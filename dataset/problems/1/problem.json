@@ -1,33 +1,32 @@
 {
-    "description": "An amusement park is installing cash-based machines and card-only machines. A cash-based machine can process CashMachineProcessingRate people per hour, while a card-only machine can process CardMachineProcessingRate people per hour. The cash-based machine needs CashMachinePaperRolls rolls of paper per hour, while the card-only machine requires CardMachinePaperRolls rolls of paper per hour. The amusement park needs to be able to process at least MinPeopleProcessed people per hour but can use at most MaxPaperRolls paper rolls per hour. Additionally, the number of card-only machines must not exceed the number of cash-based machines. The objective is to minimize the total number of machines in the park.",
-    "parameters": {
-        "CashMachineProcessingRate": {
-            "description": "Processing rate of a cash-based machine in people per hour",
-            "shape": []
-        },
-        "CardMachineProcessingRate": {
-            "description": "Processing rate of a card-only machine in people per hour",
-            "shape": []
-        },
-        "CashMachinePaperRolls": {
-            "description": "Number of paper rolls used per hour by a cash-based machine",
-            "shape": []
-        },
-        "CardMachinePaperRolls": {
-            "description": "Number of paper rolls used per hour by a card-only machine",
-            "shape": []
-        },
-        "MinPeopleProcessed": {
-            "description": "Minimum number of people that must be processed per hour",
-            "shape": []
-        },
-        "MaxPaperRolls": {
-            "description": "Maximum number of paper rolls that can be used per hour",
-            "shape": []
-        }
+  "parameters": {
+    "CashMachineProcessingRate": {
+      "description": "Processing rate of a cash-based machine in people per hour",
+      "shape": []
     },
-    "metadata": {
-        "source": "EquivaFormulation",
-        "instance_id": 47
+    "CardMachineProcessingRate": {
+      "description": "Processing rate of a card-only machine in people per hour",
+      "shape": []
+    },
+    "CashMachinePaperRolls": {
+      "description": "Number of paper rolls used per hour by a cash-based machine",
+      "shape": []
+    },
+    "CardMachinePaperRolls": {
+      "description": "Number of paper rolls used per hour by a card-only machine",
+      "shape": []
+    },
+    "MinPeopleProcessed": {
+      "description": "Minimum number of people that must be processed per hour",
+      "shape": []
+    },
+    "MaxPaperRolls": {
+      "description": "Maximum number of paper rolls that can be used per hour",
+      "shape": []
     }
+  },
+  "metadata": {
+    "source": "EquivaFormulation",
+    "instance_id": 47
+  }
 }

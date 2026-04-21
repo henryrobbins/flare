@@ -1,36 +1,35 @@
 {
-    "description": "A scientist is conducting NumExperiments different experiments to produce electricity. Each experiment i produces ElectricityProduced[i] units of electricity and requires specific amounts of NumResources types of resources as defined by ResourceRequired[j][i]. The laboratory has ResourceAvailable[j] units of each resource available. The scientist aims to determine the number of each experiment to conduct in order to maximize the total electricity produced.",
-    "parameters": {
-        "NumExperiments": {
-            "description": "Number of experiments",
-            "shape": []
-        },
-        "NumResources": {
-            "description": "Number of resource types",
-            "shape": []
-        },
-        "ResourceAvailable": {
-            "description": "Amount of resource j available",
-            "shape": [
-                "NumResources"
-            ]
-        },
-        "ResourceRequired": {
-            "description": "Amount of resource j required for experiment i",
-            "shape": [
-                "NumResources",
-                "NumExperiments"
-            ]
-        },
-        "ElectricityProduced": {
-            "description": "Amount of electricity produced by experiment i",
-            "shape": [
-                "NumExperiments"
-            ]
-        }
+  "parameters": {
+    "NumExperiments": {
+      "description": "Number of experiments",
+      "shape": []
     },
-    "metadata": {
-        "source": "EquivaFormulation",
-        "instance_id": 74
+    "NumResources": {
+      "description": "Number of resource types",
+      "shape": []
+    },
+    "ResourceAvailable": {
+      "description": "Amount of resource j available",
+      "shape": [
+        "NumResources"
+      ]
+    },
+    "ResourceRequired": {
+      "description": "Amount of resource j required for experiment i",
+      "shape": [
+        "NumResources",
+        "NumExperiments"
+      ]
+    },
+    "ElectricityProduced": {
+      "description": "Amount of electricity produced by experiment i",
+      "shape": [
+        "NumExperiments"
+      ]
     }
+  },
+  "metadata": {
+    "source": "EquivaFormulation",
+    "instance_id": 74
+  }
 }

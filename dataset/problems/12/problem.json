@@ -1,20 +1,19 @@
 {
-    "name": "Traveling Salesman Problem (TSP)",
-    "description": "Find the shortest Hamiltonian cycle visiting every city exactly once. Uses the Miller-Tucker-Zemlin (MTZ) formulation, which enforces subtour elimination via position variables on non-depot cities.",
-    "parameters": {
-        "n": {
-            "description": "Number of cities",
-            "shape": []
-        },
-        "c": {
-            "description": "Travel cost from city i to city j",
-            "shape": [
-                "n",
-                "n"
-            ]
-        }
+  "name": "Traveling Salesman Problem (TSP)",
+  "parameters": {
+    "n": {
+      "description": "Number of cities",
+      "shape": []
     },
-    "metadata": {
-        "source": "EvoCut"
+    "c": {
+      "description": "Travel cost from city i to city j",
+      "shape": [
+        "n",
+        "n"
+      ]
     }
+  },
+  "metadata": {
+    "source": "EvoCut"
+  }
 }
