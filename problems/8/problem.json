@@ -1,0 +1,31 @@
+{
+    "name": "Job Shop Scheduling Problem (JSSP)",
+    "description": "Schedule a set of jobs on multiple machines, where each job comprises a sequence of operations that must be processed in a specified order on designated machines. The objective is to minimize the makespan (completion time of the last operation), ensuring each machine handles at most one operation at a time. Formulated as a MILP with big-M disjunctive sequencing constraints.",
+    "parameters": {
+        "n": {
+            "description": "Number of jobs",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of machines",
+            "shape": []
+        },
+        "p": {
+            "description": "Processing time of each operation",
+            "shape": [
+                "n",
+                "m"
+            ]
+        },
+        "Om": {
+            "description": "Machine index assigned to each operation",
+            "shape": [
+                "n",
+                "m"
+            ]
+        }
+    },
+    "metadata": {
+        "source": "EvoCut"
+    }
+}
