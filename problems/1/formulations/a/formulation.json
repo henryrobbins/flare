@@ -1,0 +1,75 @@
+{
+    "parameters": {
+        "CashMachineProcessingRate": {
+            "description": "Processing rate of a cash-based machine in people per hour",
+            "shape": []
+        },
+        "CardMachineProcessingRate": {
+            "description": "Processing rate of a card-only machine in people per hour",
+            "shape": []
+        },
+        "CashMachinePaperRolls": {
+            "description": "Number of paper rolls used per hour by a cash-based machine",
+            "shape": []
+        },
+        "CardMachinePaperRolls": {
+            "description": "Number of paper rolls used per hour by a card-only machine",
+            "shape": []
+        },
+        "MinPeopleProcessed": {
+            "description": "Minimum number of people that must be processed per hour",
+            "shape": []
+        },
+        "MaxPaperRolls": {
+            "description": "Maximum number of paper rolls that can be used per hour",
+            "shape": []
+        }
+    },
+    "variables": {
+        "NumCashMachines": {
+            "description": "The number of cash-based machines",
+            "type": "continuous",
+            "shape": []
+        },
+        "NumCardMachines": {
+            "description": "The number of card-only machines",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "The total number of people processed per hour by cash-based and card-only machines must be at least MinPeopleProcessed.",
+            "formulation": "CashMachineProcessingRate \\cdot NumCashMachines + CardMachineProcessingRate \\cdot NumCardMachines \\geq MinPeopleProcessed",
+            "code": {
+                "gurobipy": "model.addConstr(CashMachineProcessingRate * NumCashMachines + CardMachineProcessingRate * NumCardMachines >= MinPeopleProcessed)"
+            }
+        },
+        {
+            "description": "The total number of paper rolls used per hour by cash-based and card-only machines must not exceed MaxPaperRolls.",
+            "formulation": "NumCashMachines \\times CashMachinePaperRolls + NumCardMachines \\times CardMachinePaperRolls \\leq MaxPaperRolls",
+            "code": {
+                "gurobipy": "model.addConstr(NumCashMachines * CashMachinePaperRolls + NumCardMachines * CardMachinePaperRolls <= MaxPaperRolls)"
+            }
+        },
+        {
+            "description": "The number of card-only machines must not exceed the number of cash-based machines.",
+            "formulation": "NumCardMachines \\leq NumCashMachines",
+            "code": {
+                "gurobipy": "model.addConstr(NumCardMachines <= NumCashMachines)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of machines in the park.",
+        "formulation": "Min \\ NumCashMachines + NumCardMachines",
+        "code": {
+            "gurobipy": "model.setObjective(NumCashMachines + NumCardMachines, GRB.MINIMIZE)"
+        }
+    },
+    "metadata": {
+        "source": "EquivaFormulation",
+        "instance_id": "47",
+        "variation_id": "original"
+    }
+}
