@@ -1,0 +1,29 @@
+{
+    "description": "Both subsoil and topsoil need to be added to a garden bed. The objective is to minimize the total amount of water required to hydrate the garden bed, where each bag of subsoil requires WaterSubsoil units of water per day and each bag of topsoil requires WaterTopsoil units of water per day. The total number of bags of subsoil and topsoil combined must not exceed MaxTotalBags. Additionally, at least MinTopsoilBags bags of topsoil must be used, and the proportion of topsoil bags must not exceed MaxTopsoilProportion of all bags.",
+    "parameters": {
+        "WaterSubsoil": {
+            "description": "Amount of water required to hydrate one bag of subsoil per day",
+            "shape": []
+        },
+        "WaterTopsoil": {
+            "description": "Amount of water required to hydrate one bag of topsoil per day",
+            "shape": []
+        },
+        "MaxTotalBags": {
+            "description": "Maximum number of bags of topsoil and subsoil combined",
+            "shape": []
+        },
+        "MinTopsoilBags": {
+            "description": "Minimum number of topsoil bags to be used",
+            "shape": []
+        },
+        "MaxTopsoilProportion": {
+            "description": "Maximum proportion of bags that can be topsoil",
+            "shape": []
+        }
+    },
+    "metadata": {
+        "source": "EquivaFormulation",
+        "instance_id": 217
+    }
+}
