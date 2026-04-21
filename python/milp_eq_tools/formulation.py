@@ -49,14 +49,17 @@ class Formulation:
         output_path: str | Path | None = None,
     ) -> None:
         """Run gen_params.py. Defaults: input=parent problem data.json, output=this formulation directory."""
-        if input_path is None:
-            input_path = self.path.parent.parent.parent / "data.json"
+        script = self.path / "gen_params.py"
+        needs_data = 'add_argument("data"' in script.read_text()
+        if needs_data and input_path is None:
+            input_path = self.path.parent.parent / "data.json"
         if output_path is None:
             output_path = self.path / "parameters.json"
-        subprocess.run(
-            ["python", str(self.path / "gen_params.py"), str(input_path), str(output_path)],
-            check=True,
-        )
+        cmd = ["python", str(script)]
+        if needs_data:
+            cmd.append(str(input_path))
+        cmd.append(str(output_path))
+        subprocess.run(cmd, check=True)
 
     def solve(
         self,
@@ -67,7 +70,7 @@ class Formulation:
         if input_path is None:
             input_path = self.path / "parameters.json"
         if output_path is None:
-            output_path = self.path
+            output_path = self.path / "solution.json"
         subprocess.run(
             ["python", str(self.path / "solve.py"), str(input_path), str(output_path)],
             check=True,
