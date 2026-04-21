@@ -1,0 +1,74 @@
+{
+    "parametrized_description": "A scientist is conducting M different experiments to produce electricity. Each experiment i produces A[i] units of electricity and requires specific amounts of N types of resources as defined by I[j][i]. The laboratory has Y[j] units of each resource available. The scientist aims to determine the number of each experiment to conduct in order to maximize the total electricity produced.",
+    "keywords": [
+        "N.A."
+    ],
+    "parameters": {
+        "N": {
+            "description": "Quantity of different types of resources",
+            "shape": []
+        },
+        "Y": {
+            "description": "The quantity of resource j that is accessible.",
+            "shape": [
+                "N"
+            ]
+        },
+        "A": {
+            "description": "The quantity of electrical energy generated from trial i",
+            "shape": [
+                "M"
+            ]
+        },
+        "I": {
+            "description": "Resource j quantity needed for experiment i.",
+            "shape": [
+                "N",
+                "M"
+            ]
+        },
+        "M": {
+            "description": "Amount of trials conducted",
+            "shape": []
+        }
+    },
+    "variables": {
+        "j1": {
+            "description": "Part 1 of variable j: The frequency at which each experiment is performed.",
+            "type": "continuous",
+            "shape": [
+                "M"
+            ]
+        },
+        "j2": {
+            "description": "Part 2 of variable j: The frequency at which each experiment is performed.",
+            "type": "continuous",
+            "shape": [
+                "M"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The amount of metal needed for all experiments does not surpass the metal that is currently available.",
+            "formulation": "Y_{\\text{Metal}} \\geq \\sum_{i=1}^{M} I_{\\text{Metal},i} \\cdot j1_{index} + j2_{index}",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(I[0][i] * (j1[i] + j2[i]) for i in range(M)) <= Y[0])"
+            }
+        },
+        {
+            "description": "The sum of acid needed for all experiments does not surpass the amount of acid that is available.",
+            "formulation": "\\text{Y}_{\\text{acid}} \\geq \\sum_{i=1}^{\\text{M}} \\text{I}_{\\text{acid}, i} \\cdot \\text{j1_{index} + j2_{index}}_i",
+            "code": {
+                "gurobipy": "model.addConstr(quicksum(I['acid'][i] * (j1[i] + j2[i]) for i in range(M)) <= Y['acid'])"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Increase the overall electrical output by conducting the experiments to their full potential.",
+        "formulation": "Max \\sum_{i=1}^{M} j1_{index} + j2_{index} \\times A_{i}",
+        "code": {
+            "gurobipy": "model.setObjective(quicksum((j1[i] + j2[i]) * A[i] for i in range(M)), GRB.MAXIMIZE)"
+        }
+    }
+}

@@ -1,0 +1,70 @@
+{
+    "parametrized_description": "An oil and gas company sends oil to the port using containers and trucks. Each container can hold G units of oil while each truck can hold Y units of oil. Due to government restrictions, the number of trucks used must be at most K multiplied by the number of containers used. If at least V units of oil need to be sent to the port and at least L containers must be used, minimize the total number of containers and trucks needed.",
+    "keywords": [
+        "N.A."
+    ],
+    "parameters": {
+        "L": {
+            "description": "The fewest amount of containers required",
+            "shape": []
+        },
+        "V": {
+            "description": "The smallest quantity of oil units required to be transported to the port.",
+            "shape": []
+        },
+        "G": {
+            "description": "The quantity of oil that each container is capable of holding.",
+            "shape": []
+        },
+        "Y": {
+            "description": "Quantity of oil that each truck is capable of carrying",
+            "shape": []
+        },
+        "K": {
+            "description": "The highest permitted proportion of trucks to containers",
+            "shape": []
+        }
+    },
+    "variables": {
+        "c": {
+            "description": "The quantity of containers utilized",
+            "type": "continuous",
+            "shape": []
+        },
+        "p": {
+            "description": "The quantity of trucks utilized",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "The maximum amount of trucks allowed is half the number of containers used.",
+            "formulation": "K \\times c \\geq p",
+            "code": {
+                "gurobipy": "model.addConstr(p <= K * c)"
+            }
+        },
+        {
+            "description": "A minimum of 15 containers must be utilized.",
+            "formulation": "L \\leq c",
+            "code": {
+                "gurobipy": "model.addConstr(c >= L)"
+            }
+        },
+        {
+            "description": "A minimum of 2000 units of oil must be delivered to the port, with the calculation being 30 units per container and 40 units per truck.",
+            "formulation": "V \\leq Y \\times p + G \\times c",
+            "code": {
+                "gurobipy": "model.addConstr(G * c + Y * p >= V)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "The goal is to reduce the overall requirement for containers and trucks to a minimum.",
+        "formulation": "Min c + p",
+        "code": {
+            "gurobipy": "model.setObjective(c + p, GRB.MINIMIZE)"
+        }
+    }
+}

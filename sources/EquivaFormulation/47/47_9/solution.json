@@ -1,0 +1,10 @@
+{
+    "variables": {
+        "slack_0": 0.0,
+        "slack_1": 0.0,
+        "slack_2": 0.0,
+        "a": 10.0,
+        "b": 10.0
+    },
+    "objective": 20.0
+}

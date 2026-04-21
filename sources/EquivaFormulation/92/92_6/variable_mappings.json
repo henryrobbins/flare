@@ -1,0 +1,12 @@
+{
+    "FlourUsedPerBeaker": [
+        {
+            "constant": 1,
+            "variable": "a1"
+        },
+        {
+            "constant": 1,
+            "variable": "a2"
+        }
+    ]
+}

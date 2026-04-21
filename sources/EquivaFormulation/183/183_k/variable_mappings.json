@@ -1,0 +1,14 @@
+{
+    "xCars": [
+        {
+            "constant": 1,
+            "variable": "a"
+        }
+    ],
+    "xBuses": [
+        {
+            "constant": 1,
+            "variable": "a"
+        }
+    ]
+}

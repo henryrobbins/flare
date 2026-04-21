@@ -1,0 +1,14 @@
+{
+    "NumCashMachines": [
+        {
+            "constant": 1,
+            "variable": "c"
+        }
+    ],
+    "NumCardMachines": [
+        {
+            "constant": 1,
+            "variable": "c"
+        }
+    ]
+}

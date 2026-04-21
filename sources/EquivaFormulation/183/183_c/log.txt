@@ -1,0 +1,21 @@
+Start table:
++----+--------+-------+-------+
+|    |   S0   |   x1  |   x2  |
++----+--------+-------+-------+
+| x3 | -300.0 | -20.0 |  -4.0 |
+| F  |  0.0   | -30.0 | -10.0 |
++----+--------+-------+-------+ 
+
+The pivot column: x1; the pivot row: x3:
+
+Solution of the problem of linear programming:
+[15.  0.]
+The value of the function:
+-450.0 
+
+
+Solution of the integer problem of linear programming:
+[15.  0.]
+The value of the function:
+-450.0 
+

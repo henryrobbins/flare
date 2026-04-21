@@ -1,0 +1,22 @@
+{
+    "SubsoilBags": [
+        {
+            "constant": 1,
+            "variable": "h1"
+        },
+        {
+            "constant": 1,
+            "variable": "h2"
+        }
+    ],
+    "TopsoilBags": [
+        {
+            "constant": 1,
+            "variable": "d1"
+        },
+        {
+            "constant": 1,
+            "variable": "d2"
+        }
+    ]
+}

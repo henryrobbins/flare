@@ -1,0 +1,82 @@
+{
+    "parametrized_description": "Both subsoil and topsoil need to be added to a garden bed. The objective is to minimize the total amount of water required to hydrate the garden bed, where each bag of subsoil requires Z units of water per day and each bag of topsoil requires B units of water per day. The total number of bags of subsoil and topsoil combined must not exceed D. Additionally, at least P bags of topsoil must be used, and the proportion of topsoil bags must not exceed K of all bags.",
+    "keywords": [
+        "N.A."
+    ],
+    "parameters": {
+        "P": {
+            "description": "The smallest quantity of topsoil bags that should be employed",
+            "shape": []
+        },
+        "B": {
+            "description": "The quantity of water needed to moisturize one bag of topsoil daily.",
+            "shape": []
+        },
+        "D": {
+            "description": "The highest quantity of bags containing a mixture of topsoil and subsoil",
+            "shape": []
+        },
+        "Z": {
+            "description": "Quantity of water needed to keep one bag of subsoil hydrated on a daily basis",
+            "shape": []
+        },
+        "K": {
+            "description": "The highest percentage of bags that can contain topsoil.",
+            "shape": []
+        }
+    },
+    "variables": {
+        "d": {
+            "description": "The quantity of bags containing topsoil",
+            "type": "continuous",
+            "shape": []
+        },
+        "h": {
+            "description": "The quantity of underground bags",
+            "type": "continuous",
+            "shape": []
+        },
+        "zed": {
+            "description": "New variable representing the objective function",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Constraint defining zed in terms of original variables.",
+            "formulation": "zed = Z * h + B * d",
+            "code": {
+                "gurobipy": "model.addConstr(zed == Z * h + B * d)"
+            }
+        },
+        {
+            "description": "The percentage of topsoil bags should not go beyond K out of all bags.",
+            "formulation": "K \\times ( d + h ) \\geq d",
+            "code": {
+                "gurobipy": "model.addConstr(d <= K * (d + h))"
+            }
+        },
+        {
+            "description": "The combined amount of subsoil bags and topsoil bags must not surpass D.",
+            "formulation": "D \\geq d + h",
+            "code": {
+                "gurobipy": "model.addConstr(h + d <= D)"
+            }
+        },
+        {
+            "description": "A minimum of P bags of topsoil is required to be utilized.",
+            "formulation": "P \\leq d",
+            "code": {
+                "gurobipy": "model.addConstr(d >= P)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the new variable zed.",
+        "formulation": "Minimize \\ zed",
+        "code": {
+            "gurobipy": "model.setObjective(zed, GRB.MINIMIZE)"
+        }
+    }
+}

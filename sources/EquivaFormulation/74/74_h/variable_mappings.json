@@ -1,0 +1,12 @@
+{
+    "ConductExperiment": [
+        {
+            "constant": 1,
+            "variable": "j1"
+        },
+        {
+            "constant": 1,
+            "variable": "j2"
+        }
+    ]
+}

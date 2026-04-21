@@ -1,0 +1,89 @@
+{
+    "parametrized_description": "A village delivers mail to nearby villages either by runners or canoeers. Runners can carry V bags of mail each trip and take U hours. Canoeers can carry Z bags of mail each trip and take N hours. At most P of deliveries can be made by canoe. Additionally, the village can spare at most C total hours for deliveries and must use at least E runners. The objective is to determine the number of trips by runners and canoeers to maximize the total amount of mail delivered.",
+    "keywords": [
+        "N.A."
+    ],
+    "parameters": {
+        "U": {
+            "description": "Duration of each trip taken by a runner (in hours)",
+            "shape": []
+        },
+        "C": {
+            "description": "The highest number of hours available in the village for deliveries.",
+            "shape": []
+        },
+        "V": {
+            "description": "The quantity of bags that a runner is permitted to transport during each journey.",
+            "shape": []
+        },
+        "N": {
+            "description": "The duration of time a canoeist spends on each trip (in hours)",
+            "shape": []
+        },
+        "Z": {
+            "description": "The quantity of bags that a person in a canoe can transport on every journey",
+            "shape": []
+        },
+        "E": {
+            "description": "The minimum amount of athletes required for participation.",
+            "shape": []
+        },
+        "P": {
+            "description": "The highest proportion of all deliveries that can be transported via canoe.",
+            "shape": []
+        }
+    },
+    "variables": {
+        "e": {
+            "description": "The quantity of individuals employed for transporting goods",
+            "type": "continuous",
+            "shape": [
+                "Integer"
+            ]
+        },
+        "p": {
+            "description": "Quantity of journeys taken by individuals using canoes",
+            "type": "continuous",
+            "shape": [
+                "Integer"
+            ]
+        },
+        "a": {
+            "description": "Quantity of journeys completed by individuals who run",
+            "type": "continuous",
+            "shape": [
+                "Integer"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Canoeers are limited to delivering only a portion, P, of the total mail that is to be delivered.",
+            "formulation": "P \\times \\left( p \\times Z + a \\times V \\right) \\geq p \\times Z",
+            "code": {
+                "gurobipy": "model.addConstr(p * Z <= P * (a * V + p * Z))"
+            }
+        },
+        {
+            "description": "The combined time devoted to deliveries by both runners and individuals using canoes must not surpass the limit of C hours.",
+            "formulation": "C \\geq U \\times a + N \\times p",
+            "code": {
+                "gurobipy": "model.addConstr(U * a + N * p <= C)"
+            }
+        },
+        {
+            "description": "A minimum of E runners are required to carry out the deliveries.",
+            "formulation": "E \\leq e",
+            "code": {
+                "gurobipy": "model.addConstr(e >= E)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the overall volume of mail transported by runners and canoeists while abiding by the specified time, capacity, and usage limitations.",
+        "formulation": "Max \\left( a \\times V + p \\times Z \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(a * V + p * Z, GRB.MAXIMIZE)"
+        }
+    }
+}

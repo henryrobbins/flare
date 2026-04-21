@@ -1,0 +1,18 @@
+{
+    "xCars": [
+        {
+            "constant": 1,
+            "variable": "m_0"
+        },
+        {
+            "constant": 10,
+            "variable": "m_1"
+        }
+    ],
+    "xBuses": [
+        {
+            "constant": 1,
+            "variable": "h_0"
+        }
+    ]
+}

@@ -1,0 +1,70 @@
+{
+    "parametrized_description": "A vine company sells two types of bottles: vintage and regular. A vintage bottle holds D milliliters of vine, while a regular bottle holds J milliliters of vine. The company has A milliliters of vine available. The number of regular bottles must be at least O times the number of vintage bottles. Additionally, at least Q vintage bottles must be produced. The objective is to maximize the total number of bottles produced.",
+    "keywords": [
+        "N.A."
+    ],
+    "parameters": {
+        "Q": {
+            "description": "The smallest quantity of antique bottles that must be manufactured",
+            "shape": []
+        },
+        "D": {
+            "description": "Volume of an antique bottle measured in milliliters",
+            "shape": []
+        },
+        "O": {
+            "description": "The smallest proportion of standard bottles compared to antique bottles.",
+            "shape": []
+        },
+        "J": {
+            "description": "Volume of a typical bottle measured in milliliters",
+            "shape": []
+        },
+        "A": {
+            "description": "The overall quantity of wine that is in milliliters and ready for use.",
+            "shape": []
+        }
+    },
+    "variables": {
+        "z": {
+            "description": "The quantity of standard bottles needed for production",
+            "type": "continuous",
+            "shape": []
+        },
+        "g": {
+            "description": "The quantity of old bottles to manufacture",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "The quantity of standard bottles must be a minimum of O times the quantity of vintage bottles.",
+            "formulation": "O \\times g \\leq z",
+            "code": {
+                "gurobipy": "model.addConstr(z >= O * g)"
+            }
+        },
+        {
+            "description": "A minimum of Q bottles with a vintage must be manufactured.",
+            "formulation": "Q \\leq g",
+            "code": {
+                "gurobipy": "model.addConstr(g >= Q)"
+            }
+        },
+        {
+            "description": "The combined quantity of vine used in vintage and regular bottles should not surpass A milliliters.",
+            "formulation": "A \\geq z \\times J + g \\times D",
+            "code": {
+                "gurobipy": "model.addConstr(D * g + J * z <= A)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "The objective has been replaced by the solution value.",
+        "formulation": "Max(300.0)",
+        "code": {
+            "gurobipy": "model.setObjective(300.0, GRB.MAXIMIZE)"
+        }
+    }
+}

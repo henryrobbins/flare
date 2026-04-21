@@ -1,0 +1,84 @@
+{
+    "parametrized_description": "An amusement park is installing cash-based machines and card-only machines. A cash-based machine can process A people per hour, while a card-only machine can process K people per hour. The cash-based machine needs Y rolls of paper per hour, while the card-only machine requires W rolls of paper per hour. The amusement park needs to be able to process at least U people per hour but can use at most V paper rolls per hour. Additionally, the number of card-only machines must not exceed the number of cash-based machines. The objective is to minimize the total number of machines in the park.",
+    "keywords": [
+        "N.A."
+    ],
+    "parameters": {
+        "Y": {
+            "description": "The quantity of paper rolls consumed every hour by a machine that operates on cash.",
+            "shape": []
+        },
+        "U": {
+            "description": "The lowest amount of individuals that need to be handled per hour.",
+            "shape": []
+        },
+        "A": {
+            "description": "The number of individuals processed by a cash-operated machine within an hour.",
+            "shape": []
+        },
+        "V": {
+            "description": "The highest quantity of paper rolls that can be utilized within a single hour",
+            "shape": []
+        },
+        "K": {
+            "description": "The number of individuals a card-only machine can handle in one hour.",
+            "shape": []
+        },
+        "W": {
+            "description": "Quantity of paper rolls utilized hourly by a machine that only accepts cards",
+            "shape": []
+        }
+    },
+    "variables": {
+        "s_0": {
+            "description": "Digit 0 of the The quantity of machines that operate using cash.",
+            "type": "integer",
+            "shape": []
+        },
+        "s_1": {
+            "description": "Digit 1 of the The quantity of machines that operate using cash.",
+            "type": "integer",
+            "shape": []
+        },
+        "r_0": {
+            "description": "Digit 0 of the The quantity of machines that exclusively accept cards",
+            "type": "integer",
+            "shape": []
+        },
+        "r_1": {
+            "description": "Digit 1 of the The quantity of machines that exclusively accept cards",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "The minimum number of individuals handled within an hour by machines accepting both cash and cards must be U.",
+            "formulation": "U \\leq A \\cdot K + (s_0*10^0 + s_1*10^1) \\cdot (r_0*10^0 + r_1*10^1)",
+            "code": {
+                "gurobipy": "model.addConstr(A*(s_0*10**0 + s_1*10**1)+K*(r_0*10**0 + r_1*10**1)>=U)"
+            }
+        },
+        {
+            "description": "The quantity of machines that only accept cards should not surpass the quantity of machines that accept cash.",
+            "formulation": "(s_0*10^0 + s_1*10^1) \\geq (r_0*10^0 + r_1*10^1)",
+            "code": {
+                "gurobipy": "model.addConstr((r_0*10**0 + r_1*10**1)<=(s_0*10**0 + s_1*10**1))"
+            }
+        },
+        {
+            "description": "The combined amount of paper rolls used per hour by machines that accept cash and those that only accept cards should not surpass V.",
+            "formulation": "V \\geq (r_0*10^0 + r_1*10^1) \\times W + (s_0*10^0 + s_1*10^1) \\times Y",
+            "code": {
+                "gurobipy": "model.addConstr((s_0*10**0 + s_1*10**1)*Y+(r_0*10**0 + r_1*10**1)*W<=V)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Reduce the overall quantity of machines at the park.",
+        "formulation": "Min \\ (r_0*10^0 + r_1*10^1) + (s_0*10^0 + s_1*10^1)",
+        "code": {
+            "gurobipy": "model.setObjective((s_0*10**0 + s_1*10**1)+(r_0*10**0 + r_1*10**1),GRB.MINIMIZE)"
+        }
+    }
+}
