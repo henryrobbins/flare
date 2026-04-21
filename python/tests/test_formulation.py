@@ -69,11 +69,11 @@ def test_objective(formulation_a: Formulation) -> None:
 
 
 def test_description_lazy(formulation_a: Formulation) -> None:
-    assert not hasattr(formulation_a, "_description")
+    assert "description" not in formulation_a.__dict__
     desc = formulation_a.description
     assert isinstance(desc, str)
     assert len(desc) > 0
-    assert hasattr(formulation_a, "_description")
+    assert "description" in formulation_a.__dict__
 
 
 def test_description_cached(formulation_a: Formulation) -> None:

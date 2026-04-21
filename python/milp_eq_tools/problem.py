@@ -1,4 +1,5 @@
 import json
+from functools import cached_property
 from pathlib import Path
 
 from .formulation import Formulation
@@ -16,32 +17,25 @@ class Problem:
         }
         self.metadata: dict[str, object] = raw.get("metadata", {})
 
-    @property
+    @cached_property
     def description(self) -> str:
-        if not hasattr(self, "_description"):
-            self._description = (self.path / "description.md").read_text()
-        return self._description
+        return (self.path / "description.md").read_text()
 
-    @property
+    @cached_property
     def data(self) -> dict[str, object] | None:
-        if not hasattr(self, "_data"):
-            data_file = self.path / "data.json"
-            self._data = json.loads(data_file.read_text()) if data_file.exists() else None
-        return self._data
+        data_file = self.path / "data.json"
+        return json.loads(data_file.read_text()) if data_file.exists() else None
 
-    @property
+    @cached_property
     def formulations(self) -> dict[str, Formulation]:
-        if not hasattr(self, "_formulations"):
-            formulations_dir = self.path / "formulations"
-            if formulations_dir.exists():
-                self._formulations = {
-                    d.name: Formulation(d)
-                    for d in sorted(formulations_dir.iterdir())
-                    if d.is_dir()
-                }
-            else:
-                self._formulations = {}
-        return self._formulations
+        formulations_dir = self.path / "formulations"
+        if not formulations_dir.exists():
+            return {}
+        return {
+            d.name: Formulation(d)
+            for d in sorted(formulations_dir.iterdir())
+            if d.is_dir()
+        }
 
     def __repr__(self) -> str:
         return f"Problem(path={self.path!r})"

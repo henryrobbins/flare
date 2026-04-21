@@ -16,11 +16,11 @@ def test_parameters_loaded_eagerly(problem1: Problem) -> None:
 
 
 def test_description_lazy(problem1: Problem) -> None:
-    assert not hasattr(problem1, "_description")
+    assert "description" not in problem1.__dict__
     desc = problem1.description
     assert isinstance(desc, str)
     assert len(desc) > 0
-    assert hasattr(problem1, "_description")
+    assert "description" in problem1.__dict__
 
 
 def test_description_cached(problem1: Problem) -> None:
@@ -28,11 +28,11 @@ def test_description_cached(problem1: Problem) -> None:
 
 
 def test_data_lazy(problem1: Problem) -> None:
-    assert not hasattr(problem1, "_data")
+    assert "data" not in problem1.__dict__
     data = problem1.data
     assert isinstance(data, dict)
     assert "CashMachineProcessingRate" in data
-    assert hasattr(problem1, "_data")
+    assert "data" in problem1.__dict__
 
 
 def test_data_cached(problem1: Problem) -> None:
@@ -40,10 +40,10 @@ def test_data_cached(problem1: Problem) -> None:
 
 
 def test_formulations_lazy(problem1: Problem) -> None:
-    assert not hasattr(problem1, "_formulations")
+    assert "formulations" not in problem1.__dict__
     formulations = problem1.formulations
     assert isinstance(formulations, dict)
-    assert hasattr(problem1, "_formulations")
+    assert "formulations" in problem1.__dict__
 
 
 def test_formulations_cached(problem1: Problem) -> None:

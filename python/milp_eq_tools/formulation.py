@@ -1,5 +1,6 @@
 import json
 import subprocess
+from functools import cached_property
 from pathlib import Path
 
 from .models import Constraint, Objective, Parameter, Variable, VariableType
@@ -38,11 +39,9 @@ class Formulation:
         )
         self.metadata: dict[str, object] = raw.get("metadata", {})
 
-    @property
+    @cached_property
     def description(self) -> str:
-        if not hasattr(self, "_description"):
-            self._description = (self.path / "description.md").read_text()
-        return self._description
+        return (self.path / "description.md").read_text()
 
     def gen_params(
         self,
