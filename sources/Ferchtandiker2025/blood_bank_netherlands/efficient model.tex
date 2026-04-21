@@ -1,0 +1,49 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $\mathcal{S}$: set of candidate DC locations.
+    \item $\mathcal{H}$: set of all hospital locations.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $n$: total number of DCs that should be in use.
+    \item $T_{ij}$: travel time between candidate DC location $i$ and hospital $j$.
+    \item $T$: limit on travel time from the candidate DC location $i \in \mathcal{S}$ to the hospital $j \in \mathcal{H}$.
+    \item $\delta_{ij}$: indicator parameter, $1$ if $T_{ij} \leq T$, $0$ otherwise.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_i = \begin{cases} 
+        1, & \text{if DC location } i \in \mathcal{S} \text{ is in use} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $y_{ij} = \begin{cases} 
+        1, & \text{if hospital } j  \text{ is allocated to DC } i \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{i \in \mathcal{S}} \sum_{j \in \mathcal{H}} \delta_{ij} \, y_{ij} \, T_{ij} \\
+    & \text{Minimize total transportation cost} \\[6pt]
+    \text{s.t.} \quad & \sum_{i \in \mathcal{S}} x_i = n \\
+    & \text{Select exactly } n \text{ DC locations} \\[6pt]
+    & \sum_{j \in \mathcal{H}} \delta_{ij} \, y_{ij} \leq x_i \cdot \sum_{j \in \mathcal{H}} \delta_{ij}, \quad \forall i \in \mathcal{S} \\
+    & \text{Hospitals can only be allocated to active DCs} \\[6pt]
+    & \sum_{i \in \mathcal{S}} \delta_{ij} \, y_{ij} = 1, \quad \forall j \in \mathcal{H} \\
+    & \text{Each hospital must be allocated to exactly one feasible DC} \\[6pt]
+    & x_i \in \{0,1\}, \; y_{ij} \in \{0,1\}, \quad \forall i \in \mathcal{S}, \; j \in \mathcal{H} \\
+    & \text{All variables are binary} \\[6pt]
+    & y_{ij} = 0, \quad \text{if } \delta_{ij} = 0 \\
+    & \text{(No allocation if travel time is infeasible)} 
+\end{align*}
+
+\end{document}

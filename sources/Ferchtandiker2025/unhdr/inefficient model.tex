@@ -1,0 +1,60 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb,enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of candidate hubs.
+    \item $H^f \subseteq H$: set of hubs that must be open (fixed hubs).
+    \item $C$: set of disaster regions.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $a_c$: number of people affected in region $c \in C$.
+    \item $C_{hc}$: cost per person from hub $h$ to region $c$.
+    \item $t_{hc}$: travel time from hub $h$ to region $c$.
+    \item $T$: maximum allowed (weighted) travel time per region.
+    \item $n$: maximum number of hubs that can be opened.
+    \item $M$: sufficiently large constant (used in big-M constraints).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h = \begin{cases}
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+    \end{cases}$
+    
+    \item $z_{hc} = \begin{cases}
+        1, & \text{if hub } h \text{ is assigned to serve region } c \\
+        0, & \text{otherwise}
+    \end{cases}$
+    
+    \item $q_{hc} \geq 0$: fraction of region $c$'s demand that is served by hub $h$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{h \in H} \sum_{c \in C} a_c\,C_{hc}\,q_{hc} \\
+    & \text{Minimize total transportation cost} \\[6pt]
+    \text{s.t.} \quad & \sum_{h \in H} z_{hc} = 1, \quad \forall c \in C \\
+    & \text{Assign each region to exactly one hub} \\[6pt]
+    & q_{hc} \leq M \cdot z_{hc}, \quad \forall h \in H,\; c \in C \\
+    & \text{Link shipping to assignment} \\[6pt]
+    & \sum_{h \in H} q_{hc} = 1, \quad \forall c \in C \\
+    & \text{Each region's demand must be fully met} \\[6pt]
+    & \sum_{c \in C} z_{hc} \leq |C| \cdot y_h, \quad \forall h \in H \\
+    & \text{Hubs can only serve if they are open} \\[6pt]
+    & \sum_{h \in H} y_h \leq n \\
+    & \text{Limit on the number of hubs to open} \\[6pt]
+    & y_h = 1, \quad \forall h \in H^f \\
+    & \text{Fixed hubs must be open} \\[6pt]
+    & \sum_{h \in H} t_{hc} \cdot q_{hc} \leq T, \quad \forall c \in C \\
+    & \text{Respect travel time limit per region} \\[6pt]
+    & q_{hc} \geq 0,\; z_{hc} \in \{0,1\},\; y_h \in \{0,1\}, \quad \forall h \in H,\; c \in C \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}

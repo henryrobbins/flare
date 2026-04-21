@@ -1,0 +1,62 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Sectors $\{\text{social}, \text{middle}, \text{free}\}$.
+    \item $J$: Apartment areas.
+    \item $H$: Owners $\{\text{corporation}, \text{investor}, \text{private}\}$.
+    \item $V$: Floor configurations.
+    \item $A_v$: Apartments in configuration $v \in V$.
+    \item $K$: Floors.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $p_{ijh}$: Profit for sector $i \in I$, area $j \in J$, owner $h \in H$.
+    \item $m_{ih}$: Minimum area for sector $i \in I$ and owner $h \in H$.
+    \item $b_i$: Minimum percentage of apartments in sector $i \in I$.
+    \item $s_i$: Minimum average area for sector $i \in I$.
+    \item $o_h$: Minimum ownership percentage for owner $h \in H$.
+    \item $j_{v,a}$: Area of apartment $a \in A_v$ in configuration $v \in V$.
+    \item $|A_v|$: Number of apartments in configuration $v \in V$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{kvh} = \begin{cases} 
+        1, & \text{if floor } k \text{ uses configuration } v \text{ and owner } h \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $y_{kvhia} = \begin{cases} 
+        1, & \text{if apartment } a \in A_v \text{ on floor } k \text{ (config } v, \text{ owner } h) \text{ is assigned to sector } i \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{i \in I} \sum_{a \in A_v} p_{i j_{v,a} h} \cdot y_{kvhia} \\
+    & \text{Maximize total profit from apartment assignments} \\[6pt]
+    \text{s.t.} \quad & \sum_{v \in V} \sum_{h \in H} x_{kvh} = 1, \quad \forall k \in K \\
+    & \text{Each floor has exactly one configuration and owner} \\[6pt]
+    & \sum_{i \in I} y_{kvhia} \leq x_{kvh}, \quad \forall k \in K, v \in V, h \in H, a \in A_v \\
+    & \text{Link apartments to their floor's configuration and owner} \\[6pt]
+    & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} y_{kvhia} \geq b_i \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{i' \in I} \sum_{a \in A_v} y_{kvhi'a}, \quad \forall i \in I \\
+    & \text{Minimum percentage of apartments in each sector} \\[6pt]
+    & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} j_{v,a} \cdot y_{kvhia} \geq s_i \cdot \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} y_{kvhia}, \quad \forall i \in I \\
+    & \text{Minimum average area for each sector} \\[6pt]
+    & y_{kvhia} = 0, \quad \forall k, v, h, i, a \in A_v \text{ where } j_{v,a} < m_{ih} \\
+    & \text{Enforce minimum area requirements per sector-owner pair} \\[6pt]
+    & y_{kvh_{\text{corp}}i_{\text{free}}a} = 0, \quad \forall k, v, a \in A_v \\
+    & \text{Corporations cannot own free sector apartments} \\[6pt]
+    & \sum_{k \in K} \sum_{v \in V} x_{kvh} \cdot |A_v| \geq o_h \cdot \sum_{k \in K} \sum_{v \in V} \sum_{h' \in H} x_{kvh'} \cdot |A_v|, \quad \forall h \in H \\
+    & \text{Minimum ownership percentage requirements} \\[6pt]
+    & x_{kvh} \in \{0,1\},\; y_{kvhia} \in \{0,1\}, \quad \forall k, v, h, i, a \in A_v \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}

@@ -1,0 +1,48 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+\usepackage{amssymb} % For additional math symbols
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: Set of hubs.
+    \item $C$: Set of disaster regions.
+    \item $H^f \subseteq H$: Set of fixed hubs.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $a_c$: Total number of people affected in a disaster in region $c \in C$.
+    \item $C_{hc}$: Cost of transporting relief items for one affected person from hub $h \in H$ to a disaster in region $c \in C$.
+    \item $|C|$: Total number of disaster regions.
+    \item $n$: Maximum number of hubs that can be opened.
+    \item $T$: Maximum transportation time limit.
+    \item $t_{hc}$: Transportation time from hub $h \in H$ to region $c \in C$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{hc} \geq 0$: Amount of supply transported from hub $h \in H$ to disaster region $c \in C$.
+    \item $y_h \in \{0,1\}$: Binary variable indicating whether hub $h \in H$ is open.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{h \in H} \sum_{c \in C} a_c C_{hc} x_{hc} \\
+    & \text{Minimize transportation cost} \\
+    \text{s.t.} \quad & \sum_{c \in C} x_{hc} \leq |C| y_h, \quad \forall h \in H \\
+    & \text{Each hub can serve at most $|C|$ regions if open} \\
+    & \sum_{h \in H} x_{hc} = 1, \quad \forall c \in C \\
+    & \text{Each disaster region must be supplied} \\
+    & \sum_{h \in H} y_h \leq n \\
+    & \text{Limit on the number of hubs opened} \\
+    & y_h = 1, \quad \forall h \in H^f \\
+    & \text{Fixed hubs must be open} \\
+    & \sum_{h \in H} t_{hc} x_{hc} \leq T, \quad \forall c \in C \\
+    & \text{Transportation time constraint} \\
+    & x_{hc} \in \mathbb{R}_+, \quad y_h \in \{0,1\}, \quad \forall h \in H, c \in C \\
+    & \text{Define variable types}
+\end{align*}
+\end{document}

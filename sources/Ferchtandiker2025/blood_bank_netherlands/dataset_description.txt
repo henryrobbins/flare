@@ -1,0 +1,10 @@
+# Sets
+dc_locations: List[str] = Field(description="[List[str]] List of candidate distribution center (DC) locations.")
+hospitals: List[str] = Field(description="[List[str]] List of hospital locations.")
+
+# Parameters
+n_dcs: int = Field(description="[int] Total number of DCs that should be in use (selected from candidate locations).")
+travel_times: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Travel time between each DC location and each hospital. Access as travel_times[dc][hospital] = time.")
+travel_time_limit: float = Field(description="[float] Maximum allowable travel time from a DC to a hospital for an allocation to be feasible.")
+feasibility_indicator: Dict[str, Dict[str, int]] = Field(description="[Dict[str, Dict[str, int]]] Binary indicator for feasibility of allocation. 1 if travel_times[dc][hospital] <= travel_time_limit, 0 otherwise. Access as feasibility_indicator[dc][hospital].")
+#

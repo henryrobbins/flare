@@ -1,0 +1,50 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+\usepackage{mathabx}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $\mathcal{S}$: set of candidate DC locations.
+    \item $\mathcal{H}$: set of all hospital locations.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $n$: total number of DCs that should be in use.
+    \item     $T_{ij}$: travel time between candidate DC location $j $ and hospital $i$ with $(i, j) \in  \mathcal{S} \bigtimes \mathcal{H}$.
+    \item $T$: limit on travel time from the candidate DC location $j \in \mathcal{S}$ to the hospital $i \in \mathcal{H}$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_i = \begin{cases} 
+        1, & \text{if DC location } i \in \mathcal{S} \text{ is in use} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $y_{ij} = \begin{cases} 
+        1, & \text{if hospital } j \in \mathcal{H} \text{ is allocated to DC } i \in \mathcal{S} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{i \in \mathcal{S}, j \in \mathcal{H}} y_{ij} \cdot T_{ij} \\
+    & \text{Minimize total transportation cost} \\[6pt]
+    \text{s.t.} \quad & \sum_{i \in \mathcal{S}} x_i = n \\
+    & \text{Select exactly } n \text{ DC locations} \\[6pt]
+    & \sum_{j \in \mathcal{H}} y_{ij} \leq x_i \cdot |\mathcal{H}|, \quad \forall i \in \mathcal{S} \\
+    & \text{Hospitals can only be allocated to active DCs} \\[6pt]
+    & \sum_{i \in \mathcal{S}} y_{ij} = 1, \quad \forall j \in \mathcal{H} \\
+    & \text{Each hospital must be allocated to exactly one DC} \\[6pt]& T_{ij} \cdot y_{ij} \leq T, \quad \forall i \in \mathcal{S}, j \in \mathcal{H},\\
+    & \text{Account for travel time limit}\\[6pt]
+    & y_{ij} \in \{0,1\}, \quad \forall i \in \mathcal{S}, j \in \mathcal{H} \\
+    & \text{Allocation variables are binary} \\[6pt]
+    & x_i \in \{0,1\}, \quad \forall i \in \mathcal{S} \\
+    & \text{DC selection variables are binary}
+\end{align*}
+
+\end{document}

@@ -1,0 +1,51 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Index set of households, $i = 1, \ldots, n$
+    \item $J_0$: Index set of existing hospitals, $j = 1, \ldots, m$
+    \item $J_1$: Index set of candidate (potential) hospital locations, $j = m+1, \ldots, M$
+    \item $J = J_0 \cup J_1$: Index set of all hospital sites
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_i$: number of people in household or cluster $i \in I$
+    \item $d_{ij}$: travel distance from household $i \in I$ to hospital $j \in J$
+    \item $a_{ij}$: Indicator parameter, $a_{ij} = 1$ if $d_{ij} \leq S$, $0$ otherwise
+    \item $S$: maximum allowed travel distance from household to hospital
+    \item $p$: maximum number of additional hospitals to be opened
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_j = \begin{cases} 
+        1 & \text{if hospital } j \text{ is opened} \\
+        0 & \text{otherwise}
+    \end{cases}$
+    \item $y_i = \begin{cases} 
+        1 & \text{if household } i \text{ is served by any hospital within } S \\
+        0 & \text{otherwise}
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{i \in I} v_i y_i \\
+    & \text{Maximize population coverage within acceptable distance} \\[6pt]
+    \text{s.t.} \quad & x_j = 1, \quad \forall j \in J_0 \\
+    & \text{Existing hospitals must remain open} \\[6pt]
+    & \sum_{j \in J_1} x_j \leq p \\
+    & \text{Open at most } p \text{ new hospitals} \\[6pt]
+    & y_i \leq \sum_{j \in J } a_{ij} x_j, \quad \forall i \in I \\
+    & \text{A household is served only if at least one nearby hospital is open} \\[6pt]
+    & x_j \in \{0,1\}, \quad \forall j \in J \\
+    & y_i \in \{0,1\}, \quad \forall i \in I \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}

@@ -1,0 +1,48 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $P$: set of all simple paths from supplier to beneficiary camps.
+    \item $K$: set of commodities.
+    \item $L$: set of nutrients.
+    \item $N_B$: set of beneficiary camps.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_{pk}$: cost of shipping one kg of commodity $k \in K$ along path $p \in P$.
+    \item $q_k$: procurement cost per kg of commodity $k \in K$.
+    \item $\mathrm{nutval}_{k\ell}$: nutrient-$\ell$ content (per kg) of commodity $k \in K$.
+    \item $\mathrm{nutreq}_\ell$: per-person requirement for nutrient $\ell \in L$.
+    \item $\mathrm{dem}_j$: number of beneficiaries at camp $j \in N_B$.
+    \item $e_{jp} = 
+    \begin{cases}
+        1, & \text{if path } p \text{ ends at camp } j, \\
+        0, & \text{otherwise}
+    \end{cases}$\quad for all $j \in N_B$, $p \in P$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{pk} \geq 0$: amount (kg) of commodity $k \in K$ shipped along path $p \in P$.
+    \item $R_k \geq 0$: ration size (kg per person) of commodity $k \in K$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{p \in P} \sum_{k \in K} c_{pk} \; x_{pk} + \sum_{k \in K} q_k \cdot \left( \sum_{p \in P} x_{pk} \right) \\
+    & \text{Minimize total cost of procurement and transportation} \\[6pt]
+    \text{s.t.} \quad & \sum_{p \in P} e_{jp} \, x_{pk} \geq \mathrm{dem}_j \cdot R_k, \quad \forall j \in N_B,\; \forall k \in K \\
+    & \text{Ensure each camp receives required ration quantities} \\[6pt]
+    & \sum_{k \in K} \mathrm{nutval}_{k\ell} \cdot R_k \geq \mathrm{nutreq}_\ell, \quad \forall \ell \in L \\
+    & \text{Ensure minimum nutritional content per person} \\[6pt]
+    & x_{pk} \geq 0, \quad \forall p \in P, \forall k \in K \\
+    & R_k \geq 0, \quad \forall k \in K \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}

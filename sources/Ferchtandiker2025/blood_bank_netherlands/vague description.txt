@@ -1,0 +1,3 @@
+Sanquin, the Dutch blood bank, wants to locate blood distribution centers for hospitals
+at some of the hospitals in the Netherlands. They wish to minimize the average drive time between the hospitals and its
+nearest blood distribution center.

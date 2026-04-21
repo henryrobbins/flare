@@ -1,0 +1,20 @@
+# Sets
+hubs: List[str] = Field(description="[List[str]] List of all hub indexes. h = 1, ..., N for existing hubs, h = N+1, ..., M for potential new hubs.")
+pois: List[str] = Field(description="[List[str]] List of Points of Interest (POIs).")
+junctions: List[str] = Field(description="[List[str]] List of junction roads (origins).")
+
+# Parameters
+demand: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Demand originating at junction s for POI p. demand[s][p] = v_{sp}.")
+car_time_sp: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Travel time by car from junction s to POI p (minutes). car_time_sp[s][p] = c_{sp}.")
+car_time_sh: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Travel time by car from junction s to hub h (minutes). car_time_sh[s][h] = c_{sh}.")
+bike_time_hp: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Travel time by bike from hub h to POI p (minutes). bike_time_hp[h][p] = b_{hp}.")
+distance_sp: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Distance from junction s to POI p (kilometers). distance_sp[s][p] = d_{sp}.")
+distance_hp: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Distance from hub h to POI p (kilometers). distance_hp[h][p] = d_{hp}.")
+distance_sh: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Distance from junction s to hub h (kilometers). distance_sh[s][h] = d_{sh}.")
+max_bike_time: float = Field(description="[float] Maximum allowed bike travel time from a hub h to a POI p (minutes). T.")
+num_existing_hubs: int = Field(description="[int] Number of existing hubs. N.")
+max_new_hubs: int = Field(description="[int] Maximum number of new hubs that can be opened. U.")
+min_hub_poi_distance: float = Field(description="[float] Minimum required distance between a hub h and POI p (kilometers). D.")
+max_additional_time: float = Field(description="[float] Maximum additional travel time allowed when using a bike via a hub compared to traveling directly by car (minutes). Δ.")
+min_distance_diff: float = Field(description="[float] Minimum required distance difference (d_{sp} - d_{sh}) (kilometers). τ.")
+feasibility: Dict[str, Dict[str, Dict[str, int]]] = Field(description="[Dict[str, Dict[str, Dict[str, int]]]] Binary parameter, F_{shp} = 1 if assignment from s to p via h is feasible, 0 otherwise. feasibility[s][h][p].")

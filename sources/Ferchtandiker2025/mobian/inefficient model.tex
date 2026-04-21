@@ -1,0 +1,74 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of all hub indexes. $h = 1, \dots, N$ for existing hubs, and $h = N+1, \dots, M$ for potential new hubs.
+    \item $P$: set of Points of Interest (POIs).
+    \item $S$: set of junction roads (origins).
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_{sp}$: demand originating at junction $s$ for POI $p$.
+    \item $c_{sp}$: travel time by car from junction $s$ to POI $p$ (minutes).
+    \item $c_{sh}$: travel time by car from junction $s$ to hub $h$ (minutes).
+    \item $b_{hp}$: travel time by bike from hub $h$ to POI $p$ (minutes).
+    \item $d_{sp}$: distance from junction $s$ to POI $p$ (kilometers).
+    \item $d_{hp}$: distance from hub $h$ to POI $p$ (kilometers).
+    \item $d_{sh}$: distance from junction $s$ to hub $h$ (kilometers).
+    \item $T$: maximum allowed bike travel time from a hub $h$ to a POI $p$ (minutes).
+    \item $N$: number of existing hubs.
+    \item $U$: maximum number of new hubs that can be opened.
+    \item $D$: minimum required distance between a hub $h$ and POI $p$ (kilometers).
+    \item $\Delta$: maximum additional travel time allowed when using a bike via a hub compared to traveling directly by car (minutes).
+    \item $\tau$: minimum required distance difference $(d_{sp} - d_{sh})$ (kilometers).
+    \item $F_{shp}$: binary parameter, $F_{shp} = 1$ if the following conditions are satisfied, $0$ otherwise:
+    \begin{itemize}
+        \item $(c_{sh} + b_{hp}) - c_{sp} \leq \Delta$
+        \item $b_{hp} \leq T$
+        \item $d_{hp} \geq D$
+        \item $d_{sp} - d_{sh} \geq \tau$
+    \end{itemize}
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h$: binary variable:
+        \[
+        y_h = \begin{cases} 
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+    \item $x_{shp}$: binary variable:
+        \[
+        x_{shp} = \begin{cases} 
+        1, & \text{if demand from junction } s \text{ to POI } p \text{ is assigned via hub } h \text{ such that the path is contained in } \delta_h \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{s \in S} \sum_{h \in H} \sum_{p \in P} v_{sp} x_{shp} \\
+    & \text{Maximize total covered demand via hubs} \\[6pt]
+    \text{s.t.} \quad & \sum_{h = N+1}^{M} y_h \leq U \\
+    & \text{Limit the number of new hubs opened} \\[6pt]
+    & \sum_{h = 1}^{N} y_h = N \\
+    & \text{Ensure all existing hubs are open} \\[6pt]
+    & x_{shp} \leq y_h, \quad \forall s \in S, p \in P, h \in H \\
+    & \text{Demand can only be assigned if hub } h \text{ is open} \\[6pt]
+    & x_{shp} \leq F_{shp}, \quad \forall s \in S, h \in H, p \in P \\
+    & \text{Prevent infeasible assignments} \\[6pt]
+    & \sum_{h \in H} x_{shp} \leq 1, \quad \forall s \in S, p \in P \\
+    & \text{Each demand from } s \text{ to } p \text{ can be assigned to at most one hub} \\[6pt]
+    & x_{shp}, y_h \in \{0, 1\}, \quad \forall s \in S, h \in H, p \in P \\
+    & \text{Binary variables for assignments and hub openings}
+\end{align*}
+
+\end{document}

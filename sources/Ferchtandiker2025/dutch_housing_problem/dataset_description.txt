@@ -1,0 +1,18 @@
+# Sets
+sectors: List[str] = Field(description="[List[str]] List of housing sectors. I = {'social', 'middle', 'free'}.")
+areas: List[int] = Field(description="[List[int]] List of possible apartment areas in square meters.")
+owners: List[str] = Field(description="[List[str]] List of owner types. H = {'corporation', 'investor', 'private'}.")
+floor_configurations: List[str] = Field(description="[List[str]] List of floor configurations.")
+apartments_in_config: Dict[str, List[str]] = Field(description="[Dict[str, List[str]]] Dictionary mapping each floor configuration v to its list of apartments. ")
+floors: List[int] = Field(description="[List[int]] List of floor indices in the building.")
+
+# Parameters
+profit_per_apartment: Dict[str, Dict[int, Dict[str, int]]] = Field(description="[Dict[str, Dict[int, Dict[str, int]]]] Profit per apartment for sector i, area j, owner h. profit_per_apartment[i][j][h] = p_{ijh}")
+min_area_requirement: Dict[str, Dict[str, int]] = Field(description="[Dict[str, Dict[str, int]]] Minimum required area for sector i and owner h. min_area_requirement[i][h] = m_{ih}.")
+min_sector_percentage: Dict[str, float] = Field(description="[Dict[str, float]] Minimum percentage of apartments in sector i. min_sector_percentage[i] = b_i.")
+min_avg_area_per_sector: Dict[str, int] = Field(description="[Dict[str, int]] Minimum average area for sector i. min_avg_area_per_sector[i] = s_i.")
+min_ownership_percentage: Dict[str, float] = Field(description="[Dict[str, float]] Minimum ownership percentage for owner h. min_ownership_percentage[h] = o_h.")
+apartment_area: Dict[str, Dict[str, int]] = Field(description="[Dict[str, Dict[str, int]]] Area of apartment a in configuration v. apartment_area[v][a] = j_{v,a}.")
+apartments_per_config: Dict[str, int] = Field(description="[Dict[str, int]] Number of apartments in configuration v. apartments_per_config[v] = |A_v|.")
+apartments_by_area_config: Dict[int, Dict[str, int]] = Field(description="[Dict[int, Dict[str, int]]] Number of apartments with area j in configuration v. apartments_by_area_config[j][v] = R_{jv}.")
+total_floors: int = Field(description="[int] Total number of floors in the building.") 

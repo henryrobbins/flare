@@ -1,0 +1,18 @@
+# Sets
+nutrients: List[str] = Field(description="[List[str]] List of nutritional categories")
+foods: List[str] = Field(description="[List[str]] List of food commodities")
+beneficiary_nodes: List[str] = Field(description="[List[str]] List of beneficiary camps")
+supplier_nodes: List[str] = Field(description="[List[str]] List of suppliers")
+transshipment_nodes: List[str] = Field(description="[List[str]] List of transshipment points")
+all_nodes: List[str] = Field(description="[List[str]] Combined list of all node types (suppliers + transshipment + beneficiaries)")
+edges: Dict[str, Dict[str, int]] = Field(description="[Dict[str, Dict[str, int]]] Adjacency matrix representation of edges between nodes. Access as edges[node1][node2] = 0 or 1.")
+paths: List[str] = Field(description="[List[str]] List of possible paths from suppliers to beneficiaries, direct routes and routes with up to 2 transshipment nodes inbetween")
+
+# Parameters
+demand: Dict[str, int] = Field(description="[Dict[str, int]] Number of beneficiaries at each camp. Keys are beneficiary nodes, values are population")
+nutritional_requirements: Dict[str, float] = Field(description="[Dict[str, float]] Required amount of each nutrient per person. Keys are nutrients, values are daily requirements")
+nutritional_values: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Nutritional content of each food item. Access as nutritional_values[food][nutrient] = value per kg.")
+path_costs: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Cost of transporting food along each path. Access as path_costs[path][food] = transportation cost.")
+path_end_indicators: Dict[str, Dict[str, int]] = Field(description="[Dict[str, Dict[str, int]]] Binary indicators for valid path endpoints. Access as path_end_indicators[beneficiary][path] = 0 or 1.")
+procurement_costs: Dict[str, float] = Field(description="[Dict[str, float]] Procurement cost per food item. Keys are food types, values are procurement costs.")
+edge_costs: Dict[str, Dict[str, Dict[str, float]]] = Field(description="[Dict[str, Dict[str, Dict[str, float]]]] Cost of transporting food along each edge. Access as edge_costs[node1][node2][food] = transportation cost.")

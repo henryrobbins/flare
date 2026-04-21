@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+\usepackage{amssymb}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: set of sectors $\{\text{social}, \text{middle}, \text{free}\}$.
+    \item $J$: set of areas $\{36, 42, 48, 52, 60, 68, 70, 71, 96, 131\}$.
+    \item $H$: set of owners $\{\text{corporation}, \text{investor}, \text{private}\}$.
+    \item $V$: set of floor configurations $\{\text{aa}, \text{ab}, \text{ac}, \text{bb}, \text{bc}, \text{cc}, \text{cd}, \text{ce}, \text{dd}, \text{de}, \text{ee}\}$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $K$: Total number of floors (e.g., 23, 40, or 56).
+    \item $R_{jv}$: Number of apartments with floor area $j$ and configuration $v$.
+    \item $O_{ijh}$: Profit per apartment for owner $h$ in sector $i$ and floor area $j$.
+    \item $m_{ih}$: Minimal floor area for sector $i$ and owner $h$.
+    \item $a_i$: Minimum percentage apartments of sector $i$ in total program.
+    \item $s_i$: Minimum average floor area for sector $i$.
+    \item $o_h$: Minimal percentage apartments of owner $h$ in total program.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+\item     $x_{vh}$: Number of floors of type $v$ with owner $h$.
+    \item $y_{ijh}$: Number of apartments in sector $i$ with floor area $j$ and owner $h$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{i \in I} \sum_{j \in J} \sum_{h \in H} O_{ijh} y_{ijh} \\
+    & \text{Maximize total profit} \\[6pt]
+    \text{s.t.} \quad & \sum_{v \in V}  \sum_{h \in H} x_{vh} = K \\
+    & \text{Total number of floors constraint} \\[6pt]
+    & \sum_{v \in V} R_{jv} x_{vh} = \sum_{i \in I}  y_{ijh}, \quad \forall j \in J, h \in H \\
+    & \text{Total apartments consistency} \\[6pt]
+    & \sum_{j \in J} \sum_{h \in H} y_{ijh} \geq a_i \sum_{l \in I} \sum_{j \in J} \sum_{h \in H} y_{ljh}, \quad \forall i \in I \\
+    & \text{Minimal percentage of a sector in total program} \\[6pt]
+    & \sum_{j \in J} \sum_{h \in H} j \cdot y_{ijh} \geq s_i \sum_{j \in J} \sum_{h \in H} y_{ijh}, \quad \forall i \in I \\
+    & \text{Minimal average floor area of apartments in a sector} \\[6pt]
+    & y_{ijh} = 0, \quad \forall i \in I, j \in J, h \in H \text{ where } j < m_{ih} \\
+    & \text{Minimal floor area for a sector and owner} \\[6pt]
+    & y_{\text{free},j,\text{corporation}} = 0, \quad \forall j \in J \\
+    & \text{No free sector apartments for housing corporation} \\[6pt]
+    & \sum_{i \in I} \sum_{j \in J} y_{ijh} \geq o_h \sum_{i \in I} \sum_{j \in J} \sum_{h \in H} y_{ijh}, \quad \forall h \in H \\
+    & \text{Sector ownership requirement} \\[6pt]
+    &  y_{ijh}, x_{vh} \in \mathbb{N}, \quad \forall i \in I, j \in J, h \in H, v \in V \\
+    & \text{All variables are natural numbers}
+\end{align*}
+
+\end{document}

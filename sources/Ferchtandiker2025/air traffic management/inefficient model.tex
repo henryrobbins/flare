@@ -1,0 +1,41 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $P$: set of vehicles (planes).
+    \item $A$: set of locations (airports).
+    \item $T$: set of time periods.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $\text{cap}_{a,t}$: capacity of location $a \in A$ at time $t \in T$.
+    \item $\tau_{a,a'}$: travel time from location $a$ to $a'$.
+    \item $r_{a,t}$: reward for being at location $a$ at time $t$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_{p,a,t} \in \{0,1\}$: 1 if vehicle $p$ is at location $a$ at time $t$, 0 otherwise.
+    \item $z_{p,a,a',t} \in \{0,1\}$: 1 if vehicle $p$ departs from $a$ to $a'$ at time $t$, 0 otherwise.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{p \in P} \sum_{a \in A} \sum_{t \in T} r_{a,t} y_{p,a,t} \\
+    & \text{Maximize total reward for visiting locations} \\
+\text{s.t.} \quad 
+    & \sum_{a \in A} y_{p,a,t} = 1, \quad \forall p \in P,\; t \in T \\
+    & \text{Each vehicle is at exactly one location at each time} \\
+    & \sum_{p \in P} y_{p,a,t} \leq \text{cap}_{a,t}, \quad \forall a \in A,\; t \in T \\
+    & \text{Respect location capacity at each time} \\
+    & y_{p,a,t} = y_{p,a,t-1} + \sum_{a' \in A} \sum_{t' : t' + \tau_{a',a} = t} z_{p,a',a,t'} - \sum_{a' \in A} z_{p,a,a',t}, \quad \forall p \in P,\; a \in A,\; t \in T,\; t > 0 \\
+    & \text{Flow conservation with travel time} \\
+    & y_{p,a,t} \in \{0,1\},\; z_{p,a,a',t} \in \{0,1\}
+\end{align*}
+
+\end{document}

@@ -1,0 +1,42 @@
+\documentclass{article}
+\usepackage{amssymb}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+% ----------- Efficient (Event-Based) Formulation -----------
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $P$: set of vehicles (planes).
+    \item $A$: set of locations (airports).
+    \item $T$: set of possible event times.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $\text{cap}_{a,t}$: capacity of location $a \in A$ at time $t \in T$.
+    \item $\tau_{a,a'}$: travel time from location $a$ to $a'$.
+    \item $r_{a,t}$: reward for being at location $a$ at time $t$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{p,a,a',t} \in \{0,1\}$: 1 if vehicle $p$ departs from $a$ to $a'$ at time $t$, 0 otherwise.
+    \item $t^{\text{arr}}_{p,a,a',t} = t + \tau_{a,a'}$: arrival time if $x_{p,a,a',t} = 1$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{p \in P} \sum_{a \in A} \sum_{t \in T} r_{a,t} \left( \sum_{a' \in A} \sum_{t' \in T: t' + \tau_{a,a'} = t} x_{p,a,a',t'} \right) \\
+    & \text{Maximize total reward for visiting locations} \\
+\text{s.t.} \quad 
+    & \sum_{a \in A} \sum_{a' \in A} \sum_{t \in T} x_{p,a,a',t} \geq 1, \quad \forall p \in P \\
+    & \text{Each vehicle must make at least one trip} \\
+    & \sum_{p \in P} \sum_{a \in A} \sum_{a' \in A} x_{p,a,a',t} \leq \text{cap}_{a,t}, \quad \forall a \in A,\; t \in T \\
+    & \text{Respect location capacity at each event time} \\
+    & x_{p,a,a',t} \in \{0,1\}
+\end{align*}
+
+\end{document}

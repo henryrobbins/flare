@@ -1,0 +1,12 @@
+# Sets
+households: List[str] = Field(description="[List[str]] List of household or demand node identifiers (I)")
+existing_hospitals: List[str] = Field(description="[List[str]] List of existing hospital site identifiers (J_0)")
+candidate_hospitals: List[str] = Field(description="[List[str]] List of candidate (potential) hospital site identifiers (J_1)")
+all_hospitals: List[str] = Field(description="[List[str]] Combined list of all hospital sites (J = J_0 ∪ J_1)")
+
+# Parameters
+population: Dict[str, int] = Field(description="[Dict[str, int]] Number of people in each household or demand node. Keys are household IDs, values are population (v_i)")
+travel_distances: Dict[str, Dict[str, float]] = Field(description="[Dict[str, Dict[str, float]]] Travel distance from each household to each hospital. Access as travel_distances[household][hospital] = distance (d_{ij})")
+distance_indicators: Dict[str, Dict[str, int]] = Field(description="[Dict[str, Dict[str, int]]] Binary indicator for whether a hospital is within the allowed distance for a household. Access as distance_indicators[household][hospital] = 1 if d_{ij} ≤ S, else 0 (a_{ij})")
+max_travel_distance: float = Field(description="[float] Maximum allowed travel distance from a household to a hospital (S)")
+max_new_hospitals: int = Field(description="[int] Maximum number of new hospitals that can be opened (p)")

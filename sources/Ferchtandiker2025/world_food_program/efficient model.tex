@@ -1,0 +1,47 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $N$: set of nodes.
+    \item $N_S$: set of suppliers ($N_S \subseteq N$).
+    \item $N_T$: set of transshipment points ($N_T \subseteq N$).
+    \item $N_B$: set of beneficiary camps ($N_B \subseteq N$).
+    \item $E$: an N by N matrix with 0-1 indication that an edge exists.
+    \item $L$: set of nutrients.
+    \item $K$: set of commodities.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $\text{dem}_i$: number of beneficiaries at node $i \in N_B$.
+    \item $\text{pc}_k$: procurement cost of commodity $k \in K$ (\$/kg).
+    \item $\text{tc}_{ijk}$: transportation cost of commodity $k \in K$ from node $i \in N$ to node $j \in N$ (\$/kg).
+    \item $\text{nutreq}_l$: nutritional requirement of one beneficiary for nutrient $l \in L$.
+    \item $\text{nutval}_{kl}$: nutritional value of commodity $k \in K$ for nutrient $l \in L$ (per kg).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $F_{ijk}$: amount of commodity $k \in K$ sent from node $i \in N$ to node $j \in N$ (kg).
+    \item $R_k$: ration size of commodity $k \in K$ in one person's portion (kg).
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{k \in K} \text{pc}_k \left( \sum_{j \in N_B} \text{dem}_j R_k \right) + \sum_{i \in N} \sum_{j \in N} \sum_{k \in K} \text{tc}_{ijk} F_{ijk} \\
+    & \text{Minimize total procurement and transportation costs} \\[6pt]
+    \text{s.t.} \quad & \sum_{i \in N} E_{ij} F_{ijk} = \sum_{i \in N} E_{ji} F_{jik}, \quad \forall j \in N, \forall k \in K \\
+    & \text{Flow preservation at transshipment points for each food} \\[6pt]
+    & \sum_{i \in N} E_{ij} F_{ijk} \geq \text{dem}_j R_k, \quad \forall j \in N_B, \forall k \in K \\
+    & \text{Beneficiary camps receive demanded food quantities} \\[6pt]
+    & \sum_{k \in K} \text{nutval}_{kl} R_k \geq \text{nutreq}_l, \quad \forall l \in L \\
+    & \text{Meet nutritional requirements for all nutrients} \\[6pt]
+    & R_k, F_{ijk} \geq 0, \quad \forall i,j \in N, \forall k \in K \\
+    & \text{Non-negativity constraints}
+\end{align*}
+
+\end{document}

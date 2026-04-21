@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Index set of households, $i = 1, \ldots, n$
+    \item $J_0$: Index set of existing hospitals, $j = 1, \ldots, m$
+    \item $J_1$: Index set of candidate (potential) hospital locations, $j = m+1, \ldots, M$
+    \item $J = J_0 \cup J_1$: Index set of all hospital sites
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_i$: Number of people in household or cluster of households $i \in I$
+    \item $d_{ij}$: Travel distance from household $i \in I$ to hospital facility $j \in J$
+    \item $a_{ij}$: Indicator parameter, $a_{ij} = 1$ if $d_{ij} \leq S$, $0$ otherwise
+    \item $S$: Maximum travel distance from a household to a hospital
+    \item $p$: Number of additional hospitals to be located
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_j = \begin{cases} 
+        1, & \text{if hospital } j \text{ is opened} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $y_{ij} = \begin{cases} 
+        1, & \text{if demand at household } i \text{ is served by hospital } j \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{i \in I} \sum_{j \in J} v_i y_{ij} \\
+    & \text{Maximize the number of people served by healthcare facilities} \\[6pt]
+    \text{s.t.} \quad & x_j = 1, \quad \forall j \in J_0 \\
+    & \text{Existing hospitals must remain open} \\[6pt]
+    & \sum_{j \in J_1} x_j \leq p \\
+    & \text{At most } p \text{ new hospitals can be opened} \\[6pt]
+    & \sum_{i \in I} y_{ij} \leq |I| x_j, \quad \forall j \in J \\
+    & \text{People can only be assigned to opened facilities} \\[6pt]
+    & \sum_{j \in J} y_{ij} \leq 1, \quad \forall i \in I \\
+    & \text{Each household can be assigned to at most one hospital} \\[6pt]
+    & y_{ij} \leq a_{ij}, \quad \forall i \in I, \forall j \in J \\
+    & \text{Assignment only allowed if $d_{ij} \leq S$} \\[6pt]
+    & x_j \in \{0,1\}, \quad \forall j \in J \\
+    & y_{ij} \in \{0,1\}, \quad \forall i \in I, \forall j \in J \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}

@@ -1,0 +1,58 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I = 1, \ldots, n$: blocks.
+    \item $T = 1, \ldots, t$: scheduling periods.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_i^t$: Net Present Value (NPV) of block $i$ in period $t$.
+    \item $g_i$: grade of block $i$.
+    \item $O_i$: ore tonnage of block $i$.
+    \item $W_i$: waste tonnage of block $i$.
+    \item $G_{\min}, G_{\max}$: minimum and maximum average grade.
+    \item $PC_{\min}, PC_{\max}$: processing capacity bounds (per period).
+    \item $MC_{\min}, MC_{\max}$: mining capacity bounds (ore + waste per period).
+    \item $P_{ij}$: precedence matrix; $P_{ij} = 1$ if block $i$ must be mined before block $j$, $0$ otherwise.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_i^t = \begin{cases} 
+        1, & \text{if block } i \text{ is mined in period } t \\
+        0, & \text{otherwise}
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{t=1}^{p} \sum_{i=1}^{n} c_i^t x_i^t \\
+    & \text{Maximize total NPV} \\[6pt]
+    \text{s.t.} \quad 
+    & \sum_{i=1}^{n} (g_i - G_{\max}) O_i x_i^t \leq 0, \quad \forall t \in T \\
+    & \text{Upper grade constraint} \\[6pt]
+    & \sum_{i=1}^{n} (g_i - G_{\min}) O_i x_i^t \geq 0, \quad \forall t \in T \\
+    & \text{Lower grade constraint} \\[6pt]
+    & \sum_{t=1}^{p} x_i^t \leq 1, \quad \forall i \in I \\
+    & \text{Each block mined at most once} \\[6pt]
+    & \sum_{i=1}^{n} O_i x_i^t \leq PC_{\max}, \quad \forall t \in T \\
+    & \text{Processing capacity upper bound} \\[6pt]
+    & \sum_{i=1}^{n} O_i x_i^t \geq PC_{\min}, \quad \forall t \in T \\
+    & \text{Processing capacity lower bound} \\[6pt]
+    & \sum_{i=1}^{n} (O_i + W_i) x_i^t \leq MC_{\max}, \quad \forall t \in T \\
+    & \text{Mining capacity upper bound} \\[6pt]
+    & \sum_{i=1}^{n} (O_i + W_i) x_i^t \geq MC_{\min}, \quad \forall t \in T \\
+    & \text{Mining capacity lower bound} \\[6pt]
+    & \sum_{\tau=1}^{t} x_i^{\tau} \geq x_j^t, \quad \forall t \in T,\; \forall i \in I,\; \forall j \in I \text{ with } P_{ij} = 1 \\
+    & \text{General precedence constraints: block $j$ can only be mined in period $t$ if block $i$ has been mined in period $t$ or earlier} \\[6pt]
+    & x_i^t \in \{0,1\}, \quad \forall i \in I,\; \forall t \in T \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}

@@ -1,0 +1,18 @@
+# Sets
+blocks: List[int] = Field(description="[List[int]] List of block indices (I = 1,...,n)")
+blocks_grade_1: List[int] = Field(description="[List[int]] Indices of blocks with grade 1 (I_1 = {i in I : g_i = 1})")
+blocks_grade_less_1: List[int] = Field(description="[List[int]] Indices of blocks with grade less than 1 (I_0 = {i in I : g_i < 1})")
+periods: List[int] = Field(description="[List[int]] List of scheduling periods (T = 1,...,t)")
+
+# Parameters
+npv: Dict[int, Dict[int, float]] = Field(description="[Dict[int, Dict[int, float]]] Net Present Value (NPV) of block i in period t. Access as npv[i][t]")
+grade: Dict[int, float] = Field(description="[Dict[int, float]] Grade of block i. Keys are block indices, values are grades g_i")
+ore_tonnage: Dict[int, float] = Field(description="[Dict[int, float]] Ore tonnage of block i. Keys are block indices, values are O_i")
+waste_tonnage: Dict[int, float] = Field(description="[Dict[int, float]] Waste tonnage of block i. Keys are block indices, values are W_i")
+grade_min: float = Field(description="[float] Minimum average grade (G_min)")
+grade_max: float = Field(description="[float] Maximum average grade (G_max)")
+processing_capacity_min: float = Field(description="[float] Minimum processing capacity per period (PC_min)")
+processing_capacity_max: float = Field(description="[float] Maximum processing capacity per period (PC_max)")
+mining_capacity_min: float = Field(description="[float] Minimum mining capacity per period (ore + waste, MC_min)")
+mining_capacity_max: float = Field(description="[float] Maximum mining capacity per period (ore + waste, MC_max)")
+precedence: Dict[int, Dict[int, int]] = Field(description="[Dict[int, Dict[int, int]]] Precedence matrix; precedence[i][j] = 1 if block i must be mined before block j, 0 otherwise (P_ij)")

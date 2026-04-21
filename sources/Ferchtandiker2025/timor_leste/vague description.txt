@@ -1,0 +1,17 @@
+Healthcare Accessibility in Timor-Leste
+
+Timor-Leste, a nation characterized by rugged mountainous terrain and dispersed rural communities, faces severe challenges in ensuring equitable access to healthcare. Decades of underinvestment in infrastructure have left road networks in critical disrepair: only 8% of core roads are in fair condition, while 70% are classified as very poor. Rural roads, often the only lifelines for remote villages, are plagued by landslides and frequent closures during monsoon seasons, isolating populations for days or weeks. These conditions mirror a global crisis—over 3.16 billion people worldwide cannot reach a healthcare facility within an hour on foot—but in Timor-Leste, the stakes are amplified by geographic isolation and systemic resource constraints.
+
+Healthcare accessibility is not just a logistical issue but a matter of life and death. Studies show a direct correlation between travel distance to health facilities and worsening health outcomes, particularly in rural, low-income settings. Yet, decisions about where to build or upgrade hospitals are often influenced by political agendas rather than evidence-based planning. With limited financial resources and a pressing need to allocate a World Bank-funded budget effectively, the government faces a critical dilemma: How can it strategically prioritize new health facilities or upgrades to maximize lives saved, given unreliable road networks, incomplete data, and competing regional demands?
+
+Compounding the challenge is the fragmented state of available data:
+
+Beneficiary populations are unevenly mapped, with rural areas underrepresented.
+
+Existing hospital locations are documented across conflicting datasets, none of which are comprehensive.
+
+Road network maps are outdated and do not reflect seasonal closures or landslide-prone zones.
+
+Potential sites for new facilities lack clear criteria (e.g., proximity to underserved villages, terrain stability).
+
+The urgency to act clashes with the reality of incomplete information. For instance, merging satellite imagery with ground surveys to map roads risks inaccuracies, while political pressures to "spread resources evenly" could divert clinics to areas with better infrastructure but fewer people in need. In this high-stakes environment, Timor-Leste must balance pragmatism, equity, and survival—a task as fraught as the mountain paths its citizens traverse to seek care.
