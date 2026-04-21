@@ -1,7 +1,0 @@
-{
-    "variables": {
-        "NumCashMachines": 10.0,
-        "NumCardMachines": 10.0
-    },
-    "objective": 20.0
-}

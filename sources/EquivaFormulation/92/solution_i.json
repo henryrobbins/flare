@@ -1,9 +1,0 @@
-{
-    "variables": {
-        "FlourUsedPerBeaker": {
-            "0": 0.0,
-            "1": 15.0
-        }
-    },
-    "objective": 45.0
-}
