@@ -1,4 +1,4 @@
-from milp_eq_tools import Parameter, Problem
+from milp_eq_tools import Parameter, Problem, Solution
 from milp_eq_tools.formulation import Formulation
 
 
@@ -60,3 +60,38 @@ def test_formulations_keys(problem1: Problem) -> None:
 def test_formulations_values_are_formulation_instances(problem1: Problem) -> None:
     for f in problem1.formulations.values():
         assert isinstance(f, Formulation)
+
+
+def test_solution_lazy(problem1: Problem) -> None:
+    assert "solution" not in problem1.__dict__
+    solution = problem1.solution
+    assert solution is not None
+    assert "solution" in problem1.__dict__
+
+
+def test_solution_cached(problem1: Problem) -> None:
+    assert problem1.solution is problem1.solution
+
+
+def test_solution_is_solution_instance(problem1: Problem) -> None:
+    assert isinstance(problem1.solution, Solution)
+
+
+def test_solution_values(problem1: Problem) -> None:
+    s = problem1.solution
+    assert s is not None
+    assert s.objective == 20.0
+    assert s.variables == {"NumCashMachines": 10.0, "NumCardMachines": 10.0}
+
+
+def test_solution_none_when_missing(tmp_path: "Path") -> None:
+    from pathlib import Path
+
+    problem_dir = tmp_path / "prob"
+    problem_dir.mkdir()
+    (problem_dir / "problem.json").write_text(
+        '{"description": "test", "parameters": {}, "metadata": {}}'
+    )
+    (problem_dir / "description.md").write_text("test")
+    p = Problem(problem_dir)
+    assert p.solution is None

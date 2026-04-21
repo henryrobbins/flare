@@ -32,3 +32,9 @@ class Objective:
     description: str
     formulation: str
     code: dict[str, str]
+
+
+@dataclass(frozen=True)
+class Solution:
+    variables: dict[str, object]
+    objective: float

@@ -3,7 +3,7 @@ from functools import cached_property
 from pathlib import Path
 
 from .formulation import Formulation
-from .models import Parameter
+from .models import Parameter, Solution
 
 
 class Problem:
@@ -36,6 +36,14 @@ class Problem:
             for d in sorted(formulations_dir.iterdir())
             if d.is_dir()
         }
+
+    @cached_property
+    def solution(self) -> Solution | None:
+        solution_file = self.path / "solution.json"
+        if not solution_file.exists():
+            return None
+        raw = json.loads(solution_file.read_text())
+        return Solution(variables=raw["variables"], objective=raw["objective"])
 
     def __repr__(self) -> str:
         return f"Problem(path={self.path!r})"

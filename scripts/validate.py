@@ -2,13 +2,16 @@
 """Run gen_params + solve for every formulation in the dataset."""
 
 import argparse
+import json
+import math
 import subprocess
 import sys
-from pathlib import Path
 
 from tqdm import tqdm
 
 from milp_eq_tools import Dataset
+
+OBJECTIVE_REL_TOL = 1e-6
 
 
 def main() -> None:
@@ -24,14 +27,14 @@ def main() -> None:
     dataset = Dataset(args.dataset)
 
     formulations = [
-        (pid, fid, f)
+        (pid, problem, fid, f)
         for pid, problem in dataset.problems.items()
         for fid, f in problem.formulations.items()
     ]
 
     failures: list[tuple[int, str, str]] = []
 
-    for pid, fid, formulation in tqdm(formulations, desc="validating", unit="formulation"):
+    for pid, problem, fid, formulation in tqdm(formulations, desc="validating", unit="formulation"):
         label = f"problem {pid} / formulation {fid}"
         try:
             formulation.gen_params()
@@ -45,8 +48,26 @@ def main() -> None:
         except subprocess.CalledProcessError:
             tqdm.write(f"FAIL  solve       {label}")
             failures.append((pid, fid, "solve"))
+            continue
 
-    print(f"\n{len(formulations) - len(failures)}/{len(formulations)} formulations passed")
+        if not formulation.valid:
+            continue
+
+        expected = problem.solution
+        if expected is None:
+            continue
+
+        solution_file = formulation.path / "solution.json"
+        actual_objective = json.loads(solution_file.read_text())["objective"]
+        if not math.isclose(actual_objective, expected.objective, rel_tol=OBJECTIVE_REL_TOL):
+            tqdm.write(
+                f"FAIL  solution    {label}"
+                f"  (got {actual_objective}, expected {expected.objective})"
+            )
+            failures.append((pid, fid, "solution"))
+
+    n_formulations = len(formulations)
+    print(f"\n{n_formulations - len(failures)}/{n_formulations} formulations passed")
 
     if failures:
         print("\nfailures:")
