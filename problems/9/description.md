@@ -1,0 +1,1 @@
+Select a set of directed network links and route multiple flow demands at minimal cost. Each commodity must be routed from its origin to its destination without exceeding link capacities; activating a link incurs a fixed cost. Formulated as a MILP.

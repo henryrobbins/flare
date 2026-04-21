@@ -1,0 +1,1 @@
+The CWLP is an NP-hard combinatorial optimization problem, formulated as a MILP. It involves selecting a subset of candidate warehouse locations to open and assigning each customer to one open warehouse. The problem is subjected to capacity constraints at each facility, with the goal of minimizing total fixed opening and transportation costs.

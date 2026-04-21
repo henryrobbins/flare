@@ -1,0 +1,1 @@
+Schedule a set of jobs on multiple machines, where each job comprises a sequence of operations that must be processed in a specified order on designated machines. The objective is to minimize the makespan (completion time of the last operation), ensuring each machine handles at most one operation at a time. Formulated as a MILP with big-M disjunctive sequencing constraints.

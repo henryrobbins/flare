@@ -1,0 +1,1 @@
+Given an NxN grid of unit squares, place axis-aligned rectangular tiles (no overlaps) so that each row and each column contains exactly one uncovered unit square (a hole). The objective is to minimize the number of tiles used. The problem is based on IMO 2025 Problem 6 and is formulated as a MILP using a 2D interval-flow model.
