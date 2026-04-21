@@ -1,0 +1,164 @@
+
+--------------------------------------------------------------------------------===== RECOMMENDATION IMPLEMENTATION 1/3 =====
+Recommendation Name: Replace y_ij with Assignment Index Variables
+Assumption Broken: Individual Hospital Assignments
+Explanation: The original model uses binary variables y_ij to represent the assignment of each hospital j to each DC i, leading to a large number of variables (|S|×|H|). The new model replaces these with integer variables z_j that directly indicate which DC (from the set S) is assigned to each hospital j. This reduces the number of variables from |S|×|H| to |H|, simplifying the model while maintaining the same constraints and objective.
+Key Differences: Original model uses binary variables y_ij for each hospital-DC pair, while the new model uses integer variables z_j to represent the DC assigned to each hospital., The new model reduces the number of variables from |S|×|H| to |H|., Constraints in the new model are simplified by directly using z_j to enforce the travel time limit and DC activation., The objective function in the new model directly sums the costs based on the assigned DCs.
+Potential Benefits: Reduced model complexity due to fewer variables., Potentially faster solution times as the model is more compact., Easier to implement and maintain due to simpler constraints., Maintains all original constraints and objectives while being more efficient.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $\mathcal{S}$: set of candidate DC locations.
+    \item $\mathcal{H}$: set of all hospital locations.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $n$: total number of DCs that should be in use.
+    \item $C_{ij}$: estimated transport cost from DC $i \in \mathcal{S}$ to hospital $j \in \mathcal{H}$.
+    \item $T_{ij}$: travel time between candidate DC location $i \in \mathcal{S}$ and hospital $j \in \mathcal{H}$.
+    \item $T$: limit on travel time from the candidate DC location $i \in \mathcal{S}$ to the hospital $j \in \mathcal{H}$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_i = \begin{cases} 
+        1, & \text{if DC location } i \in \mathcal{S} \text{ is in use} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $z_j \in \mathcal{S}, \quad \forall j \in \mathcal{H}$
+    \item $\text{Integer variable representing the DC assigned to hospital } j$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{j \in \mathcal{H}} C_{z_j,j} \\
+    & \text{Minimize total transportation cost} \\[6pt]
+    \text{s.t.} \quad & \sum_{i \in \mathcal{S}} x_i = n \\
+    & \text{Select exactly } n \text{ DC locations} \\[6pt]
+    & x_{z_j} = 1, \quad \forall j \in \mathcal{H} \\
+    & \text{Hospitals can only be allocated to active DCs} \\[6pt]
+    & T_{z_j,j} \leq T, \quad \forall j \in \mathcal{H} \\
+    & \text{Account for travel time limit}\\[6pt]
+    & x_i \in \{0,1\}, \quad \forall i \in \mathcal{S} \\
+    & \text{DC selection variables are binary}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 2/3 =====
+Recommendation Name: Remove Redundant x_i Variables
+Assumption Broken: Explicit DC Activation Variables
+Explanation: The original model uses explicit binary variables x_i to indicate whether a DC is active or not. This recommendation suggests removing these variables and instead deriving the activation status of a DC from the allocation variables y_ij. Specifically, a DC is considered active if it has at least one hospital assigned to it (i.e., if the sum of y_ij over all hospitals j is at least 1). This change reduces the number of variables and constraints, potentially simplifying the model and improving computational efficiency.
+Key Differences: The new model eliminates the explicit DC activation variables x_i., The constraint ensuring exactly n DCs are selected now uses an indicator function based on the sum of y_ij., The constraint linking hospital allocation to DC activation is no longer needed, as the activation is derived from y_ij.
+Potential Benefits: Reduced number of variables, which can lead to faster solution times., Simplified model structure with fewer constraints., Potential for improved solver performance due to reduced complexity.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $\mathcal{S}$: set of candidate DC locations.
+    \item $\mathcal{H}$: set of all hospital locations.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $n$: total number of DCs that should be in use.
+    \item $C_{ij}$: estimated transport cost from DC $i \in \mathcal{S}$ to hospital $j \in \mathcal{H}$.
+    \item $T_{ij}$: travel time between candidate DC location $j$ and hospital $i$ with $(i, j) \in P$.
+    \item $T$: limit on travel time from the candidate DC location $j \in \mathcal{S}$ to the hospital $i \in \mathcal{H}$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_{ij} = \begin{cases} 
+        1, & \text{if hospital } j \in \mathcal{H} \text{ is allocated to DC } i \in \mathcal{S} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{i \in \mathcal{S}, j \in \mathcal{H}} y_{ij} \cdot C_{ij} \\
+    & \text{Minimize total transportation cost} \\[6pt]
+    \text{s.t.} \quad & \sum_{i \in \mathcal{S}} \mathbb{I}(\sum_{j \in \mathcal{H}} y_{ij} \geq 1) = n \\
+    & \text{Select exactly } n \text{ DC locations} \\[6pt]
+    & \sum_{i \in \mathcal{S}} y_{ij} = 1, \quad \forall j \in \mathcal{H} \\
+    & \text{Each hospital must be allocated to exactly one DC} \\[6pt]
+    & T_{ij} \cdot y_{ij} \leq T, \quad \forall i \in \mathcal{S}, j \in \mathcal{H} \\
+    & \text{Account for travel time limit}\\[6pt]
+    & y_{ij} \in \{0,1\}, \quad \forall i \in \mathcal{S}, j \in \mathcal{H} \\
+    & \text{Allocation variables are binary}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 3/3 =====
+Recommendation Name: Tighten DC Activation Constraints
+Assumption Broken: Explicit DC Activation Variables
+Explanation: The original model allows for DC activation variables (x_i) to be set to 1 even if no hospitals are assigned to them, leading to suboptimal solutions. The new model breaks this assumption by adding constraints that ensure a DC is only activated if at least one hospital is assigned to it.
+Key Differences: Added constraint: $x_i \leq \sum_{j \in \mathcal{H}} y_{ij}, \quad \forall i \in \mathcal{S}$, Ensures that a DC is only activated if at least one hospital is assigned to it, Eliminates suboptimal solutions where a DC is activated but no hospitals are assigned to it
+Potential Benefits: Reduces the solution space by eliminating invalid solutions, Potentially speeds up the optimization process by focusing on feasible solutions, Ensures that all activated DCs are actually used, leading to more efficient resource allocation
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $\mathcal{S}$: set of candidate DC locations.
+    \item $\mathcal{H}$: set of all hospital locations.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $n$: total number of DCs that should be in use.
+    \item $C_{ij}$: estimated transport cost from DC $i \in \mathcal{S}$ to hospital $j \in \mathcal{H}$.
+    \item     $T_{ij}$: travel time between candidate DC location $j $ and hospital $i$ with $(i, j) \in P$.
+    \item $T$: limit on travel time from the candidate DC location $j \in \mathcal{S}$ to the hospital $i \in \mathcal{H}$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_i = \begin{cases} 
+        1, & \text{if DC location } i \in \mathcal{S} \text{ is in use} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $y_{ij} = \begin{cases} 
+        1, & \text{if hospital } j \in \mathcal{H} \text{ is allocated to DC } i \in \mathcal{S} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{i \in \mathcal{S}, j \in \mathcal{H}} y_{ij} \cdot C_{ij} \\
+    & \text{Minimize total transportation cost} \\[6pt]
+    \text{s.t.} \quad & \sum_{i \in \mathcal{S}} x_i = n \\
+    & \text{Select exactly } n \text{ DC locations} \\[6pt]
+    & \sum_{j \in \mathcal{H}} y_{ij} \leq x_i \cdot |\mathcal{H}|, \quad \forall i \in \mathcal{S} \\
+    & \text{Hospitals can only be allocated to active DCs} \\[6pt]
+    & \sum_{i \in \mathcal{S}} y_{ij} = 1, \quad \forall j \in \mathcal{H} \\
+    & \text{Each hospital must be allocated to exactly one DC} \\[6pt]& T_{ij} \cdot y_{ij} \leq T, \quad \forall i \in \mathcal{S}, j \in \mathcal{h},\\
+    & \text{Account for travel time limit}\\[6pt]
+    & x_i \leq \sum_{j \in \mathcal{H}} y_{ij}, \quad \forall i \in \mathcal{S} \\
+    & \text{DC can only be activated if at least one hospital is assigned to it} \\[6pt]
+    & y_{ij} \in \{0,1\}, \quad \forall i \in \mathcal{S}, j \in \mathcal{H} \\
+    & \text{Allocation variables are binary} \\[6pt]
+    & x_i \in \{0,1\}, \quad \forall i \in \mathcal{S} \\
+    & \text{DC selection variables are binary}
+\end{align*}
+
+\end{document}

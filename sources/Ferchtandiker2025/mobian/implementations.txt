@@ -1,0 +1,300 @@
+
+--------------------------------------------------------------------------------===== RECOMMENDATION IMPLEMENTATION 1/4 =====
+Recommendation Name: Aggregate Variables with Coverage Indicators
+Assumption Broken: Binary Assignment Variables (x_{shp})
+Explanation: The original model uses binary variables x_{shp} to indicate whether demand from junction s to POI p is assigned via hub h. This leads to a large number of variables (S*H*P). The new model replaces x_{shp} with z_{sp}, a binary variable indicating if (s, p) is covered by any eligible hub. This reduces the number of variables to S*P and simplifies the objective to count each (s, p) pair once if covered.
+Key Differences: Replaced x_{shp} (S*H*P variables) with z_{sp} (S*P variables)., Simplified the objective function to sum over z_{sp} instead of x_{shp}., Added a new constraint linking z_{sp} to the existence of at least one eligible hub., Removed constraints related to individual hub assignments (x_{shp} <= y_h and x_{shp} = 0 for (s, h, p) in F).
+Potential Benefits: Reduces the number of variables from S*H*P to S*P, making the model more scalable., Simplifies the objective function, focusing on coverage rather than individual hub assignments., Eliminates redundant constraints, potentially speeding up the optimization process., Maintains the same coverage logic while reducing computational complexity.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of all hub indexes. $h = 1, \dots, N$ for existing hubs, and $h = N+1, \dots, M$ for potential new hubs.
+    \item $P$: set of Points of Interest (POIs).
+    \item $S$: set of junction roads (origins).
+    \item $F$: set of infeasible assignments, containing triplets $(s, h, p)$ where using hub $h$ for travel from junction $s$ to POI $p$ is not allowed due to certain conditions.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_{sp}$: demand originating at junction $s$ for POI $p$.
+    \item $c_{sp}$: travel time by car from junction $s$ to POI $p$ (minutes).
+    \item $c_{sh}$: travel time by car from junction $s$ to hub $h$ (minutes).
+    \item $b_{hp}$: travel time by bike from hub $h$ to POI $p$ (minutes).
+    \item $d_{sp}$: distance from junction $s$ to POI $p$ (kilometers).
+    \item $d_{hp}$: distance from hub $h$ to POI $p$ (kilometers).
+    \item $T$: maximum allowed bike travel time from a hub $h$ to a POI $p$ (minutes).
+    \item $N$: number of existing hubs.
+    \item $U$: maximum number of new hubs that can be opened.
+    \item $D$: minimum required distance between a hub $h$ and POI $p$ (kilometers).
+    \item $\Delta$: maximum additional travel time allowed when using a bike via a hub compared to traveling directly by car (minutes).
+    \item $\tau$: minimum required distance difference $(d_{sp} - d_{sh})$ (kilometers).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h$: binary variable:
+        \[
+        y_h = \begin{cases} 
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+    \item $z_{sp}$: binary variable:
+        \[
+        z_{sp} = \begin{cases} 
+        1, & \text{if demand from junction } s \text{ to POI } p \text{ is covered by any eligible hub} \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{s \in S} \sum_{p \in P} v_{sp} z_{sp} \\
+    & \text{Maximize total covered demand via hubs} \\[6pt]
+    \text{s.t.} \quad & \sum_{h = N+1}^{M} y_h \leq U \\
+    & \text{Limit the number of new hubs opened} \\[6pt]
+    & \sum_{h = 1}^{N} y_h = N \\
+    & \text{Ensure all existing hubs are open} \\[6pt]
+    & z_{sp} \leq \sum_{h \in H} y_h \cdot \mathbb{I}_{(s, h, p) \notin F}, \quad \forall s \in S, p \in P \\
+    & \text{Demand can only be covered if at least one eligible hub is open} \\[6pt]
+    & z_{sp} \in \{0, 1\}, \quad \forall s \in S, p \in P \\
+    & \text{Binary variables for coverage indicators} \\[6pt]
+    & y_h \in \{0, 1\}, \quad \forall h \in H \\
+    & \text{Binary variables for hub openings}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 2/4 =====
+Recommendation Name: Encode Eligibility Conditions as Constraints
+Assumption Broken: Precomputed Infeasible Assignments (Set F)
+Explanation: The original model uses a precomputed set F to exclude infeasible assignments based on eligibility conditions. The new model breaks this assumption by dynamically enforcing these conditions through explicit constraints, eliminating the need for precomputing F.
+Key Differences: The set F is removed, and eligibility conditions are now enforced via constraints., The constraints dynamically check the eligibility conditions instead of relying on precomputed infeasible assignments., The model now uses indicator functions (I) to enforce the eligibility conditions directly.
+Potential Benefits: Eliminates the need to precompute and maintain the set F, reducing preprocessing overhead., Allows for more dynamic and flexible eligibility checks, which can be updated without recomputing F., Improves model clarity by making eligibility conditions explicit within the constraints.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of all hub indexes. $h = 1, \dots, N$ for existing hubs, and $h = N+1, \dots, M$ for potential new hubs.
+    \item $P$: set of Points of Interest (POIs).
+    \item $S$: set of junction roads (origins).
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_{sp}$: demand originating at junction $s$ for POI $p$.
+    \item $c_{sp}$: travel time by car from junction $s$ to POI $p$ (minutes).
+    \item $c_{sh}$: travel time by car from junction $s$ to hub $h$ (minutes).
+    \item $b_{hp}$: travel time by bike from hub $h$ to POI $p$ (minutes).
+    \item $d_{sp}$: distance from junction $s$ to POI $p$ (kilometers).
+    \item $d_{hp}$: distance from hub $h$ to POI $p$ (kilometers).
+    \item $T$: maximum allowed bike travel time from a hub $h$ to a POI $p$ (minutes).
+    \item $N$: number of existing hubs.
+    \item $U$: maximum number of new hubs that can be opened.
+    \item $D$: minimum required distance between a hub $h$ and POI $p$ (kilometers).
+    \item $\Delta$: maximum additional travel time allowed when using a bike via a hub compared to traveling directly by car (minutes).
+    \item $\tau$: minimum required distance difference $(d_{sp} - d_{sh})$ (kilometers).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h$: binary variable:
+        \[
+        y_h = \begin{cases} 
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+    \item $x_{shp}$: binary variable:
+        \[
+        x_{shp} = \begin{cases} 
+        1, & \text{if demand from junction } s \text{ to POI } p \text{ is assigned via hub } h \text{ such that the path is feasible} \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{s \in S} \sum_{h \in H} \sum_{p \in P} v_{sp} x_{shp} \\
+    & \text{Maximize total covered demand via hubs} \[6pt]
+    \text{s.t.} \quad & \sum_{h = N+1}^{M} y_h \leq U \\
+    & \text{Limit the number of new hubs opened} \[6pt]
+    & \sum_{h = 1}^{N} y_h = N \\
+    & \text{Ensure all existing hubs are open} \[6pt]
+    & \sum_{h \in H} x_{shp} \leq 1, \quad \forall s \in S, p \in P \\
+    & \text{Each demand pair can only be assigned to one hub} \[6pt]
+    & x_{shp} \leq y_h, \quad \forall s \in S, p \in P, h \in H \\
+    & \text{Demand can only be assigned if hub } h \text{ is open} \[6pt]
+    & x_{shp} \leq \mathbb{I}(c_{sh} + b_{hp} - c_{sp} \leq \Delta), \quad \forall s \in S, h \in H, p \in P \\
+    & \text{Extra travel time condition} \[6pt]
+    & x_{shp} \leq \mathbb{I}(b_{hp} \leq T), \quad \forall s \in S, h \in H, p \in P \\
+    & \text{Maximum bike time condition} \[6pt]
+    & x_{shp} \leq \mathbb{I}(d_{hp} \geq D), \quad \forall s \in S, h \in H, p \in P \\
+    & \text{Minimum bike distance condition} \[6pt]
+    & x_{shp} \leq \mathbb{I}(d_{sp} - d_{sh} \geq \tau), \quad \forall s \in S, h \in H, p \in P \\
+    & \text{Minimum distance difference condition} \[6pt]
+    & x_{shp}, y_h \in \{0, 1\}, \quad \forall s \in S, h \in H, p \in P \\
+    & \text{Binary variables for assignments and hub openings}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 3/4 =====
+Recommendation Name: Remove Fixed Variables for Existing Hubs
+Assumption Broken: Existing Hubs Must Remain Open
+Explanation: The original model assumes that all existing hubs must remain open, which is enforced by setting y_h = 1 for h = 1, ..., N. This recommendation suggests removing these fixed variables and treating existing hubs as constants, thereby reducing the number of decision variables and improving computational efficiency.
+Key Differences: The original model includes binary variables y_h for all hubs (existing and potential new hubs), whereas the new model only includes y_h for potential new hubs (h = N+1, ..., M)., The original model enforces that all existing hubs must remain open with the constraint sum_{h=1}^N y_h = N, which is removed in the new model., In the new model, demand can always be assigned to existing hubs (x_{shp} <= 1 for h = 1, ..., N), whereas in the original model, this was enforced via x_{shp} <= y_h with y_h fixed to 1.
+Potential Benefits: Reduces the number of decision variables by eliminating fixed variables for existing hubs, which can improve computational efficiency., Simplifies the model by removing redundant constraints (sum_{h=1}^N y_h = N)., Maintains the same solution space while reducing the problem size.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of all hub indexes. $h = 1, \dots, N$ for existing hubs, and $h = N+1, \dots, M$ for potential new hubs.
+    \item $P$: set of Points of Interest (POIs).
+    \item $S$: set of junction roads (origins).
+    \item $F$: set of infeasible assignments, containing triplets $(s, h, p)$ where using hub $h$ for travel from junction $s$ to POI $p$ is not allowed due to certain conditions.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_{sp}$: demand originating at junction $s$ for POI $p$.
+    \item $c_{sp}$: travel time by car from junction $s$ to POI $p$ (minutes).
+    \item $c_{sh}$: travel time by car from junction $s$ to hub $h$ (minutes).
+    \item $b_{hp}$: travel time by bike from hub $h$ to POI $p$ (minutes).
+    \item $d_{sp}$: distance from junction $s$ to POI $p$ (kilometers).
+    \item $d_{hp}$: distance from hub $h$ to POI $p$ (kilometers).
+    \item $T$: maximum allowed bike travel time from a hub $h$ to a POI $p$ (minutes).
+    \item $N$: number of existing hubs.
+    \item $U$: maximum number of new hubs that can be opened.
+    \item $D$: minimum required distance between a hub $h$ and POI $p$ (kilometers).
+    \item $\Delta$: maximum additional travel time allowed when using a bike via a hub compared to traveling directly by car (minutes).
+    \item $\tau$: minimum required distance difference $(d_{sp} - d_{sh})$ (kilometers).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h$: binary variable:
+        \[
+        y_h = \begin{cases} 
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+        for $h = N+1, \dots, M$ (only for potential new hubs)
+    \item $x_{shp}$: binary variable:
+        \[
+        x_{shp} = \begin{cases} 
+        1, & \text{if demand from junction } s \text{ to POI } p \text{ is assigned via hub } h \text{such that the path is contained in } \delta_h \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{s \in S} \sum_{h \in H} \sum_{p \in P} v_{sp} x_{shp} \\
+    & \text{Maximize total covered demand via hubs} \[6pt]
+    \text{s.t.} \quad & \sum_{h = N+1}^{M} y_h \leq U \\
+    & \text{Limit the number of new hubs opened} \[6pt]
+    & \sum_{h \in H} x_{shp} \leq 1, \quad \forall s \in S, p \in P \\
+    & \text{Each demand pair can only be assigned to one hub} \[6pt]
+    & x_{shp} \leq y_h, \quad \forall s \in S, p \in P, h = N+1, \dots, M \\
+    & \text{Demand can only be assigned to new hub } h \text{ if it is open} \[6pt]
+    & x_{shp} \leq 1, \quad \forall s \in S, p \in P, h = 1, \dots, N \\
+    & \text{Demand can always be assigned to existing hubs} \[6pt]
+    & x_{shp} = 0, \quad \forall (s, h, p) \in F \\
+    & \text{Prevent infeasible assignments} \[6pt]
+    & x_{shp}, y_h \in \{0, 1\}, \quad \forall s \in S, h \in H, p \in P \\
+    & \text{Binary variables for assignments and hub openings}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 4/4 =====
+Recommendation Name: Relax Single-Assignment Constraint
+Assumption Broken: Single Hub Assignment per Commuter Group
+Explanation: The original model assumes that each commuter group (s, p) can be assigned to at most one hub, enforced by the constraint ∑ₕ x_{shp} ≤ 1. This recommendation suggests relaxing this assumption by introducing coverage variables z_{sp} that indicate whether a commuter group (s, p) is covered by any hub, regardless of how many hubs cover it. This simplifies the model by removing the need to track which specific hub covers each commuter group, while still ensuring that the demand is counted correctly if covered by at least one hub.
+Key Differences: The original model uses variables x_{shp} to track specific hub assignments, while the new model uses z_{sp} to simply indicate coverage by any hub., The constraint ∑ₕ x_{shp} ≤ 1 is removed in the new model, allowing multiple hubs to cover the same (s, p) pair., The new model simplifies the objective function by summing over z_{sp} instead of x_{shp}.
+Potential Benefits: Simplifies the model by reducing the number of variables and constraints., Improves computational efficiency by removing the need to track specific hub assignments., Maintains correctness by ensuring demand is counted if covered by any hub, without needing to enforce single assignments.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of all hub indexes. $h = 1, \dots, N$ for existing hubs, and $h = N+1, \dots, M$ for potential new hubs.
+    \item $P$: set of Points of Interest (POIs).
+    \item $S$: set of junction roads (origins).
+    \item $F$: set of infeasible assignments, containing triplets $(s, h, p)$ where using hub $h$ for travel from junction $s$ to POI $p$ is not allowed due to certain conditions.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_{sp}$: demand originating at junction $s$ for POI $p$.
+    \item $c_{sp}$: travel time by car from junction $s$ to POI $p$ (minutes).
+    \item $c_{sh}$: travel time by car from junction $s$ to hub $h$ (minutes).
+    \item $b_{hp}$: travel time by bike from hub $h$ to POI $p$ (minutes).
+    \item $d_{sp}$: distance from junction $s$ to POI $p$ (kilometers).
+    \item $d_{hp}$: distance from hub $h$ to POI $p$ (kilometers).
+    \item $T$: maximum allowed bike travel time from a hub $h$ to a POI $p$ (minutes).
+    \item $N$: number of existing hubs.
+    \item $U$: maximum number of new hubs that can be opened.
+    \item $D$: minimum required distance between a hub $h$ and POI $p$ (kilometers).
+    \item $\Delta$: maximum additional travel time allowed when using a bike via a hub compared to traveling directly by car (minutes).
+    \item $\tau$: minimum required distance difference $(d_{sp} - d_{sh})$ (kilometers).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h$: binary variable:
+        \[
+        y_h = \begin{cases} 
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+    \item $z_{sp}$: binary variable:
+        \[
+        z_{sp} = \begin{cases} 
+        1, & \text{if demand from junction } s \text{ to POI } p \text{ is covered by any hub} \\
+        0, & \text{otherwise}
+        \end{cases}
+        \]
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{s \in S} \sum_{p \in P} v_{sp} z_{sp} \\
+    & \text{Maximize total covered demand via hubs} \\[6pt]
+    \text{s.t.} \quad & \sum_{h = N+1}^{M} y_h \leq U \\
+    & \text{Limit the number of new hubs opened} \\[6pt]
+    & \sum_{h = 1}^{N} y_h = N \\
+    & \text{Ensure all existing hubs are open} \\[6pt]
+    & z_{sp} \leq \sum_{h \in H} y_h \cdot \mathbb{I}_{(s, h, p) \notin F}, \quad \forall s \in S, p \in P \\
+    & \text{Demand is covered if at least one feasible hub is open} \\[6pt]
+    & z_{sp}, y_h \in \{0, 1\}, \quad \forall s \in S, p \in P, h \in H \\
+    & \text{Binary variables for coverage and hub openings}
+\end{align*}
+
+\end{document}

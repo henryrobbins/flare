@@ -1,0 +1,202 @@
+
+--------------------------------------------------------------------------------===== RECOMMENDATION IMPLEMENTATION 1/3 =====
+Recommendation Name: Aggregate Apartments by Area-Sector
+Assumption Broken: Individual Apartment Sector Assignment
+Explanation: The original model assumes that each apartment's sector assignment is individually tracked, leading to a high number of binary variables. The new model aggregates apartments by their area, sector, and floor configuration-owner pair, reducing the number of variables by grouping identical apartments in the same configuration. This leverages the repeated areas in predefined floor designs.
+Key Differences: The original model uses binary variables $y_{kvhia}$ to track individual apartment sector assignments, while the new model uses integer variables $z_{vhi j}$ to count the number of apartments of each area $j$ in configuration $v$ assigned to sector $i$ and owned by $h$., The new model aggregates apartments by their area, sector, and floor configuration-owner pair, reducing the number of variables significantly., The profit calculation in the new model multiplies the aggregated counts $z_{vhi j}$ by the floor assignment variables $x_{kvh}$, whereas the original model sums over individual apartment assignments.
+Potential Benefits: Reduced number of variables, leading to a smaller and more tractable optimization problem., Faster solution times due to the reduced complexity of the model., Easier to implement and maintain due to the simplified variable structure., Better scalability for larger instances of the problem.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Sectors $\{\text{social}, \text{middle}, \text{free}\}$.
+    \item $J$: Apartment areas $\{36,42,48,52,60,68,70,71,96,131\}$.
+    \item $H$: Owners $\{\text{corporation}, \text{investor}, \text{private}\}$.
+    \item $V$: Floor configurations $\{\text{aa}, \text{ab}, \dots, \text{ee}\}$.
+    \item $A_v$: Apartments in configuration $v \in V$.
+    \item $K$: Floors $\{1, 2, \dots, K_{\max}\}$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $p_{ijh}$: Profit for sector $i \in I$, area $j \in J$, owner $h \in H$.
+    \item $m_{ih}$: Minimum area for sector $i \in I$ and owner $h \in H$.
+    \item $b_i$: Minimum percentage of apartments in sector $i \in I$.
+    \item $s_i$: Minimum average area for sector $i \in I$.
+    \item $o_h$: Minimum ownership percentage for owner $h \in H$.
+    \item $j_{v,a}$: Area of apartment $a \in A_v$ in configuration $v \in V$.
+    \item $|A_v|$: Number of apartments in configuration $v \in V$.
+    \item $n_{vj}$: Number of apartments with area $j$ in configuration $v$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{kvh} = \begin{cases} 
+        1, & \text{if floor } k \text{ uses configuration } v \text{ and owner } h \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $z_{vhi j}$: Number of apartments with area $j$ in configuration $v$ (owned by $h$) assigned to sector $i$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{i \in I} \sum_{j \in J} p_{i j h} \cdot z_{vhi j} \cdot x_{kvh} \\
+    & \text{Maximize total profit from apartment assignments} \\[6pt]
+    \text{s.t.} \quad & \sum_{v \in V} \sum_{h \in H} x_{kvh} = 1, \quad \forall k \in K \\
+    & \text{Each floor has exactly one configuration and owner} \\[6pt]
+    & \sum_{i \in I} z_{vhi j} = n_{vj}, \quad \forall v \in V, h \in H, j \in J \\
+    & \text{All apartments of area } j \text{ in configuration } v \text{ must be assigned to some sector} \\[6pt]
+    & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{j \in J} z_{vhi j} \cdot x_{kvh} \geq b_i \cdot \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} x_{kvh} \cdot |A_v|, \quad \forall i \in I \\
+    & \text{Minimum percentage of apartments in each sector} \\[6pt]
+    & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{j \in J} j \cdot z_{vhi j} \cdot x_{kvh} \geq s_i \cdot \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{j \in J} z_{vhi j} \cdot x_{kvh}, \quad \forall i \in I \\
+    & \text{Minimum average area for each sector} \\[6pt]
+    & z_{vhi j} = 0, \quad \forall v, h, i, j \text{ where } j < m_{ih} \\
+    & \text{Enforce minimum area requirements per sector-owner pair} \\[6pt]
+    & z_{vh_{\text{corp}}i_{\text{free}}j} = 0, \quad \forall v, j \\
+    & \text{Corporations cannot own free sector apartments} \\[6pt]
+    & \sum_{k \in K} \sum_{v \in V} x_{kvh} \cdot |A_v| \geq o_h \cdot \sum_{k \in K} \sum_{v \in V} \sum_{h' \in H} x_{kvh'} \cdot |A_v|, \quad \forall h \in H \\
+    & \text{Minimum ownership percentage requirements} \\[6pt]
+    & x_{kvh} \in \{0,1\},\; z_{vhi j} \in \mathbb{Z}^+, \quad \forall k, v, h, i, j \\
+    & \text{Binary and integer decision variables}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 2/3 =====
+Recommendation Name: Remove Fixed Variables
+Assumption Broken: Existence of Fixed Variables
+Explanation: The original model includes variables y_{kvhia} that are fixed to 0 due to constraints (e.g., corporation in free sector or when j_{v,a} < m_{ih}). These variables can be eliminated during pre-processing, reducing the model size and improving computational efficiency.
+Key Differences: The new model excludes variables y_{kvhia} where j_{v,a} < m_{ih} or h=corporation and i=free during variable initialization., The constraints that fixed these variables to 0 are no longer needed, as the variables themselves are not created., The model size is reduced, which can lead to faster solving times.
+Potential Benefits: Reduced model size due to fewer variables., Improved computational efficiency by eliminating unnecessary variables., Simplified model formulation without redundant constraints.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Sectors $\{\text{social}, \text{middle}, \text{free}\}$.
+    \item $J$: Apartment areas $\{36,42,48,52,60,68,70,71,96,131\}$.
+    \item $H$: Owners $\{\text{corporation}, \text{investor}, \text{private}\}$.
+    \item $V$: Floor configurations $\{\text{aa}, \text{ab}, \dots, \text{ee}\}$.
+    \item $A_v$: Apartments in configuration $v \in V$.
+    \item $K$: Floors $\{1, 2, \dots, K_{\max}\}$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $p_{ijh}$: Profit for sector $i \in I$, area $j \in J$, owner $h \in H$.
+    \item $m_{ih}$: Minimum area for sector $i \in I$ and owner $h \in H$.
+    \item $b_i$: Minimum percentage of apartments in sector $i \in I$.
+    \item $s_i$: Minimum average area for sector $i \in I$.
+    \item $o_h$: Minimum ownership percentage for owner $h \in H$.
+    \item $j_{v,a}$: Area of apartment $a \in A_v$ in configuration $v \in V$.
+    \item $|A_v|$: Number of apartments in configuration $v \in V$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{kvh} = \begin{cases} 
+        1, & \text{if floor } k \text{ uses configuration } v \text{ and owner } h \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $y_{kvhia} = \begin{cases} 
+        1, & \text{if apartment } a \in A_v \text{ on floor } k \text{ (config } v, \text{ owner } h) \text{ is assigned to sector } i \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+        \textbf{Note:} Only defined for $i, h, a$ where $j_{v,a} \geq m_{ih}$ and $h \neq \text{corporation}$ when $i = \text{free}$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{i \in I} \sum_{a \in A_v} p_{i j_{v,a} h} \cdot y_{kvhia} \\
+    & \text{Maximize total profit from apartment assignments} \[6pt]
+    \text{s.t.} \quad & \sum_{v \in V} \sum_{h \in H} x_{kvh} = 1, \quad \forall k \in K \\
+    & \text{Each floor has exactly one configuration and owner} \[6pt]
+    & \sum_{i \in I} y_{kvhia} = x_{kvh}, \quad \forall k \in K, v \in V, h \in H, a \in A_v \\
+    & \text{Link apartments to their floor's configuration and owner} \[6pt]
+    & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} y_{kvhia} \geq b_i \cdot \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} x_{kvh} \cdot |A_v|, \quad \forall i \in I \\
+    & \text{Minimum percentage of apartments in each sector} \[6pt]
+    & \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} j_{v,a} \cdot y_{kvhia} \geq s_i \cdot \sum_{k \in K} \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} y_{kvhia}, \quad \forall i \in I \\
+    & \text{Minimum average area for each sector} \[6pt]
+    & \sum_{k \in K} \sum_{v \in V} x_{kvh} \cdot |A_v| \geq o_h \cdot \sum_{k \in K} \sum_{v \in V} \sum_{h' \in H} x_{kvh'} \cdot |A_v|, \quad \forall h \in H \\
+    & \text{Minimum ownership percentage requirements} \[6pt]
+    & x_{kvh} \in \{0,1\},\; y_{kvhia} \in \{0,1\}, \quad \forall k, v, h, i, a \in A_v \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 3/3 =====
+Recommendation Name: Aggregate Floor Configurations
+Assumption Broken: Per-Floor Indexed Variables
+Explanation: The original model assumes that each floor must be individually tracked with variables x_{kvh}, which leads to a large number of variables (O(K)). By aggregating floors into counts per configuration-owner pair, we reduce the number of variables to O(1) per configuration-owner pair, as floors are indistinguishable beyond their configuration and owner. This simplification is possible because the problem constraints do not require distinguishing between individual floors.
+Key Differences: Variables x_{kvh} are replaced with x_{vh}, which counts the number of floors per configuration-owner pair instead of tracking each floor individually., Variables y_{kvhia} are replaced with y_{vhi a}, which now represents sector assignments per configuration-owner pair rather than per floor., The constraint ensuring each floor has exactly one configuration and owner is replaced with a constraint ensuring the total number of floors equals K_{\max}., All constraints are adjusted to use the aggregated variables x_{vh} and y_{vhi a}.
+Potential Benefits: Reduces the number of variables from O(K) to O(1) per configuration-owner pair, significantly decreasing the problem size., Simplifies the model by eliminating the need to track indistinguishable floors individually., May lead to faster solution times due to the reduced problem size., Maintains all original constraints and objectives while being more computationally efficient.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Sectors $\{\text{social}, \text{middle}, \text{free}\}$.
+    \item $J$: Apartment areas $\{36,42,48,52,60,68,70,71,96,131\}$.
+    \item $H$: Owners $\{\text{corporation}, \text{investor}, \text{private}\}$.
+    \item $V$: Floor configurations $\{\text{aa}, \text{ab}, \dots, \text{ee}\}$.
+    \item $A_v$: Apartments in configuration $v \in V$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $p_{ijh}$: Profit for sector $i \in I$, area $j \in J$, owner $h \in H$.
+    \item $m_{ih}$: Minimum area for sector $i \in I$ and owner $h \in H$.
+    \item $b_i$: Minimum percentage of apartments in sector $i \in I$.
+    \item $s_i$: Minimum average area for sector $i \in I$.
+    \item $o_h$: Minimum ownership percentage for owner $h \in H$.
+    \item $j_{v,a}$: Area of apartment $a \in A_v$ in configuration $v \in V$.
+    \item $|A_v|$: Number of apartments in configuration $v \in V$.
+    \item $K_{\max}$: Total number of floors.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{vh} \in \mathbb{N}$: Number of floors using configuration $v \in V$ and owner $h \in H$.
+    \item $y_{vhi a} = \begin{cases} 
+        1, & \text{if apartment } a \in A_v \text{ in configuration } v \text{ with owner } h \text{ is assigned to sector } i \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{v \in V} \sum_{h \in H} \sum_{i \in I} \sum_{a \in A_v} p_{i j_{v,a} h} \cdot y_{vhi a} \cdot x_{vh} \\
+    & \text{Maximize total profit from apartment assignments} \\[6pt]
+    \text{s.t.} \quad & \sum_{v \in V} \sum_{h \in H} x_{vh} = K_{\max} \\
+    & \text{Total number of floors equals } K_{\max} \\[6pt]
+    & \sum_{i \in I} y_{vhi a} = 1, \quad \forall v \in V, h \in H, a \in A_v \\
+    & \text{Each apartment in a configuration-owner pair is assigned to exactly one sector} \\[6pt]
+    & \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} y_{vhi a} \cdot x_{vh} \geq b_i \cdot \sum_{v \in V} \sum_{h \in H} x_{vh} \cdot |A_v|, \quad \forall i \in I \\
+    & \text{Minimum percentage of apartments in each sector} \\[6pt]
+    & \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} j_{v,a} \cdot y_{vhi a} \cdot x_{vh} \geq s_i \cdot \sum_{v \in V} \sum_{h \in H} \sum_{a \in A_v} y_{vhi a} \cdot x_{vh}, \quad \forall i \in I \\
+    & \text{Minimum average area for each sector} \\[6pt]
+    & y_{vhi a} = 0, \quad \forall v, h, i, a \in A_v \text{ where } j_{v,a} < m_{ih} \\
+    & \text{Enforce minimum area requirements per sector-owner pair} \\[6pt]
+    & y_{v h_{\text{corp}} i_{\text{free}} a} = 0, \quad \forall v, a \in A_v \\
+    & \text{Corporations cannot own free sector apartments} \\[6pt]
+    & \sum_{v \in V} x_{v h} \cdot |A_v| \geq o_h \cdot \sum_{v \in V} \sum_{h' \in H} x_{v h'} \cdot |A_v|, \quad \forall h \in H \\
+    & \text{Minimum ownership percentage requirements} \\[6pt]
+    & x_{vh} \in \mathbb{N},\; y_{vhi a} \in \{0,1\}, \quad \forall v, h, i, a \in A_v \\
+    & \text{Decision variables}
+\end{align*}
+
+\end{document}

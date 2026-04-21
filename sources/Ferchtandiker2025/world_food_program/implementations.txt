@@ -1,0 +1,165 @@
+
+--------------------------------------------------------------------------------===== RECOMMENDATION IMPLEMENTATION 1/3 =====
+Recommendation Name: Arc-based flow variables
+Assumption Broken: Path-based flow handling
+Explanation: The original model uses path-based variables to track the flow of commodities from suppliers to beneficiary camps, which requires enumerating all possible paths. This approach can lead to scalability issues as the number of paths grows exponentially with the network size. The new model replaces path-based variables with arc-based variables, which track the flow of commodities between individual nodes (suppliers, transshipment points, and camps). This change breaks the assumption that flow must be tracked along complete paths, allowing for more efficient modeling of flow conservation at transshipment points.
+Key Differences: The original model uses path-based variables ($x_{pk}$), while the new model uses arc-based variables ($y_{ijk}$)., The new model explicitly includes flow conservation constraints at transshipment nodes, which were implicit in the path-based approach., The new model defines sets of nodes and arcs explicitly, rather than working with pre-defined paths., The cost function in the new model sums over arcs rather than paths.
+Potential Benefits: Improved scalability: The number of variables grows with the number of arcs rather than the number of paths, which is typically much smaller., Explicit modeling of flow conservation at transshipment points allows for better control and understanding of the flow dynamics., Easier to incorporate additional constraints or modifications to the network structure., More efficient solving due to reduced problem size and better constraint structure.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $N$: set of all nodes (suppliers, transshipment points, beneficiary camps).
+    \item $A$: set of all arcs (directed edges between nodes).
+    \item $K$: set of commodities.
+    \item $L$: set of nutrients.
+    \item $N_S \subseteq N$: set of supplier nodes.
+    \item $N_T \subseteq N$: set of transshipment nodes.
+    \item $N_B \subseteq N$: set of beneficiary camp nodes.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_{ijk}$: cost of shipping one kg of commodity $k \in K$ along arc $(i,j) \in A$.
+    \item $\mathrm{nutval}_{k\ell}$: nutrient-$\ell$ content (per kg) of commodity $k \in K$.
+    \item $\mathrm{nutreq}_\ell$: per-person requirement for nutrient $\ell \in L$.
+    \item $\mathrm{dem}_j$: number of beneficiaries at camp $j \in N_B$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_{ijk} \geq 0$: amount (kg) of commodity $k \in K$ shipped along arc $(i,j) \in A$.
+    \item $R_k \geq 0$: ration size (kg per person) of commodity $k \in K$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{(i,j) \in A} \sum_{k \in K} c_{ijk} \; y_{ijk} \\
+    & \text{Minimize total cost of procurement and transportation} \\[6pt]
+    \text{s.t.} \quad & \sum_{i:(i,j) \in A} y_{ijk} - \sum_{m:(j,m) \in A} y_{jmk} = 0, \quad \forall j \in N_T,\; \forall k \in K \\
+    & \text{Flow conservation at transshipment nodes} \\[6pt]
+    & \sum_{i:(i,j) \in A} y_{ijk} \geq \mathrm{dem}_j \cdot R_k, \quad \forall j \in N_B,\; \forall k \in K \\
+    & \text{Ensure each camp receives required ration quantities} \\[6pt]
+    & \sum_{k \in K} \mathrm{nutval}_{k\ell} \cdot R_k \geq \mathrm{nutreq}_\ell, \quad \forall \ell \in L \\
+    & \text{Ensure minimum nutritional content per person} \\[6pt]
+    & y_{ijk} \geq 0, \quad \forall (i,j) \in A, \forall k \in K \\
+    & R_k \geq 0, \quad \forall k \in K \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 2/3 =====
+Recommendation Name: Aggregate Similar Commodities
+Assumption Broken: Uniform ration sizes across camps
+Explanation: The original model assumes that each commodity has a uniform ration size across all beneficiary camps. By aggregating similar commodities (those with identical nutritional profiles and cost structures), we break this assumption by treating them as a single group. This reduces the number of variables and constraints without affecting the nutritional feasibility of the solution.
+Key Differences: The set $K$ of individual commodities is replaced by $K'$, the set of aggregated commodity groups., The parameters $c_{pk}$ and $\mathrm{nutval}_{k\ell}$ are now defined for aggregated groups $k' \in K'$ instead of individual commodities $k \in K$., The variables $x_{pk}$ and $R_k$ are replaced by $x_{pk'}$ and $R_{k'}$, representing the amount shipped and ration size for aggregated groups.
+Potential Benefits: Reduces the number of variables and constraints, leading to faster solution times., Simplifies the model by eliminating redundant variables for commodities with identical nutritional and cost profiles., Maintains nutritional feasibility while reducing computational complexity.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $P$: set of all simple paths from supplier to beneficiary camps.
+    \item $K'$: set of aggregated commodity groups.
+    \item $L$: set of nutrients.
+    \item $N_B$: set of beneficiary camps.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_{pk'}$: cost of shipping one kg of commodity group $k' \in K'$ along path $p \in P$.
+    \item $\mathrm{nutval}_{k'\ell}$: nutrient-$\ell$ content (per kg) of commodity group $k' \in K'$.
+    \item $\mathrm{nutreq}_\ell$: per-person requirement for nutrient $\ell \in L$.
+    \item $\mathrm{dem}_j$: number of beneficiaries at camp $j \in N_B$.
+    \item $e_{jp} = 
+    \begin{cases}
+        1, & \text{if path } p \text{ ends at camp } j, \\
+        0, & \text{otherwise}
+    \end{cases}$\quad for all $j \in N_B$, $p \in P$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{pk'} \geq 0$: amount (kg) of commodity group $k' \in K'$ shipped along path $p \in P$.
+    \item $R_{k'} \geq 0$: ration size (kg per person) of commodity group $k' \in K'$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{p \in P} \sum_{k' \in K'} c_{pk'} \; x_{pk'} \\
+    & \text{Minimize total cost of procurement and transportation} \[6pt]
+    \text{s.t.} \quad & \sum_{p \in P} e_{jp} \, x_{pk'} \geq \mathrm{dem}_j \cdot R_{k'}, \quad \forall j \in N_B,\; \forall k' \in K' \\
+    & \text{Ensure each camp receives required ration quantities} \[6pt]
+    & \sum_{k' \in K'} \mathrm{nutval}_{k'\ell} \cdot R_{k'} \geq \mathrm{nutreq}_\ell, \quad \forall \ell \in L \\
+    & \text{Ensure minimum nutritional content per person} \[6pt]
+    & x_{pk'} \geq 0, \quad \forall p \in P, \forall k' \in K' \\
+    & R_{k'} \geq 0, \quad \forall k' \in K' \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 3/3 =====
+Recommendation Name: Integer Relaxation for Shipping Amounts
+Assumption Broken: Discrete shipping units (e.g., truckloads)
+Explanation: The original model assumes that shipping amounts must be discrete (e.g., whole truckloads), which can complicate the optimization process by introducing integer variables. However, in the context of emergency food distribution, exact discrete units are not strictly necessary—continuous amounts are sufficient as food can be measured and distributed in fractions of a unit. By relaxing the integer constraint and allowing continuous variables for shipment amounts, the model becomes a linear program (LP) instead of a mixed-integer program (MIP), which is computationally easier to solve.
+Key Differences: The original model may have implicitly assumed integer variables for shipment amounts (e.g., whole truckloads), while the new model explicitly treats them as continuous., The new model is a linear program (LP), whereas the original might have been a mixed-integer program (MIP) if integer constraints were present., The constraints and objective function remain structurally the same, but the variable domains are simplified.
+Potential Benefits: Faster computation: LPs are generally easier and quicker to solve than MIPs., Scalability: The relaxed model can handle larger problem instances more efficiently., Feasibility: Continuous relaxation avoids infeasibility issues that can arise from strict integer requirements., Practicality: In emergency food distribution, fractional shipments are acceptable and often necessary.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $P$: set of all simple paths from supplier to beneficiary camps.
+    \item $K$: set of commodities.
+    \item $L$: set of nutrients.
+    \item $N_B$: set of beneficiary camps.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_{pk}$: cost of shipping one kg of commodity $k \in K$ along path $p \in P$.
+    \item $\mathrm{nutval}_{k\ell}$: nutrient-$\ell$ content (per kg) of commodity $k \in K$.
+    \item $\mathrm{nutreq}_\ell$: per-person requirement for nutrient $\ell \in L$.
+    \item $\mathrm{dem}_j$: number of beneficiaries at camp $j \in N_B$.
+    \item $e_{jp} = 
+    \begin{cases}
+        1, & \text{if path } p \text{ ends at camp } j, \\
+        0, & \text{otherwise}
+    \end{cases}$\quad for all $j \in N_B$, $p \in P$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_{pk} \geq 0$: amount (kg) of commodity $k \in K$ shipped along path $p \in P$ (continuous).
+    \item $R_k \geq 0$: ration size (kg per person) of commodity $k \in K$ (continuous).
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{p \in P} \sum_{k \in K} c_{pk} \; x_{pk} \\
+    & \text{Minimize total cost of procurement and transportation} \\[6pt]
+    \text{s.t.} \quad & \sum_{p \in P} e_{jp} \, x_{pk} \geq \mathrm{dem}_j \cdot R_k, \quad \forall j \in N_B,\; \forall k \in K \\
+    & \text{Ensure each camp receives required ration quantities} \\[6pt]
+    & \sum_{k \in K} \mathrm{nutval}_{k\ell} \cdot R_k \geq \mathrm{nutreq}_\ell, \quad \forall \ell \in L \\
+    & \text{Ensure minimum nutritional content per person} \\[6pt]
+    & x_{pk} \geq 0, \quad \forall p \in P, \forall k \in K \\
+    & R_k \geq 0, \quad \forall k \in K \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}

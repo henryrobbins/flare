@@ -1,0 +1,263 @@
+
+--------------------------------------------------------------------------------===== RECOMMENDATION IMPLEMENTATION 1/4 =====
+Recommendation Name: Aggregate Blocks into Clusters
+Assumption Broken: Individual Block Timing Necessity
+Explanation: The original model assumes that each block must be individually scheduled for extraction, leading to a large number of binary variables and constraints. By aggregating blocks into clusters based on spatial and operational similarities, we reduce the problem size by replacing per-block decisions with cluster-level decisions. This breaks the assumption that each block's extraction time must be explicitly determined in the optimization model, allowing for post-optimization inference of individual block timings.
+Key Differences: The original model uses block-level variables $x_i^t$, while the new model uses cluster-level variables $y_j^t$., The new model aggregates block attributes (e.g., ore tonnage, grade) into cluster-level parameters., The precedence constraints are adjusted to operate at the cluster level, considering the overlying blocks of each cluster., The number of variables is significantly reduced from $n \times p$ to $m \times p$, where $m \ll n$.
+Potential Benefits: Reduced computational complexity due to fewer variables and constraints., Faster solution times, enabling larger-scale problems to be solved., Simplified model management and interpretation by working with clusters instead of individual blocks., Maintains the core optimization objectives while reducing the problem size.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $j = 1, \ldots, m$: clusters of blocks.
+    \item $t = 1, \ldots, p$: scheduling periods.
+    \item $\mathcal{C}_j$: set of blocks in cluster $j$.
+    \item $\mathcal{L}_k$: set of blocks overlying block $k$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_j^t$: Net Present Value (NPV) of cluster $j$ in period $t$.
+    \item $g_j$: average grade of cluster $j$.
+    \item $O_j$: total ore tonnage of cluster $j$.
+    \item $W_j$: total waste tonnage of cluster $j$.
+    \item $G_{\min}, G_{\max}$: minimum and maximum average grade.
+    \item $PC_{\min}, PC_{\max}$: processing capacity bounds (per period).
+    \item $MC_{\min}, MC_{\max}$: mining capacity bounds (ore + waste per period).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_j^t = \begin{cases} 
+        1, & \text{if cluster } j \text{ is mined in period } t \\
+        0, & \text{otherwise}
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{t=1}^{p} \sum_{j=1}^{m} c_j^t y_j^t \\
+    & \text{Maximize total NPV} \[6pt]
+    \text{s.t.} \quad 
+    & \sum_{j=1}^{m} (g_j - G_{\max}) O_j y_j^t \leq 0, \quad \forall t \\
+    & \text{Upper grade constraint} \[6pt]
+    & \sum_{j=1}^{m} (g_j - G_{\min}) O_j y_j^t \geq 0, \quad \forall t \\
+    & \text{Lower grade constraint} \[6pt]
+    & \sum_{t=1}^{p} y_j^t \leq 1, \quad \forall j \\
+    & \text{Each cluster mined at most once} \[6pt]
+    & \sum_{j=1}^{m} O_j y_j^t \leq PC_{\max}, \quad \forall t \\
+    & \text{Processing capacity upper bound} \[6pt]
+    & \sum_{j=1}^{m} O_j y_j^t \geq PC_{\min}, \quad \forall t \\
+    & \text{Processing capacity lower bound} \[6pt]
+    & \sum_{j=1}^{m} (O_j + W_j) y_j^t \leq MC_{\max}, \quad \forall t \\
+    & \text{Mining capacity upper bound} \[6pt]
+    & \sum_{j=1}^{m} (O_j + W_j) y_j^t \geq MC_{\min}, \quad \forall t \\
+    & \text{Mining capacity lower bound} \[6pt]
+    & |\mathcal{L}_k| \cdot  y_j^t - \sum_{l \in \mathcal{L}_k} y_{j(l)}^t \leq 0, \quad \forall t,\; \forall k \in \mathcal{C}_j \\
+    & \text{Slope precedence constraints for clusters} \[6pt]
+    & y_j^t \in \{0,1\}, \quad \forall j,\; \forall t \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 2/4 =====
+Recommendation Name: Relax Processing Capacity Lower Bounds
+Assumption Broken: Processing Capacity Lower Bounds
+Explanation: The original model enforces a minimum ore processing requirement per period (PC_min), which may be unnecessary if temporary under-processing is permissible. By removing this constraint, the model becomes more flexible, allowing for periods where less ore is processed without violating operational constraints. This can simplify the model and potentially lead to better solutions by eliminating redundant constraints.
+Key Differences: The constraint ∑_{i=1}^n O_i x_i^t ≥ PC_min for all t has been removed., The model no longer enforces a minimum ore processing requirement per period.
+Potential Benefits: Increased flexibility in scheduling, allowing for periods of lower ore processing., Simplification of the model by eliminating potentially redundant constraints., Potential for better solutions by allowing more diverse scheduling options., Reduced computational complexity, possibly leading to faster solution times.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $i = 1, \ldots, n$: blocks.
+    \item $t = 1, \ldots, p$: scheduling periods.
+    \item $\mathcal{L}_k$: set of blocks overlying block $k$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_i^t$: Net Present Value (NPV) of block $i$ in period $t$.
+    \item $g_i$: grade of block $i$.
+    \item $O_i$: ore tonnage of block $i$.
+    \item $W_i$: waste tonnage of block $i$.
+    \item $G_{\min}, G_{\max}$: minimum and maximum average grade.
+    \item $PC_{\min}, PC_{\max}$: processing capacity bounds (per period).
+    \item $MC_{\min}, MC_{\max}$: mining capacity bounds (ore + waste per period).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_i^t = \begin{cases} 
+        1, & \text{if block } i \text{ is mined in period } t \\
+        0, & \text{otherwise}
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{t=1}^{p} \sum_{i=1}^{n} c_i^t x_i^t \\
+    & \text{Maximize total NPV} \[6pt]
+    \text{s.t.} \quad 
+    & \sum_{i=1}^{n} (g_i - G_{\max}) O_i x_i^t \leq 0, \quad \forall t \\
+    & \text{Upper grade constraint} \[6pt]
+    & \sum_{i=1}^{n} (g_i - G_{\min}) O_i x_i^t \geq 0, \quad \forall t \\
+    & \text{Lower grade constraint} \[6pt]
+    & \sum_{t=1}^{p} x_i^t \leq 1, \quad \forall i \\
+    & \text{Each block mined at most once} \[6pt]
+    & \sum_{i=1}^{n} O_i x_i^t \leq PC_{\max}, \quad \forall t \\
+    & \text{Processing capacity upper bound} \[6pt]
+    & \sum_{i=1}^{n} (O_i + W_i) x_i^t \leq MC_{\max}, \quad \forall t \\
+    & \text{Mining capacity upper bound} \[6pt]
+    & \sum_{i=1}^{n} (O_i + W_i) x_i^t \geq MC_{\min}, \quad \forall t \\
+    & \text{Mining capacity lower bound} \[6pt]
+    & |\mathcal{L}_k| \cdot  x_k^t - \sum_{l=\in \mathcal{L}_k} x_l^t \leq 0, \quad \forall t,\; \forall k \\
+    & \text{Slope precedence constraints} \[6pt]
+    & x_i^t \in \{0,1\}, \quad \forall i,\; \forall t \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 3/4 =====
+Recommendation Name: Multi-Period Grade Blending
+Assumption Broken: Per-Period Grade Constraints
+Explanation: The original model enforces strict grade constraints for each individual period, which can be overly restrictive and may not leverage the potential of stockpiling to blend ore grades over multiple periods. The new model replaces these per-period constraints with rolling average constraints over a window of Δ periods, allowing for more flexibility in meeting grade targets by considering the cumulative effect of ore extraction across multiple periods.
+Key Differences: Replaced per-period grade constraints with rolling average constraints over Δ periods., Added a new parameter Δ to define the window size for averaging grades., The new constraints allow for blending ore grades across multiple periods, rather than enforcing strict per-period bounds.
+Potential Benefits: Reduces the number of constraints, potentially improving computational efficiency., Allows for more flexible scheduling by leveraging stockpiling to meet grade targets over multiple periods., May lead to higher NPV by enabling more optimal extraction sequences that were previously infeasible under per-period constraints., Better reflects real-world mining operations where ore blending over time is a common practice.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $i = 1, \ldots, n$: blocks.
+    \item $t = 1, \ldots, p$: scheduling periods.
+    \item $\mathcal{L}_k$: set of blocks overlying block $k$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_i^t$: Net Present Value (NPV) of block $i$ in period $t$.
+    \item $g_i$: grade of block $i$.
+    \item $O_i$: ore tonnage of block $i$.
+    \item $W_i$: waste tonnage of block $i$.
+    \item $G_{\min}, G_{\max}$: minimum and maximum average grade.
+    \item $PC_{\min}, PC_{\max}$: processing capacity bounds (per period).
+    \item $MC_{\min}, MC_{\max}$: mining capacity bounds (ore + waste per period).
+    \item $\Delta$: number of periods over which to average grades.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_i^t = \begin{cases} 
+        1, & \text{if block } i \text{ is mined in period } t \\
+        0, & \text{otherwise}
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{t=1}^{p} \sum_{i=1}^{n} c_i^t x_i^t \\
+    & \text{Maximize total NPV} \[6pt]
+    \text{s.t.} \quad 
+    & \sum_{\tau=t}^{t+\Delta} \sum_{i=1}^{n} (g_i - G_{\max}) O_i x_i^\tau \leq 0, \quad \forall t \\
+    & \text{Upper grade constraint (rolling average)} \[6pt]
+    & \sum_{\tau=t}^{t+\Delta} \sum_{i=1}^{n} (g_i - G_{\min}) O_i x_i^\tau \geq 0, \quad \forall t \\
+    & \text{Lower grade constraint (rolling average)} \[6pt]
+    & \sum_{t=1}^{p} x_i^t \leq 1, \quad \forall i \\
+    & \text{Each block mined at most once} \[6pt]
+    & \sum_{i=1}^{n} O_i x_i^t \leq PC_{\max}, \quad \forall t \\
+    & \text{Processing capacity upper bound} \[6pt]
+    & \sum_{i=1}^{n} O_i x_i^t \geq PC_{\min}, \quad \forall t \\
+    & \text{Processing capacity lower bound} \[6pt]
+    & \sum_{i=1}^{n} (O_i + W_i) x_i^t \leq MC_{\max}, \quad \forall t \\
+    & \text{Mining capacity upper bound} \[6pt]
+    & \sum_{i=1}^{n} (O_i + W_i) x_i^t \geq MC_{\min}, \quad \forall t \\
+    & \text{Mining capacity lower bound} \[6pt]
+    & |\mathcal{L}_k| \cdot  x_k^t - \sum_{l=\in \mathcal{L}_k} x_l^t \leq 0, \quad \forall t,\; \forall k \\
+    & \text{Slope precedence constraints} \[6pt]
+    & x_i^t \in \{0,1\}, \quad \forall i,\; \forall t \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 4/4 =====
+Recommendation Name: Integer Relaxation for Clusters
+Assumption Broken: Individual Block Timing Necessity
+Explanation: The original model assumes that each block must be assigned to a specific period with a binary decision variable, which can lead to a large and complex integer programming problem. The new model relaxes this assumption by allowing clusters of blocks to be assigned fractional values across periods, which can then be post-processed into feasible integer schedules. This approach leverages the idea that clusters are large enough to allow fractional timing without significantly affecting the NPV, thereby simplifying the optimization problem.
+Key Differences: The original model uses binary variables $x_i^t$ for each block and period, while the new model uses continuous variables $y_j^t$ for each cluster and period., The new model aggregates blocks into clusters, reducing the number of decision variables., The precedence constraints are now applied at the cluster level rather than the individual block level., The new model allows fractional extraction of clusters, which can be post-processed into integer schedules.
+Potential Benefits: Reduced computational complexity due to fewer decision variables., Easier to solve as it is a linear programming problem rather than an integer programming problem., Potential for faster solution times, especially for large-scale problems., Maintains solution quality by leveraging the size of clusters to minimize the impact of fractional timing on NPV.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $i = 1, \ldots, n$: blocks.
+    \item $j = 1, \ldots, m$: clusters.
+    \item $t = 1, \ldots, p$: scheduling periods.
+    \item $\mathcal{L}_k$: set of blocks overlying block $k$.
+    \item $\mathcal{C}_j$: set of blocks in cluster $j$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $c_i^t$: Net Present Value (NPV) of block $i$ in period $t$.
+    \item $g_i$: grade of block $i$.
+    \item $O_i$: ore tonnage of block $i$.
+    \item $W_i$: waste tonnage of block $i$.
+    \item $G_{\min}, G_{\max}$: minimum and maximum average grade.
+    \item $PC_{\min}, PC_{\max}$: processing capacity bounds (per period).
+    \item $MC_{\min}, MC_{\max}$: mining capacity bounds (ore + waste per period).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_j^t \in [0,1]$: fraction of cluster $j$ mined in period $t$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{t=1}^{p} \sum_{j=1}^{m} \sum_{i \in \mathcal{C}_j} c_i^t y_j^t \\
+    & \text{Maximize total NPV} \[6pt]
+    \text{s.t.} \quad 
+    & \sum_{j=1}^{m} \sum_{i \in \mathcal{C}_j} (g_i - G_{\max}) O_i y_j^t \leq 0, \quad \forall t \\
+    & \text{Upper grade constraint} \[6pt]
+    & \sum_{j=1}^{m} \sum_{i \in \mathcal{C}_j} (g_i - G_{\min}) O_i y_j^t \geq 0, \quad \forall t \\
+    & \text{Lower grade constraint} \[6pt]
+    & \sum_{t=1}^{p} y_j^t \leq 1, \quad \forall j \\
+    & \text{Each cluster mined at most once} \[6pt]
+    & \sum_{j=1}^{m} \sum_{i \in \mathcal{C}_j} O_i y_j^t \leq PC_{\max}, \quad \forall t \\
+    & \text{Processing capacity upper bound} \[6pt]
+    & \sum_{j=1}^{m} \sum_{i \in \mathcal{C}_j} O_i y_j^t \geq PC_{\min}, \quad \forall t \\
+    & \text{Processing capacity lower bound} \[6pt]
+    & \sum_{j=1}^{m} \sum_{i \in \mathcal{C}_j} (O_i + W_i) y_j^t \leq MC_{\max}, \quad \forall t \\
+    & \text{Mining capacity upper bound} \[6pt]
+    & \sum_{j=1}^{m} \sum_{i \in \mathcal{C}_j} (O_i + W_i) y_j^t \geq MC_{\min}, \quad \forall t \\
+    & \text{Mining capacity lower bound} \[6pt]
+    & |\mathcal{L}_k| \cdot y_j^t - \sum_{l \in \mathcal{L}_k} y_j^t \leq 0, \quad \forall t,\; \forall k \in \mathcal{C}_j \\
+    & \text{Slope precedence constraints} \[6pt]
+    & y_j^t \in [0,1], \quad \forall j,\; \forall t \\
+    & \text{Continuous decision variables}
+\end{align*}
+
+\end{document}

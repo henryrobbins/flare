@@ -1,0 +1,231 @@
+
+--------------------------------------------------------------------------------===== RECOMMENDATION IMPLEMENTATION 1/4 =====
+Recommendation Name: Coverage Variables
+Assumption Broken: Binary Assignment Variables
+Explanation: The original model uses binary assignment variables (y_ij) to indicate whether a household i is assigned to a hospital j. This requires O(|I|×|J|) variables and introduces assignment constraints. The new model replaces these with coverage variables (z_i), which indicate whether a household i is within S km of any open hospital. This reduces the number of variables to O(|I|) and eliminates the need for assignment constraints, simplifying the model.
+Key Differences: Replaced binary assignment variables (y_ij) with coverage variables (z_i)., Eliminated assignment constraints (y_ij ≤ x_j, ∑ y_ij ≤ 1, y_ij = 0 for d_ij > S)., Added coverage constraints (z_i ≤ ∑_{j: d_ij ≤ S} x_j)., Reduced the number of variables from O(|I|×|J|) to O(|I|).
+Potential Benefits: Reduced computational complexity due to fewer variables., Simplified model structure with fewer constraints., Easier to solve, especially for large-scale problems., Maintains the same objective of maximizing coverage.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Index set of households, $i = 1, \ldots, n$
+    \item $J$: Index set of all hospital sites, where indexes $j = 1, \ldots, m$ correspond to existing hospitals and indexes $j = m+1, \ldots, M$ correspond to potential hospital locations
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_i$: Number of people in household or cluster of households $i \in I$
+    \item $d_{ij}$: Travel distance from household $i \in I$ to hospital facility $j \in J$
+    \item $S$: Maximum travel distance from a household to a hospital
+    \item $p$: Number of additional hospitals to be located
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_j = \begin{cases} 
+        1, & \text{if hospital } j \text{ is opened} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $z_i = \begin{cases} 
+        1, & \text{if household } i \text{ is within } S \text{ km of any open hospital} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{i \in I} v_i z_i \\
+    & \text{Maximize the number of people served by healthcare facilities} \[6pt]
+    \text{s.t.} \quad & x_j = 1, \quad \forall j = 1, \ldots, m \\
+    & \text{Existing hospitals must remain open} \[6pt]
+    & \sum_{j=m+1}^{M} x_j \leq p \\
+    & \text{At most } p \text{ new hospitals can be opened} \[6pt]
+    & z_i \leq \sum_{j: d_{ij} \leq S} x_j, \quad \forall i \in I \\
+    & \text{Household } i \text{ can only be covered if at least one hospital within } S \text{ km is open} \[6pt]
+    & x_j \in \{0,1\}, \quad \forall j \in J \\
+    & z_i \in \{0,1\}, \quad \forall i \in I \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 2/4 =====
+Recommendation Name: Household Aggregation
+Assumption Broken: Household Individuality
+Explanation: The original model treats each household individually, which can lead to a large number of variables and constraints, especially in densely populated areas. By aggregating households with identical coverage profiles (i.e., the same set of feasible hospitals within S km), we reduce the model size while preserving the essential coverage characteristics. This preprocessing step groups households into clusters where all members share the same feasible hospitals, adjusting the population parameter (v_i) to reflect the total population of each cluster.
+Key Differences: The set $I$ now represents household clusters instead of individual households., The parameter $v_i$ now represents the total population of each household cluster, not individual households., The model now operates on aggregated household clusters, reducing the number of variables and constraints.
+Potential Benefits: Reduced model size, leading to faster solution times., Lower memory requirements due to fewer variables and constraints., Simplified preprocessing and data handling by grouping similar households., Maintained accuracy in coverage optimization by preserving the essential coverage characteristics of the original households.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Index set of household clusters, $i = 1, \ldots, n$
+    \item $J$: Index set of all hospital sites, where indexes $j = 1, \ldots, m$ correspond to existing hospitals and indexes $j = m+1, \ldots, M$ correspond to potential hospital locations
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_i$: Total number of people in household cluster $i \in I$
+    \item $d_{ij}$: Travel distance from household cluster $i \in I$ to hospital facility $j \in J$
+    \item $S$: Maximum travel distance from a household to a hospital
+    \item $p$: Number of additional hospitals to be located
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_j = \begin{cases} 
+        1, & \text{if hospital } j \text{ is opened} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $y_{ij} = \begin{cases} 
+        1, & \text{if demand at household cluster } i \text{ is served by hospital } j \text{ and } d_{ij} \leq S \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{i \in I} \sum_{j \in J} v_i y_{ij} \\
+    & \text{Maximize the number of people served by healthcare facilities} \\[6pt]
+    \text{s.t.} \quad & x_j = 1, \quad \forall j = 1, \ldots, m \\
+    & \text{Existing hospitals must remain open} \\[6pt]
+    & \sum_{j=m+1}^{M} x_j \leq p \\
+    & \text{At most } p \text{ new hospitals can be opened} \\[6pt]
+    & \sum_{i \in I} y_{ij} \leq n x_j, \quad \forall j \in J \\
+    & \text{People can only be assigned to opened facilities} \\[6pt]
+    & \sum_{j \in J} y_{ij} \leq 1, \quad \forall i \in I \\
+    & \text{Each household cluster can be assigned to at most one hospital} \\[6pt]
+    & y_{ij} = 0, \quad \forall i \in I, \forall j \in J \text{ with } d_{ij} > S \\
+    & \text{Household clusters cannot be assigned to facilities beyond maximum travel distance} \\[6pt]
+    & x_j \in \{0,1\}, \quad \forall j \in J \\
+    & y_{ij} \in \{0,1\}, \quad \forall i \in I, \forall j \in J \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 3/4 =====
+Recommendation Name: Remove Redundant Variables
+Assumption Broken: Redundant Distance Variables
+Explanation: The original model includes variables y_ij for all pairs (i,j), even when d_ij > S, which are then explicitly set to zero. This creates unnecessary computational overhead. The new model preprocesses the data to eliminate these redundant variables upfront, defining y_ij only for pairs where d_ij ≤ S.
+Key Differences: Added a new set E that defines feasible household-hospital pairs where d_ij ≤ S., Modified the objective function and constraints to sum only over feasible pairs (i,j) ∈ E., Eliminated the explicit constraint y_ij = 0 for d_ij > S since these variables are no longer defined., Changed the summation indices in the constraints to reflect the reduced variable set.
+Potential Benefits: Reduced model size by eliminating redundant variables and constraints., Decreased computational overhead during solving., Improved solver performance due to smaller problem size., Simplified model formulation by removing unnecessary constraints.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Index set of households, $i = 1, \ldots, n$
+    \item $J$: Index set of all hospital sites, where indexes $j = 1, \ldots, m$ correspond to existing hospitals and indexes $j = m+1, \ldots, M$ correspond to potential hospital locations
+    \item $E = \{(i,j) \in I \times J \mid d_{ij} \leq S\}$: Set of feasible household-hospital pairs
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_i$: Number of people in household or cluster of households $i \in I$
+    \item $d_{ij}$: Travel distance from household $i \in I$ to hospital facility $j \in J$
+    \item $S$: Maximum travel distance from a household to a hospital
+    \item $p$: Number of additional hospitals to be located
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_j = \begin{cases} 
+        1, & \text{if hospital } j \text{ is opened} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $y_{ij} = \begin{cases} 
+        1, & \text{if demand at household } i \text{ is served by hospital } j \text{ and } (i,j) \in E \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{(i,j) \in E} v_i y_{ij} \\
+    & \text{Maximize the number of people served by healthcare facilities} \\[6pt]
+    \text{s.t.} \quad & x_j = 1, \quad \forall j = 1, \ldots, m \\
+    & \text{Existing hospitals must remain open} \\[6pt]
+    & \sum_{j=m+1}^{M} x_j \leq p \\
+    & \text{At most } p \text{ new hospitals can be opened} \\[6pt]
+    & \sum_{i: (i,j) \in E} y_{ij} \leq n x_j, \quad \forall j \in J \\
+    & \text{People can only be assigned to opened facilities} \\[6pt]
+    & \sum_{j: (i,j) \in E} y_{ij} \leq 1, \quad \forall i \in I \\
+    & \text{Each household can be assigned to at most one hospital} \\[6pt]
+    & x_j \in \{0,1\}, \quad \forall j \in J \\
+    & y_{ij} \in \{0,1\}, \quad \forall (i,j) \in E \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 4/4 =====
+Recommendation Name: Simplify Assignment Constraints
+Assumption Broken: Single Assignment Constraint
+Explanation: The original model enforces that each household can be assigned to at most one hospital (single assignment constraint). The new model breaks this assumption by focusing on coverage rather than specific assignments. Instead of tracking which hospital serves each household, it simply tracks whether a household is covered by any hospital within the maximum travel distance. This simplifies the model by reducing the number of variables and constraints.
+Key Differences: The original model uses variables $y_{ij}$ to track assignments of households to specific hospitals, while the new model uses variables $z_i$ to track whether a household is covered by any hospital., The original model includes constraints to ensure each household is assigned to at most one hospital, while the new model does not enforce this single assignment constraint., The new model simplifies the objective function by summing over $v_i z_i$ instead of $v_i y_{ij}$., The new model replaces the assignment constraints with coverage constraints that ensure a household is covered if at least one hospital within distance $S$ is opened.
+Potential Benefits: Reduced number of variables and constraints, leading to a simpler and potentially faster-to-solve model., Elimination of redundant constraints, as the focus shifts from specific assignments to overall coverage., Improved scalability for larger problem instances due to the reduced complexity., More straightforward interpretation of results, as the model directly maximizes the number of covered households without tracking specific hospital assignments.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath} % For advanced math formatting
+\usepackage{enumitem} % For better itemize control
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $I$: Index set of households, $i = 1, \ldots, n$
+    \item $J$: Index set of all hospital sites, where indexes $j = 1, \ldots, m$ correspond to existing hospitals and indexes $j = m+1, \ldots, M$ correspond to potential hospital locations
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $v_i$: Number of people in household or cluster of households $i \in I$
+    \item $d_{ij}$: Travel distance from household $i \in I$ to hospital facility $j \in J$
+    \item $S$: Maximum travel distance from a household to a hospital
+    \item $p$: Number of additional hospitals to be located
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $x_j = \begin{cases} 
+        1, & \text{if hospital } j \text{ is opened} \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+    \item $z_i = \begin{cases} 
+        1, & \text{if household } i \text{ is covered by any hospital within distance } S \\ 
+        0, & \text{otherwise} 
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \max \quad & \sum_{i \in I} v_i z_i \\
+    & \text{Maximize the number of people covered by healthcare facilities} \\[6pt]
+    \text{s.t.} \quad & x_j = 1, \quad \forall j = 1, \ldots, m \\
+    & \text{Existing hospitals must remain open} \\[6pt]
+    & \sum_{j=m+1}^{M} x_j \leq p \\
+    & \text{At most } p \text{ new hospitals can be opened} \\[6pt]
+    & z_i \leq \sum_{j \in J} x_j \cdot \mathbb{1}_{d_{ij} \leq S}, \quad \forall i \in I \\
+    & \text{Household } i \text{ can only be covered if at least one hospital within distance } S \text{ is opened} \\[6pt]
+    & x_j \in \{0,1\}, \quad \forall j \in J \\
+    & z_i \in \{0,1\}, \quad \forall i \in I \\
+    & \text{Binary decision variables}
+\end{align*}
+
+\end{document}

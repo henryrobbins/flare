@@ -1,0 +1,268 @@
+
+--------------------------------------------------------------------------------===== RECOMMENDATION IMPLEMENTATION 1/4 =====
+Recommendation Name: Eliminate Redundant Variables
+Assumption Broken: Redundant q_hc Variables
+Explanation: The original model assumes that both q_hc and z_hc are necessary to represent the fraction of demand served and the assignment of hubs to regions, respectively. However, q_hc is fully determined by z_hc because each region is assigned to exactly one hub (z_hc = 1 for exactly one h per c), making q_hc redundant. By replacing q_hc with z_hc, we simplify the model by reducing the number of variables and constraints.
+Key Differences: Removed the variable q_hc and replaced all instances of q_hc with z_hc., Removed the constraint q_hc ≤ M · z_hc as it is no longer needed., Removed the constraint ∑_{h ∈ H} q_hc = 1 as it is now implicitly satisfied by ∑_{h ∈ H} z_hc = 1., Simplified the objective function and the travel time constraint by using z_hc directly.
+Potential Benefits: Reduces the number of variables in the model, which can lead to faster solution times., Simplifies the model by eliminating redundant constraints., Maintains the same logical relationships while being more concise., Potentially reduces memory usage during optimization.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath,amssymb,enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of candidate hubs.
+    \item $H^f \subseteq H$: set of hubs that must be open (fixed hubs).
+    \item $C$: set of disaster regions.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $a_c$: number of people affected in region $c \in C$.
+    \item $C_{hc}$: cost per person from hub $h$ to region $c$.
+    \item $t_{hc}$: travel time from hub $h$ to region $c$.
+    \item $T$: maximum allowed (weighted) travel time per region.
+    \item $n$: maximum number of hubs that can be opened.
+    \item $M$: sufficiently large constant (used in big-M constraints).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h = \begin{cases}
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+    \end{cases}$
+    
+    \item $z_{hc} = \begin{cases}
+        1, & \text{if hub } h \text{ is assigned to serve region } c \\
+        0, & \text{otherwise}
+    \end{cases}$
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{h \in H} \sum_{c \in C} a_c\,C_{hc}\,z_{hc} \\
+    & \text{Minimize total transportation cost} \[6pt]
+    \text{s.t.} \quad & \sum_{h \in H} z_{hc} = 1, \quad \forall c \in C \\
+    & \text{Assign each region to exactly one hub} \[6pt]
+    & \sum_{c \in C} z_{hc} \leq |C| \cdot y_h, \quad \forall h \in H \\
+    & \text{Hubs can only serve if they are open} \[6pt]
+    & \sum_{h \in H} y_h \leq n \\
+    & \text{Limit on the number of hubs to open} \[6pt]
+    & y_h = 1, \quad \forall h \in H^f \\
+    & \text{Fixed hubs must be open} \[6pt]
+    & \sum_{h \in H} t_{hc} \cdot z_{hc} \leq T, \quad \forall c \in C \\
+    & \text{Respect travel time limit per region} \[6pt]
+    & z_{hc} \in \{0,1\},\; y_h \in \{0,1\}, \quad \forall h \in H,\; c \in C \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 2/4 =====
+Recommendation Name: Allow Multi-Hub Assignments
+Assumption Broken: Single Hub Assignment per Region
+Explanation: The original model enforces that each disaster region must be assigned to exactly one hub (∑_{h ∈ H} z_hc = 1). This recommendation relaxes this constraint to allow regions to be served by multiple hubs (∑_{h ∈ H} z_hc ≥ 1), thereby enabling multi-sourcing. This change breaks the assumption of single hub assignment per region, allowing for more flexible and potentially cost-effective or time-efficient solutions.
+Key Differences: The constraint ∑_{h ∈ H} z_hc = 1 is replaced with ∑_{h ∈ H} z_hc ≥ 1, allowing regions to be served by multiple hubs., The model now permits multi-sourcing, where a region's demand can be split among multiple hubs., The linkage between z_hc and q_hc remains, but q_hc can now represent partial fulfillment from multiple hubs.
+Potential Benefits: Increased flexibility in assigning hubs to regions, potentially leading to lower transportation costs., Better adherence to time constraints by allowing faster hubs to handle critical portions of demand., Improved robustness in case of hub failures or disruptions, as regions are not solely dependent on a single hub., Potential for more balanced hub utilization, avoiding overloading a single hub.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath,amssymb,enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of candidate hubs.
+    \item $H^f \subseteq H$: set of hubs that must be open (fixed hubs).
+    \item $C$: set of disaster regions.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $a_c$: number of people affected in region $c \in C$.
+    \item $C_{hc}$: cost per person from hub $h$ to region $c$.
+    \item $t_{hc}$: travel time from hub $h$ to region $c$.
+    \item $T$: maximum allowed (weighted) travel time per region.
+    \item $n$: maximum number of hubs that can be opened.
+    \item $M$: sufficiently large constant (used in big-M constraints).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h = \begin{cases}
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+    \end{cases}$
+    
+    \item $z_{hc} = \begin{cases}
+        1, & \text{if hub } h \text{ is assigned to serve region } c \\
+        0, & \text{otherwise}
+    \end{cases}$
+    
+    \item $q_{hc} \geq 0$: fraction of region $c$'s demand that is served by hub $h$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{h \in H} \sum_{c \in C} a_c\,C_{hc}\,q_{hc} \\
+    & \text{Minimize total transportation cost} \[6pt]
+    \text{s.t.} \quad & \sum_{h \in H} z_{hc} \geq 1, \quad \forall c \in C \\
+    & \text{Assign each region to at least one hub} \[6pt]
+    & q_{hc} \leq M \cdot z_{hc}, \quad \forall h \in H,\; c \in C \\
+    & \text{Link shipping to assignment} \[6pt]
+    & \sum_{h \in H} q_{hc} = 1, \quad \forall c \in C \\
+    & \text{Each region's demand must be fully met} \[6pt]
+    & \sum_{c \in C} z_{hc} \leq |C| \cdot y_h, \quad \forall h \in H \\
+    & \text{Hubs can only serve if they are open} \[6pt]
+    & \sum_{h \in H} y_h \leq n \\
+    & \text{Limit on the number of hubs to open} \[6pt]
+    & y_h = 1, \quad \forall h \in H^f \\
+    & \text{Fixed hubs must be open} \[6pt]
+    & \sum_{h \in H} t_{hc} \cdot q_{hc} \leq T, \quad \forall c \in C \\
+    & \text{Respect travel time limit per region} \[6pt]
+    & q_{hc} \geq 0,\; z_{hc} \in \{0,1\},\; y_h \in \{0,1\}, \quad \forall h \in H,\; c \in C \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 3/4 =====
+Recommendation Name: Remove Fixed Hub Variables
+Assumption Broken: Fixed Hubs as Variables
+Explanation: The original model treats fixed hubs (y_h for h ∈ H^f) as decision variables that must be set to 1. However, since these hubs are non-negotiable and must be open, they do not need to be decision variables. By removing these variables and treating them as constants, we simplify the model and reduce the problem size.
+Key Differences: The variables y_h for h ∈ H^f are removed from the model., The constraint y_h = 1 for h ∈ H^f is removed since these hubs are now treated as constants., The constraint ∑_{h ∈ H} y_h ≤ n is adjusted to ∑_{h ∈ H \ H^f} y_h ≤ n - |H^f| to account for the fixed hubs., The constraint ∑_{c ∈ C} z_{hc} ≤ |C| ⋅ y_h is now only applied to h ∈ H \ H^f.
+Potential Benefits: Reduced problem size by eliminating unnecessary variables and constraints., Simplified model formulation, making it easier to understand and implement., Potentially faster solution times due to fewer variables and constraints.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath,amssymb,enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of candidate hubs.
+    \item $H^f \subseteq H$: set of hubs that must be open (fixed hubs).
+    \item $C$: set of disaster regions.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $a_c$: number of people affected in region $c \in C$.
+    \item $C_{hc}$: cost per person from hub $h$ to region $c$.
+    \item $t_{hc}$: travel time from hub $h$ to region $c$.
+    \item $T$: maximum allowed (weighted) travel time per region.
+    \item $n$: maximum number of hubs that can be opened.
+    \item $M$: sufficiently large constant (used in big-M constraints).
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h = \begin{cases}
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+    \end{cases}$ for $h \in H \setminus H^f$
+    
+    \item $z_{hc} = \begin{cases}
+        1, & \text{if hub } h \text{ is assigned to serve region } c \\
+        0, & \text{otherwise}
+    \end{cases}$
+    
+    \item $q_{hc} \geq 0$: fraction of region $c$'s demand that is served by hub $h$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{h \in H} \sum_{c \in C} a_c\,C_{hc}\,q_{hc} \\
+    & \text{Minimize total transportation cost} \\[6pt]
+    \text{s.t.} \quad & \sum_{h \in H} z_{hc} = 1, \quad \forall c \in C \\
+    & \text{Assign each region to exactly one hub} \\[6pt]
+    & q_{hc} \leq M \cdot z_{hc}, \quad \forall h \in H,\; c \in C \\
+    & \text{Link shipping to assignment} \\[6pt]
+    & \sum_{h \in H} q_{hc} = 1, \quad \forall c \in C \\
+    & \text{Each region's demand must be fully met} \\[6pt]
+    & \sum_{c \in C} z_{hc} \leq |C| \cdot y_h, \quad \forall h \in H \setminus H^f \\
+    & \text{Hubs can only serve if they are open (for non-fixed hubs)} \\[6pt]
+    & \sum_{h \in H \setminus H^f} y_h \leq n - |H^f| \\
+    & \text{Limit on the number of additional hubs to open} \\[6pt]
+    & \sum_{h \in H} t_{hc} \cdot q_{hc} \leq T, \quad \forall c \in C \\
+    & \text{Respect travel time limit per region} \\[6pt]
+    & q_{hc} \geq 0,\; z_{hc} \in \{0,1\},\; y_h \in \{0,1\}, \quad \forall h \in H \setminus H^f,\; c \in C \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}
+
+===== RECOMMENDATION IMPLEMENTATION 4/4 =====
+Recommendation Name: Aggregate Variables by Region Groups
+Assumption Broken: Single Hub Assignment per Region
+Explanation: The original model assumes that each disaster region must be assigned to exactly one hub. By aggregating regions into groups with similar characteristics (e.g., proximity, demand patterns), we can reduce the number of variables and constraints. The hub assignments are first made at the group level and then resolved for individual regions in post-processing. This breaks the assumption that each region must be individually assigned to a hub within the optimization model itself.
+Key Differences: The original model assigns hubs to individual regions ($z_{hc}$), while the new model assigns hubs to region groups ($z_{hg}$)., The new model uses average costs ($\bar{C}_{hg}$) and travel times ($\bar{t}_{hg}$) for groups instead of individual region values., Constraints are now defined over groups ($g \in G$) rather than individual regions ($c \in C$)., The number of variables and constraints is reduced, as there are typically fewer groups than regions.
+Potential Benefits: Reduced computational complexity due to fewer variables and constraints., Faster solution times, enabling quicker decision-making in disaster response scenarios., Simplified model management by working with aggregated data., Post-processing flexibility to fine-tune assignments to individual regions after solving the aggregated problem.
+New LaTeX Model:
+\documentclass{article}
+\usepackage{amsmath,amssymb,enumitem}
+
+\begin{document}
+
+\section{Sets}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $H$: set of candidate hubs.
+    \item $H^f \subseteq H$: set of hubs that must be open (fixed hubs).
+    \item $C$: set of disaster regions.
+    \item $G$: set of region groups (partitions of $C$).
+    \item $C_g \subseteq C$: set of regions in group $g \in G$.
+\end{itemize}
+
+\section{Parameters}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $a_c$: number of people affected in region $c \in C$.
+    \item $C_{hc}$: cost per person from hub $h$ to region $c$.
+    \item $t_{hc}$: travel time from hub $h$ to region $c$.
+    \item $T$: maximum allowed (weighted) travel time per region.
+    \item $n$: maximum number of hubs that can be opened.
+    \item $M$: sufficiently large constant (used in big-M constraints).
+    \item $\bar{C}_{hg}$: average cost per person from hub $h$ to group $g$.
+    \item $\bar{t}_{hg}$: average travel time from hub $h$ to group $g$.
+\end{itemize}
+
+\section{Variables}
+\begin{itemize}[leftmargin=*,nosep]
+    \item $y_h = \begin{cases}
+        1, & \text{if hub } h \text{ is opened} \\
+        0, & \text{otherwise}
+    \end{cases}$
+    
+    \item $z_{hg} = \begin{cases}
+        1, & \text{if hub } h \text{ is assigned to serve group } g \\
+        0, & \text{otherwise}
+    \end{cases}$
+    
+    \item $q_{hg} \geq 0$: fraction of group $g$'s demand that is served by hub $h$.
+\end{itemize}
+
+\section{The Model}
+\begin{align*}
+    \min \quad & \sum_{h \in H} \sum_{g \in G} \sum_{c \in C_g} a_c\,\bar{C}_{hg}\,q_{hg} \\
+    & \text{Minimize total transportation cost (using group averages)} \\[6pt]
+    \text{s.t.} \quad & \sum_{h \in H} z_{hg} = 1, \quad \forall g \in G \\
+    & \text{Assign each group to exactly one hub} \\[6pt]
+    & q_{hg} \leq M \cdot z_{hg}, \quad \forall h \in H,\; g \in G \\
+    & \text{Link shipping to assignment} \\[6pt]
+    & \sum_{h \in H} q_{hg} = 1, \quad \forall g \in G \\
+    & \text{Each group's demand must be fully met} \\[6pt]
+    & \sum_{g \in G} z_{hg} \leq |G| \cdot y_h, \quad \forall h \in H \\
+    & \text{Hubs can only serve if they are open} \\[6pt]
+    & \sum_{h \in H} y_h \leq n \\
+    & \text{Limit on the number of hubs to open} \\[6pt]
+    & y_h = 1, \quad \forall h \in H^f \\
+    & \text{Fixed hubs must be open} \\[6pt]
+    & \sum_{h \in H} \bar{t}_{hg} \cdot q_{hg} \leq T, \quad \forall g \in G \\
+    & \text{Respect travel time limit per group (using average)} \\[6pt]
+    & q_{hg} \geq 0,\; z_{hg} \in \{0,1\},\; y_h \in \{0,1\}, \quad \forall h \in H,\; g \in G \\
+    & \text{Define variable domains}
+\end{align*}
+
+\end{document}
