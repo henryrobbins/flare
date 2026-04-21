@@ -1,0 +1,41 @@
+{
+    "name": "Air Traffic Flow Management",
+    "parameters": {
+        "nP": {
+            "description": "Number of flights",
+            "shape": []
+        },
+        "nA": {
+            "description": "Number of airspace sectors",
+            "shape": []
+        },
+        "nT": {
+            "description": "Number of time periods",
+            "shape": []
+        },
+        "tau": {
+            "description": "Transition time between each pair of sectors",
+            "shape": [
+                "nA",
+                "nA"
+            ]
+        },
+        "r": {
+            "description": "Revenue earned by scheduling flight p in time period t",
+            "shape": [
+                "nP",
+                "nT"
+            ]
+        },
+        "cap": {
+            "description": "Capacity of sector a in time period t",
+            "shape": [
+                "nA",
+                "nT"
+            ]
+        }
+    },
+    "metadata": {
+        "source": "Ferchtandiker2025"
+    }
+}

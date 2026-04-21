@@ -1,0 +1,72 @@
+{
+    "name": "Open-Pit Mine Production Scheduling",
+    "parameters": {
+        "n": {
+            "description": "Number of blocks",
+            "shape": []
+        },
+        "t": {
+            "description": "Number of scheduling periods",
+            "shape": []
+        },
+        "c": {
+            "description": "Net Present Value (NPV) of mining each block in each period",
+            "shape": [
+                "n",
+                "t"
+            ]
+        },
+        "g": {
+            "description": "Ore grade of each block",
+            "shape": [
+                "n"
+            ]
+        },
+        "O": {
+            "description": "Ore tonnage of each block",
+            "shape": [
+                "n"
+            ]
+        },
+        "W": {
+            "description": "Waste tonnage of each block",
+            "shape": [
+                "n"
+            ]
+        },
+        "G_min": {
+            "description": "Minmum allowed average ore grade in any period",
+            "shape": []
+        },
+        "G_max": {
+            "description": "Maximum allowed average ore grade in any period",
+            "shape": []
+        },
+        "PC_min": {
+            "description": "Minmum per-period ore processing capacity",
+            "shape": []
+        },
+        "PC_max": {
+            "description": "Maximum per-period ore processing capacity",
+            "shape": []
+        },
+        "MC_min": {
+            "description": "Minmum per-period total minng capacity (ore + waste)",
+            "shape": []
+        },
+        "MC_max": {
+            "description": "Maximum per-period total minng capacity (ore + waste)",
+            "shape": []
+        },
+        "P": {
+            "description": "Precedence matrix: P[i][j] = 1 if block i must be mined before block j",
+            "shape": [
+                "n",
+                "n"
+            ]
+        }
+    },
+    "metadata": {
+        "source": "Ferchtandiker2025"
+    }
+}

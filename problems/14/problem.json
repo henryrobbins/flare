@@ -1,0 +1,31 @@
+{
+    "name": "Blood Bank Netherlands",
+    "parameters": {
+        "nS": {
+            "description": "Number of candidate DC (distribution center) locations",
+            "shape": []
+        },
+        "nH": {
+            "description": "Number of hospital locations",
+            "shape": []
+        },
+        "n": {
+            "description": "Number of DCs that must be opened",
+            "shape": []
+        },
+        "T_limit": {
+            "description": "Maximum allowed travel time from a DC to any hospital it serves",
+            "shape": []
+        },
+        "T": {
+            "description": "Travel time from each candidate DC location to each hospital",
+            "shape": [
+                "nS",
+                "nH"
+            ]
+        }
+    },
+    "metadata": {
+        "source": "Ferchtandiker2025"
+    }
+}

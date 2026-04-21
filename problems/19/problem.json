@@ -1,0 +1,50 @@
+{
+    "name": "UN Humanitarian Disaster Response Hub Location (UNHDR)",
+    "parameters": {
+        "nH": {
+            "description": "Total number of candidate hub locations",
+            "shape": []
+        },
+        "Hf": {
+            "description": "Indicator for each hub: 1 if the hub is fixed and must remain open, 0 otherwise",
+            "shape": [
+                "nH"
+            ]
+        },
+        "nC": {
+            "description": "Number of disaster-prone regions",
+            "shape": []
+        },
+        "a": {
+            "description": "Number of people affected in each disaster region",
+            "shape": [
+                "nC"
+            ]
+        },
+        "C": {
+            "description": "Cost of transporting relief items for one affected person from each hub to each region",
+            "shape": [
+                "nH",
+                "nC"
+            ]
+        },
+        "t": {
+            "description": "Transportation time from each hub to each region",
+            "shape": [
+                "nH",
+                "nC"
+            ]
+        },
+        "T": {
+            "description": "Maximum allowed transportation time from any hub to any region it serves",
+            "shape": []
+        },
+        "n": {
+            "description": "Maximum number of hubs that can be opened",
+            "shape": []
+        }
+    },
+    "metadata": {
+        "source": "Ferchtandiker2025"
+    }
+}

@@ -1,0 +1,41 @@
+{
+    "name": "Timor-Leste Hospital Location",
+    "parameters": {
+        "nI": {
+            "description": "Number of household clusters",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of existing hospitals",
+            "shape": []
+        },
+        "M": {
+            "description": "Total number of candidate hospital sites (including existing hospitals)",
+            "shape": []
+        },
+        "v": {
+            "description": "Population of each household cluster",
+            "shape": [
+                "nI"
+            ]
+        },
+        "d": {
+            "description": "Travel distance from each household to each hospital site",
+            "shape": [
+                "nI",
+                "M"
+            ]
+        },
+        "S": {
+            "description": "Maximum allowed travel distance from household to hospital",
+            "shape": []
+        },
+        "p": {
+            "description": "Maximum number of new hospitals that can be opened",
+            "shape": []
+        }
+    },
+    "metadata": {
+        "source": "Ferchtandiker2025"
+    }
+}

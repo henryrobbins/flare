@@ -1,0 +1,66 @@
+{
+    "name": "World Food Program Food Distribution",
+    "parameters": {
+        "nN": {
+            "description": "Total number of nodes in the supply network (suppliers, transshipment points, and beneficiary camps)",
+            "shape": []
+        },
+        "nK": {
+            "description": "Number of food commodities",
+            "shape": []
+        },
+        "nL": {
+            "description": "Number of nutritional requirements",
+            "shape": []
+        },
+        "node_type": {
+            "description": "Type of each node: 0 = supplier, 1 = transshipment point, 2 = beneficiary camp",
+            "shape": [
+                "nN"
+            ]
+        },
+        "E": {
+            "description": "Adjacency matrix indicating whether a directed edge exists between each pair of nodes",
+            "shape": [
+                "nN",
+                "nN"
+            ]
+        },
+        "dem": {
+            "description": "Number of beneficiaries at each node (0 for non-beneficiary nodes)",
+            "shape": [
+                "nN"
+            ]
+        },
+        "pc": {
+            "description": "Procurement cost per kg of each commodity",
+            "shape": [
+                "nK"
+            ]
+        },
+        "tc": {
+            "description": "Transportation cost per kg of each commodity along each edge",
+            "shape": [
+                "nN",
+                "nN",
+                "nK"
+            ]
+        },
+        "nutreq": {
+            "description": "Per-person nutritional requirement for each nutrient",
+            "shape": [
+                "nL"
+            ]
+        },
+        "nutval": {
+            "description": "Nutritional value per kg of each commodity for each nutrient",
+            "shape": [
+                "nK",
+                "nL"
+            ]
+        }
+    },
+    "metadata": {
+        "source": "Ferchtandiker2025"
+    }
+}
