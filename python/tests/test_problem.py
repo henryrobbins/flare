@@ -24,9 +24,7 @@ def test_description_lazy(problem1: Problem) -> None:
 
 
 def test_description_cached(problem1: Problem) -> None:
-    first = problem1.description
-    second = problem1.description
-    assert first is second
+    assert problem1.description is problem1.description
 
 
 def test_data_lazy(problem1: Problem) -> None:
@@ -38,9 +36,7 @@ def test_data_lazy(problem1: Problem) -> None:
 
 
 def test_data_cached(problem1: Problem) -> None:
-    first = problem1.data
-    second = problem1.data
-    assert first is second
+    assert problem1.data is problem1.data
 
 
 def test_formulations_lazy(problem1: Problem) -> None:
@@ -51,9 +47,7 @@ def test_formulations_lazy(problem1: Problem) -> None:
 
 
 def test_formulations_cached(problem1: Problem) -> None:
-    first = problem1.formulations
-    second = problem1.formulations
-    assert first is second
+    assert problem1.formulations is problem1.formulations
 
 
 def test_formulations_keys(problem1: Problem) -> None:
@@ -66,4 +60,3 @@ def test_formulations_keys(problem1: Problem) -> None:
 def test_formulations_values_are_formulation_instances(problem1: Problem) -> None:
     for f in problem1.formulations.values():
         assert isinstance(f, Formulation)
-
