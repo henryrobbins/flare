@@ -29,39 +29,31 @@
     "variables": {
         "h1": {
             "description": "Part 1 of variable h: The quantity of buses utilized for transportation",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "h2": {
             "description": "Part 2 of variable h: The quantity of buses utilized for transportation",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "m1": {
             "description": "Part 1 of variable m: The quantity of vehicles utilized for travel purposes.",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "m2": {
             "description": "Part 2 of variable m: The quantity of vehicles utilized for travel purposes.",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         }
     },
     "constraints": [
         {
             "description": "The maximum number of buses that can be utilized is S.",
-            "formulation": "S \\geq h1_{index} + h2_{index}",
+            "formulation": "S \\geq h1 + h2",
             "code": {
-                "gurobipy": ""
+                "gurobipy": "model.addConstr(h1 + h2 <= S)"
             }
         },
         {

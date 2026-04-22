@@ -29,20 +29,21 @@
     "variables": {
         "h": {
             "description": "The quantity of buses utilized for transportation",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "m": {
             "description": "The quantity of vehicles utilized for travel purposes.",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "slack_0": {
             "description": "Slack variable for constraint: A minimum of J employees need to be transported.",
+            "type": "continuous",
+            "shape": []
+        },
+        "slack_1": {
+            "description": "Slack variable for constraint: The maximum number of buses that can be utilized is S.",
             "type": "continuous",
             "shape": []
         }
@@ -50,9 +51,16 @@
     "constraints": [
         {
             "description": "A minimum of J employees need to be transported. (Modified to include slack variable slack_0)",
-            "formulation": "m * K + h * D - slack_0 = J",
+            "formulation": "m \\cdot K + h \\cdot D - slack_0 = J",
             "code": {
                 "gurobipy": "model.addConstr(m * K + h * D - slack_0 == J)"
+            }
+        },
+        {
+            "description": "The maximum number of buses that can be utilized is S. (Modified to include slack variable slack_1)",
+            "formulation": "h + slack_1 = S",
+            "code": {
+                "gurobipy": "model.addConstr(h + slack_1 == S)"
             }
         }
     ],

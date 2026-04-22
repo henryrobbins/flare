@@ -41,29 +41,34 @@
             "description": "Digit 0 of the The quantity of buses utilized for transportation",
             "type": "integer",
             "shape": []
+        },
+        "h_1": {
+            "description": "Digit 1 of the The quantity of buses utilized for transportation",
+            "type": "integer",
+            "shape": []
         }
     },
     "constraints": [
         {
             "description": "The maximum number of buses that can be utilized is S.",
-            "formulation": "S \\geq (h_0*10^0)",
+            "formulation": "S \\geq (h_0 \\cdot 10^0 + h_1 \\cdot 10^1)",
             "code": {
-                "gurobipy": ""
+                "gurobipy": "model.addConstr((h_0*10**0 + h_1*10**1) <= S)"
             }
         },
         {
             "description": "A minimum of J employees need to be transported.",
-            "formulation": "J \\leq (m_0*10^0 + m_1*10^1) \\cdot K + (h_0*10^0) \\cdot D",
+            "formulation": "J \\leq (m_0 \\cdot 10^0 + m_1 \\cdot 10^1) \\cdot K + (h_0 \\cdot 10^0 + h_1 \\cdot 10^1) \\cdot D",
             "code": {
-                "gurobipy": "model.addConstr((m_0*10**0 + m_1*10**1)*K+(h_0*10**0)*D>=J)"
+                "gurobipy": "model.addConstr((m_0*10**0 + m_1*10**1)*K + (h_0*10**0 + h_1*10**1)*D >= J)"
             }
         }
     ],
     "objective": {
         "description": "The combined pollution generated consists of emissions from both cars and buses. The goal is to reduce the overall pollution produced as much as possible.",
-        "formulation": "Min \\ (h_0*10^0) \\times O + (m_0*10^0 + m_1*10^1) \\times M",
+        "formulation": "Min \\ (h_0 \\cdot 10^0 + h_1 \\cdot 10^1) \\times O + (m_0 \\cdot 10^0 + m_1 \\cdot 10^1) \\times M",
         "code": {
-            "gurobipy": "model.setObjective((m_0*10**0 + m_1*10**1)*M+(h_0*10**0)*O,GRB.MINIMIZE)"
+            "gurobipy": "model.setObjective((m_0*10**0 + m_1*10**1)*M + (h_0*10**0 + h_1*10**1)*O, GRB.MINIMIZE)"
         }
     },
     "metadata": {

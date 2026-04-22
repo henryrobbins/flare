@@ -29,17 +29,13 @@
     "variables": {
         "h": {
             "description": "The quantity of buses utilized for transportation",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "m": {
             "description": "The quantity of vehicles utilized for travel purposes.",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         }
     },
     "constraints": [
@@ -47,7 +43,7 @@
             "description": "The maximum number of buses that can be utilized is S.",
             "formulation": "S \\geq h",
             "code": {
-                "gurobipy": ""
+                "gurobipy": "model.addConstr(h <= S)"
             }
         },
         {
@@ -59,10 +55,10 @@
         }
     ],
     "objective": {
-        "description": "The combined pollution generated consists of emissions from both cars and buses. The goal is to reduce the overall pollution produced as much as possible.",
-        "formulation": "Min \\ h \\times O + m \\times M",
+        "description": "The combined pollution generated consists of emissions from both cars and buses, scaled by a factor of 2. The goal is to reduce the overall pollution produced as much as possible.",
+        "formulation": "Min \\ 2 \\times (h \\times O + m \\times M)",
         "code": {
-            "gurobipy": "model.setObjective(m * M + h * O, GRB.MINIMIZE)"
+            "gurobipy": "model.setObjective(2 * (m * M + h * O), GRB.MINIMIZE)"
         }
     },
     "metadata": {

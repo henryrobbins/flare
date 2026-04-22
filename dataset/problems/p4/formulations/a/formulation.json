@@ -29,17 +29,13 @@
     "variables": {
         "xCars": {
             "description": "The number of cars used for transportation",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "xBuses": {
             "description": "The number of buses used for transportation",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         }
     },
     "constraints": [
@@ -54,7 +50,7 @@
             "description": "No more than MaxBuses buses can be used.",
             "formulation": "xBuses \\leq MaxBuses",
             "code": {
-                "gurobipy": ""
+                "gurobipy": "model.addConstr(xBuses <= MaxBuses)"
             }
         }
     ],

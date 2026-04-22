@@ -4,27 +4,45 @@ import argparse
 
 
 def main(params_path: str, solution_path: str) -> None:
+
+    # Create a new model
     model = Model()
-    slack_0 = model.addVar(lb=0, name="slack_0")
+
+    # Load data
     with open(params_path, "r") as f:
         data = json.load(f)
-    K = data["K"]
+
+    # Parameters
+    J = data["J"]
     M = data["M"]
+    K = data["K"]
     D = data["D"]
     O = data["O"]
-    J = data["J"]
     S = data["S"]
+
+    # Variables
+    h = model.addVar(vtype=GRB.INTEGER, name="h")
     m = model.addVar(vtype=GRB.INTEGER, name="m")
-    h = model.addVar(vtype=GRB.INTEGER, lb=0, ub=S, name="h")
+    slack_0 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_0")
+    slack_1 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_1")
+
+    # Constraints
     model.addConstr(m * K + h * D - slack_0 == J)
+    model.addConstr(h + slack_1 == S)
+
+    # Objective
     model.setObjective(m * M + h * O, GRB.MINIMIZE)
+
+    # Solve
     model.optimize()
+
+    # Extract solution
     solution = {}
     variables = {}
-    variables["slack_0"] = slack_0.X
-    objective = []
-    variables["m"] = m.x
     variables["h"] = h.x
+    variables["m"] = m.x
+    variables["slack_0"] = slack_0.x
+    variables["slack_1"] = slack_1.x
     solution["variables"] = variables
     solution["objective"] = model.objVal
     with open(solution_path, "w") as f:

@@ -29,17 +29,13 @@
     "variables": {
         "h": {
             "description": "The quantity of buses utilized for transportation",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "m": {
             "description": "The quantity of vehicles utilized for travel purposes.",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "zed": {
             "description": "New variable representing the objective function",
@@ -59,7 +55,7 @@
             "description": "The maximum number of buses that can be utilized is S.",
             "formulation": "S \\geq h",
             "code": {
-                "gurobipy": ""
+                "gurobipy": "model.addConstr(h <= S)"
             }
         },
         {
