@@ -1,0 +1,1 @@
+Route vehicles to serve pickup-and-delivery jobs with time windows at minimum travel cost. Uses the base arc-flow formulation augmented with EC3 clique-rejection cuts derived from the conflict graph of mutually infeasible job pairs.

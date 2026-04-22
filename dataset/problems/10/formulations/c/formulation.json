@@ -1,0 +1,105 @@
+{
+    "valid": true,
+    "parametrized_description": "Route K vehicles to serve N pickup-and-delivery jobs with time windows at minimum travel cost. Uses the base arc-flow formulation augmented with EC2 mutual-feasibility-pair cuts that limit simultaneous use of bidirectional arcs and self-loops.",
+    "keywords": ["PDPTW", "pickup and delivery", "time windows", "vehicle routing", "arc-flow", "job rejection", "EC2", "mutual feasibility"],
+    "parameters": {
+        "K": {
+            "description": "Number of trucks/vehicles in the fleet",
+            "shape": []
+        },
+        "N": {
+            "description": "Number of pickup and delivery jobs",
+            "shape": []
+        },
+        "d": {
+            "description": "Travel time from job i's return terminal to job j's pickup terminal; d[i][i] is the loaded time (rejection penalty) of job i",
+            "shape": ["N", "N"]
+        },
+        "d0": {
+            "description": "Travel time from the home terminal of truck k to job i's pickup terminal",
+            "shape": ["K", "N"]
+        },
+        "dH": {
+            "description": "Travel time from job i's return terminal to the home terminal of truck k",
+            "shape": ["K", "N"]
+        },
+        "v": {
+            "description": "Time at which each truck becomes available",
+            "shape": ["K"]
+        },
+        "tau_min": {
+            "description": "Earliest permissible arrival time at each job's pickup terminal",
+            "shape": ["N"]
+        },
+        "tau_max": {
+            "description": "Latest permissible arrival time at each job's pickup terminal",
+            "shape": ["N"]
+        }
+    },
+    "variables": {
+        "x": {
+            "description": "1 if arc (u,v) is selected in the routing cycle cover; x[K+i][K+i]=1 means job i is rejected",
+            "type": "integer",
+            "shape": ["K+N", "K+N"]
+        },
+        "delta": {
+            "description": "Arrival time at job i's pickup terminal",
+            "type": "continuous",
+            "shape": ["N"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each node has exactly one outgoing arc.",
+            "formulation": "\\sum_{v=0}^{K+N-1} x_{uv} = 1 \\quad \\forall u \\in \\{0,\\dots,K+N-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(x[u, v] for v in range(K + N)) == 1 for u in range(K + N))"
+            }
+        },
+        {
+            "description": "Each node has exactly one incoming arc.",
+            "formulation": "\\sum_{v=0}^{K+N-1} x_{vu} = 1 \\quad \\forall u \\in \\{0,\\dots,K+N-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(x[v, u] for v in range(K + N)) == 1 for u in range(K + N))"
+            }
+        },
+        {
+            "description": "Arrival time at job i is at least the earliest possible arrival from any truck.",
+            "formulation": "\\delta_i - \\sum_{k=0}^{K-1} (d^k_{0i} + v^k)\\,x_{k,K+i} \\ge 0 \\quad \\forall i \\in \\{0,\\dots,N-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(delta[i] - gp.quicksum((d0[k][i] + v[k]) * x[k, K + i] for k in range(K)) >= 0 for i in range(N))"
+            }
+        },
+        {
+            "description": "Arrival time propagation between consecutive jobs via big-M.",
+            "formulation": "\\delta_j - \\delta_i - M\\,x_{K+i,K+j} + (d_{ii}+d_{ij})\\,x_{K+i,K+i} \\ge d_{ii}+d_{ij}-M \\quad \\forall i,j \\in \\{0,\\dots,N-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(delta[j] - delta[i] - M * x[K + i, K + j] + (d[i][i] + d[i][j]) * x[K + i, K + i] >= d[i][i] + d[i][j] - M for i in range(N) for j in range(N))"
+            }
+        },
+        {
+            "description": "Time-window feasibility for each job's pickup.",
+            "formulation": "\\tau^-_i \\le \\delta_i \\le \\tau^+_i \\quad \\forall i \\in \\{0,\\dots,N-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(delta[i] >= tau_min[i] for i in range(N))\nmodel.addConstrs(delta[i] <= tau_max[i] for i in range(N))"
+            }
+        },
+        {
+            "description": "EC2: For each mutually feasible pair (i,j), at most one of the two sequencing directions or a rejection of i can hold.",
+            "formulation": "x_{K+i,K+j} + x_{K+j,K+i} + x_{K+i,K+i} \\le 1 \\quad \\forall (i,j): i\\neq j,\\,(i,j)\\notin\\mathcal{A}^-,\\,(j,i)\\notin\\mathcal{A}^-",
+            "code": {
+                "gurobipy": "EST = [max(tau_min[i], min(v[k] + d0[k][i] for k in range(K))) for i in range(N)]\nA_minus = {(i, j) for i in range(N) for j in range(N) if EST[i] + d[i][i] + d[i][j] > tau_max[j]}\nfor i in range(N):\n    for j in range(N):\n        if i != j and (i, j) not in A_minus and (j, i) not in A_minus:\n            model.addConstr(x[K + i, K + j] + x[K + j, K + i] + x[K + i, K + i] <= 1)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total travel cost: deadhead from truck homes, inter-job travel, and returns to truck homes.",
+        "formulation": "\\min \\sum_{k=0}^{K-1}\\sum_{i=0}^{N-1} d^k_{0i}\\,x_{k,K+i} + \\sum_{i=0}^{N-1}\\sum_{j=0}^{N-1} d_{ij}\\,x_{K+i,K+j} + \\sum_{i=0}^{N-1}\\sum_{k=0}^{K-1} d^k_{iH}\\,x_{K+i,k}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(d0[k][i] * x[k, K + i] for k in range(K) for i in range(N))\n    + gp.quicksum(d[i][j] * x[K + i, K + j] for i in range(N) for j in range(N))\n    + gp.quicksum(dH[k][i] * x[K + i, k] for i in range(N) for k in range(K)),\n    GRB.MINIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": "EvoCut"
+    }
+}

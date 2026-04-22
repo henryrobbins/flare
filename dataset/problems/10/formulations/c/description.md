@@ -1,0 +1,1 @@
+Route vehicles to serve pickup-and-delivery jobs with time windows at minimum travel cost. Uses the base arc-flow formulation augmented with EC2 mutual-feasibility-pair cuts that limit simultaneous use of bidirectional arcs and self-loops.
