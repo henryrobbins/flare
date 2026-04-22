@@ -217,9 +217,6 @@ def main() -> None:
         for fid, formulation in problem.formulations.items():
             fj_path = formulation.path / "formulation.json"
             fj = json.loads(fj_path.read_text())
-            if not fj.get("valid", False):
-                continue
-
             code = generate(fj)
 
             if args.dry_run:
