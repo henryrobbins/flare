@@ -1,0 +1,1 @@
+CWLP base formulation augmented with the Warehouse Clique cut (Version 2, EC5): for each warehouse, at most one customer from the lifted conflict set C_j (customers mutually conflicting in that warehouse) can be assigned to it.

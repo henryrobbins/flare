@@ -1,0 +1,1 @@
+CWLP base formulation augmented with the T-Cover Bound cut (Version 1, EC3): customers whose demand exceeds the maximum capacity of small warehouses must be assigned to large warehouses, yielding a lower bound on the total number of open warehouses.

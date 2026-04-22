@@ -1,0 +1,1 @@
+Select which candidate warehouses to open and assign each customer to one open warehouse to minimize total fixed opening costs plus transportation costs, subject to warehouse capacity limits. Uses the base MILP formulation with no additional cutting planes.

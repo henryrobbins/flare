@@ -1,0 +1,101 @@
+{
+    "valid": true,
+    "parametrized_description": "CWLP base formulation augmented with the Global Slot Count Bounds cut (Version 2, EC2): for each demand threshold v in the set of distinct customer demands, the number of slots of size v provided by open warehouses must cover all customers with demand at least v.",
+    "keywords": [
+        "CWLP",
+        "capacitated warehouse location",
+        "facility location",
+        "MILP",
+        "assignment",
+        "cutting plane",
+        "slot count",
+        "demand threshold"
+    ],
+    "parameters": {
+        "n": {
+            "description": "Number of customers",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of candidate warehouses",
+            "shape": []
+        },
+        "d": {
+            "description": "Demand of customer i",
+            "shape": [
+                "n"
+            ]
+        },
+        "u": {
+            "description": "Capacity of warehouse j",
+            "shape": [
+                "m"
+            ]
+        },
+        "f": {
+            "description": "Fixed cost to open warehouse j",
+            "shape": [
+                "m"
+            ]
+        },
+        "c": {
+            "description": "Transportation cost if all of customer i's demand is served by warehouse j (already accounts for d_i)",
+            "shape": [
+                "n",
+                "m"
+            ]
+        }
+    },
+    "variables": {
+        "x": {
+            "description": "1 if customer i is assigned to warehouse j, 0 otherwise",
+            "type": "integer",
+            "shape": [
+                "n",
+                "m"
+            ]
+        },
+        "y": {
+            "description": "1 if warehouse j is opened, 0 otherwise",
+            "type": "integer",
+            "shape": [
+                "m"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each customer is assigned to exactly one warehouse.",
+            "formulation": "\\sum_{j \\in J} x_{ij} = 1 \\quad \\forall i \\in I",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(x[i, j] for j in range(m)) == 1 for i in range(n))"
+            }
+        },
+        {
+            "description": "Capacity: total demand assigned to each warehouse cannot exceed its capacity times whether it is open.",
+            "formulation": "\\sum_{i \\in I} d_i \\, x_{ij} \\leq u_j \\, y_j \\quad \\forall j \\in J",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(d[i] * x[i, j] for i in range(n)) <= u[j] * y[j] for j in range(m))"
+            }
+        },
+        {
+            "description": "Global Slot Count Bounds (EC2): for each demand threshold v in the distinct customer demands, the total floor(u_j/v) slots across open warehouses must cover customers with demand >= v.",
+            "formulation": "\\sum_{j \\in J} \\left\\lfloor \\frac{u_j}{v} \\right\\rfloor y_j \\geq |\\{i \\in I : d_i \\geq v\\}| \\quad \\forall v \\in \\mathcal{V}",
+            "code": {
+                "gurobipy": "V_set = list(set(d))\nfor v in V_set:\n    rhs = sum(1 for di in d if di >= v)\n    model.addConstr(gp.quicksum(math.floor(u[j] / v) * y[j] for j in range(m)) >= rhs)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total fixed opening cost plus transportation cost.",
+        "formulation": "\\min \\sum_{j \\in J} f_j \\, y_j + \\sum_{i \\in I} \\sum_{j \\in J} c_{ij} \\, x_{ij}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(f[j] * y[j] for j in range(m)) +\n    gp.quicksum(c[i][j] * x[i, j] for i in range(n) for j in range(m)),\n    GRB.MINIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": "EvoCut",
+        "version": 2,
+        "name": "EC2"
+    }
+}

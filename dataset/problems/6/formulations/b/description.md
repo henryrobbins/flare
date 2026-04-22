@@ -1,0 +1,1 @@
+CWLP base formulation augmented with the Critical-Customer Bound cut (Version 1, EC1): customers whose demand exceeds half the largest warehouse capacity must each be served alone, forcing at least k_crit warehouses to open.
