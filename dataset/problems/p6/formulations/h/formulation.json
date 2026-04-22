@@ -1,15 +1,5 @@
 {
     "valid": true,
-    "parametrized_description": "CWLP base formulation augmented with the Assignment cut (Version 2, EC4): a customer cannot be assigned to a warehouse whose capacity is less than the customer's demand.",
-    "keywords": [
-        "CWLP",
-        "capacitated warehouse location",
-        "facility location",
-        "MILP",
-        "assignment",
-        "cutting plane",
-        "infeasible assignment"
-    ],
     "parameters": {
         "n": {
             "description": "Number of customers",

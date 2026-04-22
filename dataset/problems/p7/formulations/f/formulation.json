@@ -1,7 +1,5 @@
 {
     "valid": true,
-    "parametrized_description": "Minimize the number of rectangular tiles covering an N×N grid with one hole per row and column, augmented with the Interior Vertical-Above Break cut (V1 EC5): an interior hole forces a strip covering that column span to end in the row above.",
-    "keywords": ["rectangular tiling", "IMO6", "interval flow", "MIP", "cutting plane"],
     "parameters": {
         "N": {
             "description": "Size of the grid (number of rows and columns)",
@@ -12,22 +10,34 @@
         "h": {
             "description": "1 if (i,j) is the unique hole in row i and column j, 0 otherwise",
             "type": "integer",
-            "shape": ["N", "N"]
+            "shape": [
+                "N",
+                "N"
+            ]
         },
         "x": {
             "description": "1 if row i, columns a through b are covered by the same tile, 0 otherwise",
             "type": "integer",
-            "shape": ["N", "|I|"]
+            "shape": [
+                "N",
+                "|I|"
+            ]
         },
         "s": {
             "description": "1 if a tile starts at row i for column interval (a,b), 0 otherwise",
             "type": "integer",
-            "shape": ["N", "|I|"]
+            "shape": [
+                "N",
+                "|I|"
+            ]
         },
         "t": {
             "description": "1 if a tile ends at row i for column interval (a,b), 0 otherwise",
             "type": "integer",
-            "shape": ["N", "|I|"]
+            "shape": [
+                "N",
+                "|I|"
+            ]
         }
     },
     "constraints": [

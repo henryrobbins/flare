@@ -1,7 +1,5 @@
 {
     "valid": true,
-    "parametrized_description": "Find the shortest Hamiltonian cycle visiting all n cities exactly once. Uses the MTZ formulation augmented with the Lifted Desrochers-Laporte MTZ Ordering cut (Version 2, EC3): a lifted strengthening of the MTZ constraint that tightens the bound using the reverse arc coefficient.",
-    "keywords": ["TSP", "traveling salesman", "Hamiltonian cycle", "MTZ", "subtour elimination", "cutting plane", "Desrochers-Laporte"],
     "parameters": {
         "n": {
             "description": "Number of cities",
@@ -9,19 +7,27 @@
         },
         "c": {
             "description": "Travel cost from city i to city j",
-            "shape": ["n", "n"]
+            "shape": [
+                "n",
+                "n"
+            ]
         }
     },
     "variables": {
         "x": {
             "description": "1 if the tour goes directly from city i to city j, 0 otherwise",
             "type": "integer",
-            "shape": ["n", "n"]
+            "shape": [
+                "n",
+                "n"
+            ]
         },
         "u": {
             "description": "MTZ position of city i in the tour; u[0] is fixed to 1 to anchor the depot",
             "type": "continuous",
-            "shape": ["n"]
+            "shape": [
+                "n"
+            ]
         }
     },
     "constraints": [
@@ -40,7 +46,7 @@
             }
         },
         {
-            "description": "MTZ subtour elimination: if arc i→j is used among non-depot cities, city j must immediately follow city i in the tour ordering.",
+            "description": "MTZ subtour elimination: if arc i\u2192j is used among non-depot cities, city j must immediately follow city i in the tour ordering.",
             "formulation": "u_i - u_j + n \\cdot x_{ij} \\leq n - 1 \\quad \\forall i, j \\in V \\setminus \\{0\\},\\; i \\neq j",
             "code": {
                 "gurobipy": "model.addConstrs(u[i] - u[j] + n * x[i, j] <= n - 1 for i in range(1, n) for j in range(1, n) if i != j)"

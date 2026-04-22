@@ -1,15 +1,5 @@
 {
     "valid": true,
-    "parametrized_description": "MCND base formulation augmented with Knapsack-Cover Capacity Cuts (Version 2, EC1): for every non-trivial node subset S, arcs crossing the cut must collectively carry enough truncated capacity to route all commodities originating in S to destinations outside S.",
-    "keywords": [
-        "MCND",
-        "multi-commodity network design",
-        "network flow",
-        "MILP",
-        "cutting plane",
-        "knapsack cover",
-        "cut set"
-    ],
     "parameters": {
         "n": {
             "description": "Number of network nodes",

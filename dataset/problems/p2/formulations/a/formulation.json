@@ -1,9 +1,5 @@
 {
     "valid": true,
-    "parametrized_description": "A scientist is conducting NumExperiments different experiments to produce electricity. Each experiment i produces ElectricityProduced[i] units of electricity and requires specific amounts of NumResources types of resources as defined by ResourceRequired[j][i]. The laboratory has ResourceAvailable[j] units of each resource available. The scientist aims to determine the number of each experiment to conduct in order to maximize the total electricity produced.",
-    "keywords": [
-        "N.A."
-    ],
     "parameters": {
         "NumExperiments": {
             "description": "Number of experiments",

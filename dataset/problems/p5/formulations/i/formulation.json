@@ -1,9 +1,5 @@
 {
     "valid": false,
-    "parametrized_description": "A vine company sells two types of bottles: vintage and regular. A vintage bottle holds D milliliters of vine, while a regular bottle holds J milliliters of vine. The company has A milliliters of vine available. The number of regular bottles must be at least O times the number of vintage bottles. Additionally, at least Q vintage bottles must be produced. The objective is to maximize the total number of bottles produced.",
-    "keywords": [
-        "N.A."
-    ],
     "parameters": {
         "Q": {
             "description": "The smallest quantity of antique bottles that must be manufactured",

@@ -1,7 +1,5 @@
 {
     "valid": true,
-    "parametrized_description": "Schedule n jobs on m machines to minimize the makespan. Uses the standard big-M MILP formulation with technological ordering and machine sequencing constraints and no additional cutting planes.",
-    "keywords": ["JSSP", "job shop scheduling", "makespan", "big-M", "sequencing"],
     "parameters": {
         "n": {
             "description": "Number of jobs",
@@ -13,23 +11,34 @@
         },
         "p": {
             "description": "Processing time of the k-th operation of job j",
-            "shape": ["n", "m"]
+            "shape": [
+                "n",
+                "m"
+            ]
         },
         "Om": {
             "description": "Machine index assigned to the k-th operation of job j",
-            "shape": ["n", "m"]
+            "shape": [
+                "n",
+                "m"
+            ]
         }
     },
     "variables": {
         "S": {
             "description": "Start time of the k-th operation of job j",
             "type": "continuous",
-            "shape": ["n", "m"]
+            "shape": [
+                "n",
+                "m"
+            ]
         },
         "y": {
             "description": "1 if operation (j1,k1) is scheduled before (j2,k2) on their shared machine, 0 otherwise; indexed over conflict pairs P",
             "type": "integer",
-            "shape": ["|P|"]
+            "shape": [
+                "|P|"
+            ]
         },
         "C_max": {
             "description": "Makespan: completion time of the last operation across all jobs",

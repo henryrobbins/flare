@@ -1,7 +1,5 @@
 {
     "valid": true,
-    "parametrized_description": "Route K vehicles to serve N pickup-and-delivery jobs with time windows at minimum travel cost. Uses the base arc-flow formulation augmented with EC4 triple-infeasibility cuts that forbid three-job sequences violating time windows.",
-    "keywords": ["PDPTW", "pickup and delivery", "time windows", "vehicle routing", "arc-flow", "job rejection", "EC4", "triple infeasibility"],
     "parameters": {
         "K": {
             "description": "Number of trucks/vehicles in the fleet",
@@ -13,39 +11,59 @@
         },
         "d": {
             "description": "Travel time from job i's return terminal to job j's pickup terminal; d[i][i] is the loaded time (rejection penalty) of job i",
-            "shape": ["N", "N"]
+            "shape": [
+                "N",
+                "N"
+            ]
         },
         "d0": {
             "description": "Travel time from the home terminal of truck k to job i's pickup terminal",
-            "shape": ["K", "N"]
+            "shape": [
+                "K",
+                "N"
+            ]
         },
         "dH": {
             "description": "Travel time from job i's return terminal to the home terminal of truck k",
-            "shape": ["K", "N"]
+            "shape": [
+                "K",
+                "N"
+            ]
         },
         "v": {
             "description": "Time at which each truck becomes available",
-            "shape": ["K"]
+            "shape": [
+                "K"
+            ]
         },
         "tau_min": {
             "description": "Earliest permissible arrival time at each job's pickup terminal",
-            "shape": ["N"]
+            "shape": [
+                "N"
+            ]
         },
         "tau_max": {
             "description": "Latest permissible arrival time at each job's pickup terminal",
-            "shape": ["N"]
+            "shape": [
+                "N"
+            ]
         }
     },
     "variables": {
         "x": {
             "description": "1 if arc (u,v) is selected in the routing cycle cover; x[K+i][K+i]=1 means job i is rejected",
             "type": "integer",
-            "shape": ["K+N", "K+N"]
+            "shape": [
+                "K+N",
+                "K+N"
+            ]
         },
         "delta": {
             "description": "Arrival time at job i's pickup terminal",
             "type": "continuous",
-            "shape": ["N"]
+            "shape": [
+                "N"
+            ]
         }
     },
     "constraints": [

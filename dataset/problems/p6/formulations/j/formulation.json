@@ -1,15 +1,5 @@
 {
     "valid": true,
-    "parametrized_description": "CWLP base formulation augmented with the Warehouse Cover Inequality cut (Version 2, EC6): at most 2 customers whose demand exceeds one-third of a warehouse's capacity can be assigned to it.",
-    "keywords": [
-        "CWLP",
-        "capacitated warehouse location",
-        "facility location",
-        "MILP",
-        "assignment",
-        "cutting plane",
-        "cover inequality"
-    ],
     "parameters": {
         "n": {
             "description": "Number of customers",
