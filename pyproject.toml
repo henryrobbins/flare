@@ -6,6 +6,7 @@ dependencies = [
     "gurobipy",
     "milp-eq-tools",
     "tqdm",
+    "tsplib95",
 ]
 
 [tool.uv]
