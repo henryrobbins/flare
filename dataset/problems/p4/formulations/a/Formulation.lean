@@ -11,8 +11,8 @@ structure Params where
   MaxBuses                : ℝ  -- max buses allowed
 
 structure Vars where
-  xCars  : ℝ  -- number of cars used
-  xBuses : ℝ  -- number of buses used
+  xCars  : ℤ  -- number of cars used
+  xBuses : ℤ  -- number of buses used
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Transport at least MinEmployeesToTransport employees

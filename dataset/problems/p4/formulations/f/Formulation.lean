@@ -11,10 +11,10 @@ structure Params where
   S : ℝ  -- max buses allowed
 
 structure Vars where
-  m1 : ℝ  -- part 1 of car count
-  m2 : ℝ  -- part 2 of car count
-  h1 : ℝ  -- part 1 of bus count
-  h2 : ℝ  -- part 2 of bus count
+  m1 : ℤ  -- part 1 of car count
+  m2 : ℤ  -- part 2 of car count
+  h1 : ℤ  -- part 1 of bus count
+  h2 : ℤ  -- part 2 of bus count
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Use at most S buses

@@ -11,8 +11,8 @@ structure Params where
   S : ℝ  -- max buses allowed
 
 structure Vars where
-  m   : ℝ  -- number of cars used
-  h   : ℝ  -- number of buses used
+  m   : ℤ  -- number of cars used
+  h   : ℤ  -- number of buses used
   zed : ℝ  -- auxiliary objective variable (= total pollution)
 
 structure Feasible (p : Params) (v : Vars) : Prop where

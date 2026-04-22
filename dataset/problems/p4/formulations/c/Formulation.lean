@@ -1,5 +1,4 @@
 import Common
-import Mathlib.Data.Int.Basic
 
 namespace P4.Fc
 
@@ -14,25 +13,27 @@ structure Params where
 structure Vars where
   m_0 : ℤ  -- digit 0 of car count
   m_1 : ℤ  -- digit 1 of car count
-  h_0 : ℤ  -- digit 0 of bus count (single digit)
+  h_0 : ℤ  -- digit 0 of bus count
+  h_1 : ℤ  -- digit 1 of bus count
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Use at most S buses
-  hmaxbus : (v.h_0 : ℝ) ≤ p.S
+  hmaxbus : (v.h_0 + 10 * v.h_1 : ℤ) ≤ p.S
   -- Transport at least J employees
-  htransport : p.J ≤ (v.m_0 + 10 * v.m_1 : ℤ) * p.K + (v.h_0 : ℤ) * p.D
-  -- [Implicit Constraints]
+  htransport : p.J ≤ (v.m_0 + 10 * v.m_1 : ℤ) * p.K + (v.h_0 + 10 * v.h_1 : ℤ) * p.D
   -- Digit bounds
   hm0_nn : 0 ≤ v.m_0
   hm1_nn : 0 ≤ v.m_1
   hh0_nn : 0 ≤ v.h_0
+  hh1_nn : 0 ≤ v.h_1
   hm0_hi : v.m_0 ≤ 9
   hm1_hi : v.m_1 ≤ 9
   hh0_hi : v.h_0 ≤ 9
+  hh1_hi : v.h_1 ≤ 9
 
 -- Minimize total pollution
 def obj (p : Params) (v : Vars) : ℝ :=
-  (v.m_0 + 10 * v.m_1 : ℤ) * p.M + (v.h_0 : ℤ) * p.O
+  (v.m_0 + 10 * v.m_1 : ℤ) * p.M + (v.h_0 + 10 * v.h_1 : ℤ) * p.O
 
 def formulation : MILPFormulation where
   Params   := Params

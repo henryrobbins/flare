@@ -11,8 +11,8 @@ structure Params where
   S : ℝ  -- max buses allowed
 
 structure Vars where
-  m : ℝ  -- number of cars used
-  h : ℝ  -- number of buses used
+  m : ℤ  -- number of cars used
+  h : ℤ  -- number of buses used
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Use at most S buses
@@ -22,8 +22,8 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hm_nn : 0 ≤ v.m
   hh_nn : 0 ≤ v.h
 
--- Minimize total pollution
-def obj (p : Params) (v : Vars) : ℝ := v.m * p.M + v.h * p.O
+-- Minimize total pollution (scaled by 2)
+def obj (p : Params) (v : Vars) : ℝ := 2 * (v.m * p.M + v.h * p.O)
 
 def formulation : MILPFormulation where
   Params   := Params
