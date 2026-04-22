@@ -1,0 +1,70 @@
+import json
+import gurobipy as gp
+from gurobipy import GRB
+import argparse
+
+
+def main(params_path: str, solution_path: str) -> None:
+
+    # Create a new model
+    model = gp.Model()
+
+    # Load data
+    with open(params_path, "r") as f:
+        data = json.load(f)
+
+    # @Def: definition of a target
+    # @Shape: shape of a target
+
+    # Parameters
+    # @Parameter n @Def: Number of cities @Shape: []
+    n = data['n']
+    # @Parameter c @Def: Travel cost from city i to city j @Shape: [n, n]
+    c = data['c']
+
+    # Variables
+    # @Variable x @Def: 1 if the tour goes directly from city i to city j, 0 otherwise @Shape: [n, n]
+    x = model.addVars(n, n, vtype=GRB.BINARY, name="x")
+    # @Variable u @Def: MTZ position of city i in the tour; u[0] is fixed to 1 @Shape: [n]
+    u = model.addVars(n, lb=1, ub=n, vtype=GRB.CONTINUOUS, name="u")
+
+    # No self-loops
+    for i in range(n):
+        x[i, i].ub = 0
+
+    # Constraints
+    # @Constraint Constr_1 @Def: Each city has exactly one outgoing arc.
+    model.addConstrs(gp.quicksum(x[i, j] for j in range(n) if j != i) == 1 for i in range(n))
+    # @Constraint Constr_2 @Def: Each city has exactly one incoming arc.
+    model.addConstrs(gp.quicksum(x[i, j] for i in range(n) if i != j) == 1 for j in range(n))
+    # @Constraint Constr_3 @Def: MTZ subtour elimination.
+    model.addConstrs(u[i] - u[j] + n * x[i, j] <= n - 1 for i in range(1, n) for j in range(1, n) if i != j)
+    # @Constraint Constr_4 @Def: Depot position is fixed to 1.
+    model.addConstr(u[0] == 1)
+    # @Constraint Constr_5 @Def: Depot-Entry Position Bound (EC2, Version 1): if the tour returns to the depot from i, then i is last.
+    model.addConstrs(u[i] >= n - (n - 2) * (1 - x[i, 0]) for i in range(1, n))
+
+    # Objective
+    # @Objective Objective @Def: Minimize total travel cost of the Hamiltonian cycle.
+    model.setObjective(gp.quicksum(c[i][j] * x[i, j] for i in range(n) for j in range(n) if i != j), GRB.MINIMIZE)
+
+    # Solve
+    model.optimize()
+
+    # Extract solution
+    solution = {}
+    variables = {}
+    variables['x'] = [[x[i, j].x for j in range(n)] for i in range(n)]
+    variables['u'] = [u[i].x for i in range(n)]
+    solution['variables'] = variables
+    solution['objective'] = model.objVal
+    with open(solution_path, 'w') as f:
+        json.dump(solution, f, indent=4)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("params", help="Path to parameters.json")
+    parser.add_argument("solution", help="Path to write solution.json")
+    args = parser.parse_args()
+    main(args.params, args.solution)

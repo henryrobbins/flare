@@ -1,0 +1,76 @@
+{
+    "valid": true,
+    "parametrized_description": "Find the shortest Hamiltonian cycle visiting all n cities exactly once. Uses the MTZ formulation augmented with the Arc Symmetry cut (Version 2, EC1): eliminates two-city cycles by forbidding both directions of an arc from being simultaneously active.",
+    "keywords": ["TSP", "traveling salesman", "Hamiltonian cycle", "MTZ", "subtour elimination", "cutting plane"],
+    "parameters": {
+        "n": {
+            "description": "Number of cities",
+            "shape": []
+        },
+        "c": {
+            "description": "Travel cost from city i to city j",
+            "shape": ["n", "n"]
+        }
+    },
+    "variables": {
+        "x": {
+            "description": "1 if the tour goes directly from city i to city j, 0 otherwise",
+            "type": "binary",
+            "shape": ["n", "n"]
+        },
+        "u": {
+            "description": "MTZ position of city i in the tour; u[0] is fixed to 1 to anchor the depot",
+            "type": "continuous",
+            "shape": ["n"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each city has exactly one outgoing arc in the tour.",
+            "formulation": "\\sum_{j \\in V,\\, j \\neq i} x_{ij} = 1 \\quad \\forall i \\in V",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(x[i, j] for j in range(n) if j != i) == 1 for i in range(n))"
+            }
+        },
+        {
+            "description": "Each city has exactly one incoming arc in the tour.",
+            "formulation": "\\sum_{i \\in V,\\, i \\neq j} x_{ij} = 1 \\quad \\forall j \\in V",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(x[i, j] for i in range(n) if i != j) == 1 for j in range(n))"
+            }
+        },
+        {
+            "description": "MTZ subtour elimination: if arc i→j is used among non-depot cities, city j must immediately follow city i in the tour ordering.",
+            "formulation": "u_i - u_j + n \\cdot x_{ij} \\leq n - 1 \\quad \\forall i, j \\in V \\setminus \\{0\\},\\; i \\neq j",
+            "code": {
+                "gurobipy": "model.addConstrs(u[i] - u[j] + n * x[i, j] <= n - 1 for i in range(1, n) for j in range(1, n) if i != j)"
+            }
+        },
+        {
+            "description": "Depot position is fixed to 1 to anchor the tour ordering.",
+            "formulation": "u_0 = 1",
+            "code": {
+                "gurobipy": "model.addConstr(u[0] == 1)"
+            }
+        },
+        {
+            "description": "Arc Symmetry (EC1): both directions of an arc cannot be simultaneously active, eliminating two-city cycles.",
+            "formulation": "x_{ij} + x_{ji} \\leq 1 \\quad \\forall i, j \\in V,\\; i < j",
+            "code": {
+                "gurobipy": "model.addConstrs(x[i, j] + x[j, i] <= 1 for i in range(n) for j in range(i + 1, n))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total travel cost of the Hamiltonian cycle.",
+        "formulation": "\\min \\sum_{i \\in V} \\sum_{j \\in V,\\, j \\neq i} c_{ij} \\cdot x_{ij}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(c[i][j] * x[i, j] for i in range(n) for j in range(n) if i != j), GRB.MINIMIZE)"
+        }
+    },
+    "metadata": {
+        "source": "EvoCut",
+        "version": 2,
+        "name": "EC1"
+    }
+}
