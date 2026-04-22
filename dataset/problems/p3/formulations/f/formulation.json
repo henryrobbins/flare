@@ -44,15 +44,15 @@
     },
     "variables": {
         "n1": {
-            "description": "Part 1 of variable n: The quantity of flour utilized by beaker i",
-            "type": "continuous",
+            "description": "Part 1 of variable n: The number of beakers of type i used",
+            "type": "integer",
             "shape": [
                 "N"
             ]
         },
         "n2": {
-            "description": "Part 2 of variable n: The quantity of flour utilized by beaker i",
-            "type": "continuous",
+            "description": "Part 2 of variable n: The number of beakers of type i used",
+            "type": "integer",
             "shape": [
                 "N"
             ]
@@ -68,9 +68,9 @@
         },
         {
             "description": "The cumulative quantity of flour utilized by each beaker does not surpass D.",
-            "formulation": "\\text{D} \\geq \\sum_{i=1}^{\\text{N}} \\text{n1_{index} + n2_{index}}_i",
+            "formulation": "D \\geq \\sum_{i=1}^{N} T_i \\cdot (n1_i + n2_i)",
             "code": {
-                "gurobipy": "model.addConstr(quicksum((n1[i] + n2[i]) for i in range(N)) <= D)"
+                "gurobipy": "model.addConstr(quicksum(T[i] * (n1[i] + n2[i]) for i in range(N)) <= D)"
             }
         },
         {

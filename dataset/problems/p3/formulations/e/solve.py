@@ -1,32 +1,51 @@
 import json
-from gurobipy import Model, GRB
+from gurobipy import Model, GRB, quicksum
 import argparse
 
 
 def main(params_path: str, solution_path: str) -> None:
+
+    # Create a new model
     model = Model()
 
+    # Load data
     with open(params_path, "r") as f:
         data = json.load(f)
-    N = data["N"]
-    D = data["D"]
-    Z = data["Z"]
-    E = data["E"]
-    T = data["T"]
-    V = data["V"]
-    X = data["X"]
+
+    # Parameters
     C = data["C"]
-    n = model.addVars(N, vtype=GRB.CONTINUOUS, name="n")
-    model.addConstr(quicksum(n[i] for i in range(N)) <= D)
-    model.addConstr(quicksum(V[i] * n[i] for i in range(N)) <= Z)
-    model.addConstr(quicksum(C[i] * n[i] for i in range(N)) <= E)
+    E = data["E"]
+    N = data["N"]
+    X = data["X"]
+    T = data["T"]
+    D = data["D"]
+    V = data["V"]
+    Z = data["Z"]
+
+    # Variables
+    n = model.addVars(N, vtype=GRB.INTEGER, name="n")
+    slack_0 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_0")
+    slack_1 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_1")
+    slack_2 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_2")
+
+    # Constraints
+    model.addConstr(quicksum(V[i] * n[i] for i in range(N)) + slack_0 == Z)
+    model.addConstr(quicksum(T[i] * n[i] for i in range(N)) + slack_1 == D)
+    model.addConstr(quicksum(C[i] * n[i] for i in range(N)) + slack_2 == E)
+
+    # Objective
     model.setObjective(quicksum(X[i] * n[i] for i in range(N)), GRB.MAXIMIZE)
+
+    # Solve
     model.optimize()
+
+    # Extract solution
     solution = {}
     variables = {}
-
-    objective = []
-    variables["n"] = {i: n[i].X for i in range(N)}
+    variables["n"] = [n[i].x for i in range(N)]
+    variables["slack_0"] = slack_0.x
+    variables["slack_1"] = slack_1.x
+    variables["slack_2"] = slack_2.x
     solution["variables"] = variables
     solution["objective"] = model.objVal
     with open(solution_path, "w") as f:

@@ -1,5 +1,5 @@
 import json
-from gurobipy import Model, GRB
+from gurobipy import Model, GRB, quicksum
 import argparse
 
 
@@ -12,52 +12,34 @@ def main(params_path: str, solution_path: str) -> None:
     with open(params_path, "r") as f:
         data = json.load(f)
 
-    # @Def: definition of a target
-    # @Shape: shape of a target
-
     # Parameters
-    # @Parameter N @Def: Number of beakers @Shape: []
-    N = data["N"]
-    # @Parameter D @Def: Amount of flour available @Shape: []
-    D = data["D"]
-    # @Parameter Z @Def: Amount of special liquid available @Shape: []
-    Z = data["Z"]
-    # @Parameter E @Def: Maximum amount of waste allowed @Shape: []
-    E = data["E"]
-    # @Parameter T @Def: Amount of flour used by each beaker @Shape: ['N']
-    T = data["T"]
-    # @Parameter V @Def: Amount of special liquid used by each beaker @Shape: ['N']
-    V = data["V"]
-    # @Parameter X @Def: Amount of slime produced by each beaker @Shape: ['N']
-    X = data["X"]
-    # @Parameter C @Def: Amount of waste produced by each beaker @Shape: ['N']
     C = data["C"]
+    E = data["E"]
+    N = data["N"]
+    X = data["X"]
+    T = data["T"]
+    D = data["D"]
+    V = data["V"]
+    Z = data["Z"]
 
     # Variables
-    # @Variable n @Def: The amount of flour used by beaker i (10 times before) @Shape: ['N']
-    n = model.addVars(N, vtype=GRB.CONTINUOUS, name="n")
+    n = model.addVars(N, vtype=GRB.INTEGER, name="n")
 
     # Constraints
-    # @Constraint Constr_1 @Def: The total amount of flour used by all beakers does not exceed D.
-    model.addConstr(quicksum((1 / 10) * n[i] for i in range(N)) <= D)
-    # @Constraint Constr_2 @Def: The total amount of special liquid used by all beakers does not exceed Z.
     model.addConstr(quicksum(V[i] * (1 / 10) * n[i] for i in range(N)) <= Z)
-    # @Constraint Constr_3 @Def: The total amount of waste produced by all beakers does not exceed E.
+    model.addConstr(quicksum(T[i] * (1 / 10) * n[i] for i in range(N)) <= D)
     model.addConstr(quicksum(C[i] * (1 / 10) * n[i] for i in range(N)) <= E)
 
     # Objective
-    # @Objective Objective @Def: The total amount of slime produced by all beakers is maximized.
-    model.setObjective(
-        2 * (quicksum(X[i] * (1 / 10) * n[i] for i in range(N))), GRB.MAXIMIZE
-    )
+    model.setObjective(quicksum(X[i] * (1 / 10) * n[i] for i in range(N)), GRB.MAXIMIZE)
+
     # Solve
     model.optimize()
 
     # Extract solution
     solution = {}
     variables = {}
-    objective = []
-    variables["n"] = {i: n[i].X for i in range(N)}
+    variables["n"] = [n[i].x for i in range(N)]
     solution["variables"] = variables
     solution["objective"] = model.objVal
     with open(solution_path, "w") as f:
