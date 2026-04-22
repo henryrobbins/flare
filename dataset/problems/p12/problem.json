@@ -1,19 +1,21 @@
 {
-  "name": "Traveling Salesman Problem (TSP)",
-  "parameters": {
-    "n": {
-      "description": "Number of cities",
-      "shape": []
+    "name": "Traveling Salesman Problem (TSP)",
+    "parameters": {
+        "n": {
+            "description": "Number of cities",
+            "shape": []
+        },
+        "c": {
+            "description": "Travel cost from city i to city j",
+            "shape": [
+                "n",
+                "n"
+            ]
+        }
     },
-    "c": {
-      "description": "Travel cost from city i to city j",
-      "shape": [
-        "n",
-        "n"
-      ]
+    "metadata": {
+        "source": {
+            "dataset": "EvoCut"
+        }
     }
-  },
-  "metadata": {
-    "source": "EvoCut"
-  }
 }

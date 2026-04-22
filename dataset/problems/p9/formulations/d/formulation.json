@@ -124,8 +124,10 @@
         }
     },
     "metadata": {
-        "source": "EvoCut",
-        "version": 2,
-        "name": "EC2"
+        "source": {
+            "dataset": "EvoCut",
+            "version": 2,
+            "name": "EC2"
+        }
     }
 }

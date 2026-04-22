@@ -75,8 +75,10 @@
         }
     },
     "metadata": {
-        "source": "EquivaFormulation",
-        "instance_id": "217",
-        "variation_id": "h"
+        "source": {
+            "dataset": "EquivaFormulation",
+            "instance_id": "217",
+            "variation_id": "h"
+        }
     }
 }

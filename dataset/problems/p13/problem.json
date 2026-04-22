@@ -36,6 +36,8 @@
         }
     },
     "metadata": {
-        "source": "Ferchtandiker2025"
+        "source": {
+            "dataset": "Ferchtandiker2025"
+        }
     }
 }

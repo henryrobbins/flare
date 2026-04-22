@@ -99,8 +99,10 @@
         }
     },
     "metadata": {
-        "source": "EvoCut",
-        "version": 1,
-        "name": "EC1"
+        "source": {
+            "dataset": "EvoCut",
+            "version": 1,
+            "name": "EC1"
+        }
     }
 }

@@ -1,35 +1,37 @@
 {
-  "parameters": {
-    "NumExperiments": {
-      "description": "Number of experiments",
-      "shape": []
+    "parameters": {
+        "NumExperiments": {
+            "description": "Number of experiments",
+            "shape": []
+        },
+        "NumResources": {
+            "description": "Number of resource types",
+            "shape": []
+        },
+        "ResourceAvailable": {
+            "description": "Amount of resource j available",
+            "shape": [
+                "NumResources"
+            ]
+        },
+        "ResourceRequired": {
+            "description": "Amount of resource j required for experiment i",
+            "shape": [
+                "NumResources",
+                "NumExperiments"
+            ]
+        },
+        "ElectricityProduced": {
+            "description": "Amount of electricity produced by experiment i",
+            "shape": [
+                "NumExperiments"
+            ]
+        }
     },
-    "NumResources": {
-      "description": "Number of resource types",
-      "shape": []
-    },
-    "ResourceAvailable": {
-      "description": "Amount of resource j available",
-      "shape": [
-        "NumResources"
-      ]
-    },
-    "ResourceRequired": {
-      "description": "Amount of resource j required for experiment i",
-      "shape": [
-        "NumResources",
-        "NumExperiments"
-      ]
-    },
-    "ElectricityProduced": {
-      "description": "Amount of electricity produced by experiment i",
-      "shape": [
-        "NumExperiments"
-      ]
+    "metadata": {
+        "source": {
+            "dataset": "EquivaFormulation",
+            "instance_id": 74
+        }
     }
-  },
-  "metadata": {
-    "source": "EquivaFormulation",
-    "instance_id": 74
-  }
 }

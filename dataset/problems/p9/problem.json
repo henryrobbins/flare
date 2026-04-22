@@ -1,68 +1,70 @@
 {
-  "name": "Multi-Commodity Network Design (MCND)",
-  "parameters": {
-    "n": {
-      "description": "Number of network nodes",
-      "shape": []
+    "name": "Multi-Commodity Network Design (MCND)",
+    "parameters": {
+        "n": {
+            "description": "Number of network nodes",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of candidate directed arcs",
+            "shape": []
+        },
+        "K": {
+            "description": "Number of commodities",
+            "shape": []
+        },
+        "tail": {
+            "description": "Source node index of each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "head": {
+            "description": "Destination node index of each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "c": {
+            "description": "Unit transportation cost on each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "f": {
+            "description": "Fixed cost to activate each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "u": {
+            "description": "Capacity of each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "O": {
+            "description": "Origin node of each commodity",
+            "shape": [
+                "K"
+            ]
+        },
+        "D": {
+            "description": "Destination node of each commodity",
+            "shape": [
+                "K"
+            ]
+        },
+        "d": {
+            "description": "Demand of each commodity",
+            "shape": [
+                "K"
+            ]
+        }
     },
-    "m": {
-      "description": "Number of candidate directed arcs",
-      "shape": []
-    },
-    "K": {
-      "description": "Number of commodities",
-      "shape": []
-    },
-    "tail": {
-      "description": "Source node index of each arc",
-      "shape": [
-        "m"
-      ]
-    },
-    "head": {
-      "description": "Destination node index of each arc",
-      "shape": [
-        "m"
-      ]
-    },
-    "c": {
-      "description": "Unit transportation cost on each arc",
-      "shape": [
-        "m"
-      ]
-    },
-    "f": {
-      "description": "Fixed cost to activate each arc",
-      "shape": [
-        "m"
-      ]
-    },
-    "u": {
-      "description": "Capacity of each arc",
-      "shape": [
-        "m"
-      ]
-    },
-    "O": {
-      "description": "Origin node of each commodity",
-      "shape": [
-        "K"
-      ]
-    },
-    "D": {
-      "description": "Destination node of each commodity",
-      "shape": [
-        "K"
-      ]
-    },
-    "d": {
-      "description": "Demand of each commodity",
-      "shape": [
-        "K"
-      ]
+    "metadata": {
+        "source": {
+            "dataset": "EvoCut"
+        }
     }
-  },
-  "metadata": {
-    "source": "EvoCut"
-  }
 }

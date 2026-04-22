@@ -1,30 +1,32 @@
 {
-  "name": "Job Shop Scheduling Problem (JSSP)",
-  "parameters": {
-    "n": {
-      "description": "Number of jobs",
-      "shape": []
+    "name": "Job Shop Scheduling Problem (JSSP)",
+    "parameters": {
+        "n": {
+            "description": "Number of jobs",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of machines",
+            "shape": []
+        },
+        "p": {
+            "description": "Processing time of each operation",
+            "shape": [
+                "n",
+                "m"
+            ]
+        },
+        "Om": {
+            "description": "Machine index assigned to each operation",
+            "shape": [
+                "n",
+                "m"
+            ]
+        }
     },
-    "m": {
-      "description": "Number of machines",
-      "shape": []
-    },
-    "p": {
-      "description": "Processing time of each operation",
-      "shape": [
-        "n",
-        "m"
-      ]
-    },
-    "Om": {
-      "description": "Machine index assigned to each operation",
-      "shape": [
-        "n",
-        "m"
-      ]
+    "metadata": {
+        "source": {
+            "dataset": "EvoCut"
+        }
     }
-  },
-  "metadata": {
-    "source": "EvoCut"
-  }
 }

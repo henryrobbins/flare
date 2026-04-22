@@ -1,41 +1,43 @@
 {
-  "name": "Capacitated Warehouse Location Problem (CWLP)",
-  "parameters": {
-    "n": {
-      "description": "Number of customers",
-      "shape": []
+    "name": "Capacitated Warehouse Location Problem (CWLP)",
+    "parameters": {
+        "n": {
+            "description": "Number of customers",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of candidate warehouses",
+            "shape": []
+        },
+        "d": {
+            "description": "Demand of each customer",
+            "shape": [
+                "n"
+            ]
+        },
+        "u": {
+            "description": "Capacity of each warehouse",
+            "shape": [
+                "m"
+            ]
+        },
+        "f": {
+            "description": "Fixed cost to open each warehouse",
+            "shape": [
+                "m"
+            ]
+        },
+        "c": {
+            "description": "Transportation cost from each warehouse to each customer",
+            "shape": [
+                "n",
+                "m"
+            ]
+        }
     },
-    "m": {
-      "description": "Number of candidate warehouses",
-      "shape": []
-    },
-    "d": {
-      "description": "Demand of each customer",
-      "shape": [
-        "n"
-      ]
-    },
-    "u": {
-      "description": "Capacity of each warehouse",
-      "shape": [
-        "m"
-      ]
-    },
-    "f": {
-      "description": "Fixed cost to open each warehouse",
-      "shape": [
-        "m"
-      ]
-    },
-    "c": {
-      "description": "Transportation cost from each warehouse to each customer",
-      "shape": [
-        "n",
-        "m"
-      ]
+    "metadata": {
+        "source": {
+            "dataset": "EvoCut"
+        }
     }
-  },
-  "metadata": {
-    "source": "EvoCut"
-  }
 }

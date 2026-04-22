@@ -118,6 +118,8 @@
         }
     },
     "metadata": {
-        "source": "EvoCut"
+        "source": {
+            "dataset": "EvoCut"
+        }
     }
 }

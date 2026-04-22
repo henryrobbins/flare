@@ -1,144 +1,146 @@
 {
-  "name": "Sub-Hour Unit Commitment (SHUC)",
-  "parameters": {
-    "T": {
-      "description": "Number of time periods",
-      "shape": []
+    "name": "Sub-Hour Unit Commitment (SHUC)",
+    "parameters": {
+        "T": {
+            "description": "Number of time periods",
+            "shape": []
+        },
+        "n_G": {
+            "description": "Number of thermal generators",
+            "shape": []
+        },
+        "n_W": {
+            "description": "Number of renewable (wind) generators",
+            "shape": []
+        },
+        "n_S": {
+            "description": "Number of startup categories per thermal generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "ell": {
+            "description": "Startup lag (minimum offline periods) for each startup category of each generator",
+            "shape": [
+                "n_G",
+                "n_S[]"
+            ]
+        },
+        "C_su": {
+            "description": "Startup cost for each startup category of each generator",
+            "shape": [
+                "n_G",
+                "n_S[]"
+            ]
+        },
+        "n_L": {
+            "description": "Number of piecewise production breakpoints per thermal generator",
+            "shape": []
+        },
+        "P": {
+            "description": "Piecewise production breakpoints for each generator",
+            "shape": [
+                "n_G",
+                "n_L[]"
+            ]
+        },
+        "C": {
+            "description": "Piecewise variable production cost at each breakpoint for each generator",
+            "shape": [
+                "n_G",
+                "n_L[]"
+            ]
+        },
+        "C_fixed": {
+            "description": "Fixed cost incurred when a thermal generator is on during a time period",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "L": {
+            "description": "Demand requirement at each time period",
+            "shape": [
+                "T"
+            ]
+        },
+        "R": {
+            "description": "Spinning reserve requirement at each time period",
+            "shape": [
+                "T"
+            ]
+        },
+        "P_min": {
+            "description": "Minimum thermal output of each generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "P_max": {
+            "description": "Maximum thermal output of each generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "P_wind_min": {
+            "description": "Minimum renewable output for each wind generator at each time period",
+            "shape": [
+                "n_W",
+                "T"
+            ]
+        },
+        "P_wind_max": {
+            "description": "Maximum renewable output for each wind generator at each time period",
+            "shape": [
+                "n_W",
+                "T"
+            ]
+        },
+        "RU": {
+            "description": "Ramp-up limit for each generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "RD": {
+            "description": "Ramp-down limit for each generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "SU": {
+            "description": "Startup ramp limit for each generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "SD": {
+            "description": "Shutdown ramp limit for each generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "U": {
+            "description": "Minimum up time for each generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "D": {
+            "description": "Minimum down time for each generator",
+            "shape": [
+                "n_G"
+            ]
+        },
+        "MR": {
+            "description": "Must-run flag for each generator",
+            "shape": [
+                "n_G"
+            ]
+        }
     },
-    "n_G": {
-      "description": "Number of thermal generators",
-      "shape": []
-    },
-    "n_W": {
-      "description": "Number of renewable (wind) generators",
-      "shape": []
-    },
-    "n_S": {
-      "description": "Number of startup categories per thermal generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "ell": {
-      "description": "Startup lag (minimum offline periods) for each startup category of each generator",
-      "shape": [
-        "n_G",
-        "n_S[]"
-      ]
-    },
-    "C_su": {
-      "description": "Startup cost for each startup category of each generator",
-      "shape": [
-        "n_G",
-        "n_S[]"
-      ]
-    },
-    "n_L": {
-      "description": "Number of piecewise production breakpoints per thermal generator",
-      "shape": []
-    },
-    "P": {
-      "description": "Piecewise production breakpoints for each generator",
-      "shape": [
-        "n_G",
-        "n_L[]"
-      ]
-    },
-    "C": {
-      "description": "Piecewise variable production cost at each breakpoint for each generator",
-      "shape": [
-        "n_G",
-        "n_L[]"
-      ]
-    },
-    "C_fixed": {
-      "description": "Fixed cost incurred when a thermal generator is on during a time period",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "L": {
-      "description": "Demand requirement at each time period",
-      "shape": [
-        "T"
-      ]
-    },
-    "R": {
-      "description": "Spinning reserve requirement at each time period",
-      "shape": [
-        "T"
-      ]
-    },
-    "P_min": {
-      "description": "Minimum thermal output of each generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "P_max": {
-      "description": "Maximum thermal output of each generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "P_wind_min": {
-      "description": "Minimum renewable output for each wind generator at each time period",
-      "shape": [
-        "n_W",
-        "T"
-      ]
-    },
-    "P_wind_max": {
-      "description": "Maximum renewable output for each wind generator at each time period",
-      "shape": [
-        "n_W",
-        "T"
-      ]
-    },
-    "RU": {
-      "description": "Ramp-up limit for each generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "RD": {
-      "description": "Ramp-down limit for each generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "SU": {
-      "description": "Startup ramp limit for each generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "SD": {
-      "description": "Shutdown ramp limit for each generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "U": {
-      "description": "Minimum up time for each generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "D": {
-      "description": "Minimum down time for each generator",
-      "shape": [
-        "n_G"
-      ]
-    },
-    "MR": {
-      "description": "Must-run flag for each generator",
-      "shape": [
-        "n_G"
-      ]
+    "metadata": {
+        "source": {
+            "dataset": "EvoCut"
+        }
     }
-  },
-  "metadata": {
-    "source": "EvoCut"
-  }
 }

@@ -338,7 +338,9 @@
         }
     },
     "metadata": {
-        "source": "EvoCut",
-        "name": "EC3b"
+        "source": {
+            "dataset": "EvoCut",
+            "name": "EC3b"
+        }
     }
 }

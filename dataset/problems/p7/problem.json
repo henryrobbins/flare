@@ -1,12 +1,14 @@
 {
-  "name": "Rectangular Tiling with One Hole per Row and Column (IMO6)",
-  "parameters": {
-    "N": {
-      "description": "Size of the grid (number of rows and columns)",
-      "shape": []
+    "name": "Rectangular Tiling with One Hole per Row and Column (IMO6)",
+    "parameters": {
+        "N": {
+            "description": "Size of the grid (number of rows and columns)",
+            "shape": []
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "EvoCut"
+        }
     }
-  },
-  "metadata": {
-    "source": "EvoCut"
-  }
 }

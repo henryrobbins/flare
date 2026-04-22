@@ -1,32 +1,34 @@
 {
-  "parameters": {
-    "CarCapacity": {
-      "description": "The number of employees that a car can take",
-      "shape": []
+    "parameters": {
+        "CarCapacity": {
+            "description": "The number of employees that a car can take",
+            "shape": []
+        },
+        "CarPollution": {
+            "description": "The pollution produced by a car",
+            "shape": []
+        },
+        "BusCapacity": {
+            "description": "The number of employees that a bus can take",
+            "shape": []
+        },
+        "BusPollution": {
+            "description": "The pollution produced by a bus",
+            "shape": []
+        },
+        "MinEmployeesToTransport": {
+            "description": "The minimum number of employees that need to be transported",
+            "shape": []
+        },
+        "MaxBuses": {
+            "description": "The maximum number of buses that can be used",
+            "shape": []
+        }
     },
-    "CarPollution": {
-      "description": "The pollution produced by a car",
-      "shape": []
-    },
-    "BusCapacity": {
-      "description": "The number of employees that a bus can take",
-      "shape": []
-    },
-    "BusPollution": {
-      "description": "The pollution produced by a bus",
-      "shape": []
-    },
-    "MinEmployeesToTransport": {
-      "description": "The minimum number of employees that need to be transported",
-      "shape": []
-    },
-    "MaxBuses": {
-      "description": "The maximum number of buses that can be used",
-      "shape": []
+    "metadata": {
+        "source": {
+            "dataset": "EquivaFormulation",
+            "instance_id": 183
+        }
     }
-  },
-  "metadata": {
-    "source": "EquivaFormulation",
-    "instance_id": 183
-  }
 }

@@ -1,28 +1,30 @@
 {
-  "parameters": {
-    "WaterSubsoil": {
-      "description": "Amount of water required to hydrate one bag of subsoil per day",
-      "shape": []
+    "parameters": {
+        "WaterSubsoil": {
+            "description": "Amount of water required to hydrate one bag of subsoil per day",
+            "shape": []
+        },
+        "WaterTopsoil": {
+            "description": "Amount of water required to hydrate one bag of topsoil per day",
+            "shape": []
+        },
+        "MaxTotalBags": {
+            "description": "Maximum number of bags of topsoil and subsoil combined",
+            "shape": []
+        },
+        "MinTopsoilBags": {
+            "description": "Minimum number of topsoil bags to be used",
+            "shape": []
+        },
+        "MaxTopsoilProportion": {
+            "description": "Maximum proportion of bags that can be topsoil",
+            "shape": []
+        }
     },
-    "WaterTopsoil": {
-      "description": "Amount of water required to hydrate one bag of topsoil per day",
-      "shape": []
-    },
-    "MaxTotalBags": {
-      "description": "Maximum number of bags of topsoil and subsoil combined",
-      "shape": []
-    },
-    "MinTopsoilBags": {
-      "description": "Minimum number of topsoil bags to be used",
-      "shape": []
-    },
-    "MaxTopsoilProportion": {
-      "description": "Maximum proportion of bags that can be topsoil",
-      "shape": []
+    "metadata": {
+        "source": {
+            "dataset": "EquivaFormulation",
+            "instance_id": 217
+        }
     }
-  },
-  "metadata": {
-    "source": "EquivaFormulation",
-    "instance_id": 217
-  }
 }

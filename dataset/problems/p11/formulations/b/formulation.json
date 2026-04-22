@@ -352,7 +352,9 @@
         }
     },
     "metadata": {
-        "source": "EvoCut",
-        "name": "EC1"
+        "source": {
+            "dataset": "EvoCut",
+            "name": "EC1"
+        }
     }
 }
