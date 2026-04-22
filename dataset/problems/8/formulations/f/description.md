@@ -1,0 +1,1 @@
+Schedule n jobs on m machines to minimize the makespan. Uses the standard big-M MILP formulation augmented with the Machine Critical-Path Bound cut (Version 2, EC2): uses explicit head h_{j,k} and tail tau_{j,k} values to lower-bound the makespan by the machine load plus minimum head and tail over its operations.

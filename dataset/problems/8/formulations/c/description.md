@@ -1,0 +1,1 @@
+Schedule n jobs on m machines to minimize the makespan. Uses the standard big-M MILP formulation augmented with the Machine Critical-Path Bound cut (Version 1, EC2): for each machine the makespan is at least the total machine load plus the minimum head and tail over its operations.

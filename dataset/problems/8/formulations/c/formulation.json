@@ -1,0 +1,89 @@
+{
+    "valid": true,
+    "parametrized_description": "Schedule n jobs on m machines to minimize the makespan. Uses the standard big-M MILP formulation augmented with the Machine Critical-Path Bound cut (Version 1, EC2): for each machine the makespan is at least the total machine load plus the minimum head and tail over its operations.",
+    "keywords": ["JSSP", "job shop scheduling", "makespan", "big-M", "sequencing", "cutting plane", "critical path"],
+    "parameters": {
+        "n": {
+            "description": "Number of jobs",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of machines",
+            "shape": []
+        },
+        "p": {
+            "description": "Processing time of the k-th operation of job j",
+            "shape": ["n", "m"]
+        },
+        "Om": {
+            "description": "Machine index assigned to the k-th operation of job j",
+            "shape": ["n", "m"]
+        }
+    },
+    "variables": {
+        "S": {
+            "description": "Start time of the k-th operation of job j",
+            "type": "continuous",
+            "shape": ["n", "m"]
+        },
+        "y": {
+            "description": "1 if operation (j1,k1) is scheduled before (j2,k2) on their shared machine, 0 otherwise; indexed over conflict pairs P",
+            "type": "integer",
+            "shape": ["|P|"]
+        },
+        "C_max": {
+            "description": "Makespan: completion time of the last operation across all jobs",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Technological ordering: each operation in a job must start after the previous operation finishes.",
+            "formulation": "S_{j,k+1} \\ge S_{j,k} + p_{j,k} \\quad \\forall j,\\; k = 0,\\dots,m-2",
+            "code": {
+                "gurobipy": "model.addConstrs(S[j, k+1] >= S[j, k] + p[j][k] for j in range(n) for k in range(m-1))"
+            }
+        },
+        {
+            "description": "Machine non-overlap (forward): if y=1, operation (j1,k1) precedes (j2,k2) on their shared machine.",
+            "formulation": "S_{j_1,k_1} + p_{j_1,k_1} \\le S_{j_2,k_2} + M(1 - y_{j_1,k_1,j_2,k_2}) \\quad \\forall ((j_1,k_1),(j_2,k_2)) \\in \\mathcal{P}",
+            "code": {
+                "gurobipy": "for (j1, k1), (j2, k2) in pairs:\n    model.addConstr(S[j1, k1] + p[j1][k1] <= S[j2, k2] + M_big * (1 - y[j1, k1, j2, k2]))"
+            }
+        },
+        {
+            "description": "Machine non-overlap (reverse): if y=0, operation (j2,k2) precedes (j1,k1) on their shared machine.",
+            "formulation": "S_{j_2,k_2} + p_{j_2,k_2} \\le S_{j_1,k_1} + M\\,y_{j_1,k_1,j_2,k_2} \\quad \\forall ((j_1,k_1),(j_2,k_2)) \\in \\mathcal{P}",
+            "code": {
+                "gurobipy": "for (j1, k1), (j2, k2) in pairs:\n    model.addConstr(S[j2, k2] + p[j2][k2] <= S[j1, k1] + M_big * y[j1, k1, j2, k2])"
+            }
+        },
+        {
+            "description": "Makespan lower bound: the makespan is at least the completion time of each job's last operation.",
+            "formulation": "C_{\\max} \\ge S_{j,m-1} + p_{j,m-1} \\quad \\forall j",
+            "code": {
+                "gurobipy": "model.addConstrs(C_max >= S[j, m-1] + p[j][m-1] for j in range(n))"
+            }
+        },
+        {
+            "description": "Machine Critical-Path Bound (EC2): for each machine, the makespan is at least the total load on that machine plus the minimum head and minimum tail of its operations across all jobs.",
+            "formulation": "C_{\\max} \\ge \\sum_{(j,k)\\in O_m} p_{j,k} + \\min_{(j,k)\\in O_m} h_{j,k} + \\min_{(j,k)\\in O_m} \\tau_{j,k} \\quad \\forall m",
+            "code": {
+                "gurobipy": "for machine in range(m):\n    ops_m = [(j, k) for j in range(n) for k in range(m) if Om[j][k] == machine]\n    load_m = sum(p[j][k] for j, k in ops_m)\n    min_head = min(sum(p[j][t] for t in range(k)) for j, k in ops_m)\n    min_tail = min(sum(p[j][t] for t in range(k + 1, m)) for j, k in ops_m)\n    model.addConstr(C_max >= load_m + min_head + min_tail)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the makespan.",
+        "formulation": "\\min\\; C_{\\max}",
+        "code": {
+            "gurobipy": "model.setObjective(C_max, GRB.MINIMIZE)"
+        }
+    },
+    "metadata": {
+        "source": "EvoCut",
+        "version": 1,
+        "name": "EC2"
+    }
+}
