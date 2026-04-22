@@ -1,0 +1,1 @@
+Base SHUC formulation augmented with the EC2b (Shutdown Derating Capacity Bound) cutting plane, which adds a continuous P_bar[g,t] variable bounded by the shutdown-derated maximum capacity for periods prior to a shutdown.

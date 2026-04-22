@@ -1,0 +1,1 @@
+Base SHUC formulation augmented with the EC3b (Ramp-Up Reachability with Previous-Period Startup Derating) cutting plane, which adds a continuous P_bar[g,t] variable bounded by the ramp-reachable capacity accounting for startup derating in the previous period.

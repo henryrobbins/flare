@@ -1,0 +1,1 @@
+Base SHUC formulation augmented with the EC4 (Demand-Reserve Feasibility) cutting plane, which adds a continuous P_bar[g,t] variable and a system-level cut requiring that total reachable thermal capacity covers net demand plus spinning reserve at every period.

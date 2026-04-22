@@ -1,0 +1,1 @@
+Base SHUC formulation augmented with the EC3c (Ramp-Up Reachability with Current-Period Shutdown Derating) cutting plane, which adds a continuous P_bar[g,t] variable bounded by the ramp-reachable capacity accounting for shutdown derating when the unit shuts down at the current period.

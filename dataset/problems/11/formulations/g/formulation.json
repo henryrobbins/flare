@@ -1,0 +1,132 @@
+{
+    "valid": true,
+    "parametrized_description": "Schedule thermal and renewable generators over T sub-hour time periods to meet demand and spinning reserve at minimum cost. This formulation augments the base SHUC model with the EC3b (Ramp-Up Reachability with Previous-Period Startup Derating) cutting plane, which introduces a continuous P_bar[g,t] variable bounded from above using the previous period's available capacity after accounting for a startup at t-1. This cut captures the scenario where a unit that started at t-1 is further limited in available output at period t.",
+    "keywords": ["unit commitment", "SHUC", "sub-hour", "piecewise linear", "startup cost", "ramp constraint", "min up time", "min down time", "MILP", "cutting plane", "EC3b", "ramp reachability", "startup derating", "capacity bound"],
+    "parameters": {
+        "T": {"description": "Number of time periods", "shape": []},
+        "n_G": {"description": "Number of thermal generators", "shape": []},
+        "n_W": {"description": "Number of renewable (wind) generators", "shape": []},
+        "n_S": {"description": "Number of startup categories per thermal generator", "shape": ["n_G"]},
+        "ell": {"description": "Startup lag for each startup category of each generator", "shape": ["n_G", "n_S[]"]},
+        "C_su": {"description": "Startup cost for each startup category of each generator", "shape": ["n_G", "n_S[]"]},
+        "n_L": {"description": "Number of piecewise production breakpoints per generator", "shape": ["n_G"]},
+        "P": {"description": "Piecewise production breakpoints for each generator", "shape": ["n_G", "n_L[]"]},
+        "C": {"description": "Piecewise variable production cost at each breakpoint for each generator", "shape": ["n_G", "n_L[]"]},
+        "C_fixed": {"description": "Fixed cost incurred when a thermal generator is on during a time period", "shape": ["n_G"]},
+        "L": {"description": "Demand requirement at each time period", "shape": ["T"]},
+        "R": {"description": "Spinning reserve requirement at each time period", "shape": ["T"]},
+        "P_min": {"description": "Minimum thermal output of each generator", "shape": ["n_G"]},
+        "P_max": {"description": "Maximum thermal output of each generator", "shape": ["n_G"]},
+        "P_wind_min": {"description": "Minimum renewable output for each wind generator at each time period", "shape": ["n_W", "T"]},
+        "P_wind_max": {"description": "Maximum renewable output for each wind generator at each time period", "shape": ["n_W", "T"]},
+        "RU": {"description": "Ramp-up limit for each generator", "shape": ["n_G"]},
+        "RD": {"description": "Ramp-down limit for each generator", "shape": ["n_G"]},
+        "SU": {"description": "Startup ramp limit for each generator", "shape": ["n_G"]},
+        "SD": {"description": "Shutdown ramp limit for each generator", "shape": ["n_G"]},
+        "U": {"description": "Minimum up time for each generator", "shape": ["n_G"]},
+        "D": {"description": "Minimum down time for each generator", "shape": ["n_G"]},
+        "MR": {"description": "Must-run flag for each generator", "shape": ["n_G"]}
+    },
+    "variables": {
+        "u": {"description": "On status of generator g at time t", "type": "integer", "shape": ["n_G", "T"]},
+        "v": {"description": "Startup indicator of generator g at time t (1 if started)", "type": "integer", "shape": ["n_G", "T"]},
+        "w": {"description": "Shutdown indicator of generator g at time t (1 if shut down)", "type": "integer", "shape": ["n_G", "T"]},
+        "d_su": {"description": "Startup category selection for generator g, category s, at time t (ragged by n_S[g])", "type": "integer", "shape": ["n_G", "n_S[]", "T"]},
+        "lam": {"description": "Piecewise convex combination weight for generator g, breakpoint l, at time t (ragged by n_L[g])", "type": "continuous", "shape": ["n_G", "n_L[]", "T"]},
+        "p": {"description": "Thermal output above P_min for generator g at time t", "type": "continuous", "shape": ["n_G", "T"]},
+        "r": {"description": "Spinning reserve of generator g at time t", "type": "continuous", "shape": ["n_G", "T"]},
+        "c_var": {"description": "Variable production cost above fixed cost for generator g at time t", "type": "continuous", "shape": ["n_G", "T"]},
+        "P_bar": {"description": "EC3b auxiliary: maximum reachable output of generator g at time t", "type": "continuous", "shape": ["n_G", "T"]}
+    },
+    "constraints": [
+        {
+            "description": "Demand balance: total thermal and renewable output equals demand at each period.",
+            "formulation": "\\sum_{g} (p_{g,t} + P^{\\min}_g u_{g,t}) + \\sum_{w} p^w_{w,t} = L_t \\quad \\forall t",
+            "code": {"gurobipy": "for t in range(T):\n    model.addConstr(gp.quicksum(p[g, t] + P_min[g] * u[g, t] for g in range(n_G)) == L[t])"}
+        },
+        {
+            "description": "Spinning reserve: total reserve meets or exceeds requirement at each period.",
+            "formulation": "\\sum_{g} r_{g,t} \\ge R_t \\quad \\forall t",
+            "code": {"gurobipy": "model.addConstrs(gp.quicksum(r[g, t] for g in range(n_G)) >= R[t] for t in range(T))"}
+        },
+        {
+            "description": "Commitment transition: links on-status to startup and shutdown indicators.",
+            "formulation": "u_{g,t} - u_{g,t-1} = v_{g,t} - w_{g,t} \\quad \\forall g, t \\ge 1",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(1, T):\n        model.addConstr(u[g, t] - u[g, t-1] == v[g, t] - w[g, t])"}
+        },
+        {
+            "description": "Minimum up time: a generator that starts must remain on for at least U[g] periods.",
+            "formulation": "\\sum_{\\tau=t-U_g+1}^{t} v_{g,\\tau} \\le u_{g,t} \\quad \\forall g, t \\ge U_g - 1",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(U[g]-1, T):\n        model.addConstr(gp.quicksum(v[g, tau] for tau in range(t - U[g] + 1, t + 1)) <= u[g, t])"}
+        },
+        {
+            "description": "Minimum down time: a generator that shuts down must remain off for at least D[g] periods.",
+            "formulation": "\\sum_{\\tau=t-D_g+1}^{t} w_{g,\\tau} \\le 1 - u_{g,t} \\quad \\forall g, t \\ge D_g - 1",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(D[g]-1, T):\n        model.addConstr(gp.quicksum(w[g, tau] for tau in range(t - D[g] + 1, t + 1)) <= 1 - u[g, t])"}
+        },
+        {
+            "description": "Startup decomposition: startup indicator equals sum of startup category selections.",
+            "formulation": "v_{g,t} = \\sum_{s} d_{g,s,t} \\quad \\forall g, t",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(v[g, t] == gp.quicksum(d_su[g, s, t] for s in range(n_S[g])))"}
+        },
+        {
+            "description": "Startup category timing: category s can only be selected if the generator was off for the required lag.",
+            "formulation": "d_{g,s,t} \\le \\sum_{i=\\ell_{g,s}}^{\\ell_{g,s+1}-1} w_{g,t-i} \\quad \\forall g, s < |S_g| - 1, t \\ge \\ell_{g,s+1} - 1",
+            "code": {"gurobipy": "for g in range(n_G):\n    for s in range(n_S[g] - 1):\n        for t in range(ell[g][s+1] - 1, T):\n            model.addConstr(d_su[g, s, t] <= gp.quicksum(w[g, t - i] for i in range(ell[g][s], ell[g][s+1])))"}
+        },
+        {
+            "description": "Must-run: generators with MR[g]=1 must remain on at all times.",
+            "formulation": "u_{g,t} \\ge \\mathrm{MR}_g \\quad \\forall g, t",
+            "code": {"gurobipy": "for g in range(n_G):\n    if MR[g] > 0:\n        for t in range(T):\n            model.addConstr(u[g, t] >= MR[g])"}
+        },
+        {
+            "description": "Startup derating: net output above minimum is limited by startup ramp during startup periods.",
+            "formulation": "p_{g,t} + r_{g,t} \\le (P^{\\max}_g - P^{\\min}_g) u_{g,t} - \\max(P^{\\max}_g - SU_g, 0) v_{g,t} \\quad \\forall g, t",
+            "code": {"gurobipy": "for g in range(n_G):\n    su_derate = max(P_max[g] - SU[g], 0)\n    for t in range(T):\n        model.addConstr(p[g, t] + r[g, t] <= (P_max[g] - P_min[g]) * u[g, t] - su_derate * v[g, t])"}
+        },
+        {
+            "description": "Shutdown derating: net output above minimum is limited by shutdown ramp the period before shutdown.",
+            "formulation": "p_{g,t} + r_{g,t} \\le (P^{\\max}_g - P^{\\min}_g) u_{g,t} - \\max(P^{\\max}_g - SD_g, 0) w_{g,t+1} \\quad \\forall g, t < T-1",
+            "code": {"gurobipy": "for g in range(n_G):\n    sd_derate = max(P_max[g] - SD[g], 0)\n    for t in range(T - 1):\n        model.addConstr(p[g, t] + r[g, t] <= (P_max[g] - P_min[g]) * u[g, t] - sd_derate * w[g, t+1])"}
+        },
+        {
+            "description": "Ramp-up limit: output plus reserve cannot increase by more than RU[g] from the previous period.",
+            "formulation": "p_{g,t} + r_{g,t} - p_{g,t-1} \\le RU_g \\quad \\forall g, t \\ge 1",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(1, T):\n        model.addConstr(p[g, t] + r[g, t] - p[g, t-1] <= RU[g])"}
+        },
+        {
+            "description": "Ramp-down limit: output cannot decrease by more than RD[g] from the previous period.",
+            "formulation": "p_{g,t-1} - p_{g,t} \\le RD_g \\quad \\forall g, t \\ge 1",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(1, T):\n        model.addConstr(p[g, t-1] - p[g, t] <= RD[g])"}
+        },
+        {
+            "description": "Piecewise production: output equals the convex combination of production breakpoints above minimum.",
+            "formulation": "p_{g,t} = \\sum_{l} (P_{g,l} - P_{g,0}) \\lambda_{g,l,t} \\quad \\forall g, t",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(p[g, t] == gp.quicksum((P[g][l] - P[g][0]) * lam[g, l, t] for l in range(n_L[g])))"}
+        },
+        {
+            "description": "Piecewise cost: variable cost equals the convex combination of cost breakpoints above fixed cost.",
+            "formulation": "c_{g,t} = \\sum_{l} (C_{g,l} - C_{g,0}) \\lambda_{g,l,t} \\quad \\forall g, t",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(c_var[g, t] == gp.quicksum((C[g][l] - C_fixed[g]) * lam[g, l, t] for l in range(n_L[g])))"}
+        },
+        {
+            "description": "Piecewise weights: convex combination weights sum to on-status.",
+            "formulation": "\\sum_{l} \\lambda_{g,l,t} = u_{g,t} \\quad \\forall g, t",
+            "code": {"gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(gp.quicksum(lam[g, l, t] for l in range(n_L[g])) == u[g, t])"}
+        },
+        {
+            "description": "EC3b: P_bar is bounded by the ramp reachability from previous period with startup derating at t-1.",
+            "formulation": "\\overline{P}_{g,t} \\le P^{\\min}_g u_{g,t} + (P^{\\max}_g - P^{\\min}_g) u_{g,t-1} - \\max(P^{\\max}_g - SU_g, 0) v_{g,t-1} + RU_g \\quad \\forall g, t \\ge 1",
+            "code": {"gurobipy": "for g in range(n_G):\n    su_derate = max(P_max[g] - SU[g], 0)\n    for t in range(1, T):\n        model.addConstr(P_bar[g, t] <= P_min[g] * u[g, t] + (P_max[g] - P_min[g]) * u[g, t - 1] - su_derate * v[g, t - 1] + RU[g])"}
+        }
+    ],
+    "objective": {
+        "description": "Minimize total production cost (fixed on-cost plus variable cost) and startup costs over all generators and time periods.",
+        "formulation": "\\min \\sum_{g} \\sum_{t} (c_{g,t} + C^{\\text{fixed}}_g u_{g,t}) + \\sum_{g} \\sum_{s} \\sum_{t} C^{su}_{g,s} d_{g,s,t}",
+        "code": {"gurobipy": "model.setObjective(gp.quicksum(c_var[g, t] + C_fixed[g] * u[g, t] for g in range(n_G) for t in range(T)) + gp.quicksum(C_su[g][s] * d_su[g, s, t] for g in range(n_G) for s in range(n_S[g]) for t in range(T)), GRB.MINIMIZE)"}
+    },
+    "metadata": {
+        "source": "EvoCut",
+        "name": "EC3b"
+    }
+}
