@@ -11,10 +11,10 @@ structure Params where
   V : ℝ  -- max paper rolls per hour
 
 structure Vars where
-  s1 : ℝ  -- part 1 of cash machine count
-  s2 : ℝ  -- part 2 of cash machine count
-  r1 : ℝ  -- part 1 of card machine count
-  r2 : ℝ  -- part 2 of card machine count
+  s1 : ℤ  -- part 1 of cash machine count
+  s2 : ℤ  -- part 2 of cash machine count
+  r1 : ℤ  -- part 1 of card machine count
+  r2 : ℤ  -- part 2 of card machine count
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Process at least U people per hour

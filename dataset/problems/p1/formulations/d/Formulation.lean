@@ -11,8 +11,8 @@ structure Params where
   V : ℝ  -- max paper rolls per hour
 
 structure Vars where
-  s   : ℝ  -- number of cash machines
-  r   : ℝ  -- number of card machines
+  s   : ℤ  -- number of cash machines
+  r   : ℤ  -- number of card machines
   zed : ℝ  -- auxiliary objective variable (= s + r)
 
 structure Feasible (p : Params) (v : Vars) : Prop where

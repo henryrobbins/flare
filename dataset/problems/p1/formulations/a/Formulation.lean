@@ -11,8 +11,8 @@ structure Params where
   MaxPaperRolls             : ℝ  -- max paper rolls per hour
 
 structure Vars where
-  NumCashMachines : ℝ  -- number of cash machines
-  NumCardMachines : ℝ  -- number of card machines
+  NumCashMachines : ℤ  -- number of cash machines
+  NumCardMachines : ℤ  -- number of card machines
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Process at least MinPeopleProcessed people per hour
@@ -21,8 +21,8 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hpaper  : v.NumCashMachines * p.CashMachinePaperRolls + v.NumCardMachines * p.CardMachinePaperRolls ≤ p.MaxPaperRolls
   -- Card machines ≤ cash machines
   hcard   : v.NumCardMachines ≤ v.NumCashMachines
-  hcash_nn : 0 ≤ v.NumCashMachines
-  hcard_nn : 0 ≤ v.NumCardMachines
+  hNumCashMachines_nn : 0 ≤ v.NumCashMachines
+  hNumCardMachines_nn : 0 ≤ v.NumCardMachines
 
 -- Minimize the total number of machines
 def obj (_ : Params) (v : Vars) : ℝ := v.NumCashMachines + v.NumCardMachines
