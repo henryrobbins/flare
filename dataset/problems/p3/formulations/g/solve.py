@@ -31,7 +31,7 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(quicksum(C[i] * (1 / 10) * n[i] for i in range(N)) <= E)
 
     # Objective
-    model.setObjective(quicksum(X[i] * (1 / 10) * n[i] for i in range(N)), GRB.MAXIMIZE)
+    model.setObjective(quicksum(X[i] * n[i] for i in range(N)), GRB.MAXIMIZE)
 
     # Solve
     model.optimize()
