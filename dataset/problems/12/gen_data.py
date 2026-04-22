@@ -2,8 +2,7 @@
 Download TSPLIB95 instances and write data.json (TSP).
 
 Source: http://comopt.ifi.uni-heidelberg.de/software/TSPLIB95/tsp/ALL_tsp.tar.gz
-Data is extracted to data_source/ (gitignored). A single small instance
-is selected at random (seed=42) and written to data.json.
+Data is extracted to data_source/ (gitignored). The ulysses16 instance is used.
 
 Parameters written match problem.json: n, c
 where c is the n×n travel-cost matrix (0-indexed, row-major list of lists).
@@ -11,7 +10,6 @@ where c is the n×n travel-cost matrix (0-indexed, row-major list of lists).
 
 import gzip
 import json
-import random
 import tarfile
 import urllib.request
 from pathlib import Path
@@ -25,8 +23,7 @@ TAR_PATH = DATA_SOURCE_DIR / "ALL_tsp.tar.gz"
 EXTRACT_DIR = DATA_SOURCE_DIR / "tsp"
 OUTPUT_PATH = SCRIPT_DIR / "data.json"
 
-RANDOM_SEED = 42
-MAX_CITIES = 20  # keep only small instances
+INSTANCE_NAME = "ulysses16.tsp"
 
 
 def download_and_extract() -> None:
@@ -56,11 +53,6 @@ def load_tsp_instance(gz_path: Path) -> dict | None:
 
     nodes = list(problem.get_nodes())
     n = len(nodes)
-    if n > MAX_CITIES:
-        return None
-
-    # Normalize to 0-indexed
-    offset = 1 if 0 not in nodes else 0
     node_to_idx = {node: i for i, node in enumerate(nodes)}
 
     c = [[0] * n for _ in range(n)]
@@ -76,21 +68,13 @@ def load_tsp_instance(gz_path: Path) -> dict | None:
 def main() -> None:
     download_and_extract()
 
-    gz_files = sorted(EXTRACT_DIR.glob("*.tsp.gz"))
-    if not gz_files:
-        raise FileNotFoundError(f"No .tsp.gz files found in {EXTRACT_DIR}")
+    gz_path = EXTRACT_DIR / (INSTANCE_NAME + ".gz")
+    if not gz_path.exists():
+        raise FileNotFoundError(f"{gz_path} not found in {EXTRACT_DIR}")
 
-    instances = []
-    for gz_path in gz_files:
-        inst = load_tsp_instance(gz_path)
-        if inst is not None:
-            instances.append((gz_path.stem, inst))  # stem strips .gz → name.tsp
-
-    if not instances:
-        raise ValueError(f"No instances with n <= {MAX_CITIES} found.")
-
-    random.seed(RANDOM_SEED)
-    name, inst = random.choice(instances)
+    inst = load_tsp_instance(gz_path)
+    if inst is None:
+        raise ValueError(f"Failed to load instance {INSTANCE_NAME}")
 
     OUTPUT_PATH.write_text(json.dumps(inst, indent=2))
 

@@ -15,7 +15,7 @@
     "variables": {
         "x": {
             "description": "1 if the tour goes directly from city i to city j, 0 otherwise",
-            "type": "binary",
+            "type": "integer",
             "shape": ["n", "n"]
         },
         "u": {
