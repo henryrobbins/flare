@@ -1,6 +1,6 @@
 import Common
 
-namespace P1.Fj
+namespace P1.j
 
 -- Missing throughput and card≤cash constraints (invalid/incomplete formulation)
 structure Params where
@@ -30,4 +30,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P1.Fj
+end P1.j

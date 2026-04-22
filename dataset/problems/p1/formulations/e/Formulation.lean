@@ -1,6 +1,6 @@
 import Common
 
-namespace P1.Fe
+namespace P1.e
 
 structure Params where
   A : ℝ  -- cash machine processing rate (people/hour)
@@ -41,4 +41,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P1.Fe
+end P1.e

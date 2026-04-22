@@ -1,6 +1,6 @@
 import Common
 
-namespace P4.Fi
+namespace P4.i
 
 -- Different problem: mail delivery by runners and canoeers (objective replaced by solution value)
 structure Params where
@@ -37,4 +37,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P4.Fi
+end P4.i

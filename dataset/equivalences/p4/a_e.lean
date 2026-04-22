@@ -8,7 +8,7 @@ namespace P4
 -- § Parameter Mapping
 -- ============================================================================
 
-private def paramMap (p : P4.Fa.Params) : P4.Fe.Params :=
+private def paramMap (p : P4.a.Params) : P4.e.Params :=
   { J := p.MinEmployeesToTransport
     M := p.CarPollution
     K := p.CarCapacity
@@ -21,15 +21,15 @@ private def paramMap (p : P4.Fa.Params) : P4.Fe.Params :=
 -- ============================================================================
 
 -- Slacks absorb the surplus of each inequality constraint in Fa
-private def fwd (p : P4.Fa.Params) (v : P4.Fa.Vars) : P4.Fe.Vars :=
+private def fwd (p : P4.a.Params) (v : P4.a.Vars) : P4.e.Vars :=
   { m       := v.xCars
     h       := v.xBuses
     slack_0 := v.xCars * p.CarCapacity + v.xBuses * p.BusCapacity - p.MinEmployeesToTransport
     slack_1 := p.MaxBuses - v.xBuses }
 
-private lemma fwd_feas (p : P4.Fa.Params) (v : P4.Fa.Vars)
-    (h : P4.Fa.Feasible p v) :
-    P4.Fe.Feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
+    (h : P4.a.Feasible p v) :
+    P4.e.Feasible (paramMap p) (fwd p v) := by
   simp only [paramMap, fwd]
   refine ⟨by ring, by ring, h.hcars_nn, h.hbus_nn,
     by linarith [h.htransport], by linarith [h.hmaxbus]⟩
@@ -39,13 +39,13 @@ private lemma fwd_feas (p : P4.Fa.Params) (v : P4.Fa.Vars)
 -- ============================================================================
 
 -- Slack variables are dropped; xCars and xBuses project directly
-private def bwd (_ : P4.Fa.Params) (v : P4.Fe.Vars) : P4.Fa.Vars :=
+private def bwd (_ : P4.a.Params) (v : P4.e.Vars) : P4.a.Vars :=
   { xCars  := v.m
     xBuses := v.h }
 
-private lemma bwd_feas (p : P4.Fa.Params) (v : P4.Fe.Vars)
-    (h : P4.Fe.Feasible (paramMap p) v) :
-    P4.Fa.Feasible p (bwd p v) := by
+private lemma bwd_feas (p : P4.a.Params) (v : P4.e.Vars)
+    (h : P4.e.Feasible (paramMap p) v) :
+    P4.a.Feasible p (bwd p v) := by
   have htr := h.htransport; simp only [paramMap] at htr
   have hbu := h.hbuses;     simp only [paramMap] at hbu
   simp only [bwd]
@@ -55,7 +55,7 @@ private lemma bwd_feas (p : P4.Fa.Params) (v : P4.Fe.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFeEquiv : MILPEquiv P4.Fa.formulation P4.Fe.formulation where
+def faFeEquiv : MILPEquiv P4.a.formulation P4.e.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

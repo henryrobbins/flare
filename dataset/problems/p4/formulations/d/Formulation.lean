@@ -1,6 +1,6 @@
 import Common
 
-namespace P4.Fd
+namespace P4.d
 
 structure Params where
   K : ℝ  -- car capacity (employees per car)
@@ -34,4 +34,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P4.Fd
+end P4.d

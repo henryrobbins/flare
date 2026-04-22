@@ -1,6 +1,6 @@
 import Common
 
-namespace P1.Fi
+namespace P1.i
 
 -- Different problem: oil containers and trucks (objective replaced by solution value)
 structure Params where
@@ -33,4 +33,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P1.Fi
+end P1.i

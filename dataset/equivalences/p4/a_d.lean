@@ -8,7 +8,7 @@ namespace P4
 -- § Parameter Mapping
 -- ============================================================================
 
-private def paramMap (p : P4.Fa.Params) : P4.Fd.Params :=
+private def paramMap (p : P4.a.Params) : P4.d.Params :=
   { J := p.MinEmployeesToTransport
     M := p.CarPollution
     K := p.CarCapacity
@@ -21,14 +21,14 @@ private def paramMap (p : P4.Fa.Params) : P4.Fd.Params :=
 -- ============================================================================
 
 -- zed is set to the total pollution so it satisfies the auxiliary constraint
-private def fwd (p : P4.Fa.Params) (v : P4.Fa.Vars) : P4.Fd.Vars :=
+private def fwd (p : P4.a.Params) (v : P4.a.Vars) : P4.d.Vars :=
   { m   := v.xCars
     h   := v.xBuses
     zed := v.xCars * p.CarPollution + v.xBuses * p.BusPollution }
 
-private lemma fwd_feas (p : P4.Fa.Params) (v : P4.Fa.Vars)
-    (h : P4.Fa.Feasible p v) :
-    P4.Fd.Feasible (paramMap p) (fwd p v) :=
+private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
+    (h : P4.a.Feasible p v) :
+    P4.d.Feasible (paramMap p) (fwd p v) :=
   { hzed       := rfl
     hmaxbus    := h.hmaxbus
     htransport := h.htransport
@@ -40,13 +40,13 @@ private lemma fwd_feas (p : P4.Fa.Params) (v : P4.Fa.Vars)
 -- ============================================================================
 
 -- zed is dropped; xCars and xBuses are projected directly
-private def bwd (_ : P4.Fa.Params) (v : P4.Fd.Vars) : P4.Fa.Vars :=
+private def bwd (_ : P4.a.Params) (v : P4.d.Vars) : P4.a.Vars :=
   { xCars  := v.m
     xBuses := v.h }
 
-private lemma bwd_feas (p : P4.Fa.Params) (v : P4.Fd.Vars)
-    (h : P4.Fd.Feasible (paramMap p) v) :
-    P4.Fa.Feasible p (bwd p v) :=
+private lemma bwd_feas (p : P4.a.Params) (v : P4.d.Vars)
+    (h : P4.d.Feasible (paramMap p) v) :
+    P4.a.Feasible p (bwd p v) :=
   { htransport := h.htransport
     hmaxbus    := h.hmaxbus
     hcars_nn   := h.hm_nn
@@ -56,7 +56,7 @@ private lemma bwd_feas (p : P4.Fa.Params) (v : P4.Fd.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFdEquiv : MILPEquiv P4.Fa.formulation P4.Fd.formulation where
+def faFdEquiv : MILPEquiv P4.a.formulation P4.d.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

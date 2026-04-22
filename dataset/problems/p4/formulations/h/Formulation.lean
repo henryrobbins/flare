@@ -1,6 +1,6 @@
 import Common
 
-namespace P4.Fh
+namespace P4.h
 
 -- Different problem: mail delivery by runners and canoeers
 structure Params where
@@ -37,4 +37,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P4.Fh
+end P4.h

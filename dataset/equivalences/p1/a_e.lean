@@ -8,7 +8,7 @@ namespace P1
 -- § Parameter Mapping
 -- ============================================================================
 
-private def paramMap (p : P1.Fa.Params) : P1.Fe.Params :=
+private def paramMap (p : P1.a.Params) : P1.e.Params :=
   { A := p.CashMachineProcessingRate
     K := p.CardMachineProcessingRate
     Y := p.CashMachinePaperRolls
@@ -21,7 +21,7 @@ private def paramMap (p : P1.Fa.Params) : P1.Fe.Params :=
 -- ============================================================================
 
 -- Slacks absorb the surplus/slack of each inequality constraint in Fa
-private def fwd (p : P1.Fa.Params) (v : P1.Fa.Vars) : P1.Fe.Vars :=
+private def fwd (p : P1.a.Params) (v : P1.a.Vars) : P1.e.Vars :=
   { s       := v.NumCashMachines
     r       := v.NumCardMachines
     slack_0 := p.CashMachineProcessingRate * v.NumCashMachines +
@@ -30,9 +30,9 @@ private def fwd (p : P1.Fa.Params) (v : P1.Fa.Vars) : P1.Fe.Vars :=
     slack_2 := p.MaxPaperRolls - v.NumCashMachines * p.CashMachinePaperRolls -
                v.NumCardMachines * p.CardMachinePaperRolls }
 
-private lemma fwd_feas (p : P1.Fa.Params) (v : P1.Fa.Vars)
-    (h : P1.Fa.Feasible p v) :
-    P1.Fe.Feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars)
+    (h : P1.a.Feasible p v) :
+    P1.e.Feasible (paramMap p) (fwd p v) := by
   have hcard_r : (↑v.NumCardMachines : ℝ) ≤ ↑v.NumCashMachines := by exact_mod_cast h.hcard
   simp only [paramMap, fwd]
   refine ⟨by ring, by ring, by ring, h.hNumCashMachines_nn, h.hNumCardMachines_nn,
@@ -43,13 +43,13 @@ private lemma fwd_feas (p : P1.Fa.Params) (v : P1.Fa.Vars)
 -- ============================================================================
 
 -- Slack variables are dropped; s and r project directly to NumCashMachines/NumCardMachines
-private def bwd (_ : P1.Fa.Params) (v : P1.Fe.Vars) : P1.Fa.Vars :=
+private def bwd (_ : P1.a.Params) (v : P1.e.Vars) : P1.a.Vars :=
   { NumCashMachines := v.s
     NumCardMachines := v.r }
 
-private lemma bwd_feas (p : P1.Fa.Params) (v : P1.Fe.Vars)
-    (h : P1.Fe.Feasible (paramMap p) v) :
-    P1.Fa.Feasible p (bwd p v) := by
+private lemma bwd_feas (p : P1.a.Params) (v : P1.e.Vars)
+    (h : P1.e.Feasible (paramMap p) v) :
+    P1.a.Feasible p (bwd p v) := by
   have hpe := h.hpeople;  simp only [paramMap] at hpe
   have hpa := h.hpaper;   simp only [paramMap] at hpa
   have hca := h.hcard
@@ -62,7 +62,7 @@ private lemma bwd_feas (p : P1.Fa.Params) (v : P1.Fe.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFeEquiv : MILPEquiv P1.Fa.formulation P1.Fe.formulation where
+def faFeEquiv : MILPEquiv P1.a.formulation P1.e.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

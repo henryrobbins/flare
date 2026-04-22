@@ -1,6 +1,6 @@
 import Common
 
-namespace P4.Fj
+namespace P4.j
 
 -- Missing all constraints (invalid/incomplete formulation)
 structure Params where
@@ -29,4 +29,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P4.Fj
+end P4.j

@@ -1,7 +1,7 @@
 import Common
 import Mathlib.Data.Int.Basic
 
-namespace P1.Fc
+namespace P1.c
 
 structure Params where
   A : ℝ  -- cash machine processing rate (people/hour)
@@ -45,4 +45,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P1.Fc
+end P1.c
