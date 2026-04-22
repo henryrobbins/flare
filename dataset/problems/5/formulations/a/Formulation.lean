@@ -1,0 +1,36 @@
+import Common
+
+namespace P5.Fa
+
+structure Params where
+  WaterSubsoil         : ℝ  -- water per bag of subsoil per day
+  WaterTopsoil         : ℝ  -- water per bag of topsoil per day
+  MaxTotalBags         : ℝ  -- max total bags (subsoil + topsoil)
+  MinTopsoilBags       : ℝ  -- min topsoil bags
+  MaxTopsoilProportion : ℝ  -- max topsoil proportion of all bags
+
+structure Vars where
+  SubsoilBags : ℝ  -- number of subsoil bags
+  TopsoilBags : ℝ  -- number of topsoil bags
+
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- Total bags ≤ max
+  htotal   : v.SubsoilBags + v.TopsoilBags ≤ p.MaxTotalBags
+  -- At least MinTopsoilBags topsoil bags
+  hmin_top : p.MinTopsoilBags ≤ v.TopsoilBags
+  -- Topsoil proportion ≤ MaxTopsoilProportion
+  hprop    : v.TopsoilBags ≤ p.MaxTopsoilProportion * (v.TopsoilBags + v.SubsoilBags)
+  hss_nn   : 0 ≤ v.SubsoilBags
+  hts_nn   : 0 ≤ v.TopsoilBags
+
+-- Minimize total water required
+def obj (p : Params) (v : Vars) : ℝ :=
+  p.WaterSubsoil * v.SubsoilBags + p.WaterTopsoil * v.TopsoilBags
+
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
+  feasible := Feasible
+  obj      := obj
+
+end P5.Fa
