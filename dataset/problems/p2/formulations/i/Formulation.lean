@@ -1,6 +1,6 @@
 import Common
 
-namespace P2.Fi
+namespace P2.i
 
 -- Different problem: snack mix blending (objective replaced by solution value)
 structure Params where
@@ -17,7 +17,7 @@ structure Vars where
 
 structure Feasible (p : Params) (v_vars : Vars) : Prop where
   -- Cat paw treats usage ≤ available
-  hcat : p.F * v_vars.n + p.M * v_vars.v ≤ p.R
+  hcat  : p.F * v_vars.n + p.M * v_vars.v ≤ p.R
   -- Gold shark treats usage ≤ available
   hgold : (100 - p.F) / 100 * v_vars.n + (100 - p.M) / 100 * v_vars.v ≤ p.W
   hn_nn : 0 ≤ v_vars.n
@@ -32,4 +32,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P2.Fi
+end P2.i

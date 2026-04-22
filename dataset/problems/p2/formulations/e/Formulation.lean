@@ -6,33 +6,39 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P2.Fe
+namespace P2.e
 
-structure Params (m n : ℕ) where
+structure Params where
+  m : ℕ  -- number of experiments
+  n : ℕ  -- number of resource types
   A : Fin m → ℝ           -- electricity produced by experiment i
   I : Fin n → Fin m → ℝ  -- resource j required for experiment i
   Y : Fin n → ℝ           -- resource j available
-  -- Assumptions
+  -- Implicit Assumptions
+  hm : NeZero m
+  hn : NeZero n
   hA_nn : ∀ i, 0 ≤ A i
   hY_nn : ∀ j, 0 ≤ Y j
   hI_nn : ∀ j i, 0 ≤ I j i
 
-structure Vars (m : ℕ) where
-  j : Fin m → ℝ  -- number of times experiment i is conducted
+structure Vars where
+  j : ℕ → ℤ  -- number of times experiment i is conducted
+  s : ℕ → ℝ  -- slack for each resource constraint
 
-structure Feasible {m n : ℕ} [NeZero m] [NeZero n] (p : Params m n) (v : Vars m) : Prop where
-  -- Resource usage does not exceed available
-  hres : ∀ i, ∑ k, p.I i k * v.j k ≤ p.Y i
-  hj_nn : ∀ i, 0 ≤ v.j i
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- Resource usage plus slack equals available (equality form)
+  hres  : ∀ k : Fin p.n, ∑ i : Fin p.m, p.I k i * v.j i + v.s k = p.Y k
+  hj_nn : ∀ i : Fin p.m, 0 ≤ v.j i
+  hs_nn : ∀ k : Fin p.n, 0 ≤ v.s k
 
 -- Maximize total electricity produced
-def obj {m n : ℕ} (p : Params m n) (v : Vars m) : ℝ :=
-  -(∑ i, p.A i * v.j i)
+def obj (p : Params) (v : Vars) : ℝ :=
+  -(∑ i : Fin p.m, p.A i * v.j i)
 
-def formulation (m n : ℕ) [NeZero m] [NeZero n] : MILPFormulation where
-  Params   := Params m n
-  Vars     := Vars m
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P2.Fe
+end P2.e

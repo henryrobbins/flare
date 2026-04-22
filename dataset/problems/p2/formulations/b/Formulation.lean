@@ -2,37 +2,40 @@ import Common
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Real.Basic
-import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P2.Fb
+namespace P2.b
 
-structure Params (m n : ℕ) where
-  A : Fin m → ℝ           -- electricity produced by experiment i
-  I : Fin n → Fin m → ℝ  -- resource j required for experiment i
-  Y : Fin n → ℝ           -- resource j available
-  -- Assumptions
+structure Params where
+  m : ℕ  -- number of trials
+  n : ℕ  -- number of resource types
+  A : Fin m → ℝ  -- electrical energy generated from trial i
+  I : Fin n → Fin m → ℝ  -- resource j quantity needed for experiment i
+  Y : Fin n → ℝ  -- quantity of resource j that is accessible
+  -- Implicit Assumptions
+  hm : NeZero m
+  hn : NeZero n
   hA_nn : ∀ i, 0 ≤ A i
-  hY_nn : ∀ j, 0 ≤ Y j
   hI_nn : ∀ j i, 0 ≤ I j i
+  hY_nn : ∀ j, 0 ≤ Y j
 
-structure Vars (m : ℕ) where
-  j : Fin m → ℝ  -- number of times experiment i is conducted
+structure Vars where
+  j : ℕ → ℤ  -- frequency at which each experiment is performed
 
-structure Feasible {m n : ℕ} [NeZero m] [NeZero n] (p : Params m n) (v : Vars m) : Prop where
-  -- Resource usage does not exceed available
-  hres : ∀ i, ∑ k, p.I i k * v.j k ≤ p.Y i
-  hj_nn : ∀ i, 0 ≤ v.j i
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- For each resource, total required across all experiments does not exceed available amount
+  hres  : ∀ i : Fin p.n, ∑ k : Fin p.m, p.I i k * v.j k ≤ p.Y i
+  hj_nn : ∀ i : Fin p.m, 0 ≤ v.j i
 
--- Maximize total electricity produced
-def obj {m n : ℕ} (p : Params m n) (v : Vars m) : ℝ :=
-  -(∑ i, p.A i * v.j i)
+-- Maximize total electrical output
+def obj (p : Params) (v : Vars) : ℝ :=
+  -(∑ i : Fin p.m, p.A i * v.j i)
 
-def formulation (m n : ℕ) [NeZero m] [NeZero n] : MILPFormulation where
-  Params   := Params m n
-  Vars     := Vars m
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P2.Fb
+end P2.b

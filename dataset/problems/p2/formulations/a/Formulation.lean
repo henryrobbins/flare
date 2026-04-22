@@ -2,38 +2,40 @@ import Common
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Real.Basic
-import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P2.Fa
+namespace P2.a
 
--- m = NumExperiments, n = NumResources
-structure Params (m n : ℕ) where
-  ElectricityProduced : Fin m → ℝ           -- electricity produced by experiment i
-  ResourceRequired    : Fin n → Fin m → ℝ  -- resource j required for experiment i
-  ResourceAvailable   : Fin n → ℝ           -- resource j available
-  -- Assumptions
-  hE_nn : ∀ i, 0 ≤ ElectricityProduced i
-  hR_nn : ∀ j i, 0 ≤ ResourceRequired j i
-  hb_nn : ∀ j, 0 ≤ ResourceAvailable j
+structure Params where
+  NumExperiments : ℕ  -- number of experiments
+  NumResources   : ℕ  -- number of resource types
+  ElectricityProduced : Fin NumExperiments → ℝ  -- amount of electricity produced by experiment i
+  ResourceRequired    : Fin NumResources → Fin NumExperiments → ℝ  -- amount of resource j required for experiment i
+  ResourceAvailable   : Fin NumResources → ℝ  -- amount of resource j available
+  -- Implicit Assumptions
+  hNumExperiments : NeZero NumExperiments
+  hNumResources   : NeZero NumResources
+  hElectricityProduced_nn : ∀ i, 0 ≤ ElectricityProduced i
+  hResourceRequired_nn : ∀ j i, 0 ≤ ResourceRequired j i
+  hResourceAvailable_nn : ∀ j, 0 ≤ ResourceAvailable j
 
-structure Vars (m : ℕ) where
-  ConductExperiment : Fin m → ℝ  -- number of times experiment i is conducted
+structure Vars where
+  ConductExperiment : ℕ → ℤ  -- number of times each experiment is conducted
 
-structure Feasible {m n : ℕ} [NeZero m] [NeZero n] (p : Params m n) (v : Vars m) : Prop where
-  -- Resource j usage does not exceed available amount
-  hres  : ∀ j, ∑ i, p.ResourceRequired j i * v.ConductExperiment i ≤ p.ResourceAvailable j
-  hx_nn : ∀ i, 0 ≤ v.ConductExperiment i
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- For each resource, total required across all experiments does not exceed available amount
+  hres  : ∀ j : Fin p.NumResources, ∑ i : Fin p.NumExperiments, p.ResourceRequired j i * v.ConductExperiment i ≤ p.ResourceAvailable j
+  hConductExperiment_nn : ∀ i : Fin p.NumExperiments, 0 ≤ v.ConductExperiment i
 
 -- Maximize total electricity produced
-def obj {m n : ℕ} (p : Params m n) (v : Vars m) : ℝ :=
-  -(∑ i, p.ElectricityProduced i * v.ConductExperiment i)
+def obj (p : Params) (v : Vars) : ℝ :=
+  -(∑ i : Fin p.NumExperiments, p.ElectricityProduced i * v.ConductExperiment i)
 
-def formulation (m n : ℕ) [NeZero m] [NeZero n] : MILPFormulation where
-  Params   := Params m n
-  Vars     := Vars m
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P2.Fa
+end P2.a
