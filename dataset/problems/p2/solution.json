@@ -1,9 +1,9 @@
 {
     "variables": {
-        "ConductExperiment": {
-            "0": 42.30769230769231,
-            "1": 134.6153846153846
-        }
+        "ConductExperiment": [
+            40.0,
+            136.0
+        ]
     },
-    "objective": 1684.6153846153848
+    "objective": 1680.0
 }
