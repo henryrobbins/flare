@@ -12,37 +12,23 @@ def main(params_path: str, solution_path: str) -> None:
     with open(params_path, "r") as f:
         data = json.load(f)
 
-    # @Def: definition of a target
-    # @Shape: shape of a target
-
     # Parameters
-    # @Parameter Z @Def: Amount of water required to hydrate one bag of subsoil per day @Shape: []
-    Z = data["Z"]
-    # @Parameter B @Def: Amount of water required to hydrate one bag of topsoil per day @Shape: []
-    B = data["B"]
-    # @Parameter D @Def: Maximum number of bags of topsoil and subsoil combined @Shape: []
-    D = data["D"]
-    # @Parameter P @Def: Minimum number of topsoil bags to be used @Shape: []
     P = data["P"]
-    # @Parameter K @Def: Maximum proportion of bags that can be topsoil @Shape: []
+    B = data["B"]
+    D = data["D"]
+    Z = data["Z"]
     K = data["K"]
 
     # Variables
-    # @Variable h @Def: The number of subsoil bags @Shape: []
-    h = model.addVar(vtype=GRB.INTEGER, name="h")
-    # @Variable d @Def: The number of topsoil bags @Shape: []
     d = model.addVar(vtype=GRB.INTEGER, name="d")
+    h = model.addVar(vtype=GRB.INTEGER, name="h")
 
     # Constraints
-    # @Constraint Constr_1 @Def: The total number of subsoil and topsoil bags combined must not exceed D.
-    model.addConstr(h + d <= D)
-    # @Constraint Constr_2 @Def: At least P bags of topsoil must be used.
-    model.addConstr(d >= P)
-    # @Constraint Constr_3 @Def: The proportion of topsoil bags must not exceed K of all bags.
     model.addConstr(d <= K * (d + h))
+    model.addConstr(h + d <= D)
+    model.addConstr(d >= P)
 
     # Objective
-    # @Objective Objective @Def: Total water required is the sum of (Z * number of subsoil bags) and (B * number of topsoil bags). The objective is to minimize the total water required.
     model.setObjective(Z * h + B * d, GRB.MINIMIZE)
 
     # Solve
@@ -51,9 +37,8 @@ def main(params_path: str, solution_path: str) -> None:
     # Extract solution
     solution = {}
     variables = {}
-    objective = []
-    variables["h"] = h.x
     variables["d"] = d.x
+    variables["h"] = h.x
     solution["variables"] = variables
     solution["objective"] = model.objVal
     with open(solution_path, "w") as f:

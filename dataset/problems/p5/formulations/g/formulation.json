@@ -25,12 +25,12 @@
     "variables": {
         "d": {
             "description": "The quantity of bags containing topsoil",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "h": {
             "description": "The quantity of underground bags",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         }
     },
@@ -58,10 +58,10 @@
         }
     ],
     "objective": {
-        "description": "The total amount of water needed consists of the combined value of (Z multiplied by the quantity of subsoil bags) and (B multiplied by the quantity of topsoil bags). The aim is to reduce the overall water consumption as much as possible.",
-        "formulation": "Min \\left( B \\times d + Z \\times h \\right )",
+        "description": "The total amount of water needed, scaled by a factor of 2. The aim is to reduce the overall water consumption as much as possible.",
+        "formulation": "Min \\ 2 \\times \\left( B \\times d + Z \\times h \\right )",
         "code": {
-            "gurobipy": "model.setObjective(Z * h + B * d, GRB.MINIMIZE)"
+            "gurobipy": "model.setObjective(2 * (Z * h + B * d), GRB.MINIMIZE)"
         }
     },
     "metadata": {

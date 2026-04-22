@@ -4,32 +4,47 @@ import argparse
 
 
 def main(params_path: str, solution_path: str) -> None:
+
+    # Create a new model
     model = Model()
-    slack_1 = model.addVar(lb=0, name="slack_1")
-    slack_2 = model.addVar(lb=0, name="slack_2")
-    slack_0 = model.addVar(lb=0, name="slack_0")
+
+    # Load data
     with open(params_path, "r") as f:
         data = json.load(f)
-    Z = data["Z"]
+
+    # Parameters
+    P = data["P"]
     B = data["B"]
     D = data["D"]
-    P = data["P"]
+    Z = data["Z"]
     K = data["K"]
-    h = model.addVar(vtype=GRB.INTEGER, name="h")
+
+    # Variables
     d = model.addVar(vtype=GRB.INTEGER, name="d")
+    h = model.addVar(vtype=GRB.INTEGER, name="h")
+    slack_0 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_0")
+    slack_1 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_1")
+    slack_2 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_2")
+
+    # Constraints
+    model.addConstr(d + slack_0 == K * (d + h))
     model.addConstr(h + d + slack_1 == D)
     model.addConstr(d - slack_2 == P)
-    model.addConstr(d + slack_0 == K * (d + h))
+
+    # Objective
     model.setObjective(Z * h + B * d, GRB.MINIMIZE)
+
+    # Solve
     model.optimize()
+
+    # Extract solution
     solution = {}
     variables = {}
-    variables["slack_1"] = slack_1.X
-    variables["slack_2"] = slack_2.X
-    variables["slack_0"] = slack_0.X
-    objective = []
-    variables["h"] = h.x
     variables["d"] = d.x
+    variables["h"] = h.x
+    variables["slack_0"] = slack_0.x
+    variables["slack_1"] = slack_1.x
+    variables["slack_2"] = slack_2.x
     solution["variables"] = variables
     solution["objective"] = model.objVal
     with open(solution_path, "w") as f:

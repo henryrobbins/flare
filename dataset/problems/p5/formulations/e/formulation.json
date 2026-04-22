@@ -25,12 +25,12 @@
     "variables": {
         "d": {
             "description": "The quantity of bags containing topsoil",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "h": {
             "description": "The quantity of underground bags",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "slack_0": {

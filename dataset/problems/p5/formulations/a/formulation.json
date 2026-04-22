@@ -25,12 +25,12 @@
     "variables": {
         "SubsoilBags": {
             "description": "The number of subsoil bags",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "TopsoilBags": {
             "description": "The number of topsoil bags",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         }
     },

@@ -25,22 +25,22 @@
     "variables": {
         "d1": {
             "description": "Part 1 of variable d: The quantity of bags containing topsoil",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "d2": {
             "description": "Part 2 of variable d: The quantity of bags containing topsoil",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "h1": {
             "description": "Part 1 of variable h: The quantity of underground bags",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "h2": {
             "description": "Part 2 of variable h: The quantity of underground bags",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         }
     },
