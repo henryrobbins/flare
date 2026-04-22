@@ -32,7 +32,7 @@
     "variables": {
         "j": {
             "description": "The frequency at which each experiment is performed.",
-            "type": "continuous",
+            "type": "integer",
             "shape": [
                 "M"
             ]

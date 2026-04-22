@@ -1,5 +1,5 @@
 import json
-from gurobipy import Model, GRB
+from gurobipy import Model, GRB, quicksum
 import argparse
 
 
@@ -12,44 +12,31 @@ def main(params_path: str, solution_path: str) -> None:
     with open(params_path, "r") as f:
         data = json.load(f)
 
-    # @Def: definition of a target
-    # @Shape: shape of a target
-
     # Parameters
-    # @Parameter M @Def: Number of experiments @Shape: []
-    M = data["M"]
-    # @Parameter N @Def: Number of resource types @Shape: []
     N = data["N"]
-    # @Parameter Y @Def: Amount of resource j available @Shape: ['N']
     Y = data["Y"]
-    # @Parameter I @Def: Amount of resource j required for experiment i @Shape: ['N', 'M']
-    I = data["I"]
-    # @Parameter A @Def: Amount of electricity produced by experiment i @Shape: ['M']
     A = data["A"]
+    I = data["I"]
+    M = data["M"]
 
     # Variables
-    # @Variable j @Def: The number of times each experiment is conducted (10 times before) @Shape: ['M']
-    j = model.addVars(M, vtype=GRB.CONTINUOUS, name="j")
+    j = model.addVars(M, vtype=GRB.INTEGER, name="j")
 
     # Constraints
-    # @Constraint Constr_1 @Def: The total metal required for all experiments does not exceed the available metal.
-    model.addConstr(quicksum(I[0][i] * (1 / 10) * j[i] for i in range(M)) <= Y[0])
-    # @Constraint Constr_2 @Def: The total acid required for all experiments does not exceed the available acid.
-    model.addConstr(quicksum(I[1][i] * (1 / 10) * j[i] for i in range(M)) <= Y[1])
+    model.addConstrs(
+        quicksum(I[k][i] * (1 / 10) * j[i] for i in range(M)) <= Y[k] for k in range(N)
+    )
 
     # Objective
-    # @Objective Objective @Def: Maximize the total electricity produced by conducting the experiments.
-    model.setObjective(
-        2 * (quicksum((1 / 10) * j[i] * A[i] for i in range(M))), GRB.MAXIMIZE
-    )
+    model.setObjective(quicksum((1 / 10) * j[i] * A[i] for i in range(M)), GRB.MAXIMIZE)
+
     # Solve
     model.optimize()
 
     # Extract solution
     solution = {}
     variables = {}
-    objective = []
-    variables["j"] = {i: j[i].X for i in range(M)}
+    variables["j"] = [j[i].x for i in range(M)]
     solution["variables"] = variables
     solution["objective"] = model.objVal
     with open(solution_path, "w") as f:

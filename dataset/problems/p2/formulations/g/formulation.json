@@ -32,7 +32,7 @@
     "variables": {
         "j": {
             "description": "The frequency at which each experiment is performed. (10 times before)",
-            "type": "continuous",
+            "type": "integer",
             "shape": [
                 "M"
             ]
@@ -40,17 +40,10 @@
     },
     "constraints": [
         {
-            "description": "The amount of metal needed for all experiments does not surpass the metal that is currently available.",
-            "formulation": "Y_{\\text{Metal}} \\geq \\sum_{i=1}^{M} I_{\\text{Metal},i} \\cdot \\frac{1}{10} j_{i}",
+            "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
+            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot \\frac{1}{10} j_i \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
             "code": {
-                "gurobipy": "model.addConstr(quicksum(I[0][i] * (1/10) * j[i] for i in range(M)) <= Y[0])"
-            }
-        },
-        {
-            "description": "The sum of acid needed for all experiments does not surpass the amount of acid that is available.",
-            "formulation": "\\text{Y}_{\\text{acid}} \\geq \\sum_{i=1}^{\\text{M}} \\text{I}_{\\text{acid}, i} \\cdot \\text{\\frac{1}{10} j}_i",
-            "code": {
-                "gurobipy": "model.addConstr(quicksum(I['acid'][i] * (1/10) * j[i] for i in range(M)) <= Y['acid'])"
+                "gurobipy": "model.addConstrs(quicksum(I[k][i] * (1/10) * j[i] for i in range(M)) <= Y[k] for k in range(N))"
             }
         }
     ],

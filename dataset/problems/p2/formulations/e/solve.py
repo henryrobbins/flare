@@ -1,28 +1,44 @@
 import json
-from gurobipy import Model, GRB
+from gurobipy import Model, GRB, quicksum
 import argparse
 
 
 def main(params_path: str, solution_path: str) -> None:
+
+    # Create a new model
     model = Model()
 
+    # Load data
     with open(params_path, "r") as f:
         data = json.load(f)
-    M = data["M"]
+
+    # Parameters
     N = data["N"]
     Y = data["Y"]
-    I = data["I"]
     A = data["A"]
-    j = model.addVars(M, vtype=GRB.CONTINUOUS, name="j")
-    model.addConstr(quicksum(I[0][i] * j[i] for i in range(M)) <= Y[0])
-    model.addConstr(quicksum(I[1][i] * j[i] for i in range(M)) <= Y[1])
+    I = data["I"]
+    M = data["M"]
+
+    # Variables
+    j = model.addVars(M, vtype=GRB.INTEGER, name="j")
+    s = model.addVars(N, vtype=GRB.CONTINUOUS, name="s")
+
+    # Constraints
+    model.addConstrs(
+        quicksum(I[k][i] * j[i] for i in range(M)) + s[k] == Y[k] for k in range(N)
+    )
+
+    # Objective
     model.setObjective(quicksum(j[i] * A[i] for i in range(M)), GRB.MAXIMIZE)
+
+    # Solve
     model.optimize()
+
+    # Extract solution
     solution = {}
     variables = {}
-
-    objective = []
-    variables["j"] = {i: j[i].X for i in range(M)}
+    variables["j"] = [j[i].x for i in range(M)]
+    variables["s"] = [s[i].x for i in range(N)]
     solution["variables"] = variables
     solution["objective"] = model.objVal
     with open(solution_path, "w") as f:

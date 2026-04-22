@@ -1,5 +1,5 @@
 import json
-from gurobipy import Model, GRB
+from gurobipy import Model, GRB, quicksum
 import argparse
 
 
@@ -12,32 +12,19 @@ def main(params_path: str, solution_path: str) -> None:
     with open(params_path, "r") as f:
         data = json.load(f)
 
-    # @Def: definition of a target
-    # @Shape: shape of a target
-
     # Parameters
-    # @Parameter M @Def: Number of experiments @Shape: []
-    M = data["M"]
-    # @Parameter N @Def: Number of resource types @Shape: []
     N = data["N"]
-    # @Parameter Y @Def: Amount of resource j available @Shape: ['N']
     Y = data["Y"]
-    # @Parameter I @Def: Amount of resource j required for experiment i @Shape: ['N', 'M']
-    I = data["I"]
-    # @Parameter A @Def: Amount of electricity produced by experiment i @Shape: ['M']
     A = data["A"]
+    I = data["I"]
+    M = data["M"]
 
     # Variables
-    # @Variable j @Def: The number of times each experiment is conducted @Shape: ['M']
-    j = model.addVars(M, vtype=GRB.CONTINUOUS, name="j")
+    j = model.addVars(M, vtype=GRB.INTEGER, name="j")
 
     # Constraints
-    # @Constraint Constr_1 @Def: The total metal required for all experiments does not exceed the available metal.
-    # @Constraint Constr_2 @Def: The total acid required for all experiments does not exceed the available acid.
-    model.addConstr(quicksum(I[1][i] * j[i] for i in range(M)) <= Y[1])
 
     # Objective
-    # @Objective Objective @Def: Maximize the total electricity produced by conducting the experiments.
     model.setObjective(quicksum(j[i] * A[i] for i in range(M)), GRB.MAXIMIZE)
 
     # Solve
@@ -46,8 +33,7 @@ def main(params_path: str, solution_path: str) -> None:
     # Extract solution
     solution = {}
     variables = {}
-    objective = []
-    variables["j"] = {i: j[i].X for i in range(M)}
+    variables["j"] = [j[i].x for i in range(M)]
     solution["variables"] = variables
     solution["objective"] = model.objVal
     with open(solution_path, "w") as f:
