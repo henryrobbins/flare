@@ -1,1 +1,0 @@
-Route multiple commodities through a directed network, selecting arcs to activate at minimum total flow plus fixed cost, subject to flow conservation and arc capacity constraints. Uses the base MILP formulation with no additional cutting planes.

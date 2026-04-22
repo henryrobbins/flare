@@ -1,1 +1,0 @@
-Route vehicles to serve pickup-and-delivery jobs with time windows at minimum travel cost. Uses the base arc-flow formulation augmented with EC1 arc-infeasibility cuts that fix time-window-infeasible arcs to zero.

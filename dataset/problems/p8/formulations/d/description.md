@@ -1,1 +1,0 @@
-Schedule n jobs on m machines to minimize the makespan. Uses the standard big-M MILP formulation augmented with the Job Interference Bound cut (Version 1, EC3): for each job the makespan is at least the job's total processing time plus the minimum interfering processing time from other jobs on each shared machine.

@@ -1,1 +1,0 @@
-CWLP base formulation augmented with the Demand-Cover Bound cut (Version 1, EC2): the minimum number of warehouses (by decreasing capacity) needed to cover total demand provides a lower bound on the number of open warehouses.

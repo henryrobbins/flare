@@ -1,1 +1,0 @@
-MCND base formulation augmented with Knapsack-Cover Capacity Cuts (Version 2, EC1): for every non-trivial node subset S, arcs crossing the cut must collectively carry enough truncated capacity to route all commodities originating in S to destinations outside S.

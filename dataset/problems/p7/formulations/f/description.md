@@ -1,1 +1,0 @@
-Minimize the number of rectangular tiles covering an N×N grid with one hole per row and column, augmented with the Interior Vertical-Above Break cut (V1 EC5): an interior hole forces a strip covering that column span to end in the row above.

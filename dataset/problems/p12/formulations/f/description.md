@@ -1,1 +1,0 @@
-MTZ formulation for TSP augmented with the Depot Triangle cut (Version 2, EC2): eliminates three-city subtours passing through the depot by limiting the total number of active arcs in any depot-adjacent triangle.

@@ -1,1 +1,0 @@
-MTZ formulation for TSP augmented with the Lifted Desrochers-Laporte MTZ Ordering cut (Version 2, EC3): a lifted strengthening of the MTZ subtour-elimination constraint that also accounts for the reverse arc.

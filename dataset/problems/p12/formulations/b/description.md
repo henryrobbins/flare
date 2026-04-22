@@ -1,1 +1,0 @@
-MTZ formulation for TSP augmented with the Depot-Exit Position Bound cut (Version 1, EC1): if the tour leaves the depot directly to city j, then j must be positioned first (position 2) in the ordering.

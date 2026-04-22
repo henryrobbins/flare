@@ -1,1 +1,0 @@
-CWLP base formulation augmented with the Global Slot Count Bounds cut (Version 2, EC2): for each demand threshold v in the set of distinct customer demands, the number of slots of size v provided by open warehouses must cover all customers with demand at least v.

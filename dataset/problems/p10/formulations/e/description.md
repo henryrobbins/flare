@@ -1,1 +1,0 @@
-Route vehicles to serve pickup-and-delivery jobs with time windows at minimum travel cost. Uses the base arc-flow formulation augmented with EC4 triple-infeasibility cuts that forbid sequences of three jobs that violate time windows.

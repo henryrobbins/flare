@@ -1,1 +1,0 @@
-Base SHUC formulation augmented with the EC2c (Combined Startup-Shutdown Derating Capacity Bound) cutting plane, which adds both the EC1 binary indicator b[g,t] and a continuous P_bar[g,t] bounded by the jointly-derated capacity with a recovery term when both startup and shutdown occur in consecutive periods.

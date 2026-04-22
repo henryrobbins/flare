@@ -1,1 +1,0 @@
-Employees have the option of using Car or Bus for transportation. A Car can carry K employees and produces M units of pollution, while a Bus can carry D employees and produces O units of pollution. At least J employees must be transported, and no more than S Buses can be used. The objective is to minimize the total pollution produced.

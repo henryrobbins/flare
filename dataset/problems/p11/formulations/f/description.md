@@ -1,1 +1,0 @@
-Base SHUC formulation augmented with the EC3a (Ramp-Up Reachability from Previous Period) cutting plane, which adds a continuous P_bar[g,t] variable bounded by the previous period output plus ramp-up rate, relaxed for generators that were offline in the previous period.

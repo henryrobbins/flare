@@ -1,1 +1,0 @@
-Schedule n jobs on m machines to minimize the makespan. Uses the standard big-M MILP formulation augmented with the Longest Job Bound cut (Version 2, EC3): the makespan is at least the total processing time of each individual job chain.

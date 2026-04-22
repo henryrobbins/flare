@@ -1,1 +1,0 @@
-Minimize the number of rectangular tiles covering an N×N grid with one hole per row and column, augmented with the Broken Interval cut (V2 EC2): if two columns shared a tile row above and a hole appears at one, the other must restart its coverage.
