@@ -2,42 +2,44 @@ import Common
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Real.Basic
-import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P3.Fj
+namespace P3.j
 
--- Missing flour and waste constraints (invalid/incomplete formulation)
-structure Params (n : ℕ) where
-  D : ℝ           -- flour available
-  Z : ℝ           -- special liquid available
+-- Invalid formulation: missing flour and waste constraints
+structure Params where
+  N : ℕ           -- number of beakers
+  C : Fin N → ℝ  -- waste per beaker i
   E : ℝ           -- max waste allowed
-  T : Fin n → ℝ  -- flour usage per beaker (not used in constraints)
-  V : Fin n → ℝ  -- special liquid usage rate per beaker
-  X : Fin n → ℝ  -- slime produced per beaker
-  C : Fin n → ℝ  -- waste produced per beaker
-  -- Assumptions
-  hV_nn : ∀ i, 0 ≤ V i
-  hX_nn : ∀ i, 0 ≤ X i
+  X : Fin N → ℝ  -- slime per beaker i
+  T : Fin N → ℝ  -- flour per beaker i
+  D : ℝ           -- flour available
+  V : Fin N → ℝ  -- liquid per beaker i
+  Z : ℝ           -- liquid available
+  -- Implicit Assumptions
+  hN    : NeZero N
   hC_nn : ∀ i, 0 ≤ C i
+  hX_nn : ∀ i, 0 ≤ X i
+  hT_nn : ∀ i, 0 ≤ T i
+  hV_nn : ∀ i, 0 ≤ V i
 
-structure Vars (n : ℕ) where
-  nv : Fin n → ℝ  -- flour used by beaker type i
+structure Vars where
+  n : ℕ → ℝ  -- quantity of flour utilized by beaker i (continuous)
 
-structure Feasible {n : ℕ} [NeZero n] (p : Params n) (v : Vars n) : Prop where
-  -- Only liquid constraint retained
-  hliquid : ∑ i, p.V i * v.nv i ≤ p.Z
-  hnv_nn : ∀ i, 0 ≤ v.nv i
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- Total liquid used does not exceed available amount
+  hliquid : ∑ i : Fin p.N, p.V i * v.n i ≤ p.Z
+  hn_nn   : ∀ i : Fin p.N, 0 ≤ v.n i
 
 -- Maximize total slime produced
-def obj {n : ℕ} (p : Params n) (v : Vars n) : ℝ :=
-  -(∑ i, p.X i * v.nv i)
+def obj (p : Params) (v : Vars) : ℝ :=
+  -(∑ i : Fin p.N, p.X i * v.n i)
 
-def formulation (n : ℕ) [NeZero n] : MILPFormulation where
-  Params   := Params n
-  Vars     := Vars n
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P3.Fj
+end P3.j

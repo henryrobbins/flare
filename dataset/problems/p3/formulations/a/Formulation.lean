@@ -6,42 +6,44 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P3.Fa
+namespace P3.a
 
--- n = NumBeakers
-structure Params (n : ℕ) where
-  FlourAvailable              : ℝ           -- flour available
-  SpecialLiquidAvailable      : ℝ           -- special liquid available
-  MaxWasteAllowed             : ℝ           -- max waste allowed
-  FlourUsagePerBeaker         : Fin n → ℝ  -- flour usage per beaker (not used in constraints)
-  SpecialLiquidUsagePerBeaker : Fin n → ℝ  -- special liquid usage rate per unit flour for beaker i
-  SlimeProducedPerBeaker      : Fin n → ℝ  -- slime produced per unit flour for beaker i
-  WasteProducedPerBeaker      : Fin n → ℝ  -- waste produced per unit flour for beaker i
-  -- Assumptions
-  hSL_nn : ∀ i, 0 ≤ SpecialLiquidUsagePerBeaker i
-  hSP_nn : ∀ i, 0 ≤ SlimeProducedPerBeaker i
-  hWP_nn : ∀ i, 0 ≤ WasteProducedPerBeaker i
+structure Params where
+  NumBeakers             : ℕ  -- number of beakers
+  FlourAvailable         : ℝ  -- amount of flour available
+  SpecialLiquidAvailable : ℝ  -- amount of special liquid available
+  MaxWasteAllowed        : ℝ  -- maximum amount of waste allowed
+  FlourUsagePerBeaker         : Fin NumBeakers → ℝ  -- amount of flour used by each beaker
+  SpecialLiquidUsagePerBeaker : Fin NumBeakers → ℝ  -- amount of special liquid used by each beaker
+  SlimeProducedPerBeaker      : Fin NumBeakers → ℝ  -- amount of slime produced by each beaker
+  WasteProducedPerBeaker      : Fin NumBeakers → ℝ  -- amount of waste produced by each beaker
+  -- Implicit Assumptions
+  hNumBeakers : NeZero NumBeakers
+  hFlour_nn   : ∀ i, 0 ≤ FlourUsagePerBeaker i
+  hLiquid_nn  : ∀ i, 0 ≤ SpecialLiquidUsagePerBeaker i
+  hSlime_nn   : ∀ i, 0 ≤ SlimeProducedPerBeaker i
+  hWaste_nn   : ∀ i, 0 ≤ WasteProducedPerBeaker i
 
-structure Vars (n : ℕ) where
-  FlourUsedPerBeaker : Fin n → ℝ  -- flour used by beaker type i
+structure Vars where
+  NumBeakersUsed : ℕ → ℤ  -- number of beakers of type i used
 
-structure Feasible {n : ℕ} [NeZero n] (p : Params n) (v : Vars n) : Prop where
-  -- Total flour used ≤ available
-  hflour  : ∑ i, v.FlourUsedPerBeaker i ≤ p.FlourAvailable
-  -- Total liquid used ≤ available
-  hliquid : ∑ i, p.SpecialLiquidUsagePerBeaker i * v.FlourUsedPerBeaker i ≤ p.SpecialLiquidAvailable
-  -- Total waste ≤ allowed
-  hwaste  : ∑ i, p.WasteProducedPerBeaker i * v.FlourUsedPerBeaker i ≤ p.MaxWasteAllowed
-  hx_nn   : ∀ i, 0 ≤ v.FlourUsedPerBeaker i
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- Total flour used does not exceed available amount
+  hflour  : ∑ i : Fin p.NumBeakers, p.FlourUsagePerBeaker i * v.NumBeakersUsed i ≤ p.FlourAvailable
+  -- Total special liquid used does not exceed available amount
+  hliquid : ∑ i : Fin p.NumBeakers, p.SpecialLiquidUsagePerBeaker i * v.NumBeakersUsed i ≤ p.SpecialLiquidAvailable
+  -- Total waste produced does not exceed maximum allowed
+  hwaste  : ∑ i : Fin p.NumBeakers, p.WasteProducedPerBeaker i * v.NumBeakersUsed i ≤ p.MaxWasteAllowed
+  hnn     : ∀ i : Fin p.NumBeakers, 0 ≤ v.NumBeakersUsed i
 
 -- Maximize total slime produced
-def obj {n : ℕ} (p : Params n) (v : Vars n) : ℝ :=
-  -(∑ i, p.SlimeProducedPerBeaker i * v.FlourUsedPerBeaker i)
+def obj (p : Params) (v : Vars) : ℝ :=
+  -(∑ i : Fin p.NumBeakers, p.SlimeProducedPerBeaker i * v.NumBeakersUsed i)
 
-def formulation (n : ℕ) [NeZero n] : MILPFormulation where
-  Params   := Params n
-  Vars     := Vars n
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P3.Fa
+end P3.a

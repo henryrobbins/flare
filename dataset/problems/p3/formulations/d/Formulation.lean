@@ -6,43 +6,46 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P3.Fd
+namespace P3.d
 
-structure Params (n : ℕ) where
-  D : ℝ           -- flour available
-  Z : ℝ           -- special liquid available
+structure Params where
+  N : ℕ           -- number of beakers
+  C : Fin N → ℝ  -- waste per beaker i
   E : ℝ           -- max waste allowed
-  T : Fin n → ℝ  -- flour usage per beaker (not used in constraints)
-  V : Fin n → ℝ  -- special liquid usage rate per beaker
-  X : Fin n → ℝ  -- slime produced per beaker
-  C : Fin n → ℝ  -- waste produced per beaker
-  -- Assumptions
-  hV_nn : ∀ i, 0 ≤ V i
-  hX_nn : ∀ i, 0 ≤ X i
+  X : Fin N → ℝ  -- slime per beaker i
+  T : Fin N → ℝ  -- flour per beaker i
+  D : ℝ           -- flour available
+  V : Fin N → ℝ  -- liquid per beaker i
+  Z : ℝ           -- liquid available
+  -- Implicit Assumptions
+  hN    : NeZero N
   hC_nn : ∀ i, 0 ≤ C i
+  hX_nn : ∀ i, 0 ≤ X i
+  hT_nn : ∀ i, 0 ≤ T i
+  hV_nn : ∀ i, 0 ≤ V i
 
-structure Vars (n : ℕ) where
-  nv  : Fin n → ℝ  -- flour used by beaker type i
-  zed : ℝ          -- auxiliary objective variable (= total slime)
+structure Vars where
+  n   : ℕ → ℤ  -- number of beakers of type i used
+  zed : ℝ       -- auxiliary variable representing total slime produced
 
-structure Feasible {n : ℕ} [NeZero n] (p : Params n) (v : Vars n) : Prop where
-  -- Auxiliary variable equals total slime produced
-  hzed : v.zed = ∑ i, p.X i * v.nv i
-  -- Total liquid used ≤ available
-  hliquid : ∑ i, p.V i * v.nv i ≤ p.Z
-  -- Total flour used ≤ available
-  hflour : ∑ i, v.nv i ≤ p.D
-  -- Total waste ≤ allowed
-  hwaste : ∑ i, p.C i * v.nv i ≤ p.E
-  hnv_nn : ∀ i, 0 ≤ v.nv i
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- zed equals total slime produced
+  hzed    : v.zed = ∑ i : Fin p.N, p.X i * v.n i
+  -- Total liquid used does not exceed available amount
+  hliquid : ∑ i : Fin p.N, p.V i * v.n i ≤ p.Z
+  -- Total flour used does not exceed available amount
+  hflour  : ∑ i : Fin p.N, p.T i * v.n i ≤ p.D
+  -- Total waste generated does not exceed maximum allowed
+  hwaste  : ∑ i : Fin p.N, p.C i * v.n i ≤ p.E
+  hn_nn   : ∀ i : Fin p.N, 0 ≤ v.n i
 
--- Maximize total slime (minimized negation)
-def obj (_ : Params n) (v : Vars n) : ℝ := -v.zed
+-- Maximize zed (total slime produced)
+def obj (_ : Params) (v : Vars) : ℝ := -v.zed
 
-def formulation (n : ℕ) [NeZero n] : MILPFormulation where
-  Params   := Params n
-  Vars     := Vars n
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P3.Fd
+end P3.d

@@ -6,42 +6,47 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P3.Fg
+namespace P3.g
 
--- Variable nv represents 10× the original flour used per beaker
-structure Params (n : ℕ) where
-  D : ℝ           -- flour available
-  Z : ℝ           -- special liquid available
+-- Variable n represents 10× the original beaker count
+structure Params where
+  N : ℕ           -- number of beakers
+  C : Fin N → ℝ  -- waste per beaker i
   E : ℝ           -- max waste allowed
-  T : Fin n → ℝ  -- flour usage per beaker (not used in constraints)
-  V : Fin n → ℝ  -- special liquid usage rate per beaker
-  X : Fin n → ℝ  -- slime produced per beaker
-  C : Fin n → ℝ  -- waste produced per beaker
-  -- Assumptions
-  hV_nn : ∀ i, 0 ≤ V i
-  hX_nn : ∀ i, 0 ≤ X i
+  X : Fin N → ℝ  -- slime per beaker i
+  T : Fin N → ℝ  -- flour per beaker i
+  D : ℝ           -- flour available
+  V : Fin N → ℝ  -- liquid per beaker i
+  Z : ℝ           -- liquid available
+  -- Implicit Assumptions
+  hN    : NeZero N
   hC_nn : ∀ i, 0 ≤ C i
+  hX_nn : ∀ i, 0 ≤ X i
+  hT_nn : ∀ i, 0 ≤ T i
+  hV_nn : ∀ i, 0 ≤ V i
 
-structure Vars (n : ℕ) where
-  nv : Fin n → ℝ  -- 10× flour used by beaker type i
+structure Vars where
+  n : ℕ → ℤ  -- 10× number of beakers of type i used
 
-structure Feasible {n : ℕ} [NeZero n] (p : Params n) (v : Vars n) : Prop where
-  -- Total liquid used (scaled) ≤ available
-  hliquid : ∑ i, p.V i * (v.nv i / 10) ≤ p.Z
-  -- Total flour used (scaled) ≤ available
-  hflour : ∑ i, (v.nv i / 10) ≤ p.D
-  -- Total waste (scaled) ≤ allowed
-  hwaste : ∑ i, p.C i * (v.nv i / 10) ≤ p.E
-  hnv_nn : ∀ i, 0 ≤ v.nv i
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- Total liquid used does not exceed available amount
+  hliquid : ∑ i : Fin p.N, p.V i * ((v.n i : ℝ) / 10) ≤ p.Z
+  -- Total flour used does not exceed available amount
+  hflour  : ∑ i : Fin p.N, p.T i * ((v.n i : ℝ) / 10) ≤ p.D
+  -- Total waste generated does not exceed maximum allowed
+  hwaste  : ∑ i : Fin p.N, p.C i * ((v.n i : ℝ) / 10) ≤ p.E
+  hn_nn   : ∀ i : Fin p.N, 0 ≤ v.n i
+  -- Each n_i is a multiple of 10
+  hdiv    : ∀ i : Fin p.N, 10 ∣ v.n i
 
--- Maximize total slime (using scaled variable)
-def obj {n : ℕ} (p : Params n) (v : Vars n) : ℝ :=
-  -(∑ i, p.X i * (v.nv i / 10))
+-- Maximize total slime produced
+noncomputable def obj (p : Params) (v : Vars) : ℝ :=
+  -(∑ i : Fin p.N, p.X i * ((v.n i : ℝ) / 10))
 
-def formulation (n : ℕ) [NeZero n] : MILPFormulation where
-  Params   := Params n
-  Vars     := Vars n
+noncomputable def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P3.Fg
+end P3.g

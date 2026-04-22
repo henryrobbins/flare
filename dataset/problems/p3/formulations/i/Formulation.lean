@@ -1,6 +1,6 @@
 import Common
 
-namespace P3.Fi
+namespace P3.i
 
 -- Different problem: glass pane production (objective replaced by solution value)
 structure Params where
@@ -18,9 +18,9 @@ structure Vars where
   h : ℝ  -- number of tempered panes produced
 
 structure Feasible (p : Params) (v : Vars) : Prop where
-  -- Heating time ≤ available
+  -- Total heating time does not exceed machine capacity
   hheating : p.C * v.e + p.P * v.h ≤ p.D
-  -- Cooling time ≤ available
+  -- Total cooling time does not exceed machine capacity
   hcooling : p.S * v.e + p.L * v.h ≤ p.V
   he_nn : 0 ≤ v.e
   hh_nn : 0 ≤ v.h
@@ -34,4 +34,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P3.Fi
+end P3.i
