@@ -289,7 +289,7 @@ wheels = [
 ]
 
 [[package]]
-name = "tmp-dataset"
+name = "equiva-proof"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

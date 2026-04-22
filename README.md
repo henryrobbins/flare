@@ -1,4 +1,4 @@
-# tmp-dataset
+# equiva-proof
 
 ## Building
 
