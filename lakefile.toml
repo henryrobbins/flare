@@ -1,5 +1,6 @@
 name = "dataset"
 version = "0.1.0"
+defaultTargets = ["Common", "Problems"]
 
 [[require]]
 name = "mathlib"
@@ -8,3 +9,8 @@ rev = "v4.28.0"
 
 [[lean_lib]]
 name = "Common"
+
+[[lean_lib]]
+name = "Problems"
+srcDir = "dataset"
+globs = ["problems.+"]

@@ -11,7 +11,7 @@ class Dataset:
         self.root = Path(root).resolve()
         raw = json.loads((self.root / "dataset.json").read_text())
         self.problems: dict[int, Problem] = {
-            pid: Problem(self.root / "problems" / str(pid))
+            pid: Problem(self.root / "problems" / f"p{pid}")
             for pid in raw["problems"]
         }
 
