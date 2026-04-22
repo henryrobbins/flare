@@ -29,12 +29,12 @@
     "variables": {
         "NumCashMachines": {
             "description": "The number of cash-based machines",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "NumCardMachines": {
             "description": "The number of card-only machines",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         }
     },

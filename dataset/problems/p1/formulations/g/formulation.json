@@ -29,12 +29,12 @@
     "variables": {
         "r": {
             "description": "The quantity of machines that exclusively accept cards",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "s": {
             "description": "The quantity of machines that operate using cash.",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         }
     },
@@ -63,9 +63,9 @@
     ],
     "objective": {
         "description": "Reduce the overall quantity of machines at the park.",
-        "formulation": "Min \\ r + s",
+        "formulation": "Min \\ 2 \\cdot (r + s)",
         "code": {
-            "gurobipy": "model.setObjective(s + r, GRB.MINIMIZE)"
+            "gurobipy": "model.setObjective(2 * (s + r), GRB.MINIMIZE)"
         }
     },
     "metadata": {

@@ -25,12 +25,12 @@
     "variables": {
         "c": {
             "description": "The quantity of containers utilized",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "p": {
             "description": "The quantity of trucks utilized",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         }
     },

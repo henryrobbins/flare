@@ -29,12 +29,12 @@
     "variables": {
         "r": {
             "description": "The quantity of machines that exclusively accept cards",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "s": {
             "description": "The quantity of machines that operate using cash.",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "slack_0": {

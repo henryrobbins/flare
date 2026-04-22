@@ -1,9 +1,10 @@
 import json
-import argparse
 from gurobipy import Model, GRB
+import argparse
 
 
 def main(params_path: str, solution_path: str) -> None:
+
     # Create a new model
     model = Model()
 
@@ -11,47 +12,32 @@ def main(params_path: str, solution_path: str) -> None:
     with open(params_path, "r") as f:
         data = json.load(f)
 
-    # @Def: definition of a target
-    # @Shape: shape of a target
-
     # Parameters
-    # @Parameter CashMachineProcessingRate @Def: Processing rate of a cash-based machine in people per hour @Shape: []
     CashMachineProcessingRate = data["CashMachineProcessingRate"]
-    # @Parameter CardMachineProcessingRate @Def: Processing rate of a card-only machine in people per hour @Shape: []
     CardMachineProcessingRate = data["CardMachineProcessingRate"]
-    # @Parameter CashMachinePaperRolls @Def: Number of paper rolls used per hour by a cash-based machine @Shape: []
     CashMachinePaperRolls = data["CashMachinePaperRolls"]
-    # @Parameter CardMachinePaperRolls @Def: Number of paper rolls used per hour by a card-only machine @Shape: []
     CardMachinePaperRolls = data["CardMachinePaperRolls"]
-    # @Parameter MinPeopleProcessed @Def: Minimum number of people that must be processed per hour @Shape: []
     MinPeopleProcessed = data["MinPeopleProcessed"]
-    # @Parameter MaxPaperRolls @Def: Maximum number of paper rolls that can be used per hour @Shape: []
     MaxPaperRolls = data["MaxPaperRolls"]
 
     # Variables
-    # @Variable NumCashMachines @Def: The number of cash-based machines @Shape: []
     NumCashMachines = model.addVar(vtype=GRB.INTEGER, name="NumCashMachines")
-    # @Variable NumCardMachines @Def: The number of card-only machines @Shape: []
     NumCardMachines = model.addVar(vtype=GRB.INTEGER, name="NumCardMachines")
 
     # Constraints
-    # @Constraint Constr_1 @Def: The total number of people processed per hour by cash-based and card-only machines must be at least MinPeopleProcessed.
     model.addConstr(
         CashMachineProcessingRate * NumCashMachines
         + CardMachineProcessingRate * NumCardMachines
         >= MinPeopleProcessed
     )
-    # @Constraint Constr_2 @Def: The total number of paper rolls used per hour by cash-based and card-only machines must not exceed MaxPaperRolls.
     model.addConstr(
         NumCashMachines * CashMachinePaperRolls
         + NumCardMachines * CardMachinePaperRolls
         <= MaxPaperRolls
     )
-    # @Constraint Constr_3 @Def: The number of card-only machines must not exceed the number of cash-based machines.
     model.addConstr(NumCardMachines <= NumCashMachines)
 
     # Objective
-    # @Objective Objective @Def: Minimize the total number of machines in the park.
     model.setObjective(NumCashMachines + NumCardMachines, GRB.MINIMIZE)
 
     # Solve

@@ -29,22 +29,22 @@
     "variables": {
         "r1": {
             "description": "Part 1 of variable r: The quantity of machines that exclusively accept cards",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "r2": {
             "description": "Part 2 of variable r: The quantity of machines that exclusively accept cards",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "s1": {
             "description": "Part 1 of variable s: The quantity of machines that operate using cash.",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         },
         "s2": {
             "description": "Part 2 of variable s: The quantity of machines that operate using cash.",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         }
     },
