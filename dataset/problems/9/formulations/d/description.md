@@ -1,0 +1,1 @@
+MCND base formulation augmented with Cardinality Cuts (Version 2, EC2): for every non-trivial node subset S, at least q_{S,B} arcs must cross the cut, where q_{S,B} is the minimum number of highest-capacity arcs needed to cover the total demand of commodities crossing S.

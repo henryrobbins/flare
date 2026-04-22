@@ -2,15 +2,14 @@
 Download MMCF R dataset and write data.json (MCND).
 
 Source: https://commalab.di.unipi.it/files/Data/MMCF/R.tgz
-Data is extracted to data_source/ (gitignored) and a single small instance
-is selected at random (seed=42) and written to data.json.
+Data is extracted to data_source/ (gitignored) and the fixed instance
+r04.2.dow is written to data.json.
 
 Parameters written match problem.json: n, m, K, tail, head, c, f, u, O, D, d
 where arcs and commodities are 0-indexed.
 """
 
 import json
-import random
 import tarfile
 import urllib.request
 from pathlib import Path
@@ -22,8 +21,7 @@ TGZ_PATH = DATA_SOURCE_DIR / "R.tgz"
 EXTRACT_DIR = DATA_SOURCE_DIR  # archive extracts .dow files directly (no R/ subdirectory)
 OUTPUT_PATH = SCRIPT_DIR / "data.json"
 
-RANDOM_SEED = 42
-MAX_NODES = 20  # keep only small instances
+INSTANCE_FILE = "r04.2.dow"
 
 
 def download_and_extract() -> None:
@@ -82,21 +80,13 @@ def parse_dow_file(fp: Path) -> dict | None:
 def main() -> None:
     download_and_extract()
 
-    dow_files = sorted(EXTRACT_DIR.rglob("*.dow"))
-    if not dow_files:
-        raise FileNotFoundError(f"No .dow files found under {EXTRACT_DIR}")
+    fp = EXTRACT_DIR / INSTANCE_FILE
+    if not fp.exists():
+        raise FileNotFoundError(f"{fp} not found after extraction")
 
-    instances = []
-    for fp in dow_files:
-        inst = parse_dow_file(fp)
-        if inst is not None and inst["n"] <= MAX_NODES:
-            instances.append((fp.name, inst))
-
-    if not instances:
-        raise ValueError(f"No instances with n <= {MAX_NODES} found.")
-
-    random.seed(RANDOM_SEED)
-    name, inst = random.choice(instances)
+    inst = parse_dow_file(fp)
+    if inst is None:
+        raise ValueError(f"Failed to parse {INSTANCE_FILE}")
 
     OUTPUT_PATH.write_text(json.dumps(inst, indent=2))
 

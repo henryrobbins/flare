@@ -1,0 +1,130 @@
+{
+    "valid": true,
+    "parametrized_description": "Route multiple commodities through a directed network, selecting arcs to activate at minimum total flow plus fixed cost, subject to flow conservation and arc capacity constraints. Uses the base MILP formulation with no additional cutting planes.",
+    "keywords": [
+        "MCND",
+        "multi-commodity network design",
+        "network flow",
+        "MILP",
+        "arc activation"
+    ],
+    "parameters": {
+        "n": {
+            "description": "Number of network nodes",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of candidate directed arcs",
+            "shape": []
+        },
+        "K": {
+            "description": "Number of commodities",
+            "shape": []
+        },
+        "tail": {
+            "description": "Source node index of each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "head": {
+            "description": "Destination node index of each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "c": {
+            "description": "Unit transportation cost on each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "f": {
+            "description": "Fixed cost to activate each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "u": {
+            "description": "Capacity of each arc",
+            "shape": [
+                "m"
+            ]
+        },
+        "O": {
+            "description": "Origin node of each commodity",
+            "shape": [
+                "K"
+            ]
+        },
+        "D": {
+            "description": "Destination node of each commodity",
+            "shape": [
+                "K"
+            ]
+        },
+        "d": {
+            "description": "Demand of each commodity",
+            "shape": [
+                "K"
+            ]
+        }
+    },
+    "variables": {
+        "x": {
+            "description": "Flow of commodity k on arc a",
+            "type": "continuous",
+            "shape": [
+                "m",
+                "K"
+            ]
+        },
+        "y": {
+            "description": "1 if arc a is activated, 0 otherwise",
+            "type": "integer",
+            "shape": [
+                "m"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Commodity source outflow equals demand.",
+            "formulation": "\\sum_{a \\in \\delta^+(O_k)} x_{ak} = d_k \\quad \\forall k \\in K",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for a in out[O[k]]) == d[k]\n    for k in range(K)\n)"
+            }
+        },
+        {
+            "description": "Commodity sink inflow equals demand.",
+            "formulation": "\\sum_{a \\in \\delta^-(D_k)} x_{ak} = d_k \\quad \\forall k \\in K",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for a in inc[D[k]]) == d[k]\n    for k in range(K)\n)"
+            }
+        },
+        {
+            "description": "Flow conservation at intermediate nodes: inflow equals outflow for every commodity at every non-source, non-sink node.",
+            "formulation": "\\sum_{a \\in \\delta^+(i)} x_{ak} - \\sum_{a \\in \\delta^-(i)} x_{ak} = 0 \\quad \\forall k \\in K,\\; \\forall i \\in N \\setminus \\{O_k, D_k\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for a in out[i]) - gp.quicksum(x[a, k] for a in inc[i]) == 0\n    for k in range(K) for i in range(n) if i != O[k] and i != D[k]\n)"
+            }
+        },
+        {
+            "description": "Arc capacity: total flow across all commodities on an arc cannot exceed its capacity times whether it is activated.",
+            "formulation": "\\sum_{k \\in K} x_{ak} \\leq u_a \\, y_a \\quad \\forall a \\in A",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for k in range(K)) <= u[a] * y[a]\n    for a in range(m)\n)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total flow cost plus fixed arc activation cost.",
+        "formulation": "\\min \\sum_{a \\in A} \\sum_{k \\in K} c_a \\, x_{ak} + \\sum_{a \\in A} f_a \\, y_a",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(c[a] * x[a, k] for a in range(m) for k in range(K)) +\n    gp.quicksum(f[a] * y[a] for a in range(m)),\n    GRB.MINIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": "EvoCut"
+    }
+}

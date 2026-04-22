@@ -1,0 +1,1 @@
+MCND base formulation augmented with the Destination In-Cut Bound cut (Version 1, EC1): for each commodity, the weighted sum of capacities of arcs entering its destination must be large enough to deliver its demand.
