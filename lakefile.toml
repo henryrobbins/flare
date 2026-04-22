@@ -1,6 +1,6 @@
 name = "dataset"
 version = "0.1.0"
-defaultTargets = ["Common", "Problems"]
+defaultTargets = ["Common", "Dataset"]
 
 [[require]]
 name = "mathlib"
@@ -11,11 +11,6 @@ rev = "v4.28.0"
 name = "Common"
 
 [[lean_lib]]
-name = "Problems"
-srcDir = "dataset"
-globs = ["problems.+"]
-
-[[lean_lib]]
-name = "Equivalences"
-srcDir = "dataset"
-globs = ["equivalences.+"]
+name = "Dataset"
+srcDir = "."
+globs = ["dataset.+"]
