@@ -1,0 +1,1 @@
+Minimize the number of rectangular tiles covering an N×N grid with one hole per row and column, augmented with the Horizontal-Right Break cut (V1 EC2): a hole forces an interval to start immediately to its right.

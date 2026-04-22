@@ -1,0 +1,1 @@
+Minimize the number of rectangular tiles covering an N×N grid with one hole per row and column, augmented with the Bottom-Row Vertical Break cut (V1 EC4): a hole in the last row forces a strip to end in row N-2 over the same column span.

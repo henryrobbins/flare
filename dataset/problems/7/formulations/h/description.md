@@ -1,0 +1,1 @@
+Minimize the number of rectangular tiles covering an N×N grid with one hole per row and column, augmented with the Vacated Column cut (V2 EC1): if a hole vacates a column between consecutive rows, that column must be covered by a new strip start.

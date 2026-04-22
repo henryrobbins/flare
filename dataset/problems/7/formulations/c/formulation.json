@@ -1,0 +1,96 @@
+{
+    "valid": true,
+    "parametrized_description": "Minimize the number of rectangular tiles covering an N×N grid with one hole per row and column, augmented with the Horizontal-Right Break cut (V1 EC2): a hole forces an interval to start immediately to its right.",
+    "keywords": ["rectangular tiling", "IMO6", "interval flow", "MIP", "cutting plane"],
+    "parameters": {
+        "N": {
+            "description": "Size of the grid (number of rows and columns)",
+            "shape": []
+        }
+    },
+    "variables": {
+        "h": {
+            "description": "1 if (i,j) is the unique hole in row i and column j, 0 otherwise",
+            "type": "integer",
+            "shape": ["N", "N"]
+        },
+        "x": {
+            "description": "1 if row i, columns a through b are covered by the same tile, 0 otherwise",
+            "type": "integer",
+            "shape": ["N", "|I|"]
+        },
+        "s": {
+            "description": "1 if a tile starts at row i for column interval (a,b), 0 otherwise",
+            "type": "integer",
+            "shape": ["N", "|I|"]
+        },
+        "t": {
+            "description": "1 if a tile ends at row i for column interval (a,b), 0 otherwise",
+            "type": "integer",
+            "shape": ["N", "|I|"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each row contains exactly one hole.",
+            "formulation": "\\sum_{j=0}^{N-1} h_{ij} = 1 \\quad \\forall i \\in \\{0,\\dots,N-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(h[i, j] for j in range(N)) == 1 for i in range(N))"
+            }
+        },
+        {
+            "description": "Each column contains exactly one hole.",
+            "formulation": "\\sum_{i=0}^{N-1} h_{ij} = 1 \\quad \\forall j \\in \\{0,\\dots,N-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(h[i, j] for i in range(N)) == 1 for j in range(N))"
+            }
+        },
+        {
+            "description": "Each cell is either a hole or covered by exactly one tile interval.",
+            "formulation": "\\sum_{(a,b) \\in I:\\, a \\le j \\le b} x_i^{ab} + h_{ij} = 1 \\quad \\forall i,j \\in \\{0,\\dots,N-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(x[i, a, b] for (a, b) in intervals if a <= j <= b) + h[i, j] == 1 for i in range(N) for j in range(N))"
+            }
+        },
+        {
+            "description": "Top-row flow: a tile covering interval (a,b) in row 0 must start there.",
+            "formulation": "x_0^{ab} - s_0^{ab} = 0 \\quad \\forall (a,b) \\in I",
+            "code": {
+                "gurobipy": "model.addConstrs(x[0, a, b] - s[0, a, b] == 0 for (a, b) in intervals)"
+            }
+        },
+        {
+            "description": "Mid-row flow: tile coverage at row i equals coverage from previous row plus new starts minus ends.",
+            "formulation": "x_i^{ab} - x_{i-1}^{ab} - s_i^{ab} + t_{i-1}^{ab} = 0 \\quad \\forall i \\in \\{1,\\dots,N-1\\},\\; \\forall (a,b) \\in I",
+            "code": {
+                "gurobipy": "model.addConstrs(x[i, a, b] - x[i-1, a, b] - s[i, a, b] + t[i-1, a, b] == 0 for i in range(1, N) for (a, b) in intervals)"
+            }
+        },
+        {
+            "description": "Bottom-row flow: a tile covering interval (a,b) in the last row must end there.",
+            "formulation": "x_{N-1}^{ab} - t_{N-1}^{ab} = 0 \\quad \\forall (a,b) \\in I",
+            "code": {
+                "gurobipy": "model.addConstrs(x[N-1, a, b] - t[N-1, a, b] == 0 for (a, b) in intervals)"
+            }
+        },
+        {
+            "description": "Horizontal-Right Break (V1 EC2): a hole at (i,j) forces an interval starting at column j+1 to begin at row i.",
+            "formulation": "h_{ij} \\le \\sum_{(a,b) \\in I:\\, a=j+1} s_i^{ab} \\quad \\forall i \\in \\{0,\\dots,N-1\\},\\; \\forall j \\in \\{0,\\dots,N-2\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(h[i, j] <= gp.quicksum(s[i, a, b] for (a, b) in intervals if a == j + 1) for i in range(N) for j in range(N - 1))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of rectangular tiles used.",
+        "formulation": "\\min \\sum_{i=0}^{N-1} \\sum_{(a,b) \\in I} s_i^{ab}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(s[i, a, b] for i in range(N) for (a, b) in intervals), GRB.MINIMIZE)"
+        }
+    },
+    "metadata": {
+        "source": "EvoCut",
+        "version": 1,
+        "name": "EC2"
+    }
+}
