@@ -1,5 +1,5 @@
 import json
-from gurobipy import *
+from gurobipy import Model, GRB
 import argparse
 
 

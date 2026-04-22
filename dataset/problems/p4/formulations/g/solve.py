@@ -1,5 +1,5 @@
 import json
-from gurobipy import *
+from gurobipy import Model, GRB
 import argparse
 
 
@@ -8,54 +8,53 @@ def main(params_path: str, solution_path: str) -> None:
     # Create a new model
     model = Model()
 
-    # Load data 
+    # Load data
     with open(params_path, "r") as f:
         data = json.load(f)
 
     # @Def: definition of a target
     # @Shape: shape of a target
 
-    # Parameters 
-    # @Parameter K @Def: The number of employees that a car can take @Shape: [] 
-    K = data['K']
-    # @Parameter M @Def: The pollution produced by a car @Shape: [] 
-    M = data['M']
-    # @Parameter D @Def: The number of employees that a bus can take @Shape: [] 
-    D = data['D']
-    # @Parameter O @Def: The pollution produced by a bus @Shape: [] 
-    O = data['O']
-    # @Parameter J @Def: The minimum number of employees that need to be transported @Shape: [] 
-    J = data['J']
-    # @Parameter S @Def: The maximum number of buses that can be used @Shape: [] 
-    S = data['S']
+    # Parameters
+    # @Parameter K @Def: The number of employees that a car can take @Shape: []
+    K = data["K"]
+    # @Parameter M @Def: The pollution produced by a car @Shape: []
+    M = data["M"]
+    # @Parameter D @Def: The number of employees that a bus can take @Shape: []
+    D = data["D"]
+    # @Parameter O @Def: The pollution produced by a bus @Shape: []
+    O = data["O"]
+    # @Parameter J @Def: The minimum number of employees that need to be transported @Shape: []
+    J = data["J"]
+    # @Parameter S @Def: The maximum number of buses that can be used @Shape: []
+    S = data["S"]
 
-    # Variables 
-    # @Variable m @Def: The number of cars used for transportation @Shape: ['Integer'] 
+    # Variables
+    # @Variable m @Def: The number of cars used for transportation @Shape: ['Integer']
     m = model.addVar(vtype=GRB.INTEGER, name="m")
-    # @Variable h @Def: The number of buses used for transportation @Shape: ['Integer'] 
+    # @Variable h @Def: The number of buses used for transportation @Shape: ['Integer']
     h = model.addVar(vtype=GRB.INTEGER, lb=0, ub=S, name="h")
 
-    # Constraints 
+    # Constraints
     # @Constraint Constr_1 @Def: At least J employees must be transported.
     model.addConstr(m * K + h * D >= J)
     # @Constraint Constr_2 @Def: No more than S buses can be used.
 
-
-    # Objective 
+    # Objective
     # @Objective Objective @Def: Total pollution produced is the sum of pollution from cars and buses. The objective is to minimize the total pollution produced.
-    model.setObjective(2*(m * M + h * O), GRB.MINIMIZE)
-    # Solve 
+    model.setObjective(2 * (m * M + h * O), GRB.MINIMIZE)
+    # Solve
     model.optimize()
 
-    # Extract solution 
+    # Extract solution
     solution = {}
     variables = {}
     objective = []
-    variables['m'] = m.x
-    variables['h'] = h.x
-    solution['variables'] = variables
-    solution['objective'] = model.objVal
-    with open(solution_path, 'w') as f:
+    variables["m"] = m.x
+    variables["h"] = h.x
+    solution["variables"] = variables
+    solution["objective"] = model.objVal
+    with open(solution_path, "w") as f:
         json.dump(solution, f, indent=4)
 
 

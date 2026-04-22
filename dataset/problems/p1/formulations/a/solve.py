@@ -1,6 +1,6 @@
 import json
 import argparse
-from gurobipy import *
+from gurobipy import Model, GRB
 
 
 def main(params_path: str, solution_path: str) -> None:
