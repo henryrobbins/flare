@@ -29,17 +29,13 @@
     "variables": {
         "h": {
             "description": "The quantity of buses utilized for transportation",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         },
         "m": {
             "description": "The quantity of vehicles utilized for travel purposes.",
-            "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "type": "integer",
+            "shape": []
         }
     },
     "constraints": [],

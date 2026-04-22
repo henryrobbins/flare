@@ -22,9 +22,9 @@ def main(params_path: str, solution_path: str) -> None:
     P = data["P"]
 
     # Variables
-    e = model.addVar(vtype=GRB.INTEGER, name="e")
-    p = model.addVar(vtype=GRB.INTEGER, name="p")
-    a = model.addVar(vtype=GRB.INTEGER, name="a")
+    e = model.addVar(vtype=GRB.CONTINUOUS, name="e")
+    p = model.addVar(vtype=GRB.CONTINUOUS, name="p")
+    a = model.addVar(vtype=GRB.CONTINUOUS, name="a")
 
     # Constraints
     model.addConstr(p * Z <= P * (a * V + p * Z))

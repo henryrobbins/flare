@@ -20,8 +20,8 @@ def main(params_path: str, solution_path: str) -> None:
     K = data["K"]
 
     # Variables
-    d = model.addVar(vtype=GRB.CONTINUOUS, name="d")
-    h = model.addVar(vtype=GRB.CONTINUOUS, name="h")
+    d = model.addVar(vtype=GRB.INTEGER, name="d")
+    h = model.addVar(vtype=GRB.INTEGER, name="h")
 
     # Constraints
     model.addConstr(d <= K * (d + h))

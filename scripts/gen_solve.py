@@ -15,20 +15,8 @@ TYPE_MAP = {
     "binary": "BINARY",
 }
 
-# Legacy shape value used to indicate integer scalar
-_INTEGER_SHAPE = ["Integer"]
-
-
-def _effective_shape(shape: list[str]) -> list[str]:
-    """Normalize ['Integer'] to []."""
-    return [] if shape == _INTEGER_SHAPE else shape
-
-
 def _gurobi_type(var: dict[str, object]) -> str:
     raw_type = str(var.get("type", "continuous"))
-    shape = list(var.get("shape", []))  # type: ignore[arg-type]
-    if shape == _INTEGER_SHAPE:
-        raw_type = "integer"
     return f"GRB.{TYPE_MAP.get(raw_type, 'CONTINUOUS')}"
 
 
@@ -41,7 +29,7 @@ def _detect_imports(codes: list[str]) -> tuple[bool, bool]:
 
 
 def _var_decl(name: str, var: dict[str, object]) -> str:
-    shape = _effective_shape(list(var.get("shape", [])))  # type: ignore[arg-type]
+    shape = list(var.get("shape", []))  # type: ignore[arg-type]
     vtype = _gurobi_type(var)
     if not shape:
         return f'{name} = model.addVar(vtype={vtype}, name="{name}")'
@@ -50,7 +38,7 @@ def _var_decl(name: str, var: dict[str, object]) -> str:
 
 
 def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
-    shape = _effective_shape(list(var.get("shape", [])))  # type: ignore[arg-type]
+    shape = list(var.get("shape", []))  # type: ignore[arg-type]
     if not shape:
         return [f'variables["{name}"] = {name}.x']
     if len(shape) == 1:

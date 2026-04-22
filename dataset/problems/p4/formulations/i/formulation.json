@@ -34,23 +34,17 @@
         "e": {
             "description": "The quantity of individuals employed for transporting goods",
             "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "shape": []
         },
         "p": {
             "description": "Quantity of journeys taken by individuals using canoes",
             "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "shape": []
         },
         "a": {
             "description": "Quantity of journeys completed by individuals who run",
             "type": "continuous",
-            "shape": [
-                "Integer"
-            ]
+            "shape": []
         }
     },
     "constraints": [
