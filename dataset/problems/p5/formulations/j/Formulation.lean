@@ -1,8 +1,7 @@
 import Common
 
-namespace P5.Fj
+namespace P5.j
 
--- Missing total-bags and min-topsoil constraints (invalid/incomplete formulation)
 structure Params where
   Z : ℝ  -- water per bag of subsoil per day
   B : ℝ  -- water per bag of topsoil per day
@@ -11,8 +10,8 @@ structure Params where
   K : ℝ  -- max topsoil proportion of all bags
 
 structure Vars where
-  h : ℝ  -- number of subsoil bags
-  d : ℝ  -- number of topsoil bags
+  h : ℤ  -- number of subsoil bags
+  d : ℤ  -- number of topsoil bags
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Only topsoil proportion constraint retained
@@ -29,4 +28,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P5.Fj
+end P5.j

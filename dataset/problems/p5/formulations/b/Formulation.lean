@@ -1,6 +1,6 @@
 import Common
 
-namespace P5.Fb
+namespace P5.b
 
 structure Params where
   Z : ℝ  -- water per bag of subsoil per day
@@ -10,8 +10,8 @@ structure Params where
   K : ℝ  -- max topsoil proportion of all bags
 
 structure Vars where
-  h : ℝ  -- number of subsoil bags
-  d : ℝ  -- number of topsoil bags
+  h : ℤ  -- number of subsoil bags
+  d : ℤ  -- number of topsoil bags
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Topsoil proportion ≤ K
@@ -32,4 +32,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P5.Fb
+end P5.b

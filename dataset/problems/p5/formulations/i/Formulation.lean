@@ -1,6 +1,6 @@
 import Common
 
-namespace P5.Fi
+namespace P5.i
 
 -- Different problem: wine bottle production (objective replaced by solution value)
 structure Params where
@@ -33,4 +33,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P5.Fi
+end P5.i

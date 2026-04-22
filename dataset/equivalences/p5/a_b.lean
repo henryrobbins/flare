@@ -1,0 +1,66 @@
+import Common
+import dataset.problems.p5.formulations.a.Formulation
+import dataset.problems.p5.formulations.b.Formulation
+
+namespace P5
+
+-- ============================================================================
+-- § Parameter Mapping
+-- ============================================================================
+
+private def paramMap (p : P5.a.Params) : P5.b.Params :=
+  { Z := p.WaterSubsoil
+    B := p.WaterTopsoil
+    D := p.MaxTotalBags
+    P := p.MinTopsoilBags
+    K := p.MaxTopsoilProportion }
+
+-- ============================================================================
+-- § Forward Mapping and Feasibility
+-- ============================================================================
+
+private def fwd (_ : P5.a.Params) (v : P5.a.Vars) : P5.b.Vars :=
+  { h := v.SubsoilBags
+    d := v.TopsoilBags }
+
+private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
+    (h : P5.a.Feasible p v) :
+    P5.b.Feasible (paramMap p) (fwd p v) := by
+  refine ⟨h.hprop, ?_, h.hmin_top, h.hss_nn, h.hts_nn⟩
+  simp only [paramMap, fwd]; linarith [h.htotal]
+
+-- ============================================================================
+-- § Backward Mapping and Feasibility
+-- ============================================================================
+
+private def bwd (_ : P5.a.Params) (v : P5.b.Vars) : P5.a.Vars :=
+  { SubsoilBags := v.h
+    TopsoilBags := v.d }
+
+private lemma bwd_feas (p : P5.a.Params) (v : P5.b.Vars)
+    (h : P5.b.Feasible (paramMap p) v) :
+    P5.a.Feasible p (bwd p v) := by
+  have ht := h.htotal; simp only [paramMap] at ht
+  refine ⟨?_, h.hmin_top, h.hprop, h.hh_nn, h.hd_nn⟩
+  simp only [bwd]; linarith
+
+-- ============================================================================
+-- § Equivalence Structure
+-- ============================================================================
+
+def faFbEquiv : MILPEquiv P5.a.formulation P5.b.formulation where
+  paramMap    := paramMap
+  fwd         := fwd
+  bwd         := bwd
+  fwd_feas    := fwd_feas
+  bwd_feas    := bwd_feas
+  objMap      := id
+  objMap_mono := monotone_id
+  fwd_obj := fun p v _ => by
+    show P5.b.obj (paramMap p) (fwd p v) = P5.a.obj p v
+    simp only [P5.b.obj, P5.a.obj, paramMap, fwd]; ring
+  bwd_obj := fun p v _ => by
+    show P5.b.obj (paramMap p) v = P5.a.obj p (bwd p v)
+    simp only [P5.b.obj, P5.a.obj, paramMap, bwd]; ring
+
+end P5

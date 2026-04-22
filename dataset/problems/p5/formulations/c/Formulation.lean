@@ -1,7 +1,7 @@
 import Common
 import Mathlib.Data.Int.Basic
 
-namespace P5.Fc
+namespace P5.c
 
 structure Params where
   Z : ℝ  -- water per bag of subsoil per day
@@ -45,4 +45,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P5.Fc
+end P5.c
