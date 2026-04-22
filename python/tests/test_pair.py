@@ -1,0 +1,49 @@
+import json
+
+import pytest
+
+from milp_eq_tools import Dataset, Pair
+from milp_eq_tools.formulation import Formulation
+
+
+def test_pairs_loaded(dataset: Dataset) -> None:
+    assert len(dataset.pairs) > 0
+
+
+def test_pairs_are_pair_instances(dataset: Dataset) -> None:
+    for pair in dataset.pairs:
+        assert isinstance(pair, Pair)
+
+
+def test_pair_formulations_are_formulation_instances(dataset: Dataset) -> None:
+    pair = dataset.pairs[0]
+    assert isinstance(pair.a, Formulation)
+    assert isinstance(pair.b, Formulation)
+
+
+def test_pair_equivalent_is_bool(dataset: Dataset) -> None:
+    for pair in dataset.pairs:
+        assert isinstance(pair.equivalent, bool)
+
+
+def test_equivalent_true_when_both_valid(dataset: Dataset) -> None:
+    for pair in dataset.pairs:
+        if pair.equivalent:
+            assert pair.a.valid and pair.b.valid
+
+
+def test_equivalent_false_when_any_invalid(dataset: Dataset) -> None:
+    for pair in dataset.pairs:
+        if not pair.equivalent:
+            assert not pair.a.valid or not pair.b.valid
+
+
+def test_has_both_true_and_false_pairs(dataset: Dataset) -> None:
+    assert any(p.equivalent for p in dataset.pairs)
+    assert any(not p.equivalent for p in dataset.pairs)
+
+
+def test_no_pairs_when_file_missing(tmp_path: pytest.TempPathFactory) -> None:
+    (tmp_path / "dataset.json").write_text('{"problems": []}')
+    ds = Dataset(tmp_path)
+    assert ds.pairs == []

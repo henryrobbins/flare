@@ -2,7 +2,7 @@ from milp_eq_tools import Dataset, Problem
 
 
 def test_problems_keys(dataset: Dataset) -> None:
-    assert set(dataset.problems.keys()) == {1, 2, 3, 4, 5}
+    assert set(dataset.problems.keys()) == set(range(1, 13))
 
 
 def test_problems_values_are_problem_instances(dataset: Dataset) -> None:

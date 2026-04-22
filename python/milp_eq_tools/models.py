@@ -38,3 +38,5 @@ class Objective:
 class Solution:
     variables: dict[str, object]
     objective: float
+
+
