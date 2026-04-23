@@ -14,7 +14,13 @@ private def paramMap (p : P1.a.Params) : P1.b.Params :=
     Y := p.CashMachinePaperRolls
     W := p.CardMachinePaperRolls
     U := p.MinPeopleProcessed
-    V := p.MaxPaperRolls }
+    V := p.MaxPaperRolls
+    hA_nn := p.hCashMachineProcessingRate_nn
+    hK_nn := p.hCardMachineProcessingRate_nn
+    hY_nn := p.hCashMachinePaperRolls_nn
+    hW_nn := p.hCardMachinePaperRolls_nn
+    hU_nn := p.hMinPeopleProcessed_nn
+    hV_nn := p.hMaxPaperRolls_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -54,7 +60,7 @@ private lemma bwd_feas (p : P1.a.Params) (v : P1.b.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFbEquiv : MILPEquiv P1.a.formulation P1.b.formulation where
+def abEquiv : MILPEquiv P1.a.formulation P1.b.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

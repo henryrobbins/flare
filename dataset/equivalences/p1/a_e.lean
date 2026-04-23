@@ -14,7 +14,13 @@ private def paramMap (p : P1.a.Params) : P1.e.Params :=
     Y := p.CashMachinePaperRolls
     W := p.CardMachinePaperRolls
     U := p.MinPeopleProcessed
-    V := p.MaxPaperRolls }
+    V := p.MaxPaperRolls
+    hA_nn := p.hCashMachineProcessingRate_nn
+    hK_nn := p.hCardMachineProcessingRate_nn
+    hY_nn := p.hCashMachinePaperRolls_nn
+    hW_nn := p.hCardMachinePaperRolls_nn
+    hU_nn := p.hMinPeopleProcessed_nn
+    hV_nn := p.hMaxPaperRolls_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -24,11 +30,11 @@ private def paramMap (p : P1.a.Params) : P1.e.Params :=
 private def fwd (p : P1.a.Params) (v : P1.a.Vars) : P1.e.Vars :=
   { s       := v.NumCashMachines
     r       := v.NumCardMachines
-    slack_0 := p.CashMachineProcessingRate * v.NumCashMachines +
-               p.CardMachineProcessingRate * v.NumCardMachines - p.MinPeopleProcessed
-    slack_1 := v.NumCashMachines - v.NumCardMachines
-    slack_2 := p.MaxPaperRolls - v.NumCashMachines * p.CashMachinePaperRolls -
-               v.NumCardMachines * p.CardMachinePaperRolls }
+    slack_0 := p.CashMachineProcessingRate * (v.NumCashMachines : ℝ) +
+               p.CardMachineProcessingRate * (v.NumCardMachines : ℝ) - p.MinPeopleProcessed
+    slack_1 := (v.NumCashMachines : ℝ) - (v.NumCardMachines : ℝ)
+    slack_2 := p.MaxPaperRolls - (v.NumCashMachines : ℝ) * p.CashMachinePaperRolls -
+               (v.NumCardMachines : ℝ) * p.CardMachinePaperRolls }
 
 private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars)
     (h : P1.a.Feasible p v) :
@@ -62,7 +68,7 @@ private lemma bwd_feas (p : P1.a.Params) (v : P1.e.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFeEquiv : MILPEquiv P1.a.formulation P1.e.formulation where
+def aEEquiv : MILPEquiv P1.a.formulation P1.e.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

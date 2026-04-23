@@ -10,6 +10,13 @@ structure Params where
   W : ℝ  -- paper rolls/hour for card machine
   U : ℝ  -- min people processed per hour
   V : ℝ  -- max paper rolls per hour
+  -- Implicit Assumptions
+  hA_nn : 0 ≤ A
+  hK_nn : 0 ≤ K
+  hY_nn : 0 ≤ Y
+  hW_nn : 0 ≤ W
+  hU_nn : 0 ≤ U
+  hV_nn : 0 ≤ V
 
 structure Vars where
   s_0 : ℤ  -- digit 0 of cash machine count

@@ -2,6 +2,7 @@ import Common
 import dataset.problems.p1.formulations.a.Formulation
 import dataset.problems.p1.formulations.f.Formulation
 
+
 namespace P1
 
 -- ============================================================================
@@ -14,7 +15,13 @@ private def paramMap (p : P1.a.Params) : P1.f.Params :=
     Y := p.CashMachinePaperRolls
     W := p.CardMachinePaperRolls
     U := p.MinPeopleProcessed
-    V := p.MaxPaperRolls }
+    V := p.MaxPaperRolls
+    hA_nn := p.hCashMachineProcessingRate_nn
+    hK_nn := p.hCardMachineProcessingRate_nn
+    hY_nn := p.hCashMachinePaperRolls_nn
+    hW_nn := p.hCardMachinePaperRolls_nn
+    hU_nn := p.hMinPeopleProcessed_nn
+    hV_nn := p.hMaxPaperRolls_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -55,10 +62,25 @@ private lemma bwd_feas (p : P1.a.Params) (v : P1.f.Vars)
     push_cast; linarith
 
 -- ============================================================================
+-- § Objective Mapping
+-- ============================================================================
+
+private lemma fwd_obj (p : P1.a.Params) (v : P1.a.Vars) (_ : P1.a.Feasible p v) :
+    P1.f.obj (paramMap p) (fwd p v) = id (P1.a.obj p v) := by
+  show (↑v.NumCashMachines : ℝ) + ↑(0 : ℤ) + ↑v.NumCardMachines + ↑(0 : ℤ) =
+       ↑v.NumCashMachines + ↑v.NumCardMachines
+  simp [Int.cast_zero]
+
+private lemma bwd_obj (p : P1.a.Params) (v : P1.f.Vars) (_ : P1.f.Feasible (paramMap p) v) :
+    P1.f.obj (paramMap p) v = id (P1.a.obj p (bwd p v)) := by
+  show (↑v.s1 + ↑v.s2 + ↑v.r1 + ↑v.r2 : ℝ) = ↑(v.s1 + v.s2) + ↑(v.r1 + v.r2)
+  push_cast; ring
+
+-- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFfEquiv : MILPEquiv P1.a.formulation P1.f.formulation where
+def afEquiv : MILPEquiv P1.a.formulation P1.f.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
@@ -66,14 +88,7 @@ def faFfEquiv : MILPEquiv P1.a.formulation P1.f.formulation where
   bwd_feas    := bwd_feas
   objMap      := id
   objMap_mono := monotone_id
-  -- Ff.obj (fwd v) = NumCash + ↑0 + NumCard + ↑0 = NumCash + NumCard = Fa.obj v
-  fwd_obj := fun _ v _ => by
-    show (↑v.NumCashMachines : ℝ) + ↑(0 : ℤ) + ↑v.NumCardMachines + ↑(0 : ℤ) =
-         ↑v.NumCashMachines + ↑v.NumCardMachines
-    simp [Int.cast_zero]
-  -- Ff.obj v = ↑s1+↑s2+↑r1+↑r2 = ↑(s1+s2)+↑(r1+r2) = Fa.obj (bwd v)
-  bwd_obj := fun _ v _ => by
-    show (↑v.s1 + ↑v.s2 + ↑v.r1 + ↑v.r2 : ℝ) = ↑(v.s1 + v.s2) + ↑(v.r1 + v.r2)
-    push_cast; ring
+  fwd_obj     := fwd_obj
+  bwd_obj     := bwd_obj
 
 end P1

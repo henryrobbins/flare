@@ -9,6 +9,13 @@ structure Params where
   W : ℝ  -- paper rolls/hour for card machine
   U : ℝ  -- min people processed per hour
   V : ℝ  -- max paper rolls per hour
+  -- Implicit Assumptions
+  hA_nn : 0 ≤ A
+  hK_nn : 0 ≤ K
+  hY_nn : 0 ≤ Y
+  hW_nn : 0 ≤ W
+  hU_nn : 0 ≤ U
+  hV_nn : 0 ≤ V
 
 structure Vars where
   s1 : ℤ  -- part 1 of cash machine count
@@ -18,18 +25,19 @@ structure Vars where
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Process at least U people per hour
-  hpeople : p.U ≤ p.A * (v.s1 + v.s2) + p.K * (v.r1 + v.r2)
+  hpeople : p.U ≤ p.A * ((v.s1 : ℝ) + (v.s2 : ℝ)) + p.K * ((v.r1 : ℝ) + (v.r2 : ℝ))
   -- Use at most V paper rolls per hour
-  hpaper : (v.s1 + v.s2) * p.Y + (v.r1 + v.r2) * p.W ≤ p.V
+  hpaper : ((v.s1 : ℝ) + (v.s2 : ℝ)) * p.Y + ((v.r1 : ℝ) + (v.r2 : ℝ)) * p.W ≤ p.V
   -- Card machines ≤ cash machines
   hcard : v.r1 + v.r2 ≤ v.s1 + v.s2
+  -- [Implicit Constraints]
   hs1_nn : 0 ≤ v.s1
   hs2_nn : 0 ≤ v.s2
   hr1_nn : 0 ≤ v.r1
   hr2_nn : 0 ≤ v.r2
 
 -- Minimize the total number of machines
-def obj (_ : Params) (v : Vars) : ℝ := v.s1 + v.s2 + v.r1 + v.r2
+def obj (_ : Params) (v : Vars) : ℝ := (v.s1 : ℝ) + (v.s2 : ℝ) + (v.r1 : ℝ) + (v.r2 : ℝ)
 
 def formulation : MILPFormulation where
   Params   := Params
