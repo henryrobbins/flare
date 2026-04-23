@@ -26,6 +26,56 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The proportion of cat paw treats in the initial blend must be non-negative.",
+            "formulation": "F \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert F >= 0"
+            }
+        },
+        {
+            "description": "The profit earned per each kilogram of the initial blend must be non-negative.",
+            "formulation": "S \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert S >= 0"
+            }
+        },
+        {
+            "description": "The quantity of cat paw treats in stock must be non-negative.",
+            "formulation": "R \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert R >= 0"
+            }
+        },
+        {
+            "description": "The revenue generated for each kilogram of the alternate blend must be non-negative.",
+            "formulation": "Z \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert Z >= 0"
+            }
+        },
+        {
+            "description": "The gold shark treats in stock by weight must be non-negative.",
+            "formulation": "W \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert W >= 0"
+            }
+        },
+        {
+            "description": "The proportion of feline paw treats in the second blend must be non-negative.",
+            "formulation": "M \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert M >= 0"
+            }
+        }
+    ],
     "variables": {
         "v": {
             "description": "The amount of the second blend in kilograms",
@@ -42,6 +92,7 @@
         {
             "description": "The combined weight of cat paw treats in both blends should not surpass R kilograms, determined by adding together F multiplied by n and M multiplied by v.",
             "formulation": "R \\geq F \\times n + M \\times v",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(F * n + M * v <= R)"
             }
@@ -49,8 +100,25 @@
         {
             "description": "The combined weight of gold shark snacks in the two mixes should not go over W kilograms, which is determined as the sum of ((100 - F) multiplied by n) and ((100 - M) multiplied by v).",
             "formulation": "W \\geq \\frac{(100 - F)}{100} \\cdot n + \\frac{(100 - M)}{100} \\cdot v",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(((100 - F) / 100) * n + ((100 - M) / 100) * v <= W)"
+            }
+        },
+        {
+            "description": "The amount of the initial blend produced must be non-negative.",
+            "formulation": "n \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(n >= 0)"
+            }
+        },
+        {
+            "description": "The amount of the second blend produced must be non-negative.",
+            "formulation": "v \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(v >= 0)"
             }
         }
     ],

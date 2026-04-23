@@ -26,6 +26,56 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The quantity of paper rolls consumed every hour by a machine that operates on cash must be non-negative.",
+            "formulation": "Y \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert Y >= 0"
+            }
+        },
+        {
+            "description": "The lowest amount of individuals that need to be handled per hour must be non-negative.",
+            "formulation": "U \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert U >= 0"
+            }
+        },
+        {
+            "description": "The number of individuals processed by a cash-operated machine within an hour must be non-negative.",
+            "formulation": "A \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert A >= 0"
+            }
+        },
+        {
+            "description": "The highest quantity of paper rolls that can be utilized within a single hour must be non-negative.",
+            "formulation": "V \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert V >= 0"
+            }
+        },
+        {
+            "description": "The number of individuals a card-only machine can handle in one hour must be non-negative.",
+            "formulation": "K \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert K >= 0"
+            }
+        },
+        {
+            "description": "The quantity of paper rolls utilized hourly by a machine that only accepts cards must be non-negative.",
+            "formulation": "W \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert W >= 0"
+            }
+        }
+    ],
     "variables": {
         "s_0": {
             "description": "Digit 0 of the The quantity of machines that operate using cash.",
@@ -52,6 +102,7 @@
         {
             "description": "The minimum number of individuals handled within an hour by machines accepting both cash and cards must be U.",
             "formulation": "U \\leq A \\cdot K + (s_0*10^0 + s_1*10^1) \\cdot (r_0*10^0 + r_1*10^1)",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(A*(s_0*10**0 + s_1*10**1)+K*(r_0*10**0 + r_1*10**1)>=U)"
             }
@@ -59,6 +110,7 @@
         {
             "description": "The quantity of machines that only accept cards should not surpass the quantity of machines that accept cash.",
             "formulation": "(s_0*10^0 + s_1*10^1) \\geq (r_0*10^0 + r_1*10^1)",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr((r_0*10**0 + r_1*10**1)<=(s_0*10**0 + s_1*10**1))"
             }
@@ -66,8 +118,73 @@
         {
             "description": "The combined amount of paper rolls used per hour by machines that accept cash and those that only accept cards should not surpass V.",
             "formulation": "V \\geq (r_0*10^0 + r_1*10^1) \\times W + (s_0*10^0 + s_1*10^1) \\times Y",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr((s_0*10**0 + s_1*10**1)*Y+(r_0*10**0 + r_1*10**1)*W<=V)"
+            }
+        },
+        {
+            "description": "Digit s_0 must be non-negative.",
+            "formulation": "s_0 \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(s_0 >= 0)"
+            }
+        },
+        {
+            "description": "Digit s_1 must be non-negative.",
+            "formulation": "s_1 \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(s_1 >= 0)"
+            }
+        },
+        {
+            "description": "Digit r_0 must be non-negative.",
+            "formulation": "r_0 \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(r_0 >= 0)"
+            }
+        },
+        {
+            "description": "Digit r_1 must be non-negative.",
+            "formulation": "r_1 \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(r_1 >= 0)"
+            }
+        },
+        {
+            "description": "Digit s_0 must be at most 9.",
+            "formulation": "s_0 \\leq 9",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(s_0 <= 9)"
+            }
+        },
+        {
+            "description": "Digit s_1 must be at most 9.",
+            "formulation": "s_1 \\leq 9",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(s_1 <= 9)"
+            }
+        },
+        {
+            "description": "Digit r_0 must be at most 9.",
+            "formulation": "r_0 \\leq 9",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(r_0 <= 9)"
+            }
+        },
+        {
+            "description": "Digit r_1 must be at most 9.",
+            "formulation": "r_1 \\leq 9",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(r_1 <= 9)"
             }
         }
     ],

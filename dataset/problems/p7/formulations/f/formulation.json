@@ -6,6 +6,7 @@
             "shape": []
         }
     },
+    "assumptions": [],
     "variables": {
         "h": {
             "description": "1 if (i,j) is the unique hole in row i and column j, 0 otherwise",
@@ -46,49 +47,56 @@
             "formulation": "\\sum_{j=0}^{N-1} h_{ij} = 1 \\quad \\forall i \\in \\{0,\\dots,N-1\\}",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(h[i, j] for j in range(N)) == 1 for i in range(N))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Each column contains exactly one hole.",
             "formulation": "\\sum_{i=0}^{N-1} h_{ij} = 1 \\quad \\forall j \\in \\{0,\\dots,N-1\\}",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(h[i, j] for i in range(N)) == 1 for j in range(N))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Each cell is either a hole or covered by exactly one tile interval.",
             "formulation": "\\sum_{(a,b) \\in I:\\, a \\le j \\le b} x_i^{ab} + h_{ij} = 1 \\quad \\forall i,j \\in \\{0,\\dots,N-1\\}",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(x[i, a, b] for (a, b) in intervals if a <= j <= b) + h[i, j] == 1 for i in range(N) for j in range(N))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Top-row flow: a tile covering interval (a,b) in row 0 must start there.",
             "formulation": "x_0^{ab} - s_0^{ab} = 0 \\quad \\forall (a,b) \\in I",
             "code": {
                 "gurobipy": "model.addConstrs(x[0, a, b] - s[0, a, b] == 0 for (a, b) in intervals)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Mid-row flow: tile coverage at row i equals coverage from previous row plus new starts minus ends.",
             "formulation": "x_i^{ab} - x_{i-1}^{ab} - s_i^{ab} + t_{i-1}^{ab} = 0 \\quad \\forall i \\in \\{1,\\dots,N-1\\},\\; \\forall (a,b) \\in I",
             "code": {
                 "gurobipy": "model.addConstrs(x[i, a, b] - x[i-1, a, b] - s[i, a, b] + t[i-1, a, b] == 0 for i in range(1, N) for (a, b) in intervals)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Bottom-row flow: a tile covering interval (a,b) in the last row must end there.",
             "formulation": "x_{N-1}^{ab} - t_{N-1}^{ab} = 0 \\quad \\forall (a,b) \\in I",
             "code": {
                 "gurobipy": "model.addConstrs(x[N-1, a, b] - t[N-1, a, b] == 0 for (a, b) in intervals)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Interior Vertical-Above Break (V1 EC5): an interior hole at (i,j) forces a strip ending in row i-1 to cover the same column.",
             "formulation": "h_{ij} \\le \\sum_{(a,b) \\in I:\\, a \\le j \\le b} t_{i-1}^{ab} \\quad \\forall i \\in \\{1,\\dots,N-2\\},\\; \\forall j \\in \\{0,\\dots,N-1\\}",
             "code": {
                 "gurobipy": "model.addConstrs(h[i, j] <= gp.quicksum(t[i-1, a, b] for (a, b) in intervals if a <= j <= b) for i in range(1, N-1) for j in range(N))"
-            }
+            },
+            "explicit": true
         }
     ],
     "objective": {

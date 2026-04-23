@@ -22,6 +22,48 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The fewest amount of containers required must be non-negative.",
+            "formulation": "L \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert L >= 0"
+            }
+        },
+        {
+            "description": "The smallest quantity of oil units required to be transported to the port must be non-negative.",
+            "formulation": "V \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert V >= 0"
+            }
+        },
+        {
+            "description": "The quantity of oil that each container is capable of holding must be non-negative.",
+            "formulation": "G \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert G >= 0"
+            }
+        },
+        {
+            "description": "The quantity of oil that each truck is capable of carrying must be non-negative.",
+            "formulation": "Y \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert Y >= 0"
+            }
+        },
+        {
+            "description": "The highest permitted proportion of trucks to containers must be non-negative.",
+            "formulation": "K \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert K >= 0"
+            }
+        }
+    ],
     "variables": {
         "c": {
             "description": "The quantity of containers utilized",
@@ -38,6 +80,7 @@
         {
             "description": "The maximum amount of trucks allowed is half the number of containers used.",
             "formulation": "K \\times c \\geq p",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(p <= K * c)"
             }
@@ -45,6 +88,7 @@
         {
             "description": "A minimum of 15 containers must be utilized.",
             "formulation": "L \\leq c",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(c >= L)"
             }
@@ -52,8 +96,25 @@
         {
             "description": "A minimum of 2000 units of oil must be delivered to the port, with the calculation being 30 units per container and 40 units per truck.",
             "formulation": "V \\leq Y \\times p + G \\times c",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(G * c + Y * p >= V)"
+            }
+        },
+        {
+            "description": "The number of containers must be non-negative.",
+            "formulation": "c \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(c >= 0)"
+            }
+        },
+        {
+            "description": "The number of trucks must be non-negative.",
+            "formulation": "p \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(p >= 0)"
             }
         }
     ],

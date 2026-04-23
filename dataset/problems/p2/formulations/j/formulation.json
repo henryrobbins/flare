@@ -29,6 +29,32 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The electrical energy generated from each trial must be non-negative.",
+            "formulation": "A_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(A[i] >= 0 for i in range(M))"
+            }
+        },
+        {
+            "description": "The quantity of each accessible resource must be non-negative.",
+            "formulation": "Y_j \\geq 0 \\quad \\forall j",
+            "explicit": false,
+            "code": {
+                "python": "assert all(Y[j] >= 0 for j in range(N))"
+            }
+        },
+        {
+            "description": "The resource quantity needed for each experiment must be non-negative.",
+            "formulation": "I_{j,i} \\geq 0 \\quad \\forall j, i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(I[j][i] >= 0 for j in range(N) for i in range(M))"
+            }
+        }
+    ],
     "variables": {
         "j": {
             "description": "The frequency at which each experiment is performed.",
@@ -38,7 +64,16 @@
             ]
         }
     },
-    "constraints": [],
+    "constraints": [
+        {
+            "description": "The frequency at which each experiment is performed must be non-negative.",
+            "formulation": "j_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(j[i] >= 0 for i in range(M))"
+            }
+        }
+    ],
     "objective": {
         "description": "Increase the overall electrical output by conducting the experiments to their full potential.",
         "formulation": "Max \\sum_{i=1}^{M} j_{i} \\times A_{i}",

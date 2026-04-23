@@ -140,6 +140,7 @@
             ]
         }
     },
+    "assumptions": [],
     "variables": {
         "u": {
             "description": "On status of generator g at time t",
@@ -214,105 +215,120 @@
             "formulation": "\\sum_{g} (p_{g,t} + P^{\\min}_g u_{g,t}) + \\sum_{w} p^w_{w,t} = L_t \\quad \\forall t",
             "code": {
                 "gurobipy": "for t in range(T):\n    model.addConstr(gp.quicksum(p[g, t] + P_min[g] * u[g, t] for g in range(n_G)) == L[t])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Spinning reserve: total reserve meets or exceeds requirement at each period.",
             "formulation": "\\sum_{g} r_{g,t} \\ge R_t \\quad \\forall t",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(r[g, t] for g in range(n_G)) >= R[t] for t in range(T))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Commitment transition: links on-status to startup and shutdown indicators.",
             "formulation": "u_{g,t} - u_{g,t-1} = v_{g,t} - w_{g,t} \\quad \\forall g, t \\ge 1",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(1, T):\n        model.addConstr(u[g, t] - u[g, t-1] == v[g, t] - w[g, t])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Minimum up time: a generator that starts must remain on for at least U[g] periods.",
             "formulation": "\\sum_{\\tau=t-U_g+1}^{t} v_{g,\\tau} \\le u_{g,t} \\quad \\forall g, t \\ge U_g - 1",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(U[g]-1, T):\n        model.addConstr(gp.quicksum(v[g, tau] for tau in range(t - U[g] + 1, t + 1)) <= u[g, t])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Minimum down time: a generator that shuts down must remain off for at least D[g] periods.",
             "formulation": "\\sum_{\\tau=t-D_g+1}^{t} w_{g,\\tau} \\le 1 - u_{g,t} \\quad \\forall g, t \\ge D_g - 1",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(D[g]-1, T):\n        model.addConstr(gp.quicksum(w[g, tau] for tau in range(t - D[g] + 1, t + 1)) <= 1 - u[g, t])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Startup decomposition: startup indicator equals sum of startup category selections.",
             "formulation": "v_{g,t} = \\sum_{s} d_{g,s,t} \\quad \\forall g, t",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(v[g, t] == gp.quicksum(d_su[g, s, t] for s in range(n_S[g])))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Startup category timing: category s can only be selected if the generator was off for the required lag.",
             "formulation": "d_{g,s,t} \\le \\sum_{i=\\ell_{g,s}}^{\\ell_{g,s+1}-1} w_{g,t-i} \\quad \\forall g, s < |S_g| - 1, t \\ge \\ell_{g,s+1} - 1",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for s in range(n_S[g] - 1):\n        for t in range(ell[g][s+1] - 1, T):\n            model.addConstr(d_su[g, s, t] <= gp.quicksum(w[g, t - i] for i in range(ell[g][s], ell[g][s+1])))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Must-run: generators with MR[g]=1 must remain on at all times.",
             "formulation": "u_{g,t} \\ge \\mathrm{MR}_g \\quad \\forall g, t",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    if MR[g] > 0:\n        for t in range(T):\n            model.addConstr(u[g, t] >= MR[g])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Startup derating: net output above minimum is limited by startup ramp during startup periods.",
             "formulation": "p_{g,t} + r_{g,t} \\le (P^{\\max}_g - P^{\\min}_g) u_{g,t} - \\max(P^{\\max}_g - SU_g, 0) v_{g,t} \\quad \\forall g, t",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    su_derate = max(P_max[g] - SU[g], 0)\n    for t in range(T):\n        model.addConstr(p[g, t] + r[g, t] <= (P_max[g] - P_min[g]) * u[g, t] - su_derate * v[g, t])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Shutdown derating: net output above minimum is limited by shutdown ramp the period before shutdown.",
             "formulation": "p_{g,t} + r_{g,t} \\le (P^{\\max}_g - P^{\\min}_g) u_{g,t} - \\max(P^{\\max}_g - SD_g, 0) w_{g,t+1} \\quad \\forall g, t < T-1",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    sd_derate = max(P_max[g] - SD[g], 0)\n    for t in range(T - 1):\n        model.addConstr(p[g, t] + r[g, t] <= (P_max[g] - P_min[g]) * u[g, t] - sd_derate * w[g, t+1])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Ramp-up limit: output plus reserve cannot increase by more than RU[g] from the previous period.",
             "formulation": "p_{g,t} + r_{g,t} - p_{g,t-1} \\le RU_g \\quad \\forall g, t \\ge 1",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(1, T):\n        model.addConstr(p[g, t] + r[g, t] - p[g, t-1] <= RU[g])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Ramp-down limit: output cannot decrease by more than RD[g] from the previous period.",
             "formulation": "p_{g,t-1} - p_{g,t} \\le RD_g \\quad \\forall g, t \\ge 1",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(1, T):\n        model.addConstr(p[g, t-1] - p[g, t] <= RD[g])"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Piecewise production: output equals the convex combination of production breakpoints above minimum.",
             "formulation": "p_{g,t} = \\sum_{l} (P_{g,l} - P_{g,0}) \\lambda_{g,l,t} \\quad \\forall g, t",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(p[g, t] == gp.quicksum((P[g][l] - P[g][0]) * lam[g, l, t] for l in range(n_L[g])))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Piecewise cost: variable cost equals the convex combination of cost breakpoints above fixed cost.",
             "formulation": "c_{g,t} = \\sum_{l} (C_{g,l} - C_{g,0}) \\lambda_{g,l,t} \\quad \\forall g, t",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(c_var[g, t] == gp.quicksum((C[g][l] - C_fixed[g]) * lam[g, l, t] for l in range(n_L[g])))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Piecewise weights: convex combination weights sum to on-status.",
             "formulation": "\\sum_{l} \\lambda_{g,l,t} = u_{g,t} \\quad \\forall g, t",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(gp.quicksum(lam[g, l, t] for l in range(n_L[g])) == u[g, t])"
-            }
+            },
+            "explicit": true
         }
     ],
     "objective": {

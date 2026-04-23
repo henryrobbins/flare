@@ -29,6 +29,32 @@
             ]
         }
     },
+    "assumptions": [
+        {
+            "description": "The electricity produced by each experiment must be non-negative.",
+            "formulation": "ElectricityProduced_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(ElectricityProduced[i] >= 0 for i in range(NumExperiments))"
+            }
+        },
+        {
+            "description": "The resource required by each experiment must be non-negative.",
+            "formulation": "ResourceRequired_{j,i} \\geq 0 \\quad \\forall j, i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(ResourceRequired[j][i] >= 0 for j in range(NumResources) for i in range(NumExperiments))"
+            }
+        },
+        {
+            "description": "The amount of each resource available must be non-negative.",
+            "formulation": "ResourceAvailable_j \\geq 0 \\quad \\forall j",
+            "explicit": false,
+            "code": {
+                "python": "assert all(ResourceAvailable[j] >= 0 for j in range(NumResources))"
+            }
+        }
+    ],
     "variables": {
         "ConductExperiment": {
             "description": "The number of times each experiment is conducted",
@@ -42,8 +68,17 @@
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
             "formulation": "\\sum_{i=1}^{NumExperiments} ResourceRequired_{j,i} \\cdot ConductExperiment_i \\leq ResourceAvailable_j \\quad \\forall j \\in \\{1, \\ldots, NumResources\\}",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(ResourceRequired[j][i] * ConductExperiment[i] for i in range(NumExperiments)) <= ResourceAvailable[j] for j in range(NumResources))"
+            }
+        },
+        {
+            "description": "The number of times each experiment is conducted must be non-negative.",
+            "formulation": "ConductExperiment_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(ConductExperiment[i] >= 0 for i in range(NumExperiments))"
             }
         }
     ],

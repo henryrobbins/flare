@@ -35,6 +35,7 @@
             ]
         }
     },
+    "assumptions": [],
     "variables": {
         "x": {
             "description": "1 if customer i is assigned to warehouse j, 0 otherwise",
@@ -58,21 +59,24 @@
             "formulation": "\\sum_{j \\in J} x_{ij} = 1 \\quad \\forall i \\in I",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(x[i, j] for j in range(m)) == 1 for i in range(n))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Capacity: total demand assigned to each warehouse cannot exceed its capacity times whether it is open.",
             "formulation": "\\sum_{i \\in I} d_i \\, x_{ij} \\leq u_j \\, y_j \\quad \\forall j \\in J",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(d[i] * x[i, j] for i in range(n)) <= u[j] * y[j] for j in range(m))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Warehouse Cover Inequality (EC6): at most 2 customers with demand exceeding one-third of warehouse j's capacity can be assigned to warehouse j.",
             "formulation": "\\sum_{i \\in I :\\, d_i > u_j/3} x_{ij} \\leq 2 \\, y_j \\quad \\forall j \\in J",
             "code": {
                 "gurobipy": "model.addConstrs(\n    gp.quicksum(x[i, j] for i in range(n) if d[i] > u[j] / 3) <= 2 * y[j]\n    for j in range(m)\n)"
-            }
+            },
+            "explicit": true
         }
     ],
     "objective": {

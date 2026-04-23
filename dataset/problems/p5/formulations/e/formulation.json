@@ -22,6 +22,48 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The smallest quantity of topsoil bags that should be employed must be non-negative.",
+            "formulation": "P \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert P >= 0"
+            }
+        },
+        {
+            "description": "The quantity of water needed to moisturize one bag of topsoil daily must be non-negative.",
+            "formulation": "B \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert B >= 0"
+            }
+        },
+        {
+            "description": "The highest quantity of bags containing a mixture of topsoil and subsoil must be non-negative.",
+            "formulation": "D \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert D >= 0"
+            }
+        },
+        {
+            "description": "The quantity of water needed to keep one bag of subsoil hydrated on a daily basis must be non-negative.",
+            "formulation": "Z \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert Z >= 0"
+            }
+        },
+        {
+            "description": "The highest percentage of bags that can contain topsoil must be non-negative.",
+            "formulation": "K \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert K >= 0"
+            }
+        }
+    ],
     "variables": {
         "d": {
             "description": "The quantity of bags containing topsoil",
@@ -53,6 +95,7 @@
         {
             "description": "The percentage of topsoil bags should not go beyond K out of all bags. (Modified to include slack variable slack_0)",
             "formulation": "d + slack_0 = K * (d + h)",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(d + slack_0 == K * (d + h))"
             }
@@ -60,6 +103,7 @@
         {
             "description": "The combined amount of subsoil bags and topsoil bags must not surpass D. (Modified to include slack variable slack_1)",
             "formulation": "h + d + slack_1 = D",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(h + d + slack_1 == D)"
             }
@@ -67,8 +111,49 @@
         {
             "description": "A minimum of P bags of topsoil is required to be utilized. (Modified to include slack variable slack_2)",
             "formulation": "d - slack_2 = P",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(d - slack_2 == P)"
+            }
+        },
+        {
+            "description": "The number of subsoil bags must be non-negative.",
+            "formulation": "h \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(h >= 0)"
+            }
+        },
+        {
+            "description": "The number of topsoil bags must be non-negative.",
+            "formulation": "d \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(d >= 0)"
+            }
+        },
+        {
+            "description": "Slack variable for topsoil proportion constraint must be non-negative.",
+            "formulation": "slack\\_0 \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(slack_0 >= 0)"
+            }
+        },
+        {
+            "description": "Slack variable for total bags constraint must be non-negative.",
+            "formulation": "slack\\_1 \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(slack_1 >= 0)"
+            }
+        },
+        {
+            "description": "Slack variable for min topsoil constraint must be non-negative.",
+            "formulation": "slack\\_2 \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(slack_2 >= 0)"
             }
         }
     ],

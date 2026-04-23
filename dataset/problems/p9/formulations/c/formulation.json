@@ -62,6 +62,7 @@
             ]
         }
     },
+    "assumptions": [],
     "variables": {
         "x": {
             "description": "Flow of commodity k on arc a",
@@ -85,35 +86,40 @@
             "formulation": "\\sum_{a \\in \\delta^+(O_k)} x_{ak} = d_k \\quad \\forall k \\in K",
             "code": {
                 "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for a in out[O[k]]) == d[k]\n    for k in range(K)\n)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Commodity sink inflow equals demand.",
             "formulation": "\\sum_{a \\in \\delta^-(D_k)} x_{ak} = d_k \\quad \\forall k \\in K",
             "code": {
                 "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for a in inc[D[k]]) == d[k]\n    for k in range(K)\n)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Flow conservation at intermediate nodes: inflow equals outflow for every commodity at every non-source, non-sink node.",
             "formulation": "\\sum_{a \\in \\delta^+(i)} x_{ak} - \\sum_{a \\in \\delta^-(i)} x_{ak} = 0 \\quad \\forall k \\in K,\\; \\forall i \\in N \\setminus \\{O_k, D_k\\}",
             "code": {
                 "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for a in out[i]) - gp.quicksum(x[a, k] for a in inc[i]) == 0\n    for k in range(K) for i in range(n) if i != O[k] and i != D[k]\n)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Arc capacity: total flow across all commodities on an arc cannot exceed its capacity times whether it is activated.",
             "formulation": "\\sum_{k \\in K} x_{ak} \\leq u_a \\, y_a \\quad \\forall a \\in A",
             "code": {
                 "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for k in range(K)) <= u[a] * y[a]\n    for a in range(m)\n)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Knapsack-Cover Capacity Cut (V2 EC1): for each non-trivial node subset S, the sum of min(u_a, D_B) over arcs leaving S must be at least D_B, where B = K(S) is all commodities crossing S and D_B is their total demand.",
             "formulation": "\\sum_{a \\in \\delta^+(S)} \\min\\{u_a,\\,D_B\\}\\,y_a \\;\\ge\\; D_B \\qquad \\forall S \\subsetneq N,\\; S \\neq \\emptyset,\\; B = K(S)",
             "code": {
                 "gurobipy": "for size in range(1, n):\n    for S in combinations(range(n), size):\n        S_set = set(S)\n        cut_arcs = [a for a in range(m) if tail[a] in S_set and head[a] not in S_set]\n        K_S = [k for k in range(K) if O[k] in S_set and D[k] not in S_set]\n        if not K_S or not cut_arcs:\n            continue\n        D_B = sum(d[k] for k in K_S)\n        model.addConstr(\n            gp.quicksum(min(u[a], D_B) * y[a] for a in cut_arcs) >= D_B\n        )"
-            }
+            },
+            "explicit": true
         }
     ],
     "objective": {

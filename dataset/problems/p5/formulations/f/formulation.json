@@ -22,6 +22,48 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The smallest quantity of topsoil bags that should be employed must be non-negative.",
+            "formulation": "P \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert P >= 0"
+            }
+        },
+        {
+            "description": "The quantity of water needed to moisturize one bag of topsoil daily must be non-negative.",
+            "formulation": "B \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert B >= 0"
+            }
+        },
+        {
+            "description": "The highest quantity of bags containing a mixture of topsoil and subsoil must be non-negative.",
+            "formulation": "D \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert D >= 0"
+            }
+        },
+        {
+            "description": "The quantity of water needed to keep one bag of subsoil hydrated on a daily basis must be non-negative.",
+            "formulation": "Z \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert Z >= 0"
+            }
+        },
+        {
+            "description": "The highest percentage of bags that can contain topsoil must be non-negative.",
+            "formulation": "K \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert K >= 0"
+            }
+        }
+    ],
     "variables": {
         "d1": {
             "description": "Part 1 of variable d: The quantity of bags containing topsoil",
@@ -48,6 +90,7 @@
         {
             "description": "The percentage of topsoil bags should not go beyond K out of all bags.",
             "formulation": "K \\times ( d1 + d2+ h1 + h2) \\geq d1 + d2",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr((d1 + d2)<= K * ((d1 + d2)+ (h1 + h2)))"
             }
@@ -55,6 +98,7 @@
         {
             "description": "The combined amount of subsoil bags and topsoil bags must not surpass D.",
             "formulation": "D \\geq d1 + d2+ h1 + h2",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr((h1 + h2)+ (d1 + d2)<= D)"
             }
@@ -62,8 +106,41 @@
         {
             "description": "A minimum of P bags of topsoil is required to be utilized.",
             "formulation": "P \\leq d1 + d2",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr((d1 + d2)>= P)"
+            }
+        },
+        {
+            "description": "Part 1 of topsoil bags must be non-negative.",
+            "formulation": "d1 \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(d1 >= 0)"
+            }
+        },
+        {
+            "description": "Part 2 of topsoil bags must be non-negative.",
+            "formulation": "d2 \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(d2 >= 0)"
+            }
+        },
+        {
+            "description": "Part 1 of subsoil bags must be non-negative.",
+            "formulation": "h1 \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(h1 >= 0)"
+            }
+        },
+        {
+            "description": "Part 2 of subsoil bags must be non-negative.",
+            "formulation": "h2 \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(h2 >= 0)"
             }
         }
     ],

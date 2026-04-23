@@ -35,6 +35,7 @@
             ]
         }
     },
+    "assumptions": [],
     "variables": {
         "x": {
             "description": "1 if customer i is assigned to warehouse j, 0 otherwise",
@@ -58,21 +59,24 @@
             "formulation": "\\sum_{j \\in J} x_{ij} = 1 \\quad \\forall i \\in I",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(x[i, j] for j in range(m)) == 1 for i in range(n))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Capacity: total demand assigned to each warehouse cannot exceed its capacity times whether it is open.",
             "formulation": "\\sum_{i \\in I} d_i \\, x_{ij} \\leq u_j \\, y_j \\quad \\forall j \\in J",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(d[i] * x[i, j] for i in range(n)) <= u[j] * y[j] for j in range(m))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Demand-Cover Bound (EC2): at least k_dem warehouses must be opened, where k_dem is the minimum number of largest-capacity warehouses needed to cover total demand.",
             "formulation": "\\sum_{j \\in J} y_j \\geq k_{\\mathrm{dem}}",
             "code": {
                 "gurobipy": "D = sum(d)\nu_sorted = sorted(u, reverse=True)\ncumsum, k_dem = 0, 0\nfor ui in u_sorted:\n    cumsum += ui; k_dem += 1\n    if cumsum >= D: break\nmodel.addConstr(gp.quicksum(y[j] for j in range(m)) >= k_dem)"
-            }
+            },
+            "explicit": true
         }
     ],
     "objective": {

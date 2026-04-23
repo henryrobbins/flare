@@ -29,6 +29,32 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The electrical energy generated from each trial must be non-negative.",
+            "formulation": "A_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(A[i] >= 0 for i in range(M))"
+            }
+        },
+        {
+            "description": "The quantity of each accessible resource must be non-negative.",
+            "formulation": "Y_j \\geq 0 \\quad \\forall j",
+            "explicit": false,
+            "code": {
+                "python": "assert all(Y[j] >= 0 for j in range(N))"
+            }
+        },
+        {
+            "description": "The resource quantity needed for each experiment must be non-negative.",
+            "formulation": "I_{j,i} \\geq 0 \\quad \\forall j, i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(I[j][i] >= 0 for j in range(N) for i in range(M))"
+            }
+        }
+    ],
     "variables": {
         "j": {
             "description": "The frequency at which each experiment is performed. (10 times before)",
@@ -42,8 +68,25 @@
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
             "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot \\frac{1}{10} j_i \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * (1/10) * j[i] for i in range(M)) <= Y[k] for k in range(N))"
+            }
+        },
+        {
+            "description": "Each scaled experiment count must be divisible by 10.",
+            "formulation": "10 \\mid j_i \\quad \\forall i",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(j[i] == 10 * gp.Var(model, vtype=GRB.INTEGER) for i in range(M))"
+            }
+        },
+        {
+            "description": "The scaled experiment count for each experiment must be non-negative.",
+            "formulation": "j_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(j[i] >= 0 for i in range(M))"
             }
         }
     ],

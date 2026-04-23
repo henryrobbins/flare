@@ -26,6 +26,56 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The processing rate of a cash-based machine must be non-negative.",
+            "formulation": "CashMachineProcessingRate \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert CashMachineProcessingRate >= 0"
+            }
+        },
+        {
+            "description": "The processing rate of a card-only machine must be non-negative.",
+            "formulation": "CardMachineProcessingRate \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert CardMachineProcessingRate >= 0"
+            }
+        },
+        {
+            "description": "The number of paper rolls used per hour by a cash-based machine must be non-negative.",
+            "formulation": "CashMachinePaperRolls \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert CashMachinePaperRolls >= 0"
+            }
+        },
+        {
+            "description": "The number of paper rolls used per hour by a card-only machine must be non-negative.",
+            "formulation": "CardMachinePaperRolls \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert CardMachinePaperRolls >= 0"
+            }
+        },
+        {
+            "description": "The minimum number of people that must be processed per hour must be non-negative.",
+            "formulation": "MinPeopleProcessed \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert MinPeopleProcessed >= 0"
+            }
+        },
+        {
+            "description": "The maximum number of paper rolls that can be used per hour must be non-negative.",
+            "formulation": "MaxPaperRolls \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert MaxPaperRolls >= 0"
+            }
+        }
+    ],
     "variables": {
         "NumCashMachines": {
             "description": "The number of cash-based machines",
@@ -42,6 +92,7 @@
         {
             "description": "The total number of people processed per hour by cash-based and card-only machines must be at least MinPeopleProcessed.",
             "formulation": "CashMachineProcessingRate \\cdot NumCashMachines + CardMachineProcessingRate \\cdot NumCardMachines \\geq MinPeopleProcessed",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(CashMachineProcessingRate * NumCashMachines + CardMachineProcessingRate * NumCardMachines >= MinPeopleProcessed)"
             }
@@ -49,6 +100,7 @@
         {
             "description": "The total number of paper rolls used per hour by cash-based and card-only machines must not exceed MaxPaperRolls.",
             "formulation": "NumCashMachines \\times CashMachinePaperRolls + NumCardMachines \\times CardMachinePaperRolls \\leq MaxPaperRolls",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(NumCashMachines * CashMachinePaperRolls + NumCardMachines * CardMachinePaperRolls <= MaxPaperRolls)"
             }
@@ -56,8 +108,25 @@
         {
             "description": "The number of card-only machines must not exceed the number of cash-based machines.",
             "formulation": "NumCardMachines \\leq NumCashMachines",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(NumCardMachines <= NumCashMachines)"
+            }
+        },
+        {
+            "description": "The number of cash-based machines must be non-negative.",
+            "formulation": "NumCashMachines \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(NumCashMachines >= 0)"
+            }
+        },
+        {
+            "description": "The number of card-only machines must be non-negative.",
+            "formulation": "NumCardMachines \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(NumCardMachines >= 0)"
             }
         }
     ],

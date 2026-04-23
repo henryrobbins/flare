@@ -22,6 +22,48 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The smallest quantity of antique bottles that must be manufactured must be non-negative.",
+            "formulation": "Q \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert Q >= 0"
+            }
+        },
+        {
+            "description": "The volume of an antique bottle measured in milliliters must be non-negative.",
+            "formulation": "D \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert D >= 0"
+            }
+        },
+        {
+            "description": "The smallest proportion of standard bottles compared to antique bottles must be non-negative.",
+            "formulation": "O \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert O >= 0"
+            }
+        },
+        {
+            "description": "The volume of a typical bottle measured in milliliters must be non-negative.",
+            "formulation": "J \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert J >= 0"
+            }
+        },
+        {
+            "description": "The overall quantity of wine that is in milliliters and ready for use must be non-negative.",
+            "formulation": "A \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert A >= 0"
+            }
+        }
+    ],
     "variables": {
         "z": {
             "description": "The quantity of standard bottles needed for production",
@@ -38,6 +80,7 @@
         {
             "description": "The quantity of standard bottles must be a minimum of O times the quantity of vintage bottles.",
             "formulation": "O \\times g \\leq z",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(z >= O * g)"
             }
@@ -45,6 +88,7 @@
         {
             "description": "A minimum of Q bottles with a vintage must be manufactured.",
             "formulation": "Q \\leq g",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(g >= Q)"
             }
@@ -52,8 +96,25 @@
         {
             "description": "The combined quantity of vine used in vintage and regular bottles should not surpass A milliliters.",
             "formulation": "A \\geq z \\times J + g \\times D",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(D * g + J * z <= A)"
+            }
+        },
+        {
+            "description": "The number of regular bottles produced must be non-negative.",
+            "formulation": "z \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(z >= 0)"
+            }
+        },
+        {
+            "description": "The number of vintage bottles produced must be non-negative.",
+            "formulation": "g \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(g >= 0)"
             }
         }
     ],

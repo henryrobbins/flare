@@ -34,6 +34,72 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The amount of time needed to cool in order to create a single tempered glass panel must be non-negative.",
+            "formulation": "L \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert L >= 0"
+            }
+        },
+        {
+            "description": "The amount of time needed for a regular glass pane to cool down must be non-negative.",
+            "formulation": "S \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert S >= 0"
+            }
+        },
+        {
+            "description": "The time needed to heat up to create a single tempered glass panel must be non-negative.",
+            "formulation": "P \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert P >= 0"
+            }
+        },
+        {
+            "description": "The earnings per each treated glass panel must be non-negative.",
+            "formulation": "H \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert H >= 0"
+            }
+        },
+        {
+            "description": "The earnings from each standard-sized glass sheet must be non-negative.",
+            "formulation": "T \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert T >= 0"
+            }
+        },
+        {
+            "description": "The duration of heating needed to make a single standard glass panel must be non-negative.",
+            "formulation": "C \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert C >= 0"
+            }
+        },
+        {
+            "description": "The highest amount of time the heating machine can be used in a day must be non-negative.",
+            "formulation": "D \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert D >= 0"
+            }
+        },
+        {
+            "description": "The maximum time allotted for the cooling machine to operate each day must be non-negative.",
+            "formulation": "V \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert V >= 0"
+            }
+        }
+    ],
     "variables": {
         "h": {
             "description": "The quantity of tempered glass sheets needed for production",
@@ -50,6 +116,7 @@
         {
             "description": "The combined heating time needed to create Regular and Tempered glass panes does not go beyond D.",
             "formulation": "D \\geq C \\cdot e + P \\cdot h",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(C * e + P * h <= D, name=\"HeatingTime\")"
             }
@@ -57,8 +124,25 @@
         {
             "description": "The combined time needed to cool both Regular and Tempered glass panels does not go beyond V.",
             "formulation": "V \\geq L \\times h + S \\times e",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(S * e + L * h <= V)"
+            }
+        },
+        {
+            "description": "The number of regular panes produced is non-negative.",
+            "formulation": "e \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(e >= 0)"
+            }
+        },
+        {
+            "description": "The number of tempered panes produced is non-negative.",
+            "formulation": "h \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(h >= 0)"
             }
         }
     ],

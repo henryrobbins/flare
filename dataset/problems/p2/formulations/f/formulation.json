@@ -29,6 +29,32 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The electrical energy generated from each trial must be non-negative.",
+            "formulation": "A_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(A[i] >= 0 for i in range(M))"
+            }
+        },
+        {
+            "description": "The quantity of each accessible resource must be non-negative.",
+            "formulation": "Y_j \\geq 0 \\quad \\forall j",
+            "explicit": false,
+            "code": {
+                "python": "assert all(Y[j] >= 0 for j in range(N))"
+            }
+        },
+        {
+            "description": "The resource quantity needed for each experiment must be non-negative.",
+            "formulation": "I_{j,i} \\geq 0 \\quad \\forall j, i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(I[j][i] >= 0 for j in range(N) for i in range(M))"
+            }
+        }
+    ],
     "variables": {
         "j1": {
             "description": "Part 1 of variable j: The frequency at which each experiment is performed.",
@@ -49,8 +75,25 @@
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
             "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot (j1_i + j2_i) \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * (j1[i] + j2[i]) for i in range(M)) <= Y[k] for k in range(N))"
+            }
+        },
+        {
+            "description": "Part 1 of each experiment frequency must be non-negative.",
+            "formulation": "j1_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(j1[i] >= 0 for i in range(M))"
+            }
+        },
+        {
+            "description": "Part 2 of each experiment frequency must be non-negative.",
+            "formulation": "j2_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(j2[i] >= 0 for i in range(M))"
             }
         }
     ],

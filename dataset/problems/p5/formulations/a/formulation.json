@@ -22,6 +22,48 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The amount of water required to hydrate one bag of subsoil per day must be non-negative.",
+            "formulation": "WaterSubsoil \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert WaterSubsoil >= 0"
+            }
+        },
+        {
+            "description": "The amount of water required to hydrate one bag of topsoil per day must be non-negative.",
+            "formulation": "WaterTopsoil \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert WaterTopsoil >= 0"
+            }
+        },
+        {
+            "description": "The maximum number of bags of topsoil and subsoil combined must be non-negative.",
+            "formulation": "MaxTotalBags \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert MaxTotalBags >= 0"
+            }
+        },
+        {
+            "description": "The minimum number of topsoil bags to be used must be non-negative.",
+            "formulation": "MinTopsoilBags \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert MinTopsoilBags >= 0"
+            }
+        },
+        {
+            "description": "The maximum proportion of bags that can be topsoil must be non-negative.",
+            "formulation": "MaxTopsoilProportion \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert MaxTopsoilProportion >= 0"
+            }
+        }
+    ],
     "variables": {
         "SubsoilBags": {
             "description": "The number of subsoil bags",
@@ -38,6 +80,7 @@
         {
             "description": "The total number of subsoil and topsoil bags combined must not exceed MaxTotalBags.",
             "formulation": "SubsoilBags + TopsoilBags \\leq MaxTotalBags",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(SubsoilBags + TopsoilBags <= MaxTotalBags)"
             }
@@ -45,6 +88,7 @@
         {
             "description": "At least MinTopsoilBags bags of topsoil must be used.",
             "formulation": "TopsoilBags \\geq MinTopsoilBags",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(TopsoilBags >= MinTopsoilBags)"
             }
@@ -52,8 +96,25 @@
         {
             "description": "The proportion of topsoil bags must not exceed MaxTopsoilProportion of all bags.",
             "formulation": "TopsoilBags \\leq MaxTopsoilProportion \\times ( TopsoilBags + SubsoilBags )",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(TopsoilBags <= MaxTopsoilProportion * (TopsoilBags + SubsoilBags))"
+            }
+        },
+        {
+            "description": "The number of subsoil bags must be non-negative.",
+            "formulation": "SubsoilBags \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(SubsoilBags >= 0)"
+            }
+        },
+        {
+            "description": "The number of topsoil bags must be non-negative.",
+            "formulation": "TopsoilBags \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(TopsoilBags >= 0)"
             }
         }
     ],

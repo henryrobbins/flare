@@ -29,6 +29,32 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The electrical energy generated from each trial must be non-negative.",
+            "formulation": "A_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(A[i] >= 0 for i in range(M))"
+            }
+        },
+        {
+            "description": "The quantity of each accessible resource must be non-negative.",
+            "formulation": "Y_j \\geq 0 \\quad \\forall j",
+            "explicit": false,
+            "code": {
+                "python": "assert all(Y[j] >= 0 for j in range(N))"
+            }
+        },
+        {
+            "description": "The resource quantity needed for each experiment must be non-negative.",
+            "formulation": "I_{j,i} \\geq 0 \\quad \\forall j, i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(I[j][i] >= 0 for j in range(N) for i in range(M))"
+            }
+        }
+    ],
     "variables": {
         "j_0": {
             "description": "Digit 0 of the frequency at which each experiment is performed.",
@@ -49,8 +75,41 @@
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
             "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot (j\\_0_i \\cdot 10^0 + j\\_1_i \\cdot 10^1) \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * (j_0[i]*10**0 + j_1[i]*10**1) for i in range(M)) <= Y[k] for k in range(N))"
+            }
+        },
+        {
+            "description": "The upper bound on digit 0 of each experiment frequency (must be at most 9).",
+            "formulation": "j\\_0_i \\leq 9 \\quad \\forall i",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(j_0[i] <= 9 for i in range(M))"
+            }
+        },
+        {
+            "description": "The upper bound on digit 1 of each experiment frequency (must be at most 9).",
+            "formulation": "j\\_1_i \\leq 9 \\quad \\forall i",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(j_1[i] <= 9 for i in range(M))"
+            }
+        },
+        {
+            "description": "Digit 0 of each experiment frequency must be non-negative.",
+            "formulation": "j\\_0_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(j_0[i] >= 0 for i in range(M))"
+            }
+        },
+        {
+            "description": "Digit 1 of each experiment frequency must be non-negative.",
+            "formulation": "j\\_1_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(j_1[i] >= 0 for i in range(M))"
             }
         }
     ],

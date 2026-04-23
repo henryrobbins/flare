@@ -29,6 +29,32 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The electrical energy generated from each trial must be non-negative.",
+            "formulation": "A_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(A[i] >= 0 for i in range(M))"
+            }
+        },
+        {
+            "description": "The quantity of each accessible resource must be non-negative.",
+            "formulation": "Y_j \\geq 0 \\quad \\forall j",
+            "explicit": false,
+            "code": {
+                "python": "assert all(Y[j] >= 0 for j in range(N))"
+            }
+        },
+        {
+            "description": "The resource quantity needed for each experiment must be non-negative.",
+            "formulation": "I_{j,i} \\geq 0 \\quad \\forall j, i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(I[j][i] >= 0 for j in range(N) for i in range(M))"
+            }
+        }
+    ],
     "variables": {
         "j": {
             "description": "The frequency at which each experiment is performed.",
@@ -46,7 +72,8 @@
     "constraints": [
         {
             "description": "Constraint defining zed in terms of original variables.",
-            "formulation": "zed = quicksum(j[i] * A[i] for i in range(M))",
+            "formulation": "zed = \\sum_{i=1}^{M} A_i \\cdot j_i",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(zed == quicksum(j[i] * A[i] for i in range(M)))"
             }
@@ -54,8 +81,17 @@
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
             "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot j_i \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * j[i] for i in range(M)) <= Y[k] for k in range(N))"
+            }
+        },
+        {
+            "description": "The frequency at which each experiment is performed must be non-negative.",
+            "formulation": "j_i \\geq 0 \\quad \\forall i",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(j[i] >= 0 for i in range(M))"
             }
         }
     ],

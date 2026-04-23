@@ -26,6 +26,56 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The number of employees that a car can take must be non-negative.",
+            "formulation": "CarCapacity \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert CarCapacity >= 0"
+            }
+        },
+        {
+            "description": "The pollution produced by a car must be non-negative.",
+            "formulation": "CarPollution \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert CarPollution >= 0"
+            }
+        },
+        {
+            "description": "The number of employees that a bus can take must be non-negative.",
+            "formulation": "BusCapacity \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert BusCapacity >= 0"
+            }
+        },
+        {
+            "description": "The pollution produced by a bus must be non-negative.",
+            "formulation": "BusPollution \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert BusPollution >= 0"
+            }
+        },
+        {
+            "description": "The minimum number of employees that need to be transported must be non-negative.",
+            "formulation": "MinEmployeesToTransport \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert MinEmployeesToTransport >= 0"
+            }
+        },
+        {
+            "description": "The maximum number of buses that can be used must be non-negative.",
+            "formulation": "MaxBuses \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert MaxBuses >= 0"
+            }
+        }
+    ],
     "variables": {
         "xCars": {
             "description": "The number of cars used for transportation",
@@ -42,6 +92,7 @@
         {
             "description": "At least MinEmployeesToTransport employees must be transported.",
             "formulation": "xCars \\cdot CarCapacity + xBuses \\cdot BusCapacity \\geq MinEmployeesToTransport",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(xCars * CarCapacity + xBuses * BusCapacity >= MinEmployeesToTransport)"
             }
@@ -49,8 +100,25 @@
         {
             "description": "No more than MaxBuses buses can be used.",
             "formulation": "xBuses \\leq MaxBuses",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(xBuses <= MaxBuses)"
+            }
+        },
+        {
+            "description": "Number of cars used is non-negative.",
+            "formulation": "xCars \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(xCars >= 0)"
+            }
+        },
+        {
+            "description": "Number of buses used is non-negative.",
+            "formulation": "xBuses \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(xBuses >= 0)"
             }
         }
     ],

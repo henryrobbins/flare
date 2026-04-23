@@ -13,6 +13,7 @@
             ]
         }
     },
+    "assumptions": [],
     "variables": {
         "x": {
             "description": "1 if the tour goes directly from city i to city j, 0 otherwise",
@@ -36,35 +37,40 @@
             "formulation": "\\sum_{j \\in V,\\, j \\neq i} x_{ij} = 1 \\quad \\forall i \\in V",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(x[i, j] for j in range(n) if j != i) == 1 for i in range(n))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Each city has exactly one incoming arc in the tour.",
             "formulation": "\\sum_{i \\in V,\\, i \\neq j} x_{ij} = 1 \\quad \\forall j \\in V",
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(x[i, j] for i in range(n) if i != j) == 1 for j in range(n))"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "MTZ subtour elimination: if arc i\u2192j is used among non-depot cities, city j must immediately follow city i in the tour ordering.",
             "formulation": "u_i - u_j + n \\cdot x_{ij} \\leq n - 1 \\quad \\forall i, j \\in V \\setminus \\{0\\},\\; i \\neq j",
             "code": {
                 "gurobipy": "model.addConstrs(u[i] - u[j] + n * x[i, j] <= n - 1 for i in range(1, n) for j in range(1, n) if i != j)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Depot position is fixed to 1 to anchor the tour ordering.",
             "formulation": "u_0 = 1",
             "code": {
                 "gurobipy": "model.addConstr(u[0] == 1)"
-            }
+            },
+            "explicit": true
         },
         {
             "description": "Depot-Exit Position Bound (EC1): if the tour leaves the depot directly to city j, then j is positioned at most second in the ordering.",
             "formulation": "u_j \\leq 2 + (n-2)(1 - x_{0j}) \\quad \\forall j \\in V \\setminus \\{0\\}",
             "code": {
                 "gurobipy": "model.addConstrs(u[j] <= 2 + (n - 2) * (1 - x[0, j]) for j in range(1, n))"
-            }
+            },
+            "explicit": true
         }
     ],
     "objective": {

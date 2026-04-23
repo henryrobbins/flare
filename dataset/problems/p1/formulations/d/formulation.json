@@ -26,6 +26,56 @@
             "shape": []
         }
     },
+    "assumptions": [
+        {
+            "description": "The quantity of paper rolls consumed every hour by a machine that operates on cash must be non-negative.",
+            "formulation": "Y \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert Y >= 0"
+            }
+        },
+        {
+            "description": "The lowest amount of individuals that need to be handled per hour must be non-negative.",
+            "formulation": "U \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert U >= 0"
+            }
+        },
+        {
+            "description": "The number of individuals processed by a cash-operated machine within an hour must be non-negative.",
+            "formulation": "A \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert A >= 0"
+            }
+        },
+        {
+            "description": "The highest quantity of paper rolls that can be utilized within a single hour must be non-negative.",
+            "formulation": "V \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert V >= 0"
+            }
+        },
+        {
+            "description": "The number of individuals a card-only machine can handle in one hour must be non-negative.",
+            "formulation": "K \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert K >= 0"
+            }
+        },
+        {
+            "description": "The quantity of paper rolls utilized hourly by a machine that only accepts cards must be non-negative.",
+            "formulation": "W \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert W >= 0"
+            }
+        }
+    ],
     "variables": {
         "r": {
             "description": "The quantity of machines that exclusively accept cards",
@@ -47,6 +97,7 @@
         {
             "description": "Constraint defining zed in terms of original variables.",
             "formulation": "zed = s + r",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(zed == s + r)"
             }
@@ -54,6 +105,7 @@
         {
             "description": "The minimum number of individuals handled within an hour by machines accepting both cash and cards must be U.",
             "formulation": "U \\leq A \\cdot K + s \\cdot r",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(A * s + K * r >= U)"
             }
@@ -61,6 +113,7 @@
         {
             "description": "The quantity of machines that only accept cards should not surpass the quantity of machines that accept cash.",
             "formulation": "s \\geq r",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(r <= s)"
             }
@@ -68,8 +121,25 @@
         {
             "description": "The combined amount of paper rolls used per hour by machines that accept cash and those that only accept cards should not surpass V.",
             "formulation": "V \\geq r \\times W + s \\times Y",
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(s * Y + r * W <= V)"
+            }
+        },
+        {
+            "description": "The number of cash machines must be non-negative.",
+            "formulation": "s \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(s >= 0)"
+            }
+        },
+        {
+            "description": "The number of card machines must be non-negative.",
+            "formulation": "r \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(r >= 0)"
             }
         }
     ],
