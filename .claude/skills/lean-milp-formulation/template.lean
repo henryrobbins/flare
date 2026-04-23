@@ -56,6 +56,8 @@ NOTE: Params structure — problem dimensions, data, and assumptions.
 - Assumptions go at the end under an `-- Assumptions` comment.
 - Separate explicitly stated assumptions from implicit ones (e.g. non-negativity)
   by placing implicit assumptions under an `-- ImplicitAssumptions` comment.
+- The `-- Assumptions` and `-- ImplicitAssumptions` sections are both optional;
+  if there are no assumptions of that type, omit the section entirely.
 - For `NeZero` assumptions on dimensions, use `h<DimName> : NeZero <DimField>`.
 - Use `_nn`, `_pos`, `_bin` suffixes where applicable. Sign assumptions
   do not require an inline comment.
@@ -93,6 +95,8 @@ structure Vars where
 NOTE: Feasible structure — constraints.
 
 - Signature is exactly `(p : Params) (v : Vars) : Prop`. No other args.
+- If `Vars` contains fields with names `p` or `v`, that is fine; they will be
+  accessed unambiguously as `v.<field>` or `p.<field>`.
 - One `--` comment line precedes each constraint or group of like
   constraints. Sign constraints do not need a comment.
 - Use `_nn`, `_pos`, `_bin`, `_lo`, `_hi` suffixes where applicable.
@@ -101,7 +105,7 @@ NOTE: Feasible structure — constraints.
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- For each resource, total requirement across all experiments is within supply
   hres : ∀ j : Fin p.NumResources,
-    ∑ i : Fin p.NumExperiments, p.ResourceRequired j i * v.ConductExperiment i
+    ∑ i : Fin p.NumExperiments, p.ResourceRequired j i * (v.ConductExperiment i : ℝ)
       ≤ p.ResourceAvailable j
   hConductExperiment_nn : ∀ i : Fin p.NumExperiments, 0 ≤ v.ConductExperiment i
 
@@ -117,10 +121,10 @@ NOTE: Objective — always ℝ-valued, named `obj`.
 
 -- Maximize total electricity produced
 def obj (p : Params) (v : Vars) : ℝ :=
-  -(∑ i : Fin p.NumExperiments, p.ElectricityProduced i * v.ConductExperiment i)
+  -(∑ i : Fin p.NumExperiments, p.ElectricityProduced i * (v.ConductExperiment i : ℝ))
 
 /-
-NOTE: Include exactly as formatted below.
+NOTE: Include EXACTLY as formatted below, with the padded alignment and spacing.
 -/
 def formulation : MILPFormulation where
   Params   := Params

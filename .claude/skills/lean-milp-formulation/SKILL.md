@@ -109,8 +109,33 @@ Use `Finset.univ.filter` to express flow conservation at specific nodes:
   with a short description. Sign constraints (non-negativity, positivity)
   do not require a comment.
 
+## Type casting
+
+Decision variables in `Vars` are `ℤ` while `Params` fields and the `obj`
+return type are `ℝ`. Lean inserts `ℤ → ℝ` coercions automatically, but
+always write them explicitly.
+
+- **In `obj`**: cast the first `ℤ` operand with ascription syntax
+  `(v.field : ℝ)`; Lean unifies the rest.
+  ```lean
+  def obj (_ : Params) (v : Vars) : ℝ := (v.s : ℝ) + v.r
+  ```
+- **In `Feasible` constraints**: cast each `ℤ` variable that appears
+  alongside `ℝ` parameters in an arithmetic expression.
+  ```lean
+  hpeople : p.A * (v.s : ℝ) + p.K * v.r ≤ p.U
+  ```
+- **Be consistent within a file.** Do not mix explicit and implicit casts
+  across constraints in the same `Feasible` block. If one constraint casts
+  `v.s` explicitly, all constraints must.
+
 ## Common pitfalls
 
+- **Implicit ℤ→ℝ casts in `obj` and `Feasible`.** Lean coerces silently,
+  but the cast must always be written explicitly using `(v.field : ℝ)`.
+  Inconsistent casts (explicit in one constraint, implicit in another) make
+  equivalence proofs harder to follow and can cause `exact h.hconstraint`
+  to fail when the elaborated type does not match the goal.
 - **Type-level dimensions.** Do NOT write `structure Params (n : ℕ)`,
   `structure Vars (n : ℕ)`, `Feasible {n : ℕ} [NeZero n] …`, or
   `def formulation (n : ℕ) [NeZero n] : …`. Every structure is

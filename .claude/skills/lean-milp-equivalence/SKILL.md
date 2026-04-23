@@ -166,6 +166,23 @@ When `linarith` must reason across `ℤ → ℝ` or `ℕ → ℤ`, it often fail
 Break the chain with explicit `have` steps using `norm_cast` / `push_cast`
 before handing to `linarith`.
 
+### Cast notation in proofs: prefer `↑`
+
+In tactic proofs, use the coercion arrow `↑v.field` rather than the
+ascription form `(v.field : ℝ)`. Both desugar to `Int.cast v.field`, but
+`↑` is conventional in proof scripts and matches what `push_cast` /
+`norm_cast` produce in the goal state, making it easier to read the goal
+and the proof side by side.
+
+```lean
+-- In a tactic proof:
+show ↑v.s + ↑v.r = ↑(v.s + v.r)
+push_cast; ring
+```
+
+Use `(v.field : ℝ)` only in term-mode expressions such as `fwd` / `bwd`
+definitions or `show` targets where the target type must be stated explicitly.
+
 ### `rewrite` interaction with `if`
 
 `rw [eq]` that substitutes inside the condition of an `if h_cond then …`

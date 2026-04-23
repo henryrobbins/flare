@@ -62,7 +62,11 @@ Check the file against the standard. Categories to cover, at minimum:
 
 **For formulation files:**
 
-- Faithful representation of source data (`formulation.json`)
+- Faithful representation of source data (`formulation.json`). It is expected
+  that some formulations are _not_ valid for their corresponding problem. This
+  is indicated by the `valid` field. The `Formulation.lean` file should still
+  be a faithful encoding of that formulation. You do not need to mention that
+  there are invalid formulation in your report.
 - Obeys all rules from the standard, including:
   - File structure
   - Naming conventions
