@@ -34,8 +34,8 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   he_nn : 0 ≤ v.e
   hh_nn : 0 ≤ v.h
 
--- Maximize total profit (objective replaced by constant solution value 45.0)
-def obj (_ : Params) (_ : Vars) : ℝ := -(45 : ℝ)
+-- Maximize total profit
+def obj (p : Params) (v : Vars) : ℝ := -(p.T * v.e + p.H * v.h)
 
 def formulation : MILPFormulation where
   Params   := Params

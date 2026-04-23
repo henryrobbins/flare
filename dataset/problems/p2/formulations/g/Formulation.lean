@@ -14,10 +14,9 @@ structure Params where
   A : Fin M → ℝ  -- electricity produced by experiment i
   I : Fin N → Fin M → ℝ  -- resource j required for experiment i
   Y : Fin N → ℝ  -- resource j available
-  -- Assumptions
+  -- Implicit Assumptions
   hM : NeZero M
   hN : NeZero N
-  -- Implicit Assumptions
   hA_nn : ∀ i, 0 ≤ A i
   hY_nn : ∀ j, 0 ≤ Y j
   hI_nn : ∀ j i, 0 ≤ I j i

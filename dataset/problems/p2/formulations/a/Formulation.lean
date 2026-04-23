@@ -14,10 +14,9 @@ structure Params where
   ElectricityProduced : Fin NumExperiments → ℝ  -- amount of electricity produced by experiment i
   ResourceRequired : Fin NumResources → Fin NumExperiments → ℝ  -- amount of resource j required for experiment i
   ResourceAvailable : Fin NumResources → ℝ  -- amount of resource j available
-  -- Assumptions
+  -- Implicit Assumptions
   hNumExperiments : NeZero NumExperiments
   hNumResources : NeZero NumResources
-  -- Implicit Assumptions
   hElectricityProduced_nn : ∀ i, 0 ≤ ElectricityProduced i
   hResourceRequired_nn : ∀ j i, 0 ≤ ResourceRequired j i
   hResourceAvailable_nn : ∀ j, 0 ≤ ResourceAvailable j

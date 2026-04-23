@@ -53,6 +53,7 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.e.Vars)
     (h : P4.e.Feasible (paramMap p) v) :
     P4.a.Feasible p (bwd p v) := by
   have htr := h.htransport; simp only [paramMap] at htr
+  have hbu := h.hbuses; simp only [paramMap] at hbu
   simp only [bwd]
   exact ⟨by linarith [h.hslack0_nn], by linarith [h.hslack1_nn], h.hm_nn, h.hh_nn⟩
 

@@ -2,7 +2,7 @@
     "valid": true,
     "parameters": {
         "NumExperiments": {
-            "description": "Number of experiments",
+            "description": "Number of experiment types",
             "shape": []
         },
         "NumResources": {
@@ -52,6 +52,22 @@
             "explicit": false,
             "code": {
                 "python": "assert all(ResourceAvailable[j] >= 0 for j in range(NumResources))"
+            }
+        },
+        {
+            "description": "The number of resource types must be positive.",
+            "formulation": "NumResources \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert NumResources >= 1"
+            }
+        },
+        {
+            "description": "The number of experiment types must be positive.",
+            "formulation": "NumExperiments \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert NumExperiments >= 1"
             }
         }
     ],

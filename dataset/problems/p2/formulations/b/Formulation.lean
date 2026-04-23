@@ -14,10 +14,9 @@ structure Params where
   A : Fin M → ℝ  -- electrical energy generated from trial i
   I : Fin N → Fin M → ℝ  -- resource j quantity needed for experiment i
   Y : Fin N → ℝ  -- quantity of resource j that is accessible
-  -- Assumptions
+  -- Implicit Assumptions
   hM : NeZero M
   hN : NeZero N
-  -- Implicit Assumptions
   hA_nn : ∀ i, 0 ≤ A i
   hI_nn : ∀ j i, 0 ≤ I j i
   hY_nn : ∀ j, 0 ≤ Y j

@@ -2,7 +2,7 @@
     "valid": true,
     "parameters": {
         "N": {
-            "description": "Quantity of different types of resources",
+            "description": "Number of resource types",
             "shape": []
         },
         "Y": {
@@ -25,7 +25,7 @@
             ]
         },
         "M": {
-            "description": "Amount of trials conducted",
+            "description": "Number of experiment types",
             "shape": []
         }
     },
@@ -52,6 +52,22 @@
             "explicit": false,
             "code": {
                 "python": "assert all(Y[j] >= 0 for j in range(N))"
+            }
+        },
+        {
+            "description": "The number of resource types must be positive.",
+            "formulation": "N \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert N >= 1"
+            }
+        },
+        {
+            "description": "The number of experiment types must be positive.",
+            "formulation": "M \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert M >= 1"
             }
         }
     ],

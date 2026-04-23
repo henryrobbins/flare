@@ -7,7 +7,6 @@ open BigOperators Finset
 
 namespace P3.j
 
--- Invalid formulation: missing flour and waste constraints
 structure Params where
   N : ℕ           -- number of beakers
   C : Fin N → ℝ  -- waste per beaker i
@@ -25,13 +24,13 @@ structure Params where
   hV_nn : ∀ i, 0 ≤ V i
 
 structure Vars where
-  n : ℕ → ℝ  -- quantity of flour utilized by beaker i
+  n : ℕ → ℤ  -- the number of beakers of type i used
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Total liquid used does not exceed available amount
   hliquid : ∑ i : Fin p.N, p.V i * v.n i ≤ p.Z
   -- [Implicit Constraints]
-  hn_nn   : ∀ i : Fin p.N, 0 ≤ v.n i
+  hn_nn : ∀ i : Fin p.N, 0 ≤ v.n i
 
 -- Maximize total slime produced
 def obj (p : Params) (v : Vars) : ℝ :=

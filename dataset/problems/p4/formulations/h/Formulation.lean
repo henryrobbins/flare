@@ -2,7 +2,6 @@ import Common
 
 namespace P4.h
 
--- Different problem: mail delivery by runners and canoeers
 structure Params where
   U : ℝ  -- time per runner trip (hours)
   C : ℝ  -- max total delivery hours

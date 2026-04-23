@@ -30,8 +30,8 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hc_nn : 0 ≤ v.c
   hp_nn : 0 ≤ v.p
 
--- Objective replaced by constant solution value 20.0
-def obj (_ : Params) (_ : Vars) : ℝ := 20
+-- Minimize total number of containers and trucks
+def obj (_ : Params) (v : Vars) : ℝ := (v.c : ℝ) + (v.p : ℝ)
 
 def formulation : MILPFormulation where
   Params   := Params

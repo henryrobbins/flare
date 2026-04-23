@@ -2,7 +2,6 @@ import Common
 
 namespace P4.i
 
--- Different problem: mail delivery by runners and canoeers (objective replaced by solution value)
 structure Params where
   U : ℝ  -- time per runner trip (hours)
   C : ℝ  -- max total delivery hours
@@ -37,8 +36,8 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hp_nn : 0 ≤ v.p
   ha_nn : 0 ≤ v.a
 
--- Objective replaced by constant solution value 670.0
-def obj (_ : Params) (_ : Vars) : ℝ := -670
+-- Maximize total mail delivered
+def obj (p : Params) (v : Vars) : ℝ := -(v.a * p.V + v.p * p.Z)
 
 def formulation : MILPFormulation where
   Params   := Params

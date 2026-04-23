@@ -30,8 +30,8 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hn_nn : 0 ≤ v.n
   hv_nn : 0 ≤ v.v
 
--- Maximize fixed solution value (negated for minimization semantics)
-def obj (_ : Params) (_ : Vars) : ℝ := -1684.6153846153848
+-- Maximize total profit
+def obj (p : Params) (v : Vars) : ℝ := -(p.S * v.n + p.Z * v.v)
 
 def formulation : MILPFormulation where
   Params := Params
