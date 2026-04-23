@@ -11,7 +11,7 @@ namespace P3
 -- § Parameter Mapping
 -- ============================================================================
 
-private def paramMap_af (p : P3.a.Params) : P3.f.Params :=
+private def paramMap (p : P3.a.Params) : P3.f.Params :=
   { N     := p.NumBeakers
     C     := p.WasteProducedPerBeaker
     E     := p.MaxWasteAllowed
@@ -30,55 +30,55 @@ private def paramMap_af (p : P3.a.Params) : P3.f.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
--- Count placed entirely in n1; n2 is zero
-private def fwd_af (_ : P3.a.Params) (v : P3.a.Vars) : P3.f.Vars :=
+/-- **P3.a → P3.f**: Count placed entirely in n1; n2 is zero. -/
+private def fwd (_ : P3.a.Params) (v : P3.a.Vars) : P3.f.Vars :=
   { n1 := v.NumBeakersUsed
     n2 := fun _ => 0 }
 
-private lemma fwd_feas_af (p : P3.a.Params) (v : P3.a.Vars)
+private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
     (h : P3.a.Feasible p v) :
-    P3.f.Feasible (paramMap_af p) (fwd_af p v) := by
-  refine ⟨?_, ?_, ?_, h.hnn, fun _ => le_refl 0⟩
-  · simp only [paramMap_af, fwd_af, Int.cast_zero, add_zero]; exact h.hliquid
-  · simp only [paramMap_af, fwd_af, Int.cast_zero, add_zero]; exact h.hflour
-  · simp only [paramMap_af, fwd_af, Int.cast_zero, add_zero]; exact h.hwaste
+    P3.f.Feasible (paramMap p) (fwd p v) := by
+  refine ⟨?_, ?_, ?_, h.hNumBeakersUsed_nn, fun _ => le_refl 0⟩
+  · simp only [paramMap, fwd, Int.cast_zero, add_zero]; exact h.hliquid
+  · simp only [paramMap, fwd, Int.cast_zero, add_zero]; exact h.hflour
+  · simp only [paramMap, fwd, Int.cast_zero, add_zero]; exact h.hwaste
 
 -- ============================================================================
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
--- Both parts are summed to recover the beaker count
-private def bwd_af (_ : P3.a.Params) (v : P3.f.Vars) : P3.a.Vars :=
+/-- **P3.f → P3.a**: Both parts are summed to recover the beaker count. -/
+private def bwd (_ : P3.a.Params) (v : P3.f.Vars) : P3.a.Vars :=
   { NumBeakersUsed := fun i => v.n1 i + v.n2 i }
 
-private lemma bwd_feas_af (p : P3.a.Params) (v : P3.f.Vars)
-    (h : P3.f.Feasible (paramMap_af p) v) :
-    P3.a.Feasible p (bwd_af p v) :=
+private lemma bwd_feas (p : P3.a.Params) (v : P3.f.Vars)
+    (h : P3.f.Feasible (paramMap p) v) :
+    P3.a.Feasible p (bwd p v) :=
   { hliquid := by
-      have h' := h.hliquid; simp only [paramMap_af, bwd_af] at h' ⊢; push_cast at h' ⊢; exact h'
+      have h' := h.hliquid; simp only [paramMap, bwd] at h' ⊢; push_cast at h' ⊢; exact h'
     hflour  := by
-      have h' := h.hflour; simp only [paramMap_af, bwd_af] at h' ⊢; push_cast at h' ⊢; exact h'
+      have h' := h.hflour; simp only [paramMap, bwd] at h' ⊢; push_cast at h' ⊢; exact h'
     hwaste  := by
-      have h' := h.hwaste; simp only [paramMap_af, bwd_af] at h' ⊢; push_cast at h' ⊢; exact h'
-    hnn     := fun i => by simp only [bwd_af]; linarith [h.hn1_nn i, h.hn2_nn i] }
+      have h' := h.hwaste; simp only [paramMap, bwd] at h' ⊢; push_cast at h' ⊢; exact h'
+    hNumBeakersUsed_nn := fun i => by simp only [bwd]; linarith [h.hn1_nn i, h.hn2_nn i] }
 
 -- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
 
-def afEquiv : MILPEquiv P3.a.formulation P3.f.formulation where
-  paramMap    := paramMap_af
-  fwd         := fwd_af
-  bwd         := bwd_af
-  fwd_feas    := fwd_feas_af
-  bwd_feas    := bwd_feas_af
+def aFEquiv : MILPEquiv P3.a.formulation P3.f.formulation where
+  paramMap    := paramMap
+  fwd         := fwd
+  bwd         := bwd
+  fwd_feas    := fwd_feas
+  bwd_feas    := bwd_feas
   objMap      := id
   objMap_mono := monotone_id
   fwd_obj     := fun _ _ _ => by
-    simp only [P3.f.formulation, P3.a.formulation, P3.f.obj, P3.a.obj, fwd_af, paramMap_af, id,
+    simp only [P3.f.formulation, P3.a.formulation, P3.f.obj, P3.a.obj, fwd, paramMap, id,
                Int.cast_zero, add_zero]
   bwd_obj     := fun _ _ _ => by
-    simp only [P3.f.formulation, P3.a.formulation, P3.f.obj, P3.a.obj, bwd_af, paramMap_af, id]
+    simp only [P3.f.formulation, P3.a.formulation, P3.f.obj, P3.a.obj, bwd, paramMap, id]
     push_cast; ring
 
 end P3

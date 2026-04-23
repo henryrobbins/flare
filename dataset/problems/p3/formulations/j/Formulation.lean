@@ -25,11 +25,12 @@ structure Params where
   hV_nn : ∀ i, 0 ≤ V i
 
 structure Vars where
-  n : ℕ → ℝ  -- quantity of flour utilized by beaker i (continuous)
+  n : ℕ → ℝ  -- quantity of flour utilized by beaker i
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Total liquid used does not exceed available amount
   hliquid : ∑ i : Fin p.N, p.V i * v.n i ≤ p.Z
+  -- [Implicit Constraints]
   hn_nn   : ∀ i : Fin p.N, 0 ≤ v.n i
 
 -- Maximize total slime produced

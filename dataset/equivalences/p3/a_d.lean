@@ -11,7 +11,7 @@ namespace P3
 -- § Parameter Mapping
 -- ============================================================================
 
-private def paramMap_ad (p : P3.a.Params) : P3.d.Params :=
+private def paramMap (p : P3.a.Params) : P3.d.Params :=
   { N     := p.NumBeakers
     C     := p.WasteProducedPerBeaker
     E     := p.MaxWasteAllowed
@@ -30,52 +30,52 @@ private def paramMap_ad (p : P3.a.Params) : P3.d.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
--- zed is set to total slime so it satisfies the auxiliary equality
-private def fwd_ad (p : P3.a.Params) (v : P3.a.Vars) : P3.d.Vars :=
+/-- **P3.a → P3.d**: Set zed to total slime so it satisfies the auxiliary equality. -/
+private def fwd (p : P3.a.Params) (v : P3.a.Vars) : P3.d.Vars :=
   { n   := v.NumBeakersUsed
-    zed := ∑ i : Fin p.NumBeakers, p.SlimeProducedPerBeaker i * v.NumBeakersUsed i }
+    zed := ∑ i : Fin p.NumBeakers, p.SlimeProducedPerBeaker i * (v.NumBeakersUsed i : ℝ) }
 
-private lemma fwd_feas_ad (p : P3.a.Params) (v : P3.a.Vars)
+private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
     (h : P3.a.Feasible p v) :
-    P3.d.Feasible (paramMap_ad p) (fwd_ad p v) :=
+    P3.d.Feasible (paramMap p) (fwd p v) :=
   { hzed    := rfl
     hliquid := h.hliquid
     hflour  := h.hflour
     hwaste  := h.hwaste
-    hn_nn   := h.hnn }
+    hn_nn   := h.hNumBeakersUsed_nn }
 
 -- ============================================================================
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
--- zed is dropped; beaker counts project directly
-private def bwd_ad (_ : P3.a.Params) (v : P3.d.Vars) : P3.a.Vars :=
+/-- **P3.d → P3.a**: Drop zed; beaker counts project directly. -/
+private def bwd (_ : P3.a.Params) (v : P3.d.Vars) : P3.a.Vars :=
   { NumBeakersUsed := v.n }
 
-private lemma bwd_feas_ad (p : P3.a.Params) (v : P3.d.Vars)
-    (h : P3.d.Feasible (paramMap_ad p) v) :
-    P3.a.Feasible p (bwd_ad p v) :=
+private lemma bwd_feas (p : P3.a.Params) (v : P3.d.Vars)
+    (h : P3.d.Feasible (paramMap p) v) :
+    P3.a.Feasible p (bwd p v) :=
   { hflour  := h.hflour
     hliquid := h.hliquid
     hwaste  := h.hwaste
-    hnn     := h.hn_nn }
+    hNumBeakersUsed_nn := h.hn_nn }
 
 -- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
 
-def adEquiv : MILPEquiv P3.a.formulation P3.d.formulation where
-  paramMap    := paramMap_ad
-  fwd         := fwd_ad
-  bwd         := bwd_ad
-  fwd_feas    := fwd_feas_ad
-  bwd_feas    := bwd_feas_ad
+def aDEquiv : MILPEquiv P3.a.formulation P3.d.formulation where
+  paramMap    := paramMap
+  fwd         := fwd
+  bwd         := bwd
+  fwd_feas    := fwd_feas
+  bwd_feas    := bwd_feas
   objMap      := id
   objMap_mono := monotone_id
   fwd_obj     := fun _ _ _ => rfl
   bwd_obj     := fun _ _ h => by
     have hzed := h.hzed
-    simp only [P3.d.formulation, P3.a.formulation, P3.d.obj, P3.a.obj, bwd_ad, paramMap_ad, id] at *
+    simp only [P3.d.formulation, P3.a.formulation, P3.d.obj, P3.a.obj, bwd, paramMap, id] at *
     linarith
 
 end P3

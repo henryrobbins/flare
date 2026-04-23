@@ -8,7 +8,6 @@ open BigOperators Finset
 
 namespace P3.g
 
--- Variable n represents 10× the original beaker count
 structure Params where
   N : ℕ           -- number of beakers
   C : Fin N → ℝ  -- waste per beaker i
@@ -35,6 +34,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hflour  : ∑ i : Fin p.N, p.T i * ((v.n i : ℝ) / 10) ≤ p.D
   -- Total waste generated does not exceed maximum allowed
   hwaste  : ∑ i : Fin p.N, p.C i * ((v.n i : ℝ) / 10) ≤ p.E
+  -- [Implicit Constraints]
   hn_nn   : ∀ i : Fin p.N, 0 ≤ v.n i
   -- Each n_i is a multiple of 10
   hdiv    : ∀ i : Fin p.N, 10 ∣ v.n i

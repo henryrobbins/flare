@@ -2,7 +2,6 @@ import Common
 
 namespace P3.h
 
--- Different problem: glass pane production
 structure Params where
   C : ℝ  -- heating time per regular pane
   S : ℝ  -- cooling time per regular pane
@@ -12,6 +11,15 @@ structure Params where
   H : ℝ  -- profit per tempered pane
   D : ℝ  -- max heating machine time per day
   V : ℝ  -- max cooling machine time per day
+  -- Implicit Assumptions
+  hC_nn : 0 ≤ C
+  hS_nn : 0 ≤ S
+  hP_nn : 0 ≤ P
+  hL_nn : 0 ≤ L
+  hT_nn : 0 ≤ T
+  hH_nn : 0 ≤ H
+  hD_nn : 0 ≤ D
+  hV_nn : 0 ≤ V
 
 structure Vars where
   e : ℝ  -- number of regular panes produced
@@ -22,6 +30,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hheating : p.C * v.e + p.P * v.h ≤ p.D
   -- Total cooling time does not exceed machine capacity
   hcooling : p.S * v.e + p.L * v.h ≤ p.V
+  -- [Implicit Constraints]
   he_nn : 0 ≤ v.e
   hh_nn : 0 ≤ v.h
 

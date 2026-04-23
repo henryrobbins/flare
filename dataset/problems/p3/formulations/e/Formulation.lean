@@ -18,7 +18,7 @@ structure Params where
   V : Fin N → ℝ  -- liquid per beaker i
   Z : ℝ           -- liquid available
   -- Implicit Assumptions
-  hN    : NeZero N
+  hN : NeZero N
   hC_nn : ∀ i, 0 ≤ C i
   hX_nn : ∀ i, 0 ≤ X i
   hT_nn : ∀ i, 0 ≤ T i
@@ -32,11 +32,12 @@ structure Vars where
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Total liquid used plus slack equals available amount
-  hliquid    : ∑ i : Fin p.N, p.V i * v.n i + v.slack_0 = p.Z
+  hliquid    : ∑ i : Fin p.N, p.V i * (v.n i : ℝ) + v.slack_0 = p.Z
   -- Total flour used plus slack equals available amount
-  hflour     : ∑ i : Fin p.N, p.T i * v.n i + v.slack_1 = p.D
+  hflour     : ∑ i : Fin p.N, p.T i * (v.n i : ℝ) + v.slack_1 = p.D
   -- Total waste generated plus slack equals maximum allowed
-  hwaste     : ∑ i : Fin p.N, p.C i * v.n i + v.slack_2 = p.E
+  hwaste     : ∑ i : Fin p.N, p.C i * (v.n i : ℝ) + v.slack_2 = p.E
+  -- [Implicit Constraints]
   hn_nn      : ∀ i : Fin p.N, 0 ≤ v.n i
   hslack0_nn : 0 ≤ v.slack_0
   hslack1_nn : 0 ≤ v.slack_1
@@ -44,7 +45,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
 
 -- Maximize total slime produced
 def obj (p : Params) (v : Vars) : ℝ :=
-  -(∑ i : Fin p.N, p.X i * v.n i)
+  -(∑ i : Fin p.N, p.X i * (v.n i : ℝ))
 
 def formulation : MILPFormulation where
   Params   := Params
