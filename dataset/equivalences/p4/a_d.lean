@@ -14,7 +14,13 @@ private def paramMap (p : P4.a.Params) : P4.d.Params :=
     K := p.CarCapacity
     D := p.BusCapacity
     O := p.BusPollution
-    S := p.MaxBuses }
+    S := p.MaxBuses
+    hK_nn := p.hCarCapacity_nn
+    hM_nn := p.hCarPollution_nn
+    hD_nn := p.hBusCapacity_nn
+    hO_nn := p.hBusPollution_nn
+    hJ_nn := p.hMinEmployeesToTransport_nn
+    hS_nn := p.hMaxBuses_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -24,7 +30,7 @@ private def paramMap (p : P4.a.Params) : P4.d.Params :=
 private def fwd (p : P4.a.Params) (v : P4.a.Vars) : P4.d.Vars :=
   { m   := v.xCars
     h   := v.xBuses
-    zed := v.xCars * p.CarPollution + v.xBuses * p.BusPollution }
+    zed := (v.xCars : ℝ) * p.CarPollution + (v.xBuses : ℝ) * p.BusPollution }
 
 private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
     (h : P4.a.Feasible p v) :
@@ -56,7 +62,7 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.d.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFdEquiv : MILPEquiv P4.a.formulation P4.d.formulation where
+def aDEquiv : MILPEquiv P4.a.formulation P4.d.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

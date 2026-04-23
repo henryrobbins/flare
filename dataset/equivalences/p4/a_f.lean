@@ -14,7 +14,13 @@ private def paramMap (p : P4.a.Params) : P4.f.Params :=
     K := p.CarCapacity
     D := p.BusCapacity
     O := p.BusPollution
-    S := p.MaxBuses }
+    S := p.MaxBuses
+    hK_nn := p.hCarCapacity_nn
+    hM_nn := p.hCarPollution_nn
+    hD_nn := p.hBusCapacity_nn
+    hO_nn := p.hBusPollution_nn
+    hJ_nn := p.hMinEmployeesToTransport_nn
+    hS_nn := p.hMaxBuses_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -52,10 +58,24 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.f.Vars)
     hbus_nn    := by simp only [bwd]; linarith [h.hh1_nn, h.hh2_nn] }
 
 -- ============================================================================
+-- § Objective Mapping
+-- ============================================================================
+
+private lemma fwd_obj (p : P4.a.Params) (v : P4.a.Vars) (_ : P4.a.Feasible p v) :
+    P4.f.obj (paramMap p) (fwd p v) = id (P4.a.obj p v) := by
+  simp only [P4.f.obj, P4.a.obj, fwd, paramMap, id]
+  push_cast; ring
+
+private lemma bwd_obj (p : P4.a.Params) (v : P4.f.Vars) (_ : P4.f.Feasible (paramMap p) v) :
+    P4.f.obj (paramMap p) v = id (P4.a.obj p (bwd p v)) := by
+  simp only [P4.f.obj, P4.a.obj, bwd, paramMap, id]
+  push_cast; ring
+
+-- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFfEquiv : MILPEquiv P4.a.formulation P4.f.formulation where
+def aFEquiv : MILPEquiv P4.a.formulation P4.f.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
@@ -63,11 +83,7 @@ def faFfEquiv : MILPEquiv P4.a.formulation P4.f.formulation where
   bwd_feas    := bwd_feas
   objMap      := id
   objMap_mono := monotone_id
-  fwd_obj := fun _ v _ => by
-    simp only [P4.f.formulation, P4.f.obj, P4.a.formulation, P4.a.obj, fwd, paramMap, id]
-    push_cast; ring
-  bwd_obj := fun _ v _ => by
-    simp only [P4.f.formulation, P4.f.obj, P4.a.formulation, P4.a.obj, bwd, paramMap, id]
-    push_cast; ring
+  fwd_obj     := fwd_obj
+  bwd_obj     := bwd_obj
 
 end P4

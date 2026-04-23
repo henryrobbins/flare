@@ -11,19 +11,28 @@ structure Params where
   Z : ℝ  -- bags per canoe trip
   E : ℝ  -- min runners required
   P : ℝ  -- max fraction of deliveries by canoe
+  -- Implicit Assumptions
+  hU_nn : 0 ≤ U
+  hC_nn : 0 ≤ C
+  hV_nn : 0 ≤ V
+  hN_nn : 0 ≤ N
+  hZ_nn : 0 ≤ Z
+  hE_nn : 0 ≤ E
+  hP_nn : 0 ≤ P
 
 structure Vars where
   e : ℝ  -- number of runners used
   p : ℝ  -- number of canoe trips
   a : ℝ  -- number of runner trips
 
-structure Feasible (p_params : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars) : Prop where
   -- Canoe deliveries ≤ fraction P of total deliveries
-  hcanoe_frac : v.p * p_params.Z ≤ p_params.P * (v.p * p_params.Z + v.a * p_params.V)
+  hcanoe_frac : v.p * p.Z ≤ p.P * (v.p * p.Z + v.a * p.V)
   -- Total delivery time ≤ available
-  htime : p_params.U * v.a + p_params.N * v.p ≤ p_params.C
+  htime : p.U * v.a + p.N * v.p ≤ p.C
   -- At least E runners required
-  hmin_runners : p_params.E ≤ v.e
+  hmin_runners : p.E ≤ v.e
+  -- [Implicit Constraints]
   he_nn : 0 ≤ v.e
   hp_nn : 0 ≤ v.p
   ha_nn : 0 ≤ v.a

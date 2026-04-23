@@ -14,7 +14,13 @@ private def paramMap (p : P4.a.Params) : P4.g.Params :=
     K := p.CarCapacity
     D := p.BusCapacity
     O := p.BusPollution
-    S := p.MaxBuses }
+    S := p.MaxBuses
+    hK_nn := p.hCarCapacity_nn
+    hM_nn := p.hCarPollution_nn
+    hD_nn := p.hBusCapacity_nn
+    hO_nn := p.hBusPollution_nn
+    hJ_nn := p.hMinEmployeesToTransport_nn
+    hS_nn := p.hMaxBuses_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -49,10 +55,22 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.g.Vars)
     hbus_nn    := h.hh_nn }
 
 -- ============================================================================
+-- § Objective Mapping
+-- ============================================================================
+
+private lemma fwd_obj (p : P4.a.Params) (v : P4.a.Vars) (_ : P4.a.Feasible p v) :
+    P4.g.obj (paramMap p) (fwd p v) = 2 * P4.a.obj p v := by
+  simp only [P4.g.obj, P4.a.obj, fwd, paramMap]
+
+private lemma bwd_obj (p : P4.a.Params) (v : P4.g.Vars) (_ : P4.g.Feasible (paramMap p) v) :
+    P4.g.obj (paramMap p) v = 2 * P4.a.obj p (bwd p v) := by
+  simp only [P4.g.obj, P4.a.obj, bwd, paramMap]
+
+-- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFgEquiv : MILPEquiv P4.a.formulation P4.g.formulation where
+def aGEquiv : MILPEquiv P4.a.formulation P4.g.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
@@ -60,7 +78,7 @@ def faFgEquiv : MILPEquiv P4.a.formulation P4.g.formulation where
   bwd_feas    := bwd_feas
   objMap      := fun x => 2 * x
   objMap_mono := fun _ _ h => by linarith
-  fwd_obj     := fun _ v _ => by simp only [P4.g.formulation, P4.g.obj, P4.a.formulation, P4.a.obj, fwd, paramMap]
-  bwd_obj     := fun _ v _ => by simp only [P4.g.formulation, P4.g.obj, P4.a.formulation, P4.a.obj, bwd, paramMap]
+  fwd_obj     := fwd_obj
+  bwd_obj     := bwd_obj
 
 end P4

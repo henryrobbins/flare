@@ -14,7 +14,13 @@ private def paramMap (p : P4.a.Params) : P4.e.Params :=
     K := p.CarCapacity
     D := p.BusCapacity
     O := p.BusPollution
-    S := p.MaxBuses }
+    S := p.MaxBuses
+    hK_nn := p.hCarCapacity_nn
+    hM_nn := p.hCarPollution_nn
+    hD_nn := p.hBusCapacity_nn
+    hO_nn := p.hBusPollution_nn
+    hJ_nn := p.hMinEmployeesToTransport_nn
+    hS_nn := p.hMaxBuses_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -24,8 +30,8 @@ private def paramMap (p : P4.a.Params) : P4.e.Params :=
 private def fwd (p : P4.a.Params) (v : P4.a.Vars) : P4.e.Vars :=
   { m       := v.xCars
     h       := v.xBuses
-    slack_0 := v.xCars * p.CarCapacity + v.xBuses * p.BusCapacity - p.MinEmployeesToTransport
-    slack_1 := p.MaxBuses - v.xBuses }
+    slack_0 := (v.xCars : ℝ) * p.CarCapacity + (v.xBuses : ℝ) * p.BusCapacity - p.MinEmployeesToTransport
+    slack_1 := p.MaxBuses - (v.xBuses : ℝ) }
 
 private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
     (h : P4.a.Feasible p v) :
@@ -47,7 +53,6 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.e.Vars)
     (h : P4.e.Feasible (paramMap p) v) :
     P4.a.Feasible p (bwd p v) := by
   have htr := h.htransport; simp only [paramMap] at htr
-  have hbu := h.hbuses;     simp only [paramMap] at hbu
   simp only [bwd]
   exact ⟨by linarith [h.hslack0_nn], by linarith [h.hslack1_nn], h.hm_nn, h.hh_nn⟩
 
@@ -55,7 +60,7 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.e.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFeEquiv : MILPEquiv P4.a.formulation P4.e.formulation where
+def aEEquiv : MILPEquiv P4.a.formulation P4.e.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

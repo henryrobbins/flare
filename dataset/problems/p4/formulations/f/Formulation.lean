@@ -9,6 +9,13 @@ structure Params where
   O : ℝ  -- bus pollution
   J : ℝ  -- min employees to transport
   S : ℝ  -- max buses allowed
+  -- Implicit Assumptions
+  hK_nn : 0 ≤ K
+  hM_nn : 0 ≤ M
+  hD_nn : 0 ≤ D
+  hO_nn : 0 ≤ O
+  hJ_nn : 0 ≤ J
+  hS_nn : 0 ≤ S
 
 structure Vars where
   m1 : ℤ  -- part 1 of car count
@@ -18,16 +25,17 @@ structure Vars where
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Use at most S buses
-  hmaxbus : v.h1 + v.h2 ≤ p.S
+  hmaxbus : ((v.h1 : ℝ) + (v.h2 : ℝ)) ≤ p.S
   -- Transport at least J employees
-  htransport : p.J ≤ (v.m1 + v.m2) * p.K + (v.h1 + v.h2) * p.D
+  htransport : p.J ≤ ((v.m1 : ℝ) + (v.m2 : ℝ)) * p.K + ((v.h1 : ℝ) + (v.h2 : ℝ)) * p.D
+  -- [Implicit Constraints]
   hm1_nn : 0 ≤ v.m1
   hm2_nn : 0 ≤ v.m2
   hh1_nn : 0 ≤ v.h1
   hh2_nn : 0 ≤ v.h2
 
 -- Minimize total pollution
-def obj (p : Params) (v : Vars) : ℝ := (v.m1 + v.m2) * p.M + (v.h1 + v.h2) * p.O
+def obj (p : Params) (v : Vars) : ℝ := ((v.m1 : ℝ) + (v.m2 : ℝ)) * p.M + ((v.h1 : ℝ) + (v.h2 : ℝ)) * p.O
 
 def formulation : MILPFormulation where
   Params   := Params
