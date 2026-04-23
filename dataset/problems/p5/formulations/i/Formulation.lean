@@ -2,13 +2,18 @@ import Common
 
 namespace P5.i
 
--- Different problem: wine bottle production (objective replaced by solution value)
 structure Params where
   Q : ℝ  -- min vintage bottles to produce
   D : ℝ  -- volume of one vintage bottle (ml)
   O : ℝ  -- min ratio of regular to vintage bottles
   J : ℝ  -- volume of one regular bottle (ml)
   A : ℝ  -- total wine available (ml)
+  -- Implicit Assumptions
+  hQ_nn : 0 ≤ Q
+  hD_nn : 0 ≤ D
+  hO_nn : 0 ≤ O
+  hJ_nn : 0 ≤ J
+  hA_nn : 0 ≤ A
 
 structure Vars where
   z : ℝ  -- number of regular bottles produced
@@ -24,8 +29,8 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hz_nn : 0 ≤ v.z
   hg_nn : 0 ≤ v.g
 
--- Objective replaced by constant solution value 300.0
-def obj (_ : Params) (_ : Vars) : ℝ := -300
+-- Maximize total bottles produced
+def obj (_ : Params) (v : Vars) : ℝ := -(v.z + v.g)
 
 def formulation : MILPFormulation where
   Params   := Params

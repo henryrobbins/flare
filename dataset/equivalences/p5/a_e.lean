@@ -13,19 +13,24 @@ private def paramMap (p : P5.a.Params) : P5.e.Params :=
     B := p.WaterTopsoil
     D := p.MaxTotalBags
     P := p.MinTopsoilBags
-    K := p.MaxTopsoilProportion }
+    K := p.MaxTopsoilProportion
+    hZ_nn := p.hWaterSubsoil_nn
+    hB_nn := p.hWaterTopsoil_nn
+    hD_nn := p.hMaxTotalBags_nn
+    hP_nn := p.hMinTopsoilBags_nn
+    hK_nn := p.hMaxTopsoilProportion_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
--- Slacks absorb the surplus of each inequality constraint in Fa
+-- Slacks absorb the surplus of each inequality constraint in P5.a
 private def fwd (p : P5.a.Params) (v : P5.a.Vars) : P5.e.Vars :=
   { h       := v.SubsoilBags
     d       := v.TopsoilBags
-    slack_0 := p.MaxTopsoilProportion * (v.TopsoilBags + v.SubsoilBags) - v.TopsoilBags
-    slack_1 := p.MaxTotalBags - v.SubsoilBags - v.TopsoilBags
-    slack_2 := v.TopsoilBags - p.MinTopsoilBags }
+    slack_0 := p.MaxTopsoilProportion * ((v.TopsoilBags : ℝ) + v.SubsoilBags) - v.TopsoilBags
+    slack_1 := p.MaxTotalBags - (v.SubsoilBags : ℝ) - v.TopsoilBags
+    slack_2 := (v.TopsoilBags : ℝ) - p.MinTopsoilBags }
 
 private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
     (h : P5.a.Feasible p v) :
@@ -57,7 +62,7 @@ private lemma bwd_feas (p : P5.a.Params) (v : P5.e.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFeEquiv : MILPEquiv P5.a.formulation P5.e.formulation where
+def aEEquiv : MILPEquiv P5.a.formulation P5.e.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

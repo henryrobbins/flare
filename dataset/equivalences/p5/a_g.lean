@@ -13,7 +13,12 @@ private def paramMap (p : P5.a.Params) : P5.g.Params :=
     B := p.WaterTopsoil
     D := p.MaxTotalBags
     P := p.MinTopsoilBags
-    K := p.MaxTopsoilProportion }
+    K := p.MaxTopsoilProportion
+    hZ_nn := p.hWaterSubsoil_nn
+    hB_nn := p.hWaterTopsoil_nn
+    hD_nn := p.hMaxTotalBags_nn
+    hP_nn := p.hMinTopsoilBags_nn
+    hK_nn := p.hMaxTopsoilProportion_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -48,7 +53,7 @@ private lemma bwd_feas (p : P5.a.Params) (v : P5.g.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def faFgEquiv : MILPEquiv P5.a.formulation P5.g.formulation where
+def aGEquiv : MILPEquiv P5.a.formulation P5.g.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

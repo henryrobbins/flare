@@ -2,13 +2,18 @@ import Common
 
 namespace P5.h
 
--- Different problem: wine bottle production
 structure Params where
   Q : ℝ  -- min vintage bottles to produce
   D : ℝ  -- volume of one vintage bottle (ml)
   O : ℝ  -- min ratio of regular to vintage bottles
   J : ℝ  -- volume of one regular bottle (ml)
   A : ℝ  -- total wine available (ml)
+  -- Implicit Assumptions
+  hQ_nn : 0 ≤ Q
+  hD_nn : 0 ≤ D
+  hO_nn : 0 ≤ O
+  hJ_nn : 0 ≤ J
+  hA_nn : 0 ≤ A
 
 structure Vars where
   z : ℝ  -- number of regular bottles produced
