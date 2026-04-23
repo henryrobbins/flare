@@ -66,11 +66,12 @@ For each problem `pN`:
 For each formulation `pN/formulations/x/`:
 
 - **`formulation.json`** — Structured description of the MILP:
-  - `parameters` — parameters for the MILP formulation; should be a function of problem parameters provided in `data.json`
-  - `variables` — name, description, type (`integer`, `continuous`, `binary`), and shape.
-  - `constraints` — list of `{description, formulation (LaTeX), code.gurobipy}`.
-  - `objective` — `{description, formulation (LaTeX), code.gurobipy}`.
   - `valid` — boolean indicating whether the formulation is a valid formulation for the parent problem; all formulations of a problem marked as valid should be equivalent to one another.
+  - `parameters` — parameters for the MILP formulation; should be a function of problem parameters provided in `data.json`.
+  - `assumptions` — list of parameter assumptions, each with `{description, formulation (LaTeX), explicit (bool), code.python}`. The `explicit` flag is `true` when the assumption is stated explicitly in the original problem text; `false` when it is implicit (e.g., non-negativity of a rate that is obviously physical). Assumptions on parameters are distinct from constraints on decision variables.
+  - `variables` — name, description, type (`integer`, `continuous`, `binary`), and shape.
+  - `constraints` — list of `{description, formulation (LaTeX), explicit (bool), code.gurobipy}`. The `explicit` flag is `true` when the constraint appears explicitly in the problem statement; `false` for implied constraints such as non-negativity bounds.
+  - `objective` — `{description, formulation (LaTeX), code.gurobipy}`.
 - **`gen_params.py`** — Generates `parameters.json` (a map of `parameters`) from the shared `data.json` (with stores problem-level `parameters`).
 - **`solve.py`** — A Gurobi script that loads `parameters.json` and writes `solution.json`. Equivalent formulations on the same instance produce the same objective.
 - **`Formulation.lean`** — A Lean 4 encoding of the MILP as a `MILPFormulation` (defined in `Common.lean`).

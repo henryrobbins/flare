@@ -3,8 +3,9 @@ from milp_eq_tools.formulation import Formulation
 
 
 def test_metadata_loaded_eagerly(problem1: Problem) -> None:
-    assert problem1.metadata["source"] == "EquivaFormulation"
-    assert problem1.metadata["instance_id"] == 47
+    source = problem1.metadata["source"]
+    assert source["dataset"] == "EquivaFormulation"
+    assert source["instance_id"] == 47
 
 
 def test_parameters_loaded_eagerly(problem1: Problem) -> None:

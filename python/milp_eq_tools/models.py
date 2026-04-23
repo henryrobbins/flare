@@ -21,9 +21,18 @@ class VariableType(str, Enum):
 
 
 @dataclass(frozen=True)
+class Assumption:
+    description: str
+    formulation: str
+    explicit: bool
+    code: dict[str, str]
+
+
+@dataclass(frozen=True)
 class Constraint:
     description: str
     formulation: str
+    explicit: bool
     code: dict[str, str]
 
 

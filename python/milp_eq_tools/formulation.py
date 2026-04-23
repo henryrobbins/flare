@@ -1,9 +1,8 @@
 import json
 import subprocess
-from functools import cached_property
 from pathlib import Path
 
-from .models import Constraint, Objective, Parameter, Variable, VariableType
+from .models import Assumption, Constraint, Objective, Parameter, Variable, VariableType
 
 
 class Formulation:
@@ -16,6 +15,15 @@ class Formulation:
             k: Parameter(description=v["description"], shape=v["shape"])
             for k, v in raw["parameters"].items()
         }
+        self.assumptions: list[Assumption] = [
+            Assumption(
+                description=a["description"],
+                formulation=a["formulation"],
+                explicit=a["explicit"],
+                code=a["code"],
+            )
+            for a in raw.get("assumptions", [])
+        ]
         self.variables: dict[str, Variable] = {
             k: Variable(
                 description=v["description"],
@@ -28,6 +36,7 @@ class Formulation:
             Constraint(
                 description=c["description"],
                 formulation=c["formulation"],
+                explicit=c["explicit"],
                 code=c["code"],
             )
             for c in raw["constraints"]
@@ -38,10 +47,6 @@ class Formulation:
             code=raw["objective"]["code"],
         )
         self.metadata: dict[str, object] = raw.get("metadata", {})
-
-    @cached_property
-    def description(self) -> str:
-        return (self.path / "description.md").read_text()
 
     def gen_params(
         self,

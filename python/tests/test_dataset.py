@@ -12,4 +12,4 @@ def test_problems_values_are_problem_instances(dataset: Dataset) -> None:
 
 def test_problem_lookup(dataset: Dataset) -> None:
     p = dataset.problems[1]
-    assert p.metadata["source"] == "EquivaFormulation"
+    assert p.metadata["source"]["dataset"] == "EquivaFormulation"
