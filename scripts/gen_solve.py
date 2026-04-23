@@ -61,9 +61,13 @@ def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
 
 def generate(formulation_json: dict[str, object]) -> str:
     params = dict(formulation_json.get("parameters", {}))  # type: ignore[arg-type]
+    assumptions = list(formulation_json.get("assumptions", []))  # type: ignore[arg-type]
     variables = dict(formulation_json.get("variables", {}))  # type: ignore[arg-type]
     constraints = list(formulation_json.get("constraints", []))  # type: ignore[arg-type]
     objective = dict(formulation_json.get("objective", {}))  # type: ignore[arg-type]
+
+    explicit_constraints = [c for c in constraints if c.get("explicit", True)]  # type: ignore[union-attr]
+    implicit_constraints = [c for c in constraints if not c.get("explicit", True)]  # type: ignore[union-attr]
 
     all_codes = [
         str(c.get("code", {}).get("gurobipy", "")) for c in constraints  # type: ignore[union-attr]
@@ -103,6 +107,17 @@ def generate(formulation_json: dict[str, object]) -> str:
             L.append(f'    {name} = data["{name}"]')
         L.append("")
 
+    # Parameter Validation
+    if assumptions:
+        L.append("    # Parameter Validation")
+        for a in assumptions:
+            a = dict(a)  # type: ignore[arg-type]
+            code = str(a.get("code", {}).get("python", "")).strip()  # type: ignore[union-attr]
+            if code:
+                for line in code.split("\n"):
+                    L.append(f"    {line}")
+        L.append("")
+
     # Variables
     if variables:
         L.append("    # Variables")
@@ -113,13 +128,24 @@ def generate(formulation_json: dict[str, object]) -> str:
 
     # Constraints
     L.append("    # Constraints")
-    for c in constraints:
+    for c in explicit_constraints:
         c = dict(c)  # type: ignore[arg-type]
         code = str(c.get("code", {}).get("gurobipy", "")).strip()  # type: ignore[union-attr]
         if code:
             for line in code.split("\n"):
                 L.append(f"    {line}")
     L.append("")
+
+    # Implicit Constraints
+    if implicit_constraints:
+        L.append("    # Implicit Constraints")
+        for c in implicit_constraints:
+            c = dict(c)  # type: ignore[arg-type]
+            code = str(c.get("code", {}).get("gurobipy", "")).strip()  # type: ignore[union-attr]
+            if code:
+                for line in code.split("\n"):
+                    L.append(f"    {line}")
+        L.append("")
 
     # Objective
     obj_code = str(objective.get("code", {}).get("gurobipy", "")).strip()  # type: ignore[union-attr]
