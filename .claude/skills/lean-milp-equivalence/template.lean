@@ -1,15 +1,11 @@
 /-
 NOTE: Imports go at the very top.
 
-Always include:
-  import MILP.Common
+Always include the project's common MILP definitions module:
+  import Common
 
-Import both formulations being compared:
-  import MILP.<family>.<problem>.Formulation.<A>
-  import MILP.<family>.<problem>.Formulation.<B>
-
-If the file requires shared lemmas:
-  import MILP.<family>.<problem>.Lemmas
+Import both formulation modules being compared. The exact import paths
+depend on where the formulation files live in the project.
 
 Use targeted Mathlib imports, NOT `import Mathlib`. Common options:
   import Mathlib.Algebra.BigOperators.Group.Finset.Basic
@@ -19,34 +15,20 @@ Use targeted Mathlib imports, NOT `import Mathlib`. Common options:
   import Mathlib.Order.ConditionallyCompleteLattice.Basic
 -/
 
-import MILP.Common
-import MILP.<family>.<problem>.Formulation.<A>
-import MILP.<family>.<problem>.Formulation.<B>
-import MILP.<family>.<problem>.Lemmas
+import Common
+import <FormulationModuleA>
+import <FormulationModuleB>
 
 /-
 NOTE: Add `open BigOperators Finset` only if the feasibility proofs use ∑ or Finsets.
 -/
 open BigOperators Finset
 
-/-!
-# <A> ↔ <B> Equivalence
-
-See `datasets/<family>/<problem>/PROBLEM.md` for MILP description and formulations.
--/
-
 /-
-NOTE: Do NOT add any additional doc-comment blocks (e.g., "## Proof Strategy",
-"## Forward Direction") after the module header above. The module header is the
-only /-! ... -/ block allowed in an equivalence file. Proof reasoning belongs in
-tactic-line comments (`-- ...`) inside the proof body.
+NOTE: Open a namespace corresponding to the shared problem scope.
+e.g., `P1` for problem p1.
 -/
-
-/-
-NOTE: Open a namespace corresponding to the shared family/problem scope.
-e.g., `EquivaFormulation.Laundromat` or `General.TSP`.
--/
-namespace <Family>.<Problem>
+namespace <Problem>
 
 -- ============================================================================
 -- § Helper Lemmas
@@ -54,12 +36,12 @@ namespace <Family>.<Problem>
 
 /-
 NOTE: This section is *optional*. Include only general lemmas that have no
-dependency on the MILP formulation or any specific feasible solution AND are
-specific to this equivalence proof (not shared across multiple files).
+dependency on any specific feasible solution.
 
 - Use the `lemma` keyword.
-- Mark as `private`. Lemmas shared across multiple equivalence files for the
-  same problem belong in `Lemmas.lean` instead.
+- Mark as `private`. Every helper lemma lives in this equivalence file;
+  equivalence files do not import each other and there is no shared-lemmas
+  module. If another equivalence file needs the same lemma, duplicate it.
 - Lemmas specific to a particular formulation that are needed by fwd_feas or
   bwd_feas belong in ForwardHelpers / BackwardHelpers sections below.
 - Remove this section entirely if no such lemmas are needed.
@@ -77,7 +59,7 @@ put it inline in the equivalence structure instead.
 - Use `private def paramMap`.
 -/
 
-private def paramMap (p : <A>.formulation.Params) : <B>.formulation.Params :=
+private def paramMap (p : <A>.Params) : <B>.Params :=
   { ... }
 
 -- ============================================================================
@@ -105,13 +87,11 @@ section ForwardHelpers
 /-
 NOTE: Use `variable` to automatically add parameters for convenience.
 
-- Introduce the index dimensions as *implicit* parameters
-- Add `[NeZero n]` for every dimension parameter (as required by the formulation)
-- Introduce the `Params` and `Vars` structures as *implicit* parameters
+- Introduce `Params` and `Vars` as *implicit* parameters.
 - Introduce the feasibility hypothesis as an *explicit* parameter (h)
 - Explicitly `include h` to avoid issues with Lean inferring the variable
 -/
-variable {n : ℕ} [NeZero n] {p : <A>.Params n} {v : <A>.Vars n} (h : <A>.Feasible p v)
+variable {p : <A>.Params} {v : <A>.Vars} (h : <A>.Feasible p v)
 include h
 
 -- Private helper lemmas and definitions depending on h go here.
@@ -121,13 +101,12 @@ end ForwardHelpers
 /--
 **<A> → <B>**: {Brief informal description of the forward map construction}
 -/
-private def fwd (_ : <A>.formulation.Params)
-    (v : <A>.formulation.Vars) : <B>.formulation.Vars :=
+private def fwd (_ : <A>.Params) (v : <A>.Vars) : <B>.Vars :=
   { ... }
 
-private lemma fwd_feas (p : <A>.formulation.Params) (v : <A>.formulation.Vars)
-    (h : <A>.formulation.feasible p v) :
-    <B>.formulation.feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : <A>.Params) (v : <A>.Vars)
+    (h : <A>.Feasible p v) :
+    <B>.Feasible (paramMap p) (fwd p v) := by
   sorry
 
 -- ============================================================================
@@ -151,7 +130,14 @@ solution from formulation <B>. Remove the section entirely if not needed.
 
 section BackwardHelpers
 
-variable {n : ℕ} [NeZero n] {p : <B>.Params n} {v : <B>.Vars n} (h : <B>.Feasible p v)
+/-
+NOTE: Use `variable` to automatically add parameters for convenience.
+
+- Introduce `Params` and `Vars` as *implicit* parameters.
+- Introduce the feasibility hypothesis as an *explicit* parameter (h)
+- Explicitly `include h` to avoid issues with Lean inferring the variable
+-/
+variable {p : <B>.Params} {v : <B>.Vars} (h : <B>.Feasible p v)
 include h
 
 -- Private helper lemmas and definitions depending on h go here.
@@ -161,13 +147,12 @@ end BackwardHelpers
 /--
 **<B> → <A>**: {Brief informal description of the backward map construction}
 -/
-private def bwd (_ : <B>.formulation.Params)
-    (v : <B>.formulation.Vars) : <A>.formulation.Vars :=
+private def bwd (_ : <A>.Params) (v : <B>.Vars) : <A>.Vars :=
   { ... }
 
-private lemma bwd_feas (p : <B>.formulation.Params) (v : <B>.formulation.Vars)
-    (h : <B>.formulation.feasible (paramMap p) v) :
-    <A>.formulation.feasible p (bwd p v) := by
+private lemma bwd_feas (p : <A>.Params) (v : <B>.Vars)
+    (h : <B>.Feasible (paramMap p) v) :
+    <A>.Feasible p (bwd p v) := by
   sorry
 
 -- ============================================================================
@@ -191,14 +176,14 @@ private def objMap : ℝ → ℝ := fun v => ...
 private lemma objMap_mono : Monotone objMap := by
   sorry
 
-private lemma fwd_obj (p : <A>.formulation.Params) (v : <A>.formulation.Vars)
-    (h : <A>.formulation.feasible p v) :
-    <B>.formulation.obj (paramMap p) (fwd p v) = objMap (<A>.formulation.obj p v) := by
+private lemma fwd_obj (p : <A>.Params) (v : <A>.Vars)
+    (h : <A>.Feasible p v) :
+    <B>.obj (paramMap p) (fwd p v) = objMap (<A>.obj p v) := by
   sorry
 
-private lemma bwd_obj (p : <B>.formulation.Params) (v : <B>.formulation.Vars)
-    (h : <B>.formulation.feasible (paramMap p) v) :
-    <B>.formulation.obj (paramMap p) v = objMap (<A>.formulation.obj p (bwd p v)) := by
+private lemma bwd_obj (p : <A>.Params) (v : <B>.Vars)
+    (h : <B>.Feasible (paramMap p) v) :
+    <B>.obj (paramMap p) v = objMap (<A>.obj p (bwd p v)) := by
   sorry
 
 -- ============================================================================
@@ -208,8 +193,9 @@ private lemma bwd_obj (p : <B>.formulation.Params) (v : <B>.formulation.Vars)
 /-
 NOTE: The final def should be a `MILPEquiv` structure:
 
-- See `MILP/Common.lean` for the definition of `MILPEquiv` and its fields.
-- Named camelCase: <formA><FormB>Equiv (e.g., `originalCEquiv`, `scfMcfEquiv`)
+- See the project's common MILP module for the definition of `MILPEquiv`
+  and its fields.
+- Named camelCase: <formA><FormB>Equiv (e.g., `faFbEquiv`, `scfMcfEquiv`)
 - Marked `noncomputable` if any helper def is noncomputable
 - `paramMap`: reference the private def above, or inline for trivial cases
     e.g., `paramMap p := { c := p.c }` or `paramMap := id`
@@ -235,4 +221,4 @@ def <formA><FormB>Equiv : MILPEquiv <A>.formulation <B>.formulation where
   fwd_obj _ _ _ := rfl
   bwd_obj _ _ _ := rfl
 
-end <Family>.<Problem>
+end <Problem>
