@@ -12,16 +12,16 @@ namespace P2
 -- ============================================================================
 
 private def paramMap (p : P2.a.Params) : P2.b.Params :=
-  { m     := p.NumExperiments
-    n     := p.NumResources
-    A     := p.ElectricityProduced
-    I     := p.ResourceRequired
-    Y     := p.ResourceAvailable
-    hm    := p.hNumExperiments
-    hn    := p.hNumResources
+  { M := p.NumExperiments
+    N := p.NumResources
+    A := p.ElectricityProduced
+    I := p.ResourceRequired
+    Y := p.ResourceAvailable
+    hM := p.hNumExperiments
+    hN := p.hNumResources
     hA_nn := p.hElectricityProduced_nn
     hI_nn := p.hResourceRequired_nn
-    hY_nn := p.hResourceAvailable_nn}
+    hY_nn := p.hResourceAvailable_nn }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility
@@ -32,7 +32,7 @@ private def fwd (_ : P2.a.Params) (v : P2.a.Vars) : P2.b.Vars :=
 
 private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars) (h : P2.a.Feasible p v) :
     P2.b.Feasible (paramMap p) (fwd p v) :=
-  { hres  := h.hres
+  { hres := h.hres
     hj_nn := h.hConductExperiment_nn }
 
 -- ============================================================================
@@ -45,7 +45,7 @@ private def bwd (_ : P2.a.Params) (v : P2.b.Vars) : P2.a.Vars :=
 private lemma bwd_feas (p : P2.a.Params) (v : P2.b.Vars)
     (h : P2.b.Feasible (paramMap p) v) :
     P2.a.Feasible p (bwd p v) :=
-  { hres  := h.hres
+  { hres := h.hres
     hConductExperiment_nn := h.hj_nn }
 
 -- ============================================================================
