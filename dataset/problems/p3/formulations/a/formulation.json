@@ -1,144 +1,144 @@
 {
-    "valid": true,
-    "parameters": {
-        "NumBeakers": {
-            "description": "Number of beakers",
-            "shape": []
-        },
-        "FlourAvailable": {
-            "description": "Amount of flour available",
-            "shape": []
-        },
-        "SpecialLiquidAvailable": {
-            "description": "Amount of special liquid available",
-            "shape": []
-        },
-        "MaxWasteAllowed": {
-            "description": "Maximum amount of waste allowed",
-            "shape": []
-        },
-        "FlourUsagePerBeaker": {
-            "description": "Amount of flour used by each beaker",
-            "shape": [
-                "NumBeakers"
-            ]
-        },
-        "SpecialLiquidUsagePerBeaker": {
-            "description": "Amount of special liquid used by each beaker",
-            "shape": [
-                "NumBeakers"
-            ]
-        },
-        "SlimeProducedPerBeaker": {
-            "description": "Amount of slime produced by each beaker",
-            "shape": [
-                "NumBeakers"
-            ]
-        },
-        "WasteProducedPerBeaker": {
-            "description": "Amount of waste produced by each beaker",
-            "shape": [
-                "NumBeakers"
-            ]
-        }
+  "valid": true,
+  "parameters": {
+    "NumBeakers": {
+      "description": "Number of beakers",
+      "shape": []
     },
-    "assumptions": [
-        {
-            "description": "NumBeakers is positive (non-zero).",
-            "formulation": "NumBeakers \\geq 1",
-            "explicit": false,
-            "code": {
-                "python": "assert NumBeakers >= 1"
-            }
-        },
-        {
-            "description": "Flour usage per beaker is non-negative for all beakers.",
-            "formulation": "FlourUsagePerBeaker_i \\geq 0 \\quad \\forall i",
-            "explicit": false,
-            "code": {
-                "python": "assert all(FlourUsagePerBeaker[i] >= 0 for i in range(NumBeakers))"
-            }
-        },
-        {
-            "description": "Special liquid usage per beaker is non-negative for all beakers.",
-            "formulation": "SpecialLiquidUsagePerBeaker_i \\geq 0 \\quad \\forall i",
-            "explicit": false,
-            "code": {
-                "python": "assert all(SpecialLiquidUsagePerBeaker[i] >= 0 for i in range(NumBeakers))"
-            }
-        },
-        {
-            "description": "Slime produced per beaker is non-negative for all beakers.",
-            "formulation": "SlimeProducedPerBeaker_i \\geq 0 \\quad \\forall i",
-            "explicit": false,
-            "code": {
-                "python": "assert all(SlimeProducedPerBeaker[i] >= 0 for i in range(NumBeakers))"
-            }
-        },
-        {
-            "description": "Waste produced per beaker is non-negative for all beakers.",
-            "formulation": "WasteProducedPerBeaker_i \\geq 0 \\quad \\forall i",
-            "explicit": false,
-            "code": {
-                "python": "assert all(WasteProducedPerBeaker[i] >= 0 for i in range(NumBeakers))"
-            }
-        }
-    ],
-    "variables": {
-        "NumBeakersUsed": {
-            "description": "The number of beakers of type i used",
-            "type": "integer",
-            "shape": [
-                "NumBeakers"
-            ]
-        }
+    "FlourAvailable": {
+      "description": "Amount of flour available",
+      "shape": []
     },
-    "constraints": [
-        {
-            "description": "The total amount of flour used by all beakers does not exceed FlourAvailable.",
-            "formulation": "\\sum_{i=1}^{\\text{NumBeakers}} FlourUsagePerBeaker_i \\cdot NumBeakersUsed_i \\leq FlourAvailable",
-            "explicit": true,
-            "code": {
-                "gurobipy": "model.addConstr(quicksum(FlourUsagePerBeaker[i] * NumBeakersUsed[i] for i in range(NumBeakers)) <= FlourAvailable)"
-            }
-        },
-        {
-            "description": "The total amount of special liquid used by all beakers does not exceed SpecialLiquidAvailable.",
-            "formulation": "\\sum_{i=1}^{NumBeakers} SpecialLiquidUsagePerBeaker_i \\cdot NumBeakersUsed_i \\leq SpecialLiquidAvailable",
-            "explicit": true,
-            "code": {
-                "gurobipy": "model.addConstr(quicksum(SpecialLiquidUsagePerBeaker[i] * NumBeakersUsed[i] for i in range(NumBeakers)) <= SpecialLiquidAvailable)"
-            }
-        },
-        {
-            "description": "The total amount of waste produced by all beakers does not exceed MaxWasteAllowed.",
-            "formulation": "\\sum_{i=1}^{\\text{NumBeakers}} WasteProducedPerBeaker_i \\cdot NumBeakersUsed_i \\leq MaxWasteAllowed",
-            "explicit": true,
-            "code": {
-                "gurobipy": "model.addConstr(quicksum(WasteProducedPerBeaker[i] * NumBeakersUsed[i] for i in range(NumBeakers)) <= MaxWasteAllowed)"
-            }
-        },
-        {
-            "description": "The number of beakers of each type used is non-negative.",
-            "formulation": "NumBeakersUsed_i \\geq 0 \\quad \\forall i",
-            "explicit": false,
-            "code": {
-                "gurobipy": "model.addConstr(NumBeakersUsed[i] >= 0)"
-            }
-        }
-    ],
-    "objective": {
-        "description": "The total amount of slime produced by all beakers is maximized.",
-        "formulation": "Max \\sum_{i=1}^{NumBeakers} SlimeProducedPerBeaker_i \\cdot NumBeakersUsed_i",
-        "code": {
-            "gurobipy": "model.setObjective(quicksum(SlimeProducedPerBeaker[i] * NumBeakersUsed[i] for i in range(NumBeakers)), GRB.MAXIMIZE)"
-        }
+    "SpecialLiquidAvailable": {
+      "description": "Amount of special liquid available",
+      "shape": []
     },
-    "metadata": {
-        "source": {
-            "dataset": "EquivaFormulation",
-            "instance_id": "92",
-            "variation_id": "original"
-        }
+    "MaxWasteAllowed": {
+      "description": "Maximum amount of waste allowed",
+      "shape": []
+    },
+    "FlourUsagePerBeaker": {
+      "description": "Amount of flour used by each beaker",
+      "shape": [
+        "NumBeakers"
+      ]
+    },
+    "SpecialLiquidUsagePerBeaker": {
+      "description": "Amount of special liquid used by each beaker",
+      "shape": [
+        "NumBeakers"
+      ]
+    },
+    "SlimeProducedPerBeaker": {
+      "description": "Amount of slime produced by each beaker",
+      "shape": [
+        "NumBeakers"
+      ]
+    },
+    "WasteProducedPerBeaker": {
+      "description": "Amount of waste produced by each beaker",
+      "shape": [
+        "NumBeakers"
+      ]
     }
+  },
+  "assumptions": [
+    {
+      "description": "NumBeakers is positive (non-zero).",
+      "formulation": "NumBeakers \\geq 1",
+      "explicit": false,
+      "code": {
+        "python": "assert NumBeakers >= 1"
+      }
+    },
+    {
+      "description": "Flour usage per beaker is non-negative for all beakers.",
+      "formulation": "FlourUsagePerBeaker_i \\geq 0 \\quad \\forall i",
+      "explicit": false,
+      "code": {
+        "python": "assert all(FlourUsagePerBeaker[i] >= 0 for i in range(NumBeakers))"
+      }
+    },
+    {
+      "description": "Special liquid usage per beaker is non-negative for all beakers.",
+      "formulation": "SpecialLiquidUsagePerBeaker_i \\geq 0 \\quad \\forall i",
+      "explicit": false,
+      "code": {
+        "python": "assert all(SpecialLiquidUsagePerBeaker[i] >= 0 for i in range(NumBeakers))"
+      }
+    },
+    {
+      "description": "Slime produced per beaker is non-negative for all beakers.",
+      "formulation": "SlimeProducedPerBeaker_i \\geq 0 \\quad \\forall i",
+      "explicit": false,
+      "code": {
+        "python": "assert all(SlimeProducedPerBeaker[i] >= 0 for i in range(NumBeakers))"
+      }
+    },
+    {
+      "description": "Waste produced per beaker is non-negative for all beakers.",
+      "formulation": "WasteProducedPerBeaker_i \\geq 0 \\quad \\forall i",
+      "explicit": false,
+      "code": {
+        "python": "assert all(WasteProducedPerBeaker[i] >= 0 for i in range(NumBeakers))"
+      }
+    }
+  ],
+  "variables": {
+    "NumBeakersUsed": {
+      "description": "The number of beakers of type i used",
+      "type": "integer",
+      "shape": [
+        "NumBeakers"
+      ]
+    }
+  },
+  "constraints": [
+    {
+      "description": "The total amount of flour used by all beakers does not exceed FlourAvailable.",
+      "formulation": "\\sum_{i=1}^{\\text{NumBeakers}} FlourUsagePerBeaker_i \\cdot NumBeakersUsed_i \\leq FlourAvailable",
+      "explicit": true,
+      "code": {
+        "gurobipy": "model.addConstr(quicksum(FlourUsagePerBeaker[i] * NumBeakersUsed[i] for i in range(NumBeakers)) <= FlourAvailable)"
+      }
+    },
+    {
+      "description": "The total amount of special liquid used by all beakers does not exceed SpecialLiquidAvailable.",
+      "formulation": "\\sum_{i=1}^{NumBeakers} SpecialLiquidUsagePerBeaker_i \\cdot NumBeakersUsed_i \\leq SpecialLiquidAvailable",
+      "explicit": true,
+      "code": {
+        "gurobipy": "model.addConstr(quicksum(SpecialLiquidUsagePerBeaker[i] * NumBeakersUsed[i] for i in range(NumBeakers)) <= SpecialLiquidAvailable)"
+      }
+    },
+    {
+      "description": "The total amount of waste produced by all beakers does not exceed MaxWasteAllowed.",
+      "formulation": "\\sum_{i=1}^{\\text{NumBeakers}} WasteProducedPerBeaker_i \\cdot NumBeakersUsed_i \\leq MaxWasteAllowed",
+      "explicit": true,
+      "code": {
+        "gurobipy": "model.addConstr(quicksum(WasteProducedPerBeaker[i] * NumBeakersUsed[i] for i in range(NumBeakers)) <= MaxWasteAllowed)"
+      }
+    },
+    {
+      "description": "The number of beakers of each type used is non-negative.",
+      "formulation": "NumBeakersUsed_i \\geq 0 \\quad \\forall i",
+      "explicit": false,
+      "code": {
+        "gurobipy": "model.addConstrs(NumBeakersUsed[i] >= 0 for i in range(NumBeakers))"
+      }
+    }
+  ],
+  "objective": {
+    "description": "The total amount of slime produced by all beakers is maximized.",
+    "formulation": "Max \\sum_{i=1}^{NumBeakers} SlimeProducedPerBeaker_i \\cdot NumBeakersUsed_i",
+    "code": {
+      "gurobipy": "model.setObjective(quicksum(SlimeProducedPerBeaker[i] * NumBeakersUsed[i] for i in range(NumBeakers)), GRB.MAXIMIZE)"
+    }
+  },
+  "metadata": {
+    "source": {
+      "dataset": "EquivaFormulation",
+      "instance_id": "92",
+      "variation_id": "original"
+    }
+  }
 }

@@ -73,7 +73,7 @@ For each formulation `pN/formulations/x/`:
   - `constraints` — list of `{description, formulation (LaTeX), explicit (bool), code.gurobipy}`. The `explicit` flag is `true` when the constraint appears explicitly in the problem statement; `false` for implied constraints such as non-negativity bounds.
   - `objective` — `{description, formulation (LaTeX), code.gurobipy}`.
 - **`gen_params.py`** — Generates `parameters.json` (a map of `parameters`) from the shared `data.json` (with stores problem-level `parameters`).
-- **`solve.py`** — A Gurobi script that loads `parameters.json` and writes `solution.json`. Equivalent formulations on the same instance produce the same objective.
+- **`solve.py`** — A Gurobi script that loads `parameters.json` and writes `solution.json`. Equivalent formulations on the same instance produce the same objective. Note this scripts is deterministically generated from the code defined in the `formulation.json`.
 - **`Formulation.lean`** — A Lean 4 encoding of the MILP as a `MILPFormulation` (defined in `Common.lean`).
 
 ## Equivalence Pairs and Proofs
