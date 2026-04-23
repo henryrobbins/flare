@@ -19,6 +19,13 @@ def main(params_path: str, solution_path: str) -> None:
     MinTopsoilBags = data["MinTopsoilBags"]
     MaxTopsoilProportion = data["MaxTopsoilProportion"]
 
+    # Parameter Validation
+    assert WaterSubsoil >= 0
+    assert WaterTopsoil >= 0
+    assert MaxTotalBags >= 0
+    assert MinTopsoilBags >= 0
+    assert MaxTopsoilProportion >= 0
+
     # Variables
     SubsoilBags = model.addVar(vtype=GRB.INTEGER, name="SubsoilBags")
     TopsoilBags = model.addVar(vtype=GRB.INTEGER, name="TopsoilBags")
@@ -27,6 +34,8 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(SubsoilBags + TopsoilBags <= MaxTotalBags)
     model.addConstr(TopsoilBags >= MinTopsoilBags)
     model.addConstr(TopsoilBags <= MaxTopsoilProportion * (TopsoilBags + SubsoilBags))
+    model.addConstr(SubsoilBags >= 0)
+    model.addConstr(TopsoilBags >= 0)
 
     # Objective
     model.setObjective(

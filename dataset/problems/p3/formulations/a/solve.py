@@ -22,6 +22,13 @@ def main(params_path: str, solution_path: str) -> None:
     SlimeProducedPerBeaker = data["SlimeProducedPerBeaker"]
     WasteProducedPerBeaker = data["WasteProducedPerBeaker"]
 
+    # Parameter Validation
+    assert NumBeakers >= 1
+    assert all(FlourUsagePerBeaker[i] >= 0 for i in range(NumBeakers))
+    assert all(SpecialLiquidUsagePerBeaker[i] >= 0 for i in range(NumBeakers))
+    assert all(SlimeProducedPerBeaker[i] >= 0 for i in range(NumBeakers))
+    assert all(WasteProducedPerBeaker[i] >= 0 for i in range(NumBeakers))
+
     # Variables
     NumBeakersUsed = model.addVars(NumBeakers, vtype=GRB.INTEGER, name="NumBeakersUsed")
 
@@ -43,6 +50,9 @@ def main(params_path: str, solution_path: str) -> None:
         )
         <= MaxWasteAllowed
     )
+
+    # Implicit Constraints
+    model.addConstrs(NumBeakersUsed[i] >= 0 for i in range(NumBeakers))
 
     # Objective
     model.setObjective(

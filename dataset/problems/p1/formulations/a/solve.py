@@ -20,6 +20,14 @@ def main(params_path: str, solution_path: str) -> None:
     MinPeopleProcessed = data["MinPeopleProcessed"]
     MaxPaperRolls = data["MaxPaperRolls"]
 
+    # Parameter Validation
+    assert CashMachineProcessingRate >= 0
+    assert CardMachineProcessingRate >= 0
+    assert CashMachinePaperRolls >= 0
+    assert CardMachinePaperRolls >= 0
+    assert MinPeopleProcessed >= 0
+    assert MaxPaperRolls >= 0
+
     # Variables
     NumCashMachines = model.addVar(vtype=GRB.INTEGER, name="NumCashMachines")
     NumCardMachines = model.addVar(vtype=GRB.INTEGER, name="NumCardMachines")
@@ -36,6 +44,10 @@ def main(params_path: str, solution_path: str) -> None:
         <= MaxPaperRolls
     )
     model.addConstr(NumCardMachines <= NumCashMachines)
+
+    # Implicit Constraints
+    model.addConstr(NumCashMachines >= 0)
+    model.addConstr(NumCardMachines >= 0)
 
     # Objective
     model.setObjective(NumCashMachines + NumCardMachines, GRB.MINIMIZE)

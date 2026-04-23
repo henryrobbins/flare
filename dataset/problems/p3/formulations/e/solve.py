@@ -22,6 +22,13 @@ def main(params_path: str, solution_path: str) -> None:
     V = data["V"]
     Z = data["Z"]
 
+    # Parameter Validation
+    assert N >= 1
+    assert all(C[i] >= 0 for i in range(N))
+    assert all(X[i] >= 0 for i in range(N))
+    assert all(T[i] >= 0 for i in range(N))
+    assert all(V[i] >= 0 for i in range(N))
+
     # Variables
     n = model.addVars(N, vtype=GRB.INTEGER, name="n")
     slack_0 = model.addVar(vtype=GRB.CONTINUOUS, name="slack_0")
@@ -32,6 +39,12 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(quicksum(V[i] * n[i] for i in range(N)) + slack_0 == Z)
     model.addConstr(quicksum(T[i] * n[i] for i in range(N)) + slack_1 == D)
     model.addConstr(quicksum(C[i] * n[i] for i in range(N)) + slack_2 == E)
+
+    # Implicit Constraints
+    model.addConstrs(n[i] >= 0 for i in range(N))
+    model.addConstr(slack_0 >= 0)
+    model.addConstr(slack_1 >= 0)
+    model.addConstr(slack_2 >= 0)
 
     # Objective
     model.setObjective(quicksum(X[i] * n[i] for i in range(N)), GRB.MAXIMIZE)

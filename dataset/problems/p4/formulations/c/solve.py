@@ -20,6 +20,14 @@ def main(params_path: str, solution_path: str) -> None:
     O = data["O"]
     S = data["S"]
 
+    # Parameter Validation
+    assert J >= 0
+    assert M >= 0
+    assert K >= 0
+    assert D >= 0
+    assert O >= 0
+    assert S >= 0
+
     # Variables
     m_0 = model.addVar(vtype=GRB.INTEGER, name="m_0")
     m_1 = model.addVar(vtype=GRB.INTEGER, name="m_1")
@@ -31,6 +39,16 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(
         (m_0 * 10**0 + m_1 * 10**1) * K + (h_0 * 10**0 + h_1 * 10**1) * D >= J
     )
+
+    # Implicit Constraints
+    model.addConstr(m_0 >= 0)
+    model.addConstr(m_1 >= 0)
+    model.addConstr(h_0 >= 0)
+    model.addConstr(h_1 >= 0)
+    model.addConstr(m_0 <= 9)
+    model.addConstr(m_1 <= 9)
+    model.addConstr(h_0 <= 9)
+    model.addConstr(h_1 <= 9)
 
     # Objective
     model.setObjective(

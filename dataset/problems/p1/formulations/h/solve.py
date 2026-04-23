@@ -19,6 +19,13 @@ def main(params_path: str, solution_path: str) -> None:
     Y = data["Y"]
     K = data["K"]
 
+    # Parameter Validation
+    assert L >= 0
+    assert V >= 0
+    assert G >= 0
+    assert Y >= 0
+    assert K >= 0
+
     # Variables
     c = model.addVar(vtype=GRB.INTEGER, name="c")
     p = model.addVar(vtype=GRB.INTEGER, name="p")
@@ -27,6 +34,10 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(p <= K * c)
     model.addConstr(c >= L)
     model.addConstr(G * c + Y * p >= V)
+
+    # Implicit Constraints
+    model.addConstr(c >= 0)
+    model.addConstr(p >= 0)
 
     # Objective
     model.setObjective(c + p, GRB.MINIMIZE)

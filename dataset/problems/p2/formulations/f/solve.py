@@ -19,6 +19,11 @@ def main(params_path: str, solution_path: str) -> None:
     I = data["I"]
     M = data["M"]
 
+    # Parameter Validation
+    assert all(A[i] >= 0 for i in range(M))
+    assert all(Y[j] >= 0 for j in range(N))
+    assert all(I[j][i] >= 0 for j in range(N) for i in range(M))
+
     # Variables
     j1 = model.addVars(M, vtype=GRB.INTEGER, name="j1")
     j2 = model.addVars(M, vtype=GRB.INTEGER, name="j2")
@@ -27,6 +32,10 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstrs(
         quicksum(I[k][i] * (j1[i] + j2[i]) for i in range(M)) <= Y[k] for k in range(N)
     )
+
+    # Implicit Constraints
+    model.addConstrs(j1[i] >= 0 for i in range(M))
+    model.addConstrs(j2[i] >= 0 for i in range(M))
 
     # Objective
     model.setObjective(quicksum((j1[i] + j2[i]) * A[i] for i in range(M)), GRB.MAXIMIZE)

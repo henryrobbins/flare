@@ -22,6 +22,13 @@ def main(params_path: str, solution_path: str) -> None:
     V = data["V"]
     Z = data["Z"]
 
+    # Parameter Validation
+    assert N >= 1
+    assert all(C[i] >= 0 for i in range(N))
+    assert all(X[i] >= 0 for i in range(N))
+    assert all(T[i] >= 0 for i in range(N))
+    assert all(V[i] >= 0 for i in range(N))
+
     # Variables
     n = model.addVars(N, vtype=GRB.INTEGER, name="n")
 
@@ -29,6 +36,10 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(quicksum(V[i] * (1 / 10) * n[i] for i in range(N)) <= Z)
     model.addConstr(quicksum(T[i] * (1 / 10) * n[i] for i in range(N)) <= D)
     model.addConstr(quicksum(C[i] * (1 / 10) * n[i] for i in range(N)) <= E)
+    model.addConstrs(n[i] % 10 == 0 for i in range(N))
+
+    # Implicit Constraints
+    model.addConstrs(n[i] >= 0 for i in range(N))
 
     # Objective
     model.setObjective(quicksum(X[i] * n[i] for i in range(N)), GRB.MAXIMIZE)

@@ -22,6 +22,13 @@ def main(params_path: str, solution_path: str) -> None:
     V = data["V"]
     Z = data["Z"]
 
+    # Parameter Validation
+    assert N >= 1
+    assert all(C[i] >= 0 for i in range(N))
+    assert all(X[i] >= 0 for i in range(N))
+    assert all(T[i] >= 0 for i in range(N))
+    assert all(V[i] >= 0 for i in range(N))
+
     # Variables
     n_0 = model.addVars(N, vtype=GRB.INTEGER, name="n_0")
     n_1 = model.addVars(N, vtype=GRB.INTEGER, name="n_1")
@@ -36,6 +43,12 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(
         quicksum(C[i] * (n_0[i] * 10**0 + n_1[i] * 10**1) for i in range(N)) <= E
     )
+    model.addConstrs(n_0[i] <= 9 for i in range(N))
+    model.addConstrs(n_1[i] <= 9 for i in range(N))
+
+    # Implicit Constraints
+    model.addConstrs(n_0[i] >= 0 for i in range(N))
+    model.addConstrs(n_1[i] >= 0 for i in range(N))
 
     # Objective
     model.setObjective(

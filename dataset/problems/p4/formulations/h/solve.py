@@ -21,6 +21,15 @@ def main(params_path: str, solution_path: str) -> None:
     E = data["E"]
     P = data["P"]
 
+    # Parameter Validation
+    assert U >= 0
+    assert C >= 0
+    assert V >= 0
+    assert N >= 0
+    assert Z >= 0
+    assert E >= 0
+    assert P >= 0
+
     # Variables
     e = model.addVar(vtype=GRB.CONTINUOUS, name="e")
     p = model.addVar(vtype=GRB.CONTINUOUS, name="p")
@@ -30,6 +39,11 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(p * Z <= P * (a * V + p * Z))
     model.addConstr(U * a + N * p <= C)
     model.addConstr(e >= E)
+
+    # Implicit Constraints
+    model.addConstr(e >= 0)
+    model.addConstr(p >= 0)
+    model.addConstr(a >= 0)
 
     # Objective
     model.setObjective(a * V + p * Z, GRB.MAXIMIZE)

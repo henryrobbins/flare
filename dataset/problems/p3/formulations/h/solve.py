@@ -22,6 +22,16 @@ def main(params_path: str, solution_path: str) -> None:
     D = data["D"]
     V = data["V"]
 
+    # Parameter Validation
+    assert L >= 0
+    assert S >= 0
+    assert P >= 0
+    assert H >= 0
+    assert T >= 0
+    assert C >= 0
+    assert D >= 0
+    assert V >= 0
+
     # Variables
     h = model.addVar(vtype=GRB.CONTINUOUS, name="h")
     e = model.addVar(vtype=GRB.CONTINUOUS, name="e")
@@ -29,6 +39,10 @@ def main(params_path: str, solution_path: str) -> None:
     # Constraints
     model.addConstr(C * e + P * h <= D, name="HeatingTime")
     model.addConstr(S * e + L * h <= V)
+
+    # Implicit Constraints
+    model.addConstr(e >= 0)
+    model.addConstr(h >= 0)
 
     # Objective
     model.setObjective(T * e + H * h, GRB.MAXIMIZE)

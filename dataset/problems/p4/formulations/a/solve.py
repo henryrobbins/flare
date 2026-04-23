@@ -20,6 +20,14 @@ def main(params_path: str, solution_path: str) -> None:
     MinEmployeesToTransport = data["MinEmployeesToTransport"]
     MaxBuses = data["MaxBuses"]
 
+    # Parameter Validation
+    assert CarCapacity >= 0
+    assert CarPollution >= 0
+    assert BusCapacity >= 0
+    assert BusPollution >= 0
+    assert MinEmployeesToTransport >= 0
+    assert MaxBuses >= 0
+
     # Variables
     xCars = model.addVar(vtype=GRB.INTEGER, name="xCars")
     xBuses = model.addVar(vtype=GRB.INTEGER, name="xBuses")
@@ -29,6 +37,10 @@ def main(params_path: str, solution_path: str) -> None:
         xCars * CarCapacity + xBuses * BusCapacity >= MinEmployeesToTransport
     )
     model.addConstr(xBuses <= MaxBuses)
+
+    # Implicit Constraints
+    model.addConstr(xCars >= 0)
+    model.addConstr(xBuses >= 0)
 
     # Objective
     model.setObjective(xCars * CarPollution + xBuses * BusPollution, GRB.MINIMIZE)

@@ -19,6 +19,15 @@ def main(params_path: str, solution_path: str) -> None:
     ResourceRequired = data["ResourceRequired"]
     ElectricityProduced = data["ElectricityProduced"]
 
+    # Parameter Validation
+    assert all(ElectricityProduced[i] >= 0 for i in range(NumExperiments))
+    assert all(
+        ResourceRequired[j][i] >= 0
+        for j in range(NumResources)
+        for i in range(NumExperiments)
+    )
+    assert all(ResourceAvailable[j] >= 0 for j in range(NumResources))
+
     # Variables
     ConductExperiment = model.addVars(
         NumExperiments, vtype=GRB.INTEGER, name="ConductExperiment"
@@ -32,6 +41,9 @@ def main(params_path: str, solution_path: str) -> None:
         <= ResourceAvailable[j]
         for j in range(NumResources)
     )
+
+    # Implicit Constraints
+    model.addConstrs(ConductExperiment[i] >= 0 for i in range(NumExperiments))
 
     # Objective
     model.setObjective(

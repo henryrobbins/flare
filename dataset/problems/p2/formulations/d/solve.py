@@ -19,6 +19,11 @@ def main(params_path: str, solution_path: str) -> None:
     I = data["I"]
     M = data["M"]
 
+    # Parameter Validation
+    assert all(A[i] >= 0 for i in range(M))
+    assert all(Y[j] >= 0 for j in range(N))
+    assert all(I[j][i] >= 0 for j in range(N) for i in range(M))
+
     # Variables
     j = model.addVars(M, vtype=GRB.INTEGER, name="j")
     zed = model.addVar(vtype=GRB.CONTINUOUS, name="zed")
@@ -28,6 +33,9 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstrs(
         quicksum(I[k][i] * j[i] for i in range(M)) <= Y[k] for k in range(N)
     )
+
+    # Implicit Constraints
+    model.addConstrs(j[i] >= 0 for i in range(M))
 
     # Objective
     model.setObjective(zed, GRB.MAXIMIZE)
