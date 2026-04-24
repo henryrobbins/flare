@@ -2,48 +2,51 @@ import Common
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Real.Basic
-import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P8.Fb
+namespace P8.b
 
-structure Params (nJ nM : ℕ) where
-  p   : Fin nJ → Fin nM → ℝ
-  Om  : Fin nM → Finset (Fin nJ × Fin nM)
-  M   : ℝ
-  hp_nn   : ∀ j k, 0 ≤ p j k
-  hM_pos  : 0 < M
-  hOm_ne  : ∀ m, (Om m).Nonempty
+structure Params where
+  n : ℕ  -- number of jobs
+  m : ℕ  -- number of machines
+  p : Fin n → Fin m → ℝ       -- processing time of op k of job j
+  Om : Fin n → Fin m → Fin m  -- machine index for op k of job j
+  -- Implicit Assumptions
+  hN : NeZero n
+  hM : NeZero m
+  hp_nn : ∀ j k, 0 ≤ p j k
+  hOm_perm : ∀ j : Fin n, Function.Bijective (Om j)
 
-structure Vars (nJ nM : ℕ) where
-  S    : Fin nJ → Fin nM → ℝ
-  y    : Fin nJ → Fin nM → Fin nJ → Fin nM → ℤ
-  Cmax : ℝ
+structure Vars where
+  S : ℕ → ℕ → ℝ  -- start time of op k of job j
+  Cmax : ℝ        -- makespan
 
-structure Feasible {nJ nM : ℕ} [NeZero nJ] [NeZero nM]
-    (P : Params nJ nM) (v : Vars nJ nM) : Prop where
-  hprec : ∀ j k, (h : k.val + 1 < nM) →
-    v.S j ⟨k.val + 1, h⟩ ≥ v.S j k + P.p j k
-  hoverlap_fwd : ∀ m, ∀ a ∈ P.Om m, ∀ b ∈ P.Om m, a ≠ b →
-    v.S a.1 a.2 + P.p a.1 a.2 ≤ v.S b.1 b.2 + P.M * (1 - v.y a.1 a.2 b.1 b.2)
-  hoverlap_bwd : ∀ m, ∀ a ∈ P.Om m, ∀ b ∈ P.Om m, a ≠ b →
-    v.S b.1 b.2 + P.p b.1 b.2 ≤ v.S a.1 a.2 + P.M * v.y a.1 a.2 b.1 b.2
-  hmakespan : ∀ j, v.Cmax ≥
-    v.S j ⟨nM - 1, by have := NeZero.pos nM; omega⟩ +
-    P.p j ⟨nM - 1, by have := NeZero.pos nM; omega⟩
-  hS_nn  : ∀ j k, 0 ≤ v.S j k
-  hy_bin : ∀ j1 k1 j2 k2, v.y j1 k1 j2 k2 = 0 ∨ v.y j1 k1 j2 k2 = 1
-  -- EC1 (V1): Average Load Bound
-  -- Makespan is at least the average total processing time per machine
-  hec1 : v.Cmax ≥ (∑ j : Fin nJ, ∑ k : Fin nM, P.p j k) / nM
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- Technological ordering: op k+1 starts after op k finishes
+  hprec : ∀ j : Fin p.n, ∀ k : Fin p.m, (h : k.val + 1 < p.m) →
+    v.S j.val (k.val + 1) ≥ v.S j.val k.val + p.p j k
+  -- Machine non-overlap: two distinct ops on the same machine do not overlap
+  -- (encodes Big-M machine non-overlap constraints, y elided)
+  hoverlap : ∀ j1 : Fin p.n, ∀ k1 : Fin p.m, ∀ j2 : Fin p.n, ∀ k2 : Fin p.m,
+    p.Om j1 k1 = p.Om j2 k2 → (j1, k1) ≠ (j2, k2) →
+    v.S j1.val k1.val + p.p j1 k1 ≤ v.S j2.val k2.val ∨
+    v.S j2.val k2.val + p.p j2 k2 ≤ v.S j1.val k1.val
+  -- Makespan bounds the completion of each job's last operation
+  hmakespan : ∀ j : Fin p.n, v.Cmax ≥
+    v.S j.val (p.m - 1) + p.p j ⟨p.m - 1, by have := p.hM.out; omega⟩
+  hS_nn : ∀ j : Fin p.n, ∀ k : Fin p.m, 0 ≤ v.S j.val k.val
+  hCmax_nn : 0 ≤ v.Cmax
+  -- EC1: makespan is at least the average total processing time per machine
+  hec1 : v.Cmax ≥ (∑ j : Fin p.n, ∑ k : Fin p.m, p.p j k) / (p.m : ℝ)
 
-def obj {nJ nM : ℕ} (_ : Params nJ nM) (v : Vars nJ nM) : ℝ := v.Cmax
+-- Minimize the makespan
+def obj (_ : Params) (v : Vars) : ℝ := v.Cmax
 
-def formulation (nJ nM : ℕ) [NeZero nJ] [NeZero nM] : MILPFormulation where
-  Params   := Params nJ nM
-  Vars     := Vars nJ nM
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P8.Fb
+end P8.b

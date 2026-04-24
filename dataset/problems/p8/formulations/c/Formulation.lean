@@ -2,60 +2,71 @@ import Common
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Real.Basic
-import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P8.Fc
+namespace P8.c
 
-structure Params (nJ nM : ℕ) where
-  p   : Fin nJ → Fin nM → ℝ
-  Om  : Fin nM → Finset (Fin nJ × Fin nM)
-  M   : ℝ
-  hp_nn   : ∀ j k, 0 ≤ p j k
-  hM_pos  : 0 < M
-  hOm_ne  : ∀ m, (Om m).Nonempty
+structure Params where
+  n : ℕ  -- number of jobs
+  m : ℕ  -- number of machines
+  p : Fin n → Fin m → ℝ       -- processing time of op k of job j
+  Om : Fin n → Fin m → Fin m  -- machine index for op k of job j
+  -- Implicit Assumptions
+  hN : NeZero n
+  hM : NeZero m
+  hp_nn : ∀ j k, 0 ≤ p j k
+  hOm_perm : ∀ j : Fin n, Function.Bijective (Om j)
 
-structure Vars (nJ nM : ℕ) where
-  S    : Fin nJ → Fin nM → ℝ
-  y    : Fin nJ → Fin nM → Fin nJ → Fin nM → ℤ
-  Cmax : ℝ
+structure Vars where
+  S : ℕ → ℕ → ℝ  -- start time of op k of job j
+  Cmax : ℝ        -- makespan
+
+-- Operations assigned to machine i
+private def machineOps (p : Params) (i : Fin p.m) : Finset (Fin p.n × Fin p.m) :=
+  Finset.univ.filter (fun jk => p.Om jk.1 jk.2 = i)
+
+private lemma machineOps_ne (p : Params) (i : Fin p.m) : (machineOps p i).Nonempty := by
+  have hn : 0 < p.n := Nat.pos_of_ne_zero p.hN.out
+  obtain ⟨k, hk⟩ := (p.hOm_perm ⟨0, hn⟩).2 i
+  exact ⟨⟨⟨0, hn⟩, k⟩, Finset.mem_filter.mpr ⟨Finset.mem_univ _, hk⟩⟩
 
 -- Head of operation (j,k): total processing time of earlier ops in job j
-private def head (p : Fin nJ → Fin nM → ℝ) (j : Fin nJ) (k : Fin nM) : ℝ :=
-  ∑ t : Fin nM, if t.val < k.val then p j t else 0
+private def head {n m : ℕ} (p : Fin n → Fin m → ℝ) (j : Fin n) (k : Fin m) : ℝ :=
+  ∑ t : Fin m, if t.val < k.val then p j t else 0
 
 -- Tail of operation (j,k): total processing time of later ops in job j
-private def tail (p : Fin nJ → Fin nM → ℝ) (j : Fin nJ) (k : Fin nM) : ℝ :=
-  ∑ t : Fin nM, if k.val < t.val then p j t else 0
+private def tail {n m : ℕ} (p : Fin n → Fin m → ℝ) (j : Fin n) (k : Fin m) : ℝ :=
+  ∑ t : Fin m, if k.val < t.val then p j t else 0
 
-structure Feasible {nJ nM : ℕ} [NeZero nJ] [NeZero nM]
-    (P : Params nJ nM) (v : Vars nJ nM) : Prop where
-  hprec : ∀ j k, (h : k.val + 1 < nM) →
-    v.S j ⟨k.val + 1, h⟩ ≥ v.S j k + P.p j k
-  hoverlap_fwd : ∀ m, ∀ a ∈ P.Om m, ∀ b ∈ P.Om m, a ≠ b →
-    v.S a.1 a.2 + P.p a.1 a.2 ≤ v.S b.1 b.2 + P.M * (1 - v.y a.1 a.2 b.1 b.2)
-  hoverlap_bwd : ∀ m, ∀ a ∈ P.Om m, ∀ b ∈ P.Om m, a ≠ b →
-    v.S b.1 b.2 + P.p b.1 b.2 ≤ v.S a.1 a.2 + P.M * v.y a.1 a.2 b.1 b.2
-  hmakespan : ∀ j, v.Cmax ≥
-    v.S j ⟨nM - 1, by have := NeZero.pos nM; omega⟩ +
-    P.p j ⟨nM - 1, by have := NeZero.pos nM; omega⟩
-  hS_nn  : ∀ j k, 0 ≤ v.S j k
-  hy_bin : ∀ j1 k1 j2 k2, v.y j1 k1 j2 k2 = 0 ∨ v.y j1 k1 j2 k2 = 1
-  -- EC2 (V1): Machine Critical-Path Bound
-  -- For each machine and each pair of ops a, b on it, makespan ≥ load + head(a) + tail(b)
-  -- (Universally quantifying over a, b linearizes the min over heads and tails)
-  hec2 : ∀ m, ∀ a ∈ P.Om m, ∀ b ∈ P.Om m,
-    v.Cmax ≥ ∑ jk ∈ P.Om m, P.p jk.1 jk.2
-           + head P.p a.1 a.2
-           + tail P.p b.1 b.2
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- Technological ordering: op k+1 starts after op k finishes
+  hprec : ∀ j : Fin p.n, ∀ k : Fin p.m, (h : k.val + 1 < p.m) →
+    v.S j.val (k.val + 1) ≥ v.S j.val k.val + p.p j k
+  -- Machine non-overlap: two distinct ops on the same machine do not overlap
+  -- (encodes Big-M machine non-overlap constraints, y elided)
+  hoverlap : ∀ j1 : Fin p.n, ∀ k1 : Fin p.m, ∀ j2 : Fin p.n, ∀ k2 : Fin p.m,
+    p.Om j1 k1 = p.Om j2 k2 → (j1, k1) ≠ (j2, k2) →
+    v.S j1.val k1.val + p.p j1 k1 ≤ v.S j2.val k2.val ∨
+    v.S j2.val k2.val + p.p j2 k2 ≤ v.S j1.val k1.val
+  -- Makespan bounds the completion of each job's last operation
+  hmakespan : ∀ j : Fin p.n, v.Cmax ≥
+    v.S j.val (p.m - 1) + p.p j ⟨p.m - 1, by have := p.hM.out; omega⟩
+  hS_nn : ∀ j : Fin p.n, ∀ k : Fin p.m, 0 ≤ v.S j.val k.val
+  hCmax_nn : 0 ≤ v.Cmax
+  -- EC2: for each machine, makespan ≥ machine load + min head + min tail over its ops
+  hec2 : ∀ i : Fin p.m,
+    v.Cmax ≥ (∑ jk ∈ machineOps p i, p.p jk.1 jk.2)
+           + (machineOps p i).inf' (machineOps_ne p i) (fun a => head p.p a.1 a.2)
+           + (machineOps p i).inf' (machineOps_ne p i) (fun b => tail p.p b.1 b.2)
 
-def obj {nJ nM : ℕ} (_ : Params nJ nM) (v : Vars nJ nM) : ℝ := v.Cmax
+-- Minimize the makespan
+def obj (_ : Params) (v : Vars) : ℝ := v.Cmax
 
-def formulation (nJ nM : ℕ) [NeZero nJ] [NeZero nM] : MILPFormulation where
-  Params   := Params nJ nM
-  Vars     := Vars nJ nM
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P8.Fc
+end P8.c

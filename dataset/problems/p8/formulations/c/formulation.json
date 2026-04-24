@@ -24,7 +24,54 @@
             ]
         }
     },
-    "assumptions": [],
+    "assumptions": [
+        {
+            "description": "Processing times are non-negative.",
+            "formulation": "p_{j,k} \\geq 0 \\quad \\forall j,k",
+            "explicit": false,
+            "code": {
+                "python": "assert all(p[j][k] >= 0 for j in range(n) for k in range(m))"
+            }
+        },
+        {
+            "description": "There is at least one job and one machine.",
+            "formulation": "n \\geq 1, \\; m \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert n >= 1 and m >= 1"
+            }
+        },
+        {
+            "description": "Each operation is assigned to exactly one machine (Om is a total function into machines).",
+            "formulation": "\\forall j,k: \\; \\exists!\\, i: \\; Om_{j,k} = i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(0 <= Om[j][k] < m for j in range(n) for k in range(m))"
+            }
+        },
+        {
+            "description": "For each job, its operations visit every machine exactly once (Om[j] is a permutation of the machine set).",
+            "formulation": "\\forall j, i: \\; \\exists!\\, k: \\; Om_{j,k} = i",
+            "explicit": false,
+            "code": {
+                "python": "assert all(sorted(Om[j]) == list(range(m)) for j in range(n))"
+            }
+        }
+    ],
+    "definitions": {
+        "P": {
+            "description": "Set of conflict pairs: all ((j1,k1),(j2,k2)) with j1!=j2 or k1!=k2 that share the same machine",
+            "code": {
+                "python": "P = []\nfor machine in range(m):\n    ops = [(j, k) for j in range(n) for k in range(m) if Om[j][k] == machine]\n    for i in range(len(ops)):\n        for j2, k2 in ops[i + 1:]:\n            P.append((ops[i], (j2, k2)))"
+            }
+        },
+        "M": {
+            "description": "Big-M constant: sum of all processing times",
+            "code": {
+                "python": "M = sum(p[j][k] for j in range(n) for k in range(m))"
+            }
+        }
+    },
     "variables": {
         "S": {
             "description": "Start time of the k-th operation of job j",
@@ -36,10 +83,11 @@
         },
         "y": {
             "description": "1 if operation (j1,k1) is scheduled before (j2,k2) on their shared machine, 0 otherwise; indexed over conflict pairs P",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "|P|"
-            ]
+            ],
+            "indices": "(j1, k1, j2, k2) for (j1, k1), (j2, k2) in P"
         },
         "C_max": {
             "description": "Makespan: completion time of the last operation across all jobs",
@@ -60,7 +108,7 @@
             "description": "Machine non-overlap (forward): if y=1, operation (j1,k1) precedes (j2,k2) on their shared machine.",
             "formulation": "S_{j_1,k_1} + p_{j_1,k_1} \\le S_{j_2,k_2} + M(1 - y_{j_1,k_1,j_2,k_2}) \\quad \\forall ((j_1,k_1),(j_2,k_2)) \\in \\mathcal{P}",
             "code": {
-                "gurobipy": "for (j1, k1), (j2, k2) in pairs:\n    model.addConstr(S[j1, k1] + p[j1][k1] <= S[j2, k2] + M_big * (1 - y[j1, k1, j2, k2]))"
+                "gurobipy": "for (j1, k1), (j2, k2) in P:\n    model.addConstr(S[j1, k1] + p[j1][k1] <= S[j2, k2] + M * (1 - y[j1, k1, j2, k2]))"
             },
             "explicit": true
         },
@@ -68,7 +116,7 @@
             "description": "Machine non-overlap (reverse): if y=0, operation (j2,k2) precedes (j1,k1) on their shared machine.",
             "formulation": "S_{j_2,k_2} + p_{j_2,k_2} \\le S_{j_1,k_1} + M\\,y_{j_1,k_1,j_2,k_2} \\quad \\forall ((j_1,k_1),(j_2,k_2)) \\in \\mathcal{P}",
             "code": {
-                "gurobipy": "for (j1, k1), (j2, k2) in pairs:\n    model.addConstr(S[j2, k2] + p[j2][k2] <= S[j1, k1] + M_big * y[j1, k1, j2, k2])"
+                "gurobipy": "for (j1, k1), (j2, k2) in P:\n    model.addConstr(S[j2, k2] + p[j2][k2] <= S[j1, k1] + M * y[j1, k1, j2, k2])"
             },
             "explicit": true
         },
