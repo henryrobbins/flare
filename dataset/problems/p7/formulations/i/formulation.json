@@ -6,11 +6,20 @@
             "shape": []
         }
     },
-    "assumptions": [],
+    "assumptions": [
+        {
+            "description": "Grid size is positive.",
+            "formulation": "N \\ge 1",
+            "explicit": false,
+            "code": {
+                "python": "assert N >= 1"
+            }
+        }
+    ],
     "variables": {
         "h": {
             "description": "1 if (i,j) is the unique hole in row i and column j, 0 otherwise",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "N",
                 "N"
@@ -18,26 +27,29 @@
         },
         "x": {
             "description": "1 if row i, columns a through b are covered by the same tile, 0 otherwise",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "N",
-                "|I|"
+                "N",
+                "N"
             ]
         },
         "s": {
             "description": "1 if a tile starts at row i for column interval (a,b), 0 otherwise",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "N",
-                "|I|"
+                "N",
+                "N"
             ]
         },
         "t": {
             "description": "1 if a tile ends at row i for column interval (a,b), 0 otherwise",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "N",
-                "|I|"
+                "N",
+                "N"
             ]
         }
     },
@@ -62,7 +74,7 @@
             "description": "Each cell is either a hole or covered by exactly one tile interval.",
             "formulation": "\\sum_{(a,b) \\in I:\\, a \\le j \\le b} x_i^{ab} + h_{ij} = 1 \\quad \\forall i,j \\in \\{0,\\dots,N-1\\}",
             "code": {
-                "gurobipy": "model.addConstrs(gp.quicksum(x[i, a, b] for (a, b) in intervals if a <= j <= b) + h[i, j] == 1 for i in range(N) for j in range(N))"
+                "gurobipy": "model.addConstrs(gp.quicksum(x[i, a, b] for (a, b) in [(a, b) for a in range(N) for b in range(a, N)] if a <= j <= b) + h[i, j] == 1 for i in range(N) for j in range(N))"
             },
             "explicit": true
         },
@@ -70,7 +82,7 @@
             "description": "Top-row flow: a tile covering interval (a,b) in row 0 must start there.",
             "formulation": "x_0^{ab} - s_0^{ab} = 0 \\quad \\forall (a,b) \\in I",
             "code": {
-                "gurobipy": "model.addConstrs(x[0, a, b] - s[0, a, b] == 0 for (a, b) in intervals)"
+                "gurobipy": "model.addConstrs(x[0, a, b] - s[0, a, b] == 0 for (a, b) in [(a, b) for a in range(N) for b in range(a, N)])"
             },
             "explicit": true
         },
@@ -78,7 +90,7 @@
             "description": "Mid-row flow: tile coverage at row i equals coverage from previous row plus new starts minus ends.",
             "formulation": "x_i^{ab} - x_{i-1}^{ab} - s_i^{ab} + t_{i-1}^{ab} = 0 \\quad \\forall i \\in \\{1,\\dots,N-1\\},\\; \\forall (a,b) \\in I",
             "code": {
-                "gurobipy": "model.addConstrs(x[i, a, b] - x[i-1, a, b] - s[i, a, b] + t[i-1, a, b] == 0 for i in range(1, N) for (a, b) in intervals)"
+                "gurobipy": "model.addConstrs(x[i, a, b] - x[i-1, a, b] - s[i, a, b] + t[i-1, a, b] == 0 for i in range(1, N) for (a, b) in [(a, b) for a in range(N) for b in range(a, N)])"
             },
             "explicit": true
         },
@@ -86,7 +98,7 @@
             "description": "Bottom-row flow: a tile covering interval (a,b) in the last row must end there.",
             "formulation": "x_{N-1}^{ab} - t_{N-1}^{ab} = 0 \\quad \\forall (a,b) \\in I",
             "code": {
-                "gurobipy": "model.addConstrs(x[N-1, a, b] - t[N-1, a, b] == 0 for (a, b) in intervals)"
+                "gurobipy": "model.addConstrs(x[N-1, a, b] - t[N-1, a, b] == 0 for (a, b) in [(a, b) for a in range(N) for b in range(a, N)])"
             },
             "explicit": true
         },
@@ -94,7 +106,7 @@
             "description": "Broken Interval (V2 EC2): if columns j and k shared a tile in row i-1 and the hole is at k in row i, then column j must be covered by a new start in row i.",
             "formulation": "\\sum_{(a,b) \\in I:\\, a \\le j \\le b} s_i^{ab} \\ge \\sum_{(a,b) \\in I:\\, a \\le \\min(j,k),\\, b \\ge \\max(j,k)} x_{i-1}^{ab} + h_{ik} - 1 \\quad \\forall i \\in \\{1,\\dots,N-1\\},\\; \\forall j,k \\in \\{0,\\dots,N-1\\},\\; j \\neq k",
             "code": {
-                "gurobipy": "model.addConstrs(gp.quicksum(s[i, a, b] for (a, b) in intervals if a <= j <= b) >= gp.quicksum(x[i-1, a, b] for (a, b) in intervals if a <= min(j, k) and b >= max(j, k)) + h[i, k] - 1 for i in range(1, N) for j in range(N) for k in range(N) if j != k)"
+                "gurobipy": "model.addConstrs(gp.quicksum(s[i, a, b] for (a, b) in [(a, b) for a in range(N) for b in range(a, N)] if a <= j <= b) >= gp.quicksum(x[i-1, a, b] for (a, b) in [(a, b) for a in range(N) for b in range(a, N)] if a <= min(j, k) and b >= max(j, k)) + h[i, k] - 1 for i in range(1, N) for j in range(N) for k in range(N) if j != k)"
             },
             "explicit": true
         }
@@ -103,7 +115,7 @@
         "description": "Minimize the total number of rectangular tiles used.",
         "formulation": "\\min \\sum_{i=0}^{N-1} \\sum_{(a,b) \\in I} s_i^{ab}",
         "code": {
-            "gurobipy": "model.setObjective(gp.quicksum(s[i, a, b] for i in range(N) for (a, b) in intervals), GRB.MINIMIZE)"
+            "gurobipy": "model.setObjective(gp.quicksum(s[i, a, b] for i in range(N) for (a, b) in [(a, b) for a in range(N) for b in range(a, N)]), GRB.MINIMIZE)"
         }
     },
     "metadata": {
