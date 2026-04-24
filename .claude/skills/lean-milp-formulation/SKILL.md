@@ -87,6 +87,20 @@ Use `Finset.univ.filter` to express flow conservation at specific nodes:
 (univ.filter (fun e => p.tail e = i)).sum (fun e => v.x e k) = …
 ```
 
+### Big-M constraints
+
+**Never introduce a big-M constant in a Lean formulation.** Big-M is a
+solver linearization technique, not a mathematical concept. Use a
+disjunction instead. For example:
+
+- **MILP:** `S_a + p_a ≤ S_b + M·(1 − y)` and `S_b + p_b ≤ S_a + M·y`
+- **Lean:** `S_a + p_a ≤ S_b ∨ S_b + p_b ≤ S_a`
+
+Concretely, replace every pair of big-M constraints that encode a
+disjunction `P ∨ Q` with a single `Prop` field in `Feasible`. Binary indicator
+variables that exist solely to linearize a disjunction for a MIP solver do not
+belong in `Vars`. Omit them entirely.
+
 ## Naming Conventions
 
 - `Params` fields: use the parameter name exactly as it appears in the source.
