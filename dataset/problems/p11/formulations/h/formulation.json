@@ -23,14 +23,14 @@
             "description": "Startup lag for each startup category of each generator",
             "shape": [
                 "n_G",
-                "n_S[]"
+                "n_S[n_G]"
             ]
         },
         "C_su": {
             "description": "Startup cost for each startup category of each generator",
             "shape": [
                 "n_G",
-                "n_S[]"
+                "n_S[n_G]"
             ]
         },
         "n_L": {
@@ -43,14 +43,14 @@
             "description": "Piecewise production breakpoints for each generator",
             "shape": [
                 "n_G",
-                "n_L[]"
+                "n_L[n_G]"
             ]
         },
         "C": {
             "description": "Piecewise variable production cost at each breakpoint for each generator",
             "shape": [
                 "n_G",
-                "n_L[]"
+                "n_L[n_G]"
             ]
         },
         "C_fixed": {
@@ -140,11 +140,212 @@
             ]
         }
     },
-    "assumptions": [],
+    "assumptions": [
+        {
+            "description": "Number of time periods is positive.",
+            "formulation": "T \\ge 1",
+            "explicit": false,
+            "code": {
+                "python": "assert T >= 1"
+            }
+        },
+        {
+            "description": "Number of thermal generators is positive.",
+            "formulation": "n_G \\ge 1",
+            "explicit": false,
+            "code": {
+                "python": "assert n_G >= 1"
+            }
+        },
+        {
+            "description": "Number of wind generators is positive.",
+            "formulation": "n_W \\ge 1",
+            "explicit": false,
+            "code": {
+                "python": "assert n_W >= 1"
+            }
+        },
+        {
+            "description": "Each generator has at least one startup category.",
+            "formulation": "n_{S,g} \\ge 1 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(n_S[g] >= 1 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Each generator has at least one piecewise breakpoint.",
+            "formulation": "n_{L,g} \\ge 1 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(n_L[g] >= 1 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Startup lags are non-negative.",
+            "formulation": "\\ell_{g,s} \\ge 0 \\quad \\forall g, s",
+            "explicit": false,
+            "code": {
+                "python": "assert all(ell[g][s] >= 0 for g in range(n_G) for s in range(n_S[g]))"
+            }
+        },
+        {
+            "description": "Startup costs are non-negative.",
+            "formulation": "C^{su}_{g,s} \\ge 0 \\quad \\forall g, s",
+            "explicit": false,
+            "code": {
+                "python": "assert all(C_su[g][s] >= 0 for g in range(n_G) for s in range(n_S[g]))"
+            }
+        },
+        {
+            "description": "Piecewise production breakpoints are non-negative.",
+            "formulation": "P_{g,l} \\ge 0 \\quad \\forall g, l",
+            "explicit": false,
+            "code": {
+                "python": "assert all(P[g][l] >= 0 for g in range(n_G) for l in range(n_L[g]))"
+            }
+        },
+        {
+            "description": "Piecewise variable production costs are non-negative.",
+            "formulation": "C_{g,l} \\ge 0 \\quad \\forall g, l",
+            "explicit": false,
+            "code": {
+                "python": "assert all(C[g][l] >= 0 for g in range(n_G) for l in range(n_L[g]))"
+            }
+        },
+        {
+            "description": "Fixed on-costs are non-negative.",
+            "formulation": "C^{\\text{fixed}}_g \\ge 0 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(C_fixed[g] >= 0 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Demand at each time period is non-negative.",
+            "formulation": "L_t \\ge 0 \\quad \\forall t",
+            "explicit": false,
+            "code": {
+                "python": "assert all(L[t] >= 0 for t in range(T))"
+            }
+        },
+        {
+            "description": "Spinning reserve requirement is non-negative.",
+            "formulation": "R_t \\ge 0 \\quad \\forall t",
+            "explicit": false,
+            "code": {
+                "python": "assert all(R[t] >= 0 for t in range(T))"
+            }
+        },
+        {
+            "description": "Minimum thermal output is non-negative.",
+            "formulation": "P^{\\min}_g \\ge 0 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(P_min[g] >= 0 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Maximum thermal output is non-negative.",
+            "formulation": "P^{\\max}_g \\ge 0 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(P_max[g] >= 0 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Minimum renewable output is non-negative.",
+            "formulation": "P^{w,\\min}_{w,t} \\ge 0 \\quad \\forall w, t",
+            "explicit": false,
+            "code": {
+                "python": "assert all(P_wind_min[w][t] >= 0 for w in range(n_W) for t in range(T))"
+            }
+        },
+        {
+            "description": "Maximum renewable output is non-negative.",
+            "formulation": "P^{w,\\max}_{w,t} \\ge 0 \\quad \\forall w, t",
+            "explicit": false,
+            "code": {
+                "python": "assert all(P_wind_max[w][t] >= 0 for w in range(n_W) for t in range(T))"
+            }
+        },
+        {
+            "description": "Ramp-up limits are non-negative.",
+            "formulation": "RU_g \\ge 0 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(RU[g] >= 0 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Ramp-down limits are non-negative.",
+            "formulation": "RD_g \\ge 0 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(RD[g] >= 0 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Startup ramp limits are non-negative.",
+            "formulation": "SU_g \\ge 0 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(SU[g] >= 0 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Shutdown ramp limits are non-negative.",
+            "formulation": "SD_g \\ge 0 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(SD[g] >= 0 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Minimum up times are at least one period.",
+            "formulation": "U_g \\ge 1 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(U[g] >= 1 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Minimum down times are at least one period.",
+            "formulation": "D_g \\ge 1 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(D[g] >= 1 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Must-run flag is non-negative.",
+            "formulation": "MR_g \\ge 0 \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(MR[g] >= 0 for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Maximum thermal output is at least the minimum thermal output for each generator.",
+            "formulation": "P^{\\max}_g \\ge P^{\\min}_g \\quad \\forall g",
+            "explicit": false,
+            "code": {
+                "python": "assert all(P_max[g] >= P_min[g] for g in range(n_G))"
+            }
+        },
+        {
+            "description": "Maximum renewable output is at least the minimum renewable output for each wind generator and time period.",
+            "formulation": "P^{w,\\max}_{w,t} \\ge P^{w,\\min}_{w,t} \\quad \\forall w, t",
+            "explicit": false,
+            "code": {
+                "python": "assert all(P_wind_max[w][t] >= P_wind_min[w][t] for w in range(n_W) for t in range(T))"
+            }
+        }
+    ],
     "variables": {
         "u": {
             "description": "On status of generator g at time t",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "n_G",
                 "T"
@@ -152,7 +353,7 @@
         },
         "v": {
             "description": "Startup indicator of generator g at time t (1 if started)",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "n_G",
                 "T"
@@ -160,7 +361,7 @@
         },
         "w": {
             "description": "Shutdown indicator of generator g at time t (1 if shut down)",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "n_G",
                 "T"
@@ -168,10 +369,10 @@
         },
         "d_su": {
             "description": "Startup category selection for generator g, category s, at time t (ragged by n_S[g])",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "n_G",
-                "n_S[]",
+                "n_S[n_G]",
                 "T"
             ]
         },
@@ -180,7 +381,7 @@
             "type": "continuous",
             "shape": [
                 "n_G",
-                "n_L[]",
+                "n_L[n_G]",
                 "T"
             ]
         },
@@ -335,6 +536,14 @@
             "formulation": "\\sum_{l} \\lambda_{g,l,t} = u_{g,t} \\quad \\forall g, t",
             "code": {
                 "gurobipy": "for g in range(n_G):\n    for t in range(T):\n        model.addConstr(gp.quicksum(lam[g, l, t] for l in range(n_L[g])) == u[g, t])"
+            },
+            "explicit": true
+        },
+        {
+            "description": "Piecewise weights are at most one.",
+            "formulation": "\\lambda_{g,l,t} \\le 1 \\quad \\forall g, l, t",
+            "code": {
+                "gurobipy": "for g in range(n_G):\n    for l in range(n_L[g]):\n        for t in range(T):\n            model.addConstr(lam[g, l, t] <= 1)"
             },
             "explicit": true
         },
