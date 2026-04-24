@@ -19,7 +19,7 @@
             "problem": 1,
             "formulation": "c"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
@@ -118,7 +118,7 @@
             "problem": 2,
             "formulation": "c"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
@@ -217,7 +217,7 @@
             "problem": 3,
             "formulation": "c"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
@@ -316,7 +316,7 @@
             "problem": 4,
             "formulation": "c"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
@@ -415,7 +415,7 @@
             "problem": 5,
             "formulation": "c"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
@@ -711,39 +711,6 @@
         "b": {
             "problem": 8,
             "formulation": "d"
-        },
-        "equivalent": true
-    },
-    {
-        "a": {
-            "problem": 8,
-            "formulation": "a"
-        },
-        "b": {
-            "problem": 8,
-            "formulation": "e"
-        },
-        "equivalent": true
-    },
-    {
-        "a": {
-            "problem": 8,
-            "formulation": "a"
-        },
-        "b": {
-            "problem": 8,
-            "formulation": "f"
-        },
-        "equivalent": true
-    },
-    {
-        "a": {
-            "problem": 8,
-            "formulation": "a"
-        },
-        "b": {
-            "problem": 8,
-            "formulation": "g"
         },
         "equivalent": true
     },
@@ -932,7 +899,7 @@
             "problem": 12,
             "formulation": "c"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
@@ -954,7 +921,7 @@
             "problem": 12,
             "formulation": "e"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
@@ -965,7 +932,7 @@
             "problem": 12,
             "formulation": "f"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
