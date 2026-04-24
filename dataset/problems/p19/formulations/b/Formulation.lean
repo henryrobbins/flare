@@ -11,20 +11,20 @@ namespace P19.b
 structure Params where
   nH : ℕ  -- number of candidate hub locations
   nC : ℕ  -- number of disaster-prone regions
-  a : ℕ → ℝ  -- number of people affected in each disaster region
-  C : ℕ → ℕ → ℝ  -- cost per person from hub to region
-  t : ℕ → ℕ → ℝ  -- transportation time from hub to region
+  a : Fin nC → ℝ  -- number of people affected in each disaster region
+  C : Fin nH → Fin nC → ℝ  -- cost per person from hub to region
+  t : Fin nH → Fin nC → ℝ  -- transportation time from hub to region
   T : ℝ  -- maximum allowed transportation time per region
   n : ℕ  -- maximum number of hubs that can be opened
-  Hf : ℕ → ℤ  -- indicator: 1 if hub is fixed and must remain open, 0 otherwise
+  Hf : Fin nH → ℤ  -- indicator: 1 if hub is fixed and must remain open, 0 otherwise
   -- Assumptions
+  hHf_bin : ∀ h : Fin nH, Hf h = 0 ∨ Hf h = 1
+  -- Implicit Assumptions
   hnH : NeZero nH
   hnC : NeZero nC
-  -- Implicit Assumptions
   ha_nn : ∀ c : Fin nC, 0 ≤ a c
   hC_nn : ∀ h : Fin nH, ∀ c : Fin nC, 0 ≤ C h c
   ht_nn : ∀ h : Fin nH, ∀ c : Fin nC, 0 ≤ t h c
-  hHf_bin : ∀ h : Fin nH, Hf h = 0 ∨ Hf h = 1
 
 structure Vars where
   q : ℕ → ℕ → ℝ  -- demand fraction served by hub h to region c
