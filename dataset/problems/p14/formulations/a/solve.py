@@ -19,14 +19,18 @@ def main(params_path: str, solution_path: str) -> None:
     n = data["n"]
     T_limit = data["T_limit"]
     T = data["T"]
+    delta = data["delta"]
 
     # Parameter Validation
+    assert nS > 0
+    assert nH > 0
     assert all(T[i][j] >= 0 for i in range(nS) for j in range(nH))
     assert T_limit >= 0
     assert n <= nS
-
-    # Definitions
-    delta = [[1 if T[i][j] <= T_limit else 0 for j in range(nH)] for i in range(nS)]
+    assert all(delta[i][j] in (0, 1) for i in range(nS) for j in range(nH))
+    assert all(
+        (delta[i][j] == 1) == (T[i][j] <= T_limit) for i in range(nS) for j in range(nH)
+    )
 
     # Variables
     x = model.addVars(nS, vtype=GRB.BINARY, name="x")

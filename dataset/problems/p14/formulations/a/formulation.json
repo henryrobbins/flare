@@ -23,9 +23,32 @@
                 "nS",
                 "nH"
             ]
+        },
+        "delta": {
+            "description": "Feasibility indicator: 1 if travel time from DC i to hospital j is within the limit, 0 otherwise",
+            "shape": [
+                "nS",
+                "nH"
+            ]
         }
     },
     "assumptions": [
+        {
+            "description": "Number of candidate DC locations is positive.",
+            "formulation": "|\\mathcal{S}| > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nS > 0"
+            }
+        },
+        {
+            "description": "Number of hospital locations is positive.",
+            "formulation": "|\\mathcal{H}| > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nH > 0"
+            }
+        },
         {
             "description": "Travel times are non-negative.",
             "formulation": "T_{ij} \\geq 0 \\quad \\forall i \\in \\mathcal{S},\\, j \\in \\mathcal{H}",
@@ -49,16 +72,24 @@
             "code": {
                 "python": "assert n <= nS"
             }
-        }
-    ],
-    "definitions": {
-        "delta": {
-            "description": "Feasibility indicator: 1 if travel time from DC i to hospital j is within the limit, 0 otherwise",
+        },
+        {
+            "description": "delta is binary.",
+            "formulation": "\\delta_{ij} \\in \\{0, 1\\} \\quad \\forall i \\in \\mathcal{S},\\, j \\in \\mathcal{H}",
+            "explicit": true,
             "code": {
-                "python": "delta = [[1 if T[i][j] <= T_limit else 0 for j in range(nH)] for i in range(nS)]"
+                "python": "assert all(delta[i][j] in (0, 1) for i in range(nS) for j in range(nH))"
+            }
+        },
+        {
+            "description": "delta encodes feasibility: 1 iff travel time is within the limit.",
+            "formulation": "\\delta_{ij} = 1 \\iff T_{ij} \\leq T_{\\text{limit}}, \\quad \\delta_{ij} = 0 \\iff T_{ij} > T_{\\text{limit}} \\quad \\forall i \\in \\mathcal{S},\\, j \\in \\mathcal{H}",
+            "explicit": true,
+            "code": {
+                "python": "assert all((delta[i][j] == 1) == (T[i][j] <= T_limit) for i in range(nS) for j in range(nH))"
             }
         }
-    },
+    ],
     "variables": {
         "x": {
             "description": "1 if candidate DC location i is opened, 0 otherwise",
@@ -119,7 +150,8 @@
     },
     "metadata": {
         "source": {
-            "dataset": "Ferchtandiker2025"
+            "dataset": "Ferchtandiker2025",
+            "formulation_id": "efficient"
         }
     }
 }

@@ -111,7 +111,8 @@
     },
     "metadata": {
         "source": {
-            "dataset": "Ferchtandiker2025"
+            "dataset": "Ferchtandiker2025",
+            "formulation_id": "inefficient"
         }
     }
 }

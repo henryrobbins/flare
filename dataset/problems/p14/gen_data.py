@@ -16,6 +16,7 @@ Output keys match problem.json:
 
 import json
 import random
+from itertools import combinations
 import numpy as np
 from pathlib import Path
 
@@ -64,8 +65,24 @@ def generate_data(
     }
 
 
+def is_feasible(data: dict) -> bool:
+    T = data["T"]
+    T_limit = data["T_limit"]
+    nS, nH, n = data["nS"], data["nH"], data["n"]
+    coverage = [set(j for j in range(nH) if T[i][j] <= T_limit) for i in range(nS)]
+    return any(
+        set().union(*(coverage[i] for i in combo)) == set(range(nH))
+        for combo in combinations(range(nS), n)
+    )
+
+
 def main() -> None:
-    data = generate_data()
+    seed = SEED
+    while True:
+        data = generate_data(seed=seed)
+        if is_feasible(data):
+            break
+        seed += 1
     OUTPUT_PATH.write_text(json.dumps(data, indent=2))
 
 
