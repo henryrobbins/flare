@@ -6,63 +6,59 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P10.Fa
+namespace P10.a
 
-def jobNode (K : ℕ) {N : ℕ} (i : Fin N) : Fin (K + N) :=
-  ⟨K + i.val, Nat.add_lt_add_left i.isLt K⟩
-
-def truckNode {K : ℕ} (N : ℕ) (k : Fin K) : Fin (K + N) :=
-  Fin.castLE (Nat.le_add_right K N) k
-
-lemma jobNode_injective (K : ℕ) {N : ℕ} : Function.Injective (jobNode K (N := N)) := by
-  intro i j h
-  simp only [jobNode, Fin.mk.injEq] at h
-  exact Fin.ext (Nat.add_left_cancel h)
-
-structure Params (K N : ℕ) where
-  d     : Fin N → Fin N → ℝ  -- job-to-job travel time
-  d0    : Fin K → Fin N → ℝ  -- depot-to-job travel time
-  dH    : Fin K → Fin N → ℝ  -- job-to-depot travel time
-  v     : Fin K → ℝ           -- truck available time
-  τ_low : Fin N → ℝ           -- earliest arrival time
-  τ_hi  : Fin N → ℝ           -- latest arrival time
+structure Params where
+  K : ℕ  -- number of trucks
+  N : ℕ  -- number of jobs
+  d : ℕ → ℕ → ℝ -- job-to-job travel time
+  d0 : ℕ → ℕ → ℝ -- depot-to-job travel time
+  dH : ℕ → ℕ → ℝ -- job-to-depot travel time
+  v : ℕ → ℝ -- truck available time
+  τ_min : ℕ → ℝ -- earliest arrival time
+  τ_max : ℕ → ℝ -- latest arrival time
+  -- Implicit Assumptions
+  hK : NeZero K
+  hN : NeZero N
   hd_pos : ∀ i j : Fin N, 0 < d i j
-  htri0  : ∀ k i j, d0 k i ≤ d0 k j + d j i
-  htri   : ∀ i j m, d i j ≤ d i m + d m j
+  htri0 : ∀ (k : Fin K) (i j : Fin N), d0 k i ≤ d0 k j + d j i
+  htri : ∀ i j m : Fin N, d i j ≤ d i m + d m j
+  hv_nn : ∀ k : Fin K, 0 ≤ v k
+  hτ_min_nn : ∀ i : Fin N, 0 ≤ τ_min i
+  hτ_max_nn : ∀ i : Fin N, 0 ≤ τ_max i
 
-structure Vars (K N : ℕ) where
-  x : Fin (K + N) → Fin (K + N) → ℤ  -- arc indicator
-  δ : Fin N → ℝ                       -- arrival time
+structure Vars where
+  x : ℕ → ℕ → ℤ -- arc indicator
+  δ : ℕ → ℝ -- arrival time
 
-structure Feasible {K N : ℕ} [NeZero K] [NeZero N]
-    (p : Params K N) (v : Vars K N) : Prop where
+structure Feasible (p : Params) (v : Vars) : Prop where
   -- Each node has exactly one outgoing arc
-  hout : ∀ u, ∑ w, v.x u w = 1
+  hout : ∀ u : Fin (p.K + p.N), ∑ w : Fin (p.K + p.N), v.x u w = 1
   -- Each node has exactly one incoming arc
-  hin : ∀ u, ∑ w, v.x w u = 1
+  hin : ∀ u : Fin (p.K + p.N), ∑ w : Fin (p.K + p.N), v.x w u = 1
   -- Arrival time lower bound at each job
-  harrival : ∀ i, v.δ i ≥
-    ∑ k, (p.d0 k i + p.v k) * v.x (truckNode N k) (jobNode K i)
+  harrival : ∀ i : Fin p.N,
+    v.δ i ≥ ∑ k : Fin p.K, (p.d0 k i + p.v k) * (v.x k (p.K + i) : ℝ)
   -- Arrival time propagation between consecutive jobs
-  hseq : ∀ i j : Fin N, i ≠ j →
-    v.x (jobNode K i) (jobNode K j) = 1 →
-    v.x (jobNode K i) (jobNode K i) = 0 →
+  hseq : ∀ i j : Fin p.N,
+    v.x (p.K + i) (p.K + j) = 1 →
+    v.x (p.K + i) (p.K + i) = 0 →
     v.δ j ≥ v.δ i + p.d i i + p.d i j
   -- Time window bounds
-  htw_low : ∀ i, p.τ_low i ≤ v.δ i
-  htw_hi  : ∀ i, v.δ i ≤ p.τ_hi i
-  hx_bin  : ∀ u w, v.x u w = 0 ∨ v.x u w = 1
+  htw_min : ∀ i : Fin p.N, p.τ_min i ≤ v.δ i
+  htw_max : ∀ i : Fin p.N, v.δ i ≤ p.τ_max i
+  hx_bin : ∀ u w : Fin (p.K + p.N), v.x u w = 0 ∨ v.x u w = 1
 
 -- Minimize total routing cost
-def obj {K N : ℕ} (p : Params K N) (v : Vars K N) : ℝ :=
-  (∑ k, ∑ i, p.d0 k i * (v.x (truckNode N k) (jobNode K i) : ℝ))
-  + (∑ i, ∑ j, p.d i j * (v.x (jobNode K i) (jobNode K j) : ℝ))
-  + (∑ i, ∑ k, p.dH k i * (v.x (jobNode K i) (truckNode N k) : ℝ))
+def obj (p : Params) (v : Vars) : ℝ :=
+  (∑ k : Fin p.K, ∑ i : Fin p.N, p.d0 k i * (v.x k (p.K + i) : ℝ))
+  + (∑ i : Fin p.N, ∑ j : Fin p.N, p.d i j * (v.x (p.K + i) (p.K + j) : ℝ))
+  + (∑ i : Fin p.N, ∑ k : Fin p.K, p.dH k i * (v.x (p.K + i) k : ℝ))
 
-def formulation (K N : ℕ) [NeZero K] [NeZero N] : MILPFormulation where
-  Params   := Params K N
-  Vars     := Vars K N
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P10.Fa
+end P10.a

@@ -6,77 +6,74 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P10.Fc
+namespace P10.c
 
-def jobNode (K : ℕ) {N : ℕ} (i : Fin N) : Fin (K + N) :=
-  ⟨K + i.val, Nat.add_lt_add_left i.isLt K⟩
-
-def truckNode {K : ℕ} (N : ℕ) (k : Fin K) : Fin (K + N) :=
-  Fin.castLE (Nat.le_add_right K N) k
-
-lemma jobNode_injective (K : ℕ) {N : ℕ} : Function.Injective (jobNode K (N := N)) := by
-  intro i j h
-  simp only [jobNode, Fin.mk.injEq] at h
-  exact Fin.ext (Nat.add_left_cancel h)
-
-structure Params (K N : ℕ) where
-  d     : Fin N → Fin N → ℝ
-  d0    : Fin K → Fin N → ℝ
-  dH    : Fin K → Fin N → ℝ
-  v     : Fin K → ℝ
-  τ_low : Fin N → ℝ
-  τ_hi  : Fin N → ℝ
+structure Params where
+  K : ℕ  -- number of trucks
+  N : ℕ  -- number of jobs
+  d : ℕ → ℕ → ℝ -- job-to-job travel time
+  d0 : ℕ → ℕ → ℝ -- depot-to-job travel time
+  dH : ℕ → ℕ → ℝ -- job-to-depot travel time
+  v : ℕ → ℝ -- truck available time
+  τ_min : ℕ → ℝ -- earliest arrival time
+  τ_max : ℕ → ℝ -- latest arrival time
+  -- Implicit Assumptions
+  hK : NeZero K
+  hN : NeZero N
   hd_pos : ∀ i j : Fin N, 0 < d i j
-  htri0  : ∀ k i j, d0 k i ≤ d0 k j + d j i
-  htri   : ∀ i j m, d i j ≤ d i m + d m j
+  htri0 : ∀ (k : Fin K) (i j : Fin N), d0 k i ≤ d0 k j + d j i
+  htri : ∀ i j m : Fin N, d i j ≤ d i m + d m j
+  hv_nn : ∀ k : Fin K, 0 ≤ v k
+  hτ_min_nn : ∀ i : Fin N, 0 ≤ τ_min i
+  hτ_max_nn : ∀ i : Fin N, 0 ≤ τ_max i
 
-section
+noncomputable def EST (p : Params) (i : Fin p.N) : ℝ :=
+  haveI := p.hK
+  max (p.τ_min i) (univ.inf' univ_nonempty (fun k : Fin p.K => p.v k + p.d0 k i))
 
-variable {K N : ℕ} [NeZero K] [NeZero N] (p : Params K N)
-
-noncomputable def EST (i : Fin N) : ℝ :=
-  max (p.τ_low i) (univ.inf' univ_nonempty (fun k => p.v k + p.d0 k i))
-
-def A_minus : Set (Fin N × Fin N) :=
-  {pr | pr.1 ≠ pr.2 ∧ p.τ_hi pr.2 < EST p pr.1 + p.d pr.1 pr.1 + p.d pr.1 pr.2}
+def A_minus (p : Params) : Set (Fin p.N × Fin p.N) :=
+  {pr | pr.1 ≠ pr.2 ∧ p.τ_max pr.2 < EST p pr.1 + p.d pr.1 pr.1 + p.d pr.1 pr.2}
 
 /-- Mutually feasible pairs: distinct jobs where neither direction is infeasible. -/
-def F₂ : Set (Fin N × Fin N) :=
+def F₂ (p : Params) : Set (Fin p.N × Fin p.N) :=
   {pr | pr.1 ≠ pr.2 ∧ (pr.1, pr.2) ∉ A_minus p ∧ (pr.2, pr.1) ∉ A_minus p}
 
-end
+structure Vars where
+  x : ℕ → ℕ → ℤ -- arc indicator
+  δ : ℕ → ℝ -- arrival time
 
-structure Vars (K N : ℕ) where
-  x : Fin (K + N) → Fin (K + N) → ℤ
-  δ : Fin N → ℝ
-
-structure Feasible {K N : ℕ} [NeZero K] [NeZero N]
-    (p : Params K N) (v : Vars K N) : Prop where
-  hout     : ∀ u, ∑ w, v.x u w = 1
-  hin      : ∀ u, ∑ w, v.x w u = 1
-  harrival : ∀ i, v.δ i ≥
-    ∑ k, (p.d0 k i + p.v k) * v.x (truckNode N k) (jobNode K i)
-  hseq     : ∀ i j : Fin N, i ≠ j →
-    v.x (jobNode K i) (jobNode K j) = 1 →
-    v.x (jobNode K i) (jobNode K i) = 0 →
+structure Feasible (p : Params) (v : Vars) : Prop where
+  -- Each node has exactly one outgoing arc
+  hout : ∀ u : Fin (p.K + p.N), ∑ w : Fin (p.K + p.N), v.x u w = 1
+  -- Each node has exactly one incoming arc
+  hin : ∀ u : Fin (p.K + p.N), ∑ w : Fin (p.K + p.N), v.x w u = 1
+  -- Arrival time lower bound at each job
+  harrival : ∀ i : Fin p.N,
+    v.δ i ≥ ∑ k : Fin p.K, (p.d0 k i + p.v k) * (v.x k (p.K + i) : ℝ)
+  -- Arrival time propagation between consecutive jobs
+  hseq : ∀ i j : Fin p.N,
+    v.x (p.K + i) (p.K + j) = 1 →
+    v.x (p.K + i) (p.K + i) = 0 →
     v.δ j ≥ v.δ i + p.d i i + p.d i j
-  htw_low  : ∀ i, p.τ_low i ≤ v.δ i
-  htw_hi   : ∀ i, v.δ i ≤ p.τ_hi i
-  hx_bin   : ∀ u w, v.x u w = 0 ∨ v.x u w = 1
+  -- Time window bounds
+  htw_min : ∀ i : Fin p.N, p.τ_min i ≤ v.δ i
+  htw_max : ∀ i : Fin p.N, v.δ i ≤ p.τ_max i
+  hx_bin : ∀ u w : Fin (p.K + p.N), v.x u w = 0 ∨ v.x u w = 1
   -- EC2: For each mutually feasible pair, at most one direction or a rejection of i
-  hec2     : ∀ i j : Fin N, (i, j) ∈ F₂ p →
-    v.x (jobNode K i) (jobNode K j) + v.x (jobNode K j) (jobNode K i)
-      + v.x (jobNode K i) (jobNode K i) ≤ 1
+  hec2 : ∀ i j : Fin p.N, (i, j) ∈ F₂ p →
+    v.x (p.K + i) (p.K + j) + v.x (p.K + j) (p.K + i)
+      + v.x (p.K + i) (p.K + i) ≤ 1
 
-def obj {K N : ℕ} (p : Params K N) (v : Vars K N) : ℝ :=
-  (∑ k, ∑ i, p.d0 k i * (v.x (truckNode N k) (jobNode K i) : ℝ))
-  + (∑ i, ∑ j, p.d i j * (v.x (jobNode K i) (jobNode K j) : ℝ))
-  + (∑ i, ∑ k, p.dH k i * (v.x (jobNode K i) (truckNode N k) : ℝ))
+-- Minimize total routing cost
+def obj (p : Params) (v : Vars) : ℝ :=
+  (∑ k : Fin p.K, ∑ i : Fin p.N, p.d0 k i * (v.x k (p.K + i) : ℝ))
+  + (∑ i : Fin p.N, ∑ j : Fin p.N, p.d i j * (v.x (p.K + i) (p.K + j) : ℝ))
+  + (∑ i : Fin p.N, ∑ k : Fin p.K, p.dH k i * (v.x (p.K + i) k : ℝ))
 
-def formulation (K N : ℕ) [NeZero K] [NeZero N] : MILPFormulation where
-  Params   := Params K N
-  Vars     := Vars K N
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P10.Fc
+end P10.c
