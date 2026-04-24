@@ -1,6 +1,6 @@
 from .dataset import Dataset
 from .formulation import Formulation
-from .models import Assumption, Constraint, Objective, Parameter, Solution, Variable, VariableType
+from .models import Assumption, Constraint, Definition, Objective, Parameter, Solution, Variable, VariableType
 from .pair import Pair
 from .problem import Problem
 
@@ -14,6 +14,7 @@ __all__ = [
     "VariableType",
     "Assumption",
     "Constraint",
+    "Definition",
     "Objective",
     "Solution",
 ]

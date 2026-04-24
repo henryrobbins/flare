@@ -2,7 +2,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from .models import Assumption, Constraint, Objective, Parameter, Variable, VariableType
+from .models import Assumption, Constraint, Definition, Objective, Parameter, Variable, VariableType
 
 
 class Formulation:
@@ -14,6 +14,10 @@ class Formulation:
         self.parameters: dict[str, Parameter] = {
             k: Parameter(description=v["description"], shape=v["shape"])
             for k, v in raw["parameters"].items()
+        }
+        self.definitions: dict[str, Definition] = {
+            k: Definition(description=v["description"], code=v["code"])
+            for k, v in raw.get("definitions", {}).items()
         }
         self.assumptions: list[Assumption] = [
             Assumption(
@@ -28,7 +32,8 @@ class Formulation:
             k: Variable(
                 description=v["description"],
                 type=VariableType(v["type"]),
-                shape=v["shape"],
+                shape=v.get("shape", []),
+                indices=v.get("indices"),
             )
             for k, v in raw["variables"].items()
         }

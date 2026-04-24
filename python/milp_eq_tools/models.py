@@ -13,12 +13,19 @@ class Variable:
     description: str
     type: "VariableType"
     shape: list[int | str]
+    indices: str | None = None  # Python expression for index set (mutually exclusive with shape)
 
 
 class VariableType(str, Enum):
     continuous = "continuous"
     integer = "integer"
     binary = "binary"
+
+
+@dataclass(frozen=True)
+class Definition:
+    description: str
+    code: dict[str, str]
 
 
 @dataclass(frozen=True)

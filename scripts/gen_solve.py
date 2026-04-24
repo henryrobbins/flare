@@ -29,8 +29,11 @@ def _detect_imports(codes: list[str]) -> tuple[bool, bool]:
 
 
 def _var_decl(name: str, var: dict[str, object]) -> str:
-    shape = list(var.get("shape", []))  # type: ignore[arg-type]
     vtype = _gurobi_type(var)
+    indices = var.get("indices")
+    if indices is not None:
+        return f'{name} = model.addVars([{indices}], vtype={vtype}, name="{name}")'
+    shape = list(var.get("shape", []))  # type: ignore[arg-type]
     if not shape:
         return f'{name} = model.addVar(vtype={vtype}, name="{name}")'
     dims = ", ".join(str(d) for d in shape)
@@ -38,6 +41,8 @@ def _var_decl(name: str, var: dict[str, object]) -> str:
 
 
 def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
+    if var.get("indices") is not None:
+        return [f'variables["{name}"] = {{str(list(k)): {name}[k].x for k in {name}}}']
     shape = list(var.get("shape", []))  # type: ignore[arg-type]
     if not shape:
         return [f'variables["{name}"] = {name}.x']
@@ -62,6 +67,7 @@ def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
 def generate(formulation_json: dict[str, object]) -> str:
     params = dict(formulation_json.get("parameters", {}))  # type: ignore[arg-type]
     assumptions = list(formulation_json.get("assumptions", []))  # type: ignore[arg-type]
+    definitions = dict(formulation_json.get("definitions", {}))  # type: ignore[arg-type]
     variables = dict(formulation_json.get("variables", {}))  # type: ignore[arg-type]
     constraints = list(formulation_json.get("constraints", []))  # type: ignore[arg-type]
     objective = dict(formulation_json.get("objective", {}))  # type: ignore[arg-type]
@@ -113,6 +119,17 @@ def generate(formulation_json: dict[str, object]) -> str:
         for a in assumptions:
             a = dict(a)  # type: ignore[arg-type]
             code = str(a.get("code", {}).get("python", "")).strip()  # type: ignore[union-attr]
+            if code:
+                for line in code.split("\n"):
+                    L.append(f"    {line}")
+        L.append("")
+
+    # Definitions
+    if definitions:
+        L.append("    # Definitions")
+        for name, d in definitions.items():
+            d = dict(d)  # type: ignore[arg-type]
+            code = str(d.get("code", {}).get("python", "")).strip()  # type: ignore[union-attr]
             if code:
                 for line in code.split("\n"):
                     L.append(f"    {line}")

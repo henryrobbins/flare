@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from milp_eq_tools import Assumption, Constraint, Objective, Parameter, Problem, Variable, VariableType
+from milp_eq_tools import Assumption, Constraint, Definition, Objective, Parameter, Problem, Variable, VariableType
 from milp_eq_tools.formulation import Formulation
 
 DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset" / "problems"
@@ -11,6 +11,12 @@ DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset" / "problems"
 @pytest.fixture
 def formulation_a(problem1: Problem) -> Formulation:
     return problem1.formulations["a"]
+
+
+@pytest.fixture
+def formulation_with_definitions() -> Formulation:
+    """p8.a has a non-empty definitions field."""
+    return Formulation(DATASET_ROOT / "p8" / "formulations" / "a")
 
 
 def test_valid(formulation_a: Formulation) -> None:
@@ -89,5 +95,32 @@ def test_objective(formulation_a: Formulation) -> None:
     assert isinstance(obj, Objective)
     assert "Minimize" in obj.description or "minimize" in obj.description.lower()
     assert "gurobipy" in obj.code
+
+
+def test_definitions_empty(formulation_a: Formulation) -> None:
+    assert formulation_a.definitions == {}
+
+
+def test_definitions_parsed(formulation_with_definitions: Formulation) -> None:
+    defs = formulation_with_definitions.definitions
+    assert len(defs) > 0
+    for name, d in defs.items():
+        assert isinstance(name, str)
+        assert isinstance(d, Definition)
+        assert isinstance(d.description, str)
+        assert isinstance(d.code, dict)
+        assert "python" in d.code
+
+
+def test_definitions_keys(formulation_with_definitions: Formulation) -> None:
+    assert "P" in formulation_with_definitions.definitions
+    assert "M" in formulation_with_definitions.definitions
+
+
+def test_definitions_code(formulation_with_definitions: Formulation) -> None:
+    p_def = formulation_with_definitions.definitions["P"]
+    assert "P" in p_def.code["python"]
+    m_def = formulation_with_definitions.definitions["M"]
+    assert "M" in m_def.code["python"]
 
 
