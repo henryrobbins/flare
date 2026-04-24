@@ -63,6 +63,20 @@ def render_equivalence(a: Formulation, b: Formulation) -> RenderedPrompt:
     return RenderedPrompt(system=EQUIVALENCE_SYSTEM, user=user)
 
 
+def render_formulation_description(form: Formulation, problem_description: str) -> str:
+    tmpl = _env.get_template("formulation_description.md.j2")
+    return tmpl.render(
+        formulation_id=form.path.name,
+        problem_description=problem_description,
+        parameters=form.parameters,
+        variables=form.variables,
+        definitions=form.definitions,
+        assumptions=form.assumptions,
+        constraints=form.constraints,
+        objective=form.objective,
+    )
+
+
 def render_variable_mapping(var_name: str, a: Formulation, b: Formulation) -> RenderedPrompt:
     info_a = problem_info(a)
     info_b = problem_info(b)

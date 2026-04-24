@@ -1,0 +1,49 @@
+# Problem Description
+
+{{ problem_description }}
+
+---
+
+## Formulation: {{ formulation_id }}
+
+### Parameters
+
+{% for name, p in parameters.items() %}
+- **{{ name }}**{% if p.shape %} (shape: `{{ p.shape }}`){% endif %}: {{ p.description }}
+{% endfor %}
+
+### Variables
+
+{% for name, v in variables.items() %}
+- **{{ name }}** ({{ v.type.value }}{% if v.shape %}, shape: `{{ v.shape }}`{% endif %}{% if v.indices %}, indices: `{{ v.indices }}`{% endif %}): {{ v.description }}
+{% endfor %}
+{% if definitions %}
+
+### Definitions
+
+{% for name, d in definitions.items() %}
+- **{{ name }}**: {{ d.description }}
+{% endfor %}
+{% endif %}
+{% if assumptions %}
+
+### Assumptions
+
+{% for a in assumptions %}
+- {% if a.explicit %}(explicit) {% endif %}{{ a.description }}{% if a.formulation %}: ${{ a.formulation }}${% endif %}
+
+{% endfor %}
+{% endif %}
+
+### Constraints
+
+{% for c in constraints %}
+**{{ c.description }}**{% if not c.explicit %} *(implicit)*{% endif %}:
+$${{ c.formulation }}$$
+
+{% endfor %}
+
+### Objective
+
+{{ objective.description }}:
+$${{ objective.formulation }}$$

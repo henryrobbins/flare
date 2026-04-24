@@ -22,6 +22,7 @@ load_dotenv()
 from milp_eq_tools import Dataset, Formulation, Pair
 
 from src.checker import EquivalenceChecker
+from src.claude_code_checker import ClaudeCodeChecker
 from src.equivamap_checker import EquivaMapChecker
 from src.execution_checker import ExecutionChecker
 from src.llm_client import AnthropicClient
@@ -97,6 +98,7 @@ def main(workers: int = DEFAULT_WORKERS) -> None:
         ExecutionChecker(run_dir),
         NaiveLLMChecker(run_dir, client),
         EquivaMapChecker(run_dir, client),
+        ClaudeCodeChecker(run_dir, repo_root=Path(".")),
     ]
 
     results_path = run_dir / "results.jsonl"
