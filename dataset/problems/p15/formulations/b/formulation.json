@@ -1,0 +1,251 @@
+{
+    "valid": true,
+    "parameters": {
+        "nK": {
+            "description": "Number of floors in the tower",
+            "shape": []
+        },
+        "nV": {
+            "description": "Number of floor configurations",
+            "shape": []
+        },
+        "nH": {
+            "description": "Number of owner classes",
+            "shape": []
+        },
+        "nI": {
+            "description": "Number of sectors",
+            "shape": []
+        },
+        "nJ": {
+            "description": "Number of distinct apartment floor areas",
+            "shape": []
+        },
+        "nA": {
+            "description": "Maximum number of apartments across all configurations",
+            "shape": []
+        },
+        "cap": {
+            "description": "Number of apartments in configuration v",
+            "shape": [
+                "nV"
+            ]
+        },
+        "jApt": {
+            "description": "Area index of apartment a in configuration v (maps (v, a) to an index in 0..nJ-1)",
+            "shape": [
+                "nV",
+                "nA"
+            ]
+        },
+        "pProfit": {
+            "description": "Profit per apartment for sector i, area index j, and owner h",
+            "shape": [
+                "nI",
+                "nJ",
+                "nH"
+            ]
+        },
+        "area": {
+            "description": "Actual floor area value for area index j",
+            "shape": [
+                "nJ"
+            ]
+        },
+        "m": {
+            "description": "Minimum floor area required for each sector i and owner h",
+            "shape": [
+                "nI",
+                "nH"
+            ]
+        },
+        "b": {
+            "description": "Minimum fraction of total apartments that must belong to each sector i",
+            "shape": [
+                "nI"
+            ]
+        },
+        "s": {
+            "description": "Minimum average floor area required for apartments in each sector i",
+            "shape": [
+                "nI"
+            ]
+        },
+        "o": {
+            "description": "Minimum fraction of total apartments that must belong to each owner class h",
+            "shape": [
+                "nH"
+            ]
+        },
+        "iFree": {
+            "description": "Index of the free sector",
+            "shape": []
+        },
+        "hCorp": {
+            "description": "Index of the corporation owner class",
+            "shape": []
+        }
+    },
+    "assumptions": [
+        {
+            "description": "cap is non-negative and at most nA for each configuration.",
+            "formulation": "0 \\leq \\text{cap}_v \\leq nA \\quad \\forall v \\in V",
+            "explicit": false,
+            "code": {
+                "python": "assert all(0 <= cap[v] <= nA for v in range(nV))"
+            }
+        },
+        {
+            "description": "jApt values are valid area indices.",
+            "formulation": "0 \\leq \\text{jApt}_{va} < nJ \\quad \\forall v \\in V,\\; a < \\text{cap}_v",
+            "explicit": false,
+            "code": {
+                "python": "assert all(0 <= jApt[v][a] < nJ for v in range(nV) for a in range(cap[v]))"
+            }
+        },
+        {
+            "description": "Area values are non-negative.",
+            "formulation": "\\text{area}_j \\geq 0 \\quad \\forall j \\in J",
+            "explicit": false,
+            "code": {
+                "python": "assert all(area[j] >= 0 for j in range(nJ))"
+            }
+        },
+        {
+            "description": "Minimum area requirements are non-negative.",
+            "formulation": "m_{ih} \\geq 0 \\quad \\forall i \\in I,\\; h \\in H",
+            "explicit": false,
+            "code": {
+                "python": "assert all(m[i][h] >= 0 for i in range(nI) for h in range(nH))"
+            }
+        },
+        {
+            "description": "Sector fraction lower bounds are non-negative.",
+            "formulation": "b_i \\geq 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(b[i] >= 0 for i in range(nI))"
+            }
+        },
+        {
+            "description": "Average area lower bounds are non-negative.",
+            "formulation": "s_i \\geq 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(s[i] >= 0 for i in range(nI))"
+            }
+        },
+        {
+            "description": "Ownership fraction lower bounds are non-negative.",
+            "formulation": "o_h \\geq 0 \\quad \\forall h \\in H",
+            "explicit": false,
+            "code": {
+                "python": "assert all(o[h] >= 0 for h in range(nH))"
+            }
+        },
+        {
+            "description": "iFree is a valid sector index.",
+            "formulation": "0 \\leq \\text{iFree} < nI",
+            "explicit": false,
+            "code": {
+                "python": "assert 0 <= iFree < nI"
+            }
+        },
+        {
+            "description": "hCorp is a valid owner index.",
+            "formulation": "0 \\leq \\text{hCorp} < nH",
+            "explicit": false,
+            "code": {
+                "python": "assert 0 <= hCorp < nH"
+            }
+        }
+    ],
+    "variables": {
+        "x": {
+            "description": "1 if floor k uses configuration v with owner h, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nK",
+                "nV",
+                "nH"
+            ]
+        },
+        "y": {
+            "description": "1 if apartment a in configuration v on floor k (with owner h) is assigned to sector i, 0 otherwise",
+            "type": "binary",
+            "shape": ["nK", "nV", "nH", "nI", "|A_v|"],
+            "indices": "(k, v, h, i, a) for k in range(nK) for v in range(nV) for h in range(nH) for i in range(nI) for a in range(cap[v])"
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each floor is assigned exactly one configuration and owner.",
+            "formulation": "\\sum_{v \\in V} \\sum_{h \\in H} x_{kvh} = 1 \\quad \\forall k \\in K",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(x[k, v, h] for v in range(nV) for h in range(nH)) == 1 for k in range(nK))"
+            }
+        },
+        {
+            "description": "Each apartment on a floor can be assigned to a sector only if the floor uses the matching configuration and owner.",
+            "formulation": "\\sum_{i \\in I} y_{kvhia} \\leq x_{kvh} \\quad \\forall k \\in K,\\; v \\in V,\\; h \\in H,\\; a \\in A_v",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(y[k, v, h, i, a] for i in range(nI)) <= x[k, v, h] for k in range(nK) for v in range(nV) for h in range(nH) for a in range(cap[v]))"
+            }
+        },
+        {
+            "description": "Minimum fraction of total apartments that must be in sector i.",
+            "formulation": "\\sum_{k} \\sum_{v} \\sum_{h} \\sum_{a \\in A_v} y_{kvhia} \\geq b_i \\sum_{k} \\sum_{v} \\sum_{h} \\sum_{i'} \\sum_{a \\in A_v} y_{kvhi'a} \\quad \\forall i \\in I",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(y[k, v, h, i, a] for k in range(nK) for v in range(nV) for h in range(nH) for a in range(cap[v])) >= b[i] * gp.quicksum(y[k, v, h, ip, a] for k in range(nK) for v in range(nV) for h in range(nH) for ip in range(nI) for a in range(cap[v])) for i in range(nI))"
+            }
+        },
+        {
+            "description": "Minimum average floor area for sector i.",
+            "formulation": "\\sum_{k,v,h,a \\in A_v} \\text{area}_{j_{va}} \\cdot y_{kvhia} \\geq s_i \\sum_{k,v,h,a \\in A_v} y_{kvhia} \\quad \\forall i \\in I",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(area[jApt[v][a]] * y[k, v, h, i, a] for k in range(nK) for v in range(nV) for h in range(nH) for a in range(cap[v])) >= s[i] * gp.quicksum(y[k, v, h, i, a] for k in range(nK) for v in range(nV) for h in range(nH) for a in range(cap[v])) for i in range(nI))"
+            }
+        },
+        {
+            "description": "Apartments with area below minimum for (sector i, owner h) must have zero assignment.",
+            "formulation": "y_{kvhia} = 0 \\quad \\forall k,v,h,i,a \\in A_v \\text{ with } \\text{area}_{j_{va}} < m_{ih}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(y[k, v, h, i, a] == 0 for k in range(nK) for v in range(nV) for h in range(nH) for i in range(nI) for a in range(cap[v]) if area[jApt[v][a]] < m[i][h])"
+            }
+        },
+        {
+            "description": "Corporations cannot own free sector apartments.",
+            "formulation": "y_{kv\\,\\text{hCorp}\\,\\text{iFree}\\,a} = 0 \\quad \\forall k \\in K,\\; v \\in V,\\; a \\in A_v",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(y[k, v, hCorp, iFree, a] == 0 for k in range(nK) for v in range(nV) for a in range(cap[v]))"
+            }
+        },
+        {
+            "description": "Minimum ownership fraction: total apartments assigned to owner h meets o_h times all apartments.",
+            "formulation": "\\sum_{k,v} x_{kvh} \\cdot |A_v| \\geq o_h \\sum_{k,v,h'} x_{kvh'} \\cdot |A_v| \\quad \\forall h \\in H",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(x[k, v, h] * cap[v] for k in range(nK) for v in range(nV)) >= o[h] * gp.quicksum(x[k, v, hp] * cap[v] for k in range(nK) for v in range(nV) for hp in range(nH)) for h in range(nH))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total profit from apartment assignments.",
+        "formulation": "\\max \\sum_{k,v,h,i,a \\in A_v} p_{i\\,j_{va}\\,h} \\cdot y_{kvhia}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(pProfit[i][jApt[v][a]][h] * y[k, v, h, i, a]\n                for k in range(nK) for v in range(nV) for h in range(nH)\n                for i in range(nI) for a in range(cap[v])),\n    GRB.MAXIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025",
+            "variation_id": "inefficient"
+        }
+    }
+}

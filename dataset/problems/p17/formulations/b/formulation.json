@@ -1,0 +1,185 @@
+{
+    "valid": true,
+    "parameters": {
+        "n": {
+            "description": "Number of blocks",
+            "shape": []
+        },
+        "t": {
+            "description": "Number of scheduling periods",
+            "shape": []
+        },
+        "c": {
+            "description": "Net Present Value (NPV) of mining block i in period tau",
+            "shape": ["n", "t"]
+        },
+        "g": {
+            "description": "Ore grade of each block",
+            "shape": ["n"]
+        },
+        "O": {
+            "description": "Ore tonnage of each block",
+            "shape": ["n"]
+        },
+        "W": {
+            "description": "Waste tonnage of each block",
+            "shape": ["n"]
+        },
+        "G_min": {
+            "description": "Minimum allowed average ore grade in any period",
+            "shape": []
+        },
+        "G_max": {
+            "description": "Maximum allowed average ore grade in any period",
+            "shape": []
+        },
+        "PC_min": {
+            "description": "Minimum per-period ore processing capacity",
+            "shape": []
+        },
+        "PC_max": {
+            "description": "Maximum per-period ore processing capacity",
+            "shape": []
+        },
+        "MC_min": {
+            "description": "Minimum per-period total mining capacity (ore + waste)",
+            "shape": []
+        },
+        "MC_max": {
+            "description": "Maximum per-period total mining capacity (ore + waste)",
+            "shape": []
+        },
+        "P": {
+            "description": "Precedence matrix: P[i][j] = 1 if block i must be mined before block j",
+            "shape": ["n", "n"]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "Ore tonnage of each block is non-negative.",
+            "formulation": "O_i \\geq 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(O[i] >= 0 for i in range(n))"
+            }
+        },
+        {
+            "description": "Waste tonnage of each block is non-negative.",
+            "formulation": "W_i \\geq 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(W[i] >= 0 for i in range(n))"
+            }
+        },
+        {
+            "description": "Precedence matrix entries are binary.",
+            "formulation": "P_{ij} \\in \\{0,1\\} \\quad \\forall i,j \\in I",
+            "explicit": true,
+            "code": {
+                "python": "assert all(P[i][j] in (0, 1) for i in range(n) for j in range(n))"
+            }
+        },
+        {
+            "description": "Number of blocks is positive.",
+            "formulation": "n \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert n >= 1"
+            }
+        },
+        {
+            "description": "Number of scheduling periods is positive.",
+            "formulation": "t \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert t >= 1"
+            }
+        }
+    ],
+    "variables": {
+        "x": {
+            "description": "Binary indicator: 1 if block i is mined in period tau, 0 otherwise",
+            "type": "binary",
+            "shape": ["n", "t"]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Upper grade blending constraint: weighted average ore grade does not exceed G_max in each period.",
+            "formulation": "\\sum_{i \\in I} (g_i - G_{\\max}) O_i x_i^\\tau \\leq 0 \\quad \\forall \\tau \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum((g[i] - G_max) * O[i] * x[i, tau] for i in range(n)) <= 0\n    for tau in range(t)\n)"
+            }
+        },
+        {
+            "description": "Lower grade blending constraint: weighted average ore grade is at least G_min in each period.",
+            "formulation": "\\sum_{i \\in I} (g_i - G_{\\min}) O_i x_i^\\tau \\geq 0 \\quad \\forall \\tau \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum((g[i] - G_min) * O[i] * x[i, tau] for i in range(n)) >= 0\n    for tau in range(t)\n)"
+            }
+        },
+        {
+            "description": "Each block is mined at most once over the entire planning horizon.",
+            "formulation": "\\sum_{\\tau \\in T} x_i^\\tau \\leq 1 \\quad \\forall i \\in I",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[i, tau] for tau in range(t)) <= 1\n    for i in range(n)\n)"
+            }
+        },
+        {
+            "description": "Ore processing capacity upper bound per period.",
+            "formulation": "\\sum_{i \\in I} O_i x_i^\\tau \\leq PC_{\\max} \\quad \\forall \\tau \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(O[i] * x[i, tau] for i in range(n)) <= PC_max\n    for tau in range(t)\n)"
+            }
+        },
+        {
+            "description": "Ore processing capacity lower bound per period.",
+            "formulation": "\\sum_{i \\in I} O_i x_i^\\tau \\geq PC_{\\min} \\quad \\forall \\tau \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(O[i] * x[i, tau] for i in range(n)) >= PC_min\n    for tau in range(t)\n)"
+            }
+        },
+        {
+            "description": "Total mining capacity (ore + waste) upper bound per period.",
+            "formulation": "\\sum_{i \\in I} (O_i + W_i) x_i^\\tau \\leq MC_{\\max} \\quad \\forall \\tau \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum((O[i] + W[i]) * x[i, tau] for i in range(n)) <= MC_max\n    for tau in range(t)\n)"
+            }
+        },
+        {
+            "description": "Total mining capacity (ore + waste) lower bound per period.",
+            "formulation": "\\sum_{i \\in I} (O_i + W_i) x_i^\\tau \\geq MC_{\\min} \\quad \\forall \\tau \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum((O[i] + W[i]) * x[i, tau] for i in range(n)) >= MC_min\n    for tau in range(t)\n)"
+            }
+        },
+        {
+            "description": "Precedence constraint: block j may be mined in period tau only after all required predecessors i (P[i][j]=1) have been mined by period tau.",
+            "formulation": "\\sum_{\\tau'=1}^{\\tau} x_i^{\\tau'} \\geq x_j^\\tau \\quad \\forall \\tau \\in T,\\; \\forall i,j \\in I \\text{ with } P_{ij}=1",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[i, tau2] for tau2 in range(tau + 1)) >= x[j, tau]\n    for tau in range(t)\n    for i in range(n)\n    for j in range(n)\n    if P[i][j] == 1\n)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total discounted Net Present Value (NPV) across all blocks and periods.",
+        "formulation": "\\max \\sum_{\\tau \\in T} \\sum_{i \\in I} c_i^\\tau x_i^\\tau",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(c[i][tau] * x[i, tau] for i in range(n) for tau in range(t)),\n    GRB.MAXIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025",
+            "variation_id": "inefficient"
+        }
+    }
+}

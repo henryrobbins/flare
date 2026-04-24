@@ -1,0 +1,125 @@
+{
+    "valid": true,
+    "parameters": {
+        "nS": {
+            "description": "Number of candidate DC locations",
+            "shape": []
+        },
+        "nH": {
+            "description": "Number of hospital locations",
+            "shape": []
+        },
+        "n": {
+            "description": "Number of DCs that must be opened",
+            "shape": []
+        },
+        "T_limit": {
+            "description": "Maximum allowed travel time from a DC to any hospital it serves",
+            "shape": []
+        },
+        "T": {
+            "description": "Travel time from candidate DC location i to hospital j",
+            "shape": [
+                "nS",
+                "nH"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "Travel times are non-negative.",
+            "formulation": "T_{ij} \\geq 0 \\quad \\forall i \\in \\mathcal{S},\\, j \\in \\mathcal{H}",
+            "explicit": false,
+            "code": {
+                "python": "assert all(T[i][j] >= 0 for i in range(nS) for j in range(nH))"
+            }
+        },
+        {
+            "description": "The travel time limit is non-negative.",
+            "formulation": "T_{\\text{limit}} \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert T_limit >= 0"
+            }
+        },
+        {
+            "description": "The number of DCs to open does not exceed the number of candidate locations.",
+            "formulation": "n \\leq |\\mathcal{S}|",
+            "explicit": false,
+            "code": {
+                "python": "assert n <= nS"
+            }
+        }
+    ],
+    "definitions": {
+        "delta": {
+            "description": "Feasibility indicator: 1 if travel time from DC i to hospital j is within the limit, 0 otherwise",
+            "code": {
+                "python": "delta = [[1 if T[i][j] <= T_limit else 0 for j in range(nH)] for i in range(nS)]"
+            }
+        }
+    },
+    "variables": {
+        "x": {
+            "description": "1 if candidate DC location i is opened, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nS"
+            ]
+        },
+        "y": {
+            "description": "1 if hospital j is assigned to DC i, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nS",
+                "nH"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Select exactly n DC locations.",
+            "formulation": "\\sum_{i \\in \\mathcal{S}} x_i = n",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(x[i] for i in range(nS)) == n)"
+            }
+        },
+        {
+            "description": "Hospitals can only be allocated to active DCs, bounded by the number of feasibly reachable hospitals.",
+            "formulation": "\\sum_{j \\in \\mathcal{H}} \\delta_{ij}\\, y_{ij} \\leq x_i \\cdot \\sum_{j \\in \\mathcal{H}} \\delta_{ij} \\quad \\forall i \\in \\mathcal{S}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(delta[i][j] * y[i, j] for j in range(nH)) <= x[i] * sum(delta[i][j] for j in range(nH)) for i in range(nS))"
+            }
+        },
+        {
+            "description": "Each hospital must be assigned to exactly one feasible DC.",
+            "formulation": "\\sum_{i \\in \\mathcal{S}} \\delta_{ij}\\, y_{ij} = 1 \\quad \\forall j \\in \\mathcal{H}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(delta[i][j] * y[i, j] for i in range(nS)) == 1 for j in range(nH))"
+            }
+        },
+        {
+            "description": "No allocation allowed if travel time between DC and hospital exceeds the limit.",
+            "formulation": "y_{ij} = 0 \\quad \\forall i \\in \\mathcal{S},\\, j \\in \\mathcal{H} \\text{ with } \\delta_{ij} = 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(y[i, j] == 0 for i in range(nS) for j in range(nH) if delta[i][j] == 0)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total drive time across all feasible hospital-DC assignments.",
+        "formulation": "\\min \\sum_{i \\in \\mathcal{S}} \\sum_{j \\in \\mathcal{H}} \\delta_{ij}\\, y_{ij}\\, T_{ij}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(delta[i][j] * y[i, j] * T[i][j] for i in range(nS) for j in range(nH)),\n    GRB.MINIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025"
+        }
+    }
+}

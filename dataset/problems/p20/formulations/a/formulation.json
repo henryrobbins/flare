@@ -1,0 +1,178 @@
+{
+    "valid": true,
+    "parameters": {
+        "nN": {
+            "description": "Total number of nodes in the supply network (suppliers, transshipment points, and beneficiary camps)",
+            "shape": []
+        },
+        "nK": {
+            "description": "Number of food commodities",
+            "shape": []
+        },
+        "nL": {
+            "description": "Number of nutritional requirements",
+            "shape": []
+        },
+        "isB": {
+            "description": "Beneficiary-camp indicator: 1 if node j is a beneficiary camp, 0 otherwise",
+            "shape": [
+                "nN"
+            ]
+        },
+        "E": {
+            "description": "Adjacency matrix: 1 if a directed edge exists from node i to node j, 0 otherwise",
+            "shape": [
+                "nN",
+                "nN"
+            ]
+        },
+        "dem": {
+            "description": "Number of beneficiaries at each node (0 for non-beneficiary nodes)",
+            "shape": [
+                "nN"
+            ]
+        },
+        "pc": {
+            "description": "Procurement cost per kg of each commodity",
+            "shape": [
+                "nK"
+            ]
+        },
+        "tc": {
+            "description": "Transportation cost per kg of commodity k along the edge from node i to node j",
+            "shape": [
+                "nN",
+                "nN",
+                "nK"
+            ]
+        },
+        "nutreq": {
+            "description": "Per-person nutritional requirement for each nutrient",
+            "shape": [
+                "nL"
+            ]
+        },
+        "nutval": {
+            "description": "Nutritional value per kg of each commodity for each nutrient",
+            "shape": [
+                "nK",
+                "nL"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "Number of beneficiaries at each node is non-negative.",
+            "formulation": "\\mathrm{dem}_j \\geq 0 \\quad \\forall j \\in N",
+            "explicit": false,
+            "code": {
+                "python": "assert all(dem[j] >= 0 for j in range(nN))"
+            }
+        },
+        {
+            "description": "Procurement cost per kg of each commodity is non-negative.",
+            "formulation": "\\mathrm{pc}_k \\geq 0 \\quad \\forall k \\in K",
+            "explicit": false,
+            "code": {
+                "python": "assert all(pc[k] >= 0 for k in range(nK))"
+            }
+        },
+        {
+            "description": "Transportation cost along each arc for each commodity is non-negative.",
+            "formulation": "\\mathrm{tc}_{ijk} \\geq 0 \\quad \\forall i,j \\in N, k \\in K",
+            "explicit": false,
+            "code": {
+                "python": "assert all(tc[i][j][k] >= 0 for i in range(nN) for j in range(nN) for k in range(nK))"
+            }
+        },
+        {
+            "description": "Per-person nutritional requirement for each nutrient is non-negative.",
+            "formulation": "\\mathrm{nutreq}_l \\geq 0 \\quad \\forall l \\in L",
+            "explicit": false,
+            "code": {
+                "python": "assert all(nutreq[l] >= 0 for l in range(nL))"
+            }
+        },
+        {
+            "description": "Nutritional value per kg of each commodity for each nutrient is non-negative.",
+            "formulation": "\\mathrm{nutval}_{kl} \\geq 0 \\quad \\forall k \\in K, l \\in L",
+            "explicit": false,
+            "code": {
+                "python": "assert all(nutval[k][l] >= 0 for k in range(nK) for l in range(nL))"
+            }
+        }
+    ],
+    "variables": {
+        "F": {
+            "description": "Amount of commodity k shipped from node i to node j (kg)",
+            "type": "continuous",
+            "shape": [
+                "nN",
+                "nN",
+                "nK"
+            ]
+        },
+        "R": {
+            "description": "Ration size per person of each commodity (kg)",
+            "type": "continuous",
+            "shape": [
+                "nK"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Flow conservation at every node for each commodity: total inflow equals total outflow (no storage).",
+            "formulation": "\\sum_{i \\in N} E_{ij} F_{ijk} = \\sum_{i \\in N} E_{ji} F_{jik} \\quad \\forall j \\in N, k \\in K",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(E[i][j] * F[i, j, k] for i in range(nN)) ==\n    gp.quicksum(E[j][i] * F[j, i, k] for i in range(nN))\n    for j in range(nN) for k in range(nK)\n)"
+            }
+        },
+        {
+            "description": "Each beneficiary camp receives at least its ration demand on incoming edges for each commodity.",
+            "formulation": "\\sum_{i \\in N} E_{ij} F_{ijk} \\geq \\mathrm{dem}_j R_k \\quad \\forall j \\in N_B, k \\in K",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(E[i][j] * F[i, j, k] for i in range(nN)) >= dem[j] * R[k]\n    for j in range(nN) for k in range(nK) if isB[j] == 1\n)"
+            }
+        },
+        {
+            "description": "The ration collectively satisfies all per-person nutritional requirements.",
+            "formulation": "\\sum_{k \\in K} \\mathrm{nutval}_{kl} R_k \\geq \\mathrm{nutreq}_l \\quad \\forall l \\in L",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(nutval[k][l] * R[k] for k in range(nK)) >= nutreq[l]\n    for l in range(nL)\n)"
+            }
+        },
+        {
+            "description": "Flow on each arc for each commodity is non-negative.",
+            "formulation": "F_{ijk} \\geq 0 \\quad \\forall i,j \\in N, k \\in K",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(F[i, j, k] >= 0 for i in range(nN) for j in range(nN) for k in range(nK))"
+            }
+        },
+        {
+            "description": "Ration size per person of each commodity is non-negative.",
+            "formulation": "R_k \\geq 0 \\quad \\forall k \\in K",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(R[k] >= 0 for k in range(nK))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total procurement cost plus total transportation cost.",
+        "formulation": "\\min \\sum_{k \\in K} \\mathrm{pc}_k \\left( \\sum_{j \\in N_B} \\mathrm{dem}_j R_k \\right) + \\sum_{i \\in N} \\sum_{j \\in N} \\sum_{k \\in K} \\mathrm{tc}_{ijk} F_{ijk}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(pc[k] * gp.quicksum(isB[j] * dem[j] * R[k] for j in range(nN)) for k in range(nK))\n    + gp.quicksum(tc[i][j][k] * F[i, j, k] for i in range(nN) for j in range(nN) for k in range(nK)),\n    GRB.MINIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025",
+            "variation_id": "efficient"
+        }
+    }
+}

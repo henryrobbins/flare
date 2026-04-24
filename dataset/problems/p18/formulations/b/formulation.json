@@ -1,0 +1,140 @@
+{
+    "valid": true,
+    "parameters": {
+        "nI": {
+            "description": "Number of household clusters",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of existing hospitals",
+            "shape": []
+        },
+        "M": {
+            "description": "Total number of candidate hospital sites (including existing hospitals)",
+            "shape": []
+        },
+        "v": {
+            "description": "Population of each household cluster",
+            "shape": [
+                "nI"
+            ]
+        },
+        "a": {
+            "description": "Coverage indicator: 1 if household i is within distance S of hospital j, 0 otherwise",
+            "shape": [
+                "nI",
+                "M"
+            ]
+        },
+        "p": {
+            "description": "Maximum number of new hospitals that can be opened",
+            "shape": []
+        }
+    },
+    "assumptions": [
+        {
+            "description": "Population of each household cluster is non-negative.",
+            "formulation": "v_i \\geq 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(v[i] >= 0 for i in range(nI))"
+            }
+        },
+        {
+            "description": "Coverage indicator is binary.",
+            "formulation": "a_{ij} \\in \\{0, 1\\} \\quad \\forall i \\in I,\\; \\forall j \\in J",
+            "explicit": false,
+            "code": {
+                "python": "assert all(a[i][j] in (0, 1) for i in range(nI) for j in range(M))"
+            }
+        },
+        {
+            "description": "Maximum number of new hospitals is non-negative.",
+            "formulation": "p \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert p >= 0"
+            }
+        },
+        {
+            "description": "Number of existing hospitals does not exceed total hospital sites.",
+            "formulation": "m \\leq M",
+            "explicit": false,
+            "code": {
+                "python": "assert m <= M"
+            }
+        }
+    ],
+    "variables": {
+        "x": {
+            "description": "1 if hospital j is opened, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "M"
+            ]
+        },
+        "y": {
+            "description": "1 if demand at household i is served by hospital j, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nI",
+                "M"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "All existing hospitals must remain open.",
+            "formulation": "x_j = 1 \\quad \\forall j \\in J_0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(x[j] == 1 for j in range(m))"
+            }
+        },
+        {
+            "description": "At most p new hospitals can be opened.",
+            "formulation": "\\sum_{j \\in J_1} x_j \\leq p",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(x[j] for j in range(m, M)) <= p)"
+            }
+        },
+        {
+            "description": "A hospital can only receive household assignments if it is open.",
+            "formulation": "\\sum_{i \\in I} y_{ij} \\leq |I| \\cdot x_j \\quad \\forall j \\in J",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(y[i, j] for i in range(nI)) <= nI * x[j] for j in range(M))"
+            }
+        },
+        {
+            "description": "Each household is assigned to at most one hospital.",
+            "formulation": "\\sum_{j \\in J} y_{ij} \\leq 1 \\quad \\forall i \\in I",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(y[i, j] for j in range(M)) <= 1 for i in range(nI))"
+            }
+        },
+        {
+            "description": "Assignment is only permitted to hospitals within the maximum travel distance.",
+            "formulation": "y_{ij} \\leq a_{ij} \\quad \\forall i \\in I,\\; \\forall j \\in J",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(y[i, j] <= a[i][j] for i in range(nI) for j in range(M))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the total population served by an assigned hospital.",
+        "formulation": "\\max \\sum_{i \\in I} \\sum_{j \\in J} v_i y_{ij}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(v[i] * y[i, j] for i in range(nI) for j in range(M)),\n    GRB.MAXIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025",
+            "variation_id": "inefficient"
+        }
+    }
+}

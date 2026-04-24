@@ -1,0 +1,130 @@
+{
+    "valid": true,
+    "parameters": {
+        "N": {
+            "description": "Number of existing hubs that must remain open (hubs 0..N-1)",
+            "shape": []
+        },
+        "M": {
+            "description": "Total number of hub locations (existing and potential new)",
+            "shape": []
+        },
+        "nP": {
+            "description": "Number of Points of Interest (destinations)",
+            "shape": []
+        },
+        "nS": {
+            "description": "Number of junction roads (commuter origins)",
+            "shape": []
+        },
+        "v": {
+            "description": "Commuter demand from junction s to POI p",
+            "shape": [
+                "nS",
+                "nP"
+            ]
+        },
+        "F": {
+            "description": "Feasibility indicator: 1 iff junction-hub-POI triple is viable for Park and Bike use",
+            "shape": [
+                "nS",
+                "M",
+                "nP"
+            ]
+        },
+        "U": {
+            "description": "Maximum number of new hubs that can be opened",
+            "shape": []
+        }
+    },
+    "assumptions": [
+        {
+            "description": "Commuter demand is non-negative.",
+            "formulation": "v_{sp} \\geq 0 \\quad \\forall s \\in S, p \\in P",
+            "explicit": false,
+            "code": {
+                "python": "assert all(v[s][p] >= 0 for s in range(nS) for p in range(nP))"
+            }
+        },
+        {
+            "description": "Feasibility indicators are binary.",
+            "formulation": "F_{shp} \\in \\{0, 1\\} \\quad \\forall s \\in S, h \\in H, p \\in P",
+            "explicit": false,
+            "code": {
+                "python": "assert all(F[s][h][p] in (0, 1) for s in range(nS) for h in range(M) for p in range(nP))"
+            }
+        },
+        {
+            "description": "The number of existing hubs does not exceed total hubs.",
+            "formulation": "N \\leq M",
+            "explicit": false,
+            "code": {
+                "python": "assert N <= M"
+            }
+        },
+        {
+            "description": "The maximum number of new hubs is non-negative.",
+            "formulation": "U \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert U >= 0"
+            }
+        }
+    ],
+    "variables": {
+        "y": {
+            "description": "1 if hub h is opened, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "M"
+            ]
+        },
+        "z": {
+            "description": "1 if demand from junction s to POI p is covered by at least one open feasible hub, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nS",
+                "nP"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "At most U new hubs (indices N..M-1) may be opened.",
+            "formulation": "\\sum_{h=N}^{M-1} y_h \\leq U",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(y[h] for h in range(N, M)) <= U)"
+            }
+        },
+        {
+            "description": "All existing hubs (indices 0..N-1) must remain open.",
+            "formulation": "\\sum_{h=0}^{N-1} y_h = N",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(y[h] for h in range(N)) == N)"
+            }
+        },
+        {
+            "description": "Demand from junction s to POI p can only be covered if at least one feasible open hub exists for the pair.",
+            "formulation": "z_{sp} \\leq \\sum_{h \\in H} F_{shp} \\, y_h \\quad \\forall s \\in S, p \\in P",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(z[s, p] <= gp.quicksum(F[s][h][p] * y[h] for h in range(M)) for s in range(nS) for p in range(nP))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize the total commuter demand covered by the hub network.",
+        "formulation": "\\max \\sum_{s \\in S} \\sum_{p \\in P} v_{sp} \\, z_{sp}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(v[s][p] * z[s, p] for s in range(nS) for p in range(nP)),\n    GRB.MAXIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025",
+            "variation_id": "efficient"
+        }
+    }
+}

@@ -1,0 +1,166 @@
+{
+    "valid": true,
+    "parameters": {
+        "nP": {
+            "description": "Number of simple paths from a supplier to a beneficiary camp",
+            "shape": []
+        },
+        "nK": {
+            "description": "Number of food commodities",
+            "shape": []
+        },
+        "nL": {
+            "description": "Number of nutritional requirements",
+            "shape": []
+        },
+        "nB": {
+            "description": "Number of beneficiary camps",
+            "shape": []
+        },
+        "c": {
+            "description": "Shipping cost per kg of commodity k along path p",
+            "shape": [
+                "nP",
+                "nK"
+            ]
+        },
+        "q": {
+            "description": "Procurement cost per kg of commodity k",
+            "shape": [
+                "nK"
+            ]
+        },
+        "nutval": {
+            "description": "Nutritional value per kg of commodity k for nutrient l",
+            "shape": [
+                "nK",
+                "nL"
+            ]
+        },
+        "nutreq": {
+            "description": "Per-person nutritional requirement for nutrient l",
+            "shape": [
+                "nL"
+            ]
+        },
+        "dem": {
+            "description": "Number of beneficiaries at beneficiary camp j",
+            "shape": [
+                "nB"
+            ]
+        },
+        "e": {
+            "description": "Indicator: 1 if path p ends at beneficiary camp j, 0 otherwise",
+            "shape": [
+                "nB",
+                "nP"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "Shipping cost along each path for each commodity is non-negative.",
+            "formulation": "c_{pk} \\geq 0 \\quad \\forall p \\in P, k \\in K",
+            "explicit": false,
+            "code": {
+                "python": "assert all(c[p][k] >= 0 for p in range(nP) for k in range(nK))"
+            }
+        },
+        {
+            "description": "Procurement cost per kg of each commodity is non-negative.",
+            "formulation": "q_k \\geq 0 \\quad \\forall k \\in K",
+            "explicit": false,
+            "code": {
+                "python": "assert all(q[k] >= 0 for k in range(nK))"
+            }
+        },
+        {
+            "description": "Nutritional value per kg of each commodity for each nutrient is non-negative.",
+            "formulation": "\\mathrm{nutval}_{kl} \\geq 0 \\quad \\forall k \\in K, l \\in L",
+            "explicit": false,
+            "code": {
+                "python": "assert all(nutval[k][l] >= 0 for k in range(nK) for l in range(nL))"
+            }
+        },
+        {
+            "description": "Per-person nutritional requirement for each nutrient is non-negative.",
+            "formulation": "\\mathrm{nutreq}_l \\geq 0 \\quad \\forall l \\in L",
+            "explicit": false,
+            "code": {
+                "python": "assert all(nutreq[l] >= 0 for l in range(nL))"
+            }
+        },
+        {
+            "description": "Number of beneficiaries at each camp is non-negative.",
+            "formulation": "\\mathrm{dem}_j \\geq 0 \\quad \\forall j \\in N_B",
+            "explicit": false,
+            "code": {
+                "python": "assert all(dem[j] >= 0 for j in range(nB))"
+            }
+        }
+    ],
+    "variables": {
+        "x": {
+            "description": "Amount of commodity k shipped along path p (kg)",
+            "type": "continuous",
+            "shape": [
+                "nP",
+                "nK"
+            ]
+        },
+        "R": {
+            "description": "Ration size per person of each commodity (kg)",
+            "type": "continuous",
+            "shape": [
+                "nK"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each beneficiary camp receives at least its ration demand from paths ending there for each commodity.",
+            "formulation": "\\sum_{p \\in P} e_{jp} x_{pk} \\geq \\mathrm{dem}_j R_k \\quad \\forall j \\in N_B, k \\in K",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(e[j][p] * x[p, k] for p in range(nP)) >= dem[j] * R[k]\n    for j in range(nB) for k in range(nK)\n)"
+            }
+        },
+        {
+            "description": "The ration collectively satisfies all per-person nutritional requirements.",
+            "formulation": "\\sum_{k \\in K} \\mathrm{nutval}_{kl} R_k \\geq \\mathrm{nutreq}_l \\quad \\forall l \\in L",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(nutval[k][l] * R[k] for k in range(nK)) >= nutreq[l]\n    for l in range(nL)\n)"
+            }
+        },
+        {
+            "description": "Amount shipped along each path for each commodity is non-negative.",
+            "formulation": "x_{pk} \\geq 0 \\quad \\forall p \\in P, k \\in K",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(x[p, k] >= 0 for p in range(nP) for k in range(nK))"
+            }
+        },
+        {
+            "description": "Ration size per person of each commodity is non-negative.",
+            "formulation": "R_k \\geq 0 \\quad \\forall k \\in K",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(R[k] >= 0 for k in range(nK))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total shipping cost plus total procurement cost.",
+        "formulation": "\\min \\sum_{p \\in P} \\sum_{k \\in K} c_{pk} x_{pk} + \\sum_{k \\in K} q_k \\left( \\sum_{p \\in P} x_{pk} \\right)",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(c[p][k] * x[p, k] for p in range(nP) for k in range(nK))\n    + gp.quicksum(q[k] * gp.quicksum(x[p, k] for p in range(nP)) for k in range(nK)),\n    GRB.MINIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025",
+            "variation_id": "inefficient"
+        }
+    }
+}

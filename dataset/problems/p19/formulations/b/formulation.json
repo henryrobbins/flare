@@ -1,0 +1,205 @@
+{
+    "valid": true,
+    "parameters": {
+        "nH": {
+            "description": "Total number of candidate hub locations",
+            "shape": []
+        },
+        "nC": {
+            "description": "Number of disaster-prone regions",
+            "shape": []
+        },
+        "a": {
+            "description": "Number of people affected in each disaster region",
+            "shape": [
+                "nC"
+            ]
+        },
+        "C": {
+            "description": "Cost of transporting relief items for one affected person from each hub to each region",
+            "shape": [
+                "nH",
+                "nC"
+            ]
+        },
+        "t": {
+            "description": "Transportation time from each hub to each region",
+            "shape": [
+                "nH",
+                "nC"
+            ]
+        },
+        "T": {
+            "description": "Maximum allowed transportation time from any hub to any region it serves",
+            "shape": []
+        },
+        "n": {
+            "description": "Maximum number of hubs that can be opened",
+            "shape": []
+        },
+        "Hf": {
+            "description": "Indicator for each hub: 1 if the hub is fixed and must remain open, 0 otherwise",
+            "shape": [
+                "nH"
+            ]
+        },
+        "M": {
+            "description": "Big-M constant used to link the demand-fraction variable q to the assignment indicator z",
+            "shape": []
+        }
+    },
+    "assumptions": [
+        {
+            "description": "The number of candidate hubs is positive.",
+            "formulation": "nH > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nH > 0"
+            }
+        },
+        {
+            "description": "The number of disaster regions is positive.",
+            "formulation": "nC > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nC > 0"
+            }
+        },
+        {
+            "description": "The number of people affected in each region is non-negative.",
+            "formulation": "a_c \\geq 0 \\quad \\forall c \\in C",
+            "explicit": false,
+            "code": {
+                "python": "assert all(a[c] >= 0 for c in range(nC))"
+            }
+        },
+        {
+            "description": "Transportation cost per person from each hub to each region is non-negative.",
+            "formulation": "C_{hc} \\geq 0 \\quad \\forall h \\in H, c \\in C",
+            "explicit": false,
+            "code": {
+                "python": "assert all(C[h][c] >= 0 for h in range(nH) for c in range(nC))"
+            }
+        },
+        {
+            "description": "Transportation time from each hub to each region is non-negative.",
+            "formulation": "t_{hc} \\geq 0 \\quad \\forall h \\in H, c \\in C",
+            "explicit": false,
+            "code": {
+                "python": "assert all(t[h][c] >= 0 for h in range(nH) for c in range(nC))"
+            }
+        },
+        {
+            "description": "The hub fixed indicator is binary for each hub.",
+            "formulation": "Hf_h \\in \\{0, 1\\} \\quad \\forall h \\in H",
+            "explicit": false,
+            "code": {
+                "python": "assert all(Hf[h] in (0, 1) for h in range(nH))"
+            }
+        },
+        {
+            "description": "The big-M constant is positive.",
+            "formulation": "M > 0",
+            "explicit": true,
+            "code": {
+                "python": "assert M > 0"
+            }
+        }
+    ],
+    "variables": {
+        "q": {
+            "description": "Fraction of region c's demand served by hub h",
+            "type": "continuous",
+            "shape": [
+                "nH",
+                "nC"
+            ]
+        },
+        "z": {
+            "description": "1 if hub h contributes any supply to region c, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nH",
+                "nC"
+            ]
+        },
+        "y": {
+            "description": "1 if hub h is opened, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nH"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Big-M link: the demand fraction from hub h to region c is zero unless z_hc = 1.",
+            "formulation": "q_{hc} \\leq M \\, z_{hc} \\quad \\forall h \\in H, c \\in C",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(q[h, c] <= M * z[h, c] for h in range(nH) for c in range(nC))"
+            }
+        },
+        {
+            "description": "Each disaster region's demand must be fully supplied.",
+            "formulation": "\\sum_{h \\in H} q_{hc} = 1 \\quad \\forall c \\in C",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(q[h, c] for h in range(nH)) == 1 for c in range(nC))"
+            }
+        },
+        {
+            "description": "A hub can only be assigned to regions if it is open: total assignments from hub h is at most nC times its open indicator.",
+            "formulation": "\\sum_{c \\in C} z_{hc} \\leq |C| \\, y_h \\quad \\forall h \\in H",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(z[h, c] for c in range(nC)) <= nC * y[h] for h in range(nH))"
+            }
+        },
+        {
+            "description": "The total number of opened hubs must not exceed the maximum.",
+            "formulation": "\\sum_{h \\in H} y_h \\leq n",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(y[h] for h in range(nH)) <= n)"
+            }
+        },
+        {
+            "description": "Fixed hubs must be opened.",
+            "formulation": "y_h = 1 \\quad \\forall h \\in H^f",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(y[h] == 1 for h in range(nH) if Hf[h] == 1)"
+            }
+        },
+        {
+            "description": "Per-region weighted travel time must not exceed the maximum allowed time.",
+            "formulation": "\\sum_{h \\in H} t_{hc} \\, q_{hc} \\leq T \\quad \\forall c \\in C",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(t[h][c] * q[h, c] for h in range(nH)) <= T for c in range(nC))"
+            }
+        },
+        {
+            "description": "Demand fractions are non-negative.",
+            "formulation": "q_{hc} \\geq 0 \\quad \\forall h \\in H, c \\in C",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(q[h, c] >= 0 for h in range(nH) for c in range(nC))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize total per-person-weighted transportation cost across all hubs and regions.",
+        "formulation": "\\min \\sum_{h \\in H} \\sum_{c \\in C} a_c \\, C_{hc} \\, q_{hc}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(a[c] * C[h][c] * q[h, c] for h in range(nH) for c in range(nC)),\n    GRB.MINIMIZE\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025",
+            "variation_id": "inefficient"
+        }
+    }
+}

@@ -1,0 +1,107 @@
+{
+    "valid": true,
+    "parameters": {
+        "nP": {
+            "description": "Number of flights",
+            "shape": []
+        },
+        "nA": {
+            "description": "Number of airspace sectors/locations",
+            "shape": []
+        },
+        "nT": {
+            "description": "Number of time periods",
+            "shape": []
+        },
+        "tau": {
+            "description": "Transition time from location a to location a'",
+            "shape": [
+                "nA",
+                "nA"
+            ]
+        },
+        "r": {
+            "description": "Reward for being at location a at time t",
+            "shape": [
+                "nA",
+                "nT"
+            ]
+        },
+        "cap": {
+            "description": "Capacity of location a at time t",
+            "shape": [
+                "nA",
+                "nT"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "Capacity values are non-negative.",
+            "formulation": "\\text{cap}_{a,t} \\geq 0 \\quad \\forall a \\in A, t \\in T",
+            "explicit": false,
+            "code": {
+                "python": "assert all(cap[a][t] >= 0 for a in range(nA) for t in range(nT))"
+            }
+        }
+    ],
+    "variables": {
+        "y": {
+            "description": "1 if flight p is at location a at time t, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nP",
+                "nA",
+                "nT"
+            ]
+        },
+        "z": {
+            "description": "1 if flight p departs from location a to location a' at time t, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "nP",
+                "nA",
+                "nA",
+                "nT"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Each flight is at exactly one location at each time period.",
+            "formulation": "\\sum_{a \\in A} y_{p,a,t} = 1 \\quad \\forall p \\in P, t \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(y[p, a, t] for a in range(nA)) == 1 for p in range(nP) for t in range(nT))"
+            }
+        },
+        {
+            "description": "The number of flights at each location does not exceed the location capacity.",
+            "formulation": "\\sum_{p \\in P} y_{p,a,t} \\leq \\text{cap}_{a,t} \\quad \\forall a \\in A, t \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(y[p, a, t] for p in range(nP)) <= cap[a][t] for a in range(nA) for t in range(nT))"
+            }
+        },
+        {
+            "description": "Flow conservation: the number of flights at location a at time t equals those at t-1 plus arrivals minus departures, accounting for travel times.",
+            "formulation": "y_{p,a,t} = y_{p,a,t-1} + \\sum_{a' \\in A} \\sum_{t' : t' + \\tau_{a',a} = t} z_{p,a',a,t'} - \\sum_{a' \\in A} z_{p,a,a',t} \\quad \\forall p \\in P, a \\in A, t \\in T, t > 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(y[p, a, t] == y[p, a, t-1] + gp.quicksum(z[p, a2, a, t2] for a2 in range(nA) for t2 in range(nT) if t2 + tau[a2][a] == t) - gp.quicksum(z[p, a, a2, t] for a2 in range(nA)) for p in range(nP) for a in range(nA) for t in range(1, nT))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Maximize total reward for all flights across all locations and time periods.",
+        "formulation": "\\max \\sum_{p \\in P} \\sum_{a \\in A} \\sum_{t \\in T} r_{a,t} \\cdot y_{p,a,t}",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(r[a][t] * y[p, a, t] for p in range(nP) for a in range(nA) for t in range(nT)), GRB.MAXIMIZE)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "Ferchtandiker2025"
+        }
+    }
+}
