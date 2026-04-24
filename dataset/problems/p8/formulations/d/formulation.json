@@ -81,10 +81,10 @@
             "explicit": true
         },
         {
-            "description": "Average Load Bound (EC1): the makespan is at least the total processing time of all operations divided by the number of machines.",
-            "formulation": "C_{\\max} \\ge \\frac{1}{n_{\\text{mach}}} \\sum_{(j,k)\\in O} p_{j,k}",
+            "description": "Longest Job Bound (EC3): the makespan is at least the total processing time of each job chain.",
+            "formulation": "C_{\\max} \\ge \\sum_{k=0}^{m-1} p_{j,k} \\quad \\forall j",
             "code": {
-                "gurobipy": "model.addConstr(C_max >= sum(p[j][k] for j in range(n) for k in range(m)) / m)"
+                "gurobipy": "model.addConstrs(C_max >= sum(p[j][k] for k in range(m)) for j in range(n))"
             },
             "explicit": true
         }
@@ -100,7 +100,7 @@
         "source": {
             "dataset": "EvoCut",
             "version": 2,
-            "name": "EC1"
+            "name": "EC3"
         }
     }
 }

@@ -34,9 +34,9 @@ structure Feasible {nJ nM : ℕ} [NeZero nJ] [NeZero nM]
     P.p j ⟨nM - 1, by have := NeZero.pos nM; omega⟩
   hS_nn  : ∀ j k, 0 ≤ v.S j k
   hy_bin : ∀ j1 k1 j2 k2, v.y j1 k1 j2 k2 = 0 ∨ v.y j1 k1 j2 k2 = 1
-  -- EC1 (V2): Average Load Bound
-  -- Makespan is at least the total processing time of all ops divided by number of machines
-  hec1 : v.Cmax ≥ (∑ j : Fin nJ, ∑ k : Fin nM, P.p j k) / nM
+  -- EC3 (V2): Longest Job Bound
+  -- Makespan is at least the total processing time of each job chain
+  hec3 : ∀ j : Fin nJ, v.Cmax ≥ ∑ k : Fin nM, P.p j k
 
 def obj {nJ nM : ℕ} (_ : Params nJ nM) (v : Vars nJ nM) : ℝ := v.Cmax
 
