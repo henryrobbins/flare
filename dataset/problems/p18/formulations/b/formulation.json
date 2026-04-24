@@ -33,6 +33,22 @@
     },
     "assumptions": [
         {
+            "description": "Number of household clusters is positive.",
+            "formulation": "nI > 0",
+            "explicit": true,
+            "code": {
+                "python": "assert nI > 0"
+            }
+        },
+        {
+            "description": "Total number of candidate hospital sites is positive.",
+            "formulation": "M > 0",
+            "explicit": true,
+            "code": {
+                "python": "assert M > 0"
+            }
+        },
+        {
             "description": "Population of each household cluster is non-negative.",
             "formulation": "v_i \\geq 0 \\quad \\forall i \\in I",
             "explicit": false,

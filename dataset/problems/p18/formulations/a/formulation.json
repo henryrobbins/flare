@@ -33,6 +33,22 @@
     },
     "assumptions": [
         {
+            "description": "Number of household clusters is positive.",
+            "formulation": "nI > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nI > 0"
+            }
+        },
+        {
+            "description": "Total number of candidate hospital sites is positive.",
+            "formulation": "M > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert M > 0"
+            }
+        },
+        {
             "description": "Population of each household cluster is non-negative.",
             "formulation": "v_i \\geq 0 \\quad \\forall i \\in I",
             "explicit": false,
@@ -43,7 +59,7 @@
         {
             "description": "Coverage indicator is binary.",
             "formulation": "a_{ij} \\in \\{0, 1\\} \\quad \\forall i \\in I,\\; \\forall j \\in J",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert all(a[i][j] in (0, 1) for i in range(nI) for j in range(M))"
             }
@@ -59,7 +75,7 @@
         {
             "description": "Number of existing hospitals does not exceed total hospital sites.",
             "formulation": "m \\leq M",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert m <= M"
             }
@@ -117,7 +133,7 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025",
-            "variation_id": "efficient"
+            "formulation_id": "efficient"
         }
     }
 }

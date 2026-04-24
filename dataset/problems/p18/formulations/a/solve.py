@@ -22,6 +22,8 @@ def main(params_path: str, solution_path: str) -> None:
     p = data["p"]
 
     # Parameter Validation
+    assert nI > 0
+    assert M > 0
     assert all(v[i] >= 0 for i in range(nI))
     assert all(a[i][j] in (0, 1) for i in range(nI) for j in range(M))
     assert p >= 0

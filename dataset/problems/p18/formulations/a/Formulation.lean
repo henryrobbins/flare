@@ -16,12 +16,12 @@ structure Params where
   a : Fin nI → Fin M → ℤ  -- coverage indicator: 1 if d_ij ≤ S, 0 otherwise
   p : ℤ                    -- maximum number of new hospitals to open
   -- Assumptions
+  hmM : m ≤ M  -- existing hospital count bounded by total sites
+  ha_bin : ∀ i j, a i j = 0 ∨ a i j = 1
+  -- Implicit Assumptions
   hnI : NeZero nI
   hM : NeZero M
-  -- Implicit Assumptions
-  hmM : m ≤ M  -- existing hospital count bounded by total sites
   hv_nn : ∀ i, 0 ≤ v i
-  ha_bin : ∀ i j, a i j = 0 ∨ a i j = 1
   hp_nn : 0 ≤ p
 
 structure Vars where
@@ -35,7 +35,6 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hnew_cap : ∑ j ∈ univ.filter (fun j : Fin p.M => p.m ≤ j.val), (v.x j : ℤ) ≤ p.p
   -- A household is covered only if at least one open hospital within range exists
   hcover : ∀ i : Fin p.nI, (v.y i : ℤ) ≤ ∑ j : Fin p.M, p.a i j * v.x j
-  -- [Implicit Constraints]
   hx_bin : ∀ j : Fin p.M, v.x j = 0 ∨ v.x j = 1
   hy_bin : ∀ i : Fin p.nI, v.y i = 0 ∨ v.y i = 1
 
