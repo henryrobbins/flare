@@ -1,5 +1,5 @@
 {
-    "valid": true,
+    "valid": false,
     "parameters": {
         "nP": {
             "description": "Number of flights",
@@ -36,6 +36,14 @@
         }
     },
     "assumptions": [
+        {
+            "description": "Travel times are non-negative.",
+            "formulation": "\\tau_{a,a'} \\geq 0 \\quad \\forall a, a' \\in A",
+            "explicit": false,
+            "code": {
+                "python": "assert all(tau[a][a2] >= 0 for a in range(nA) for a2 in range(nA))"
+            }
+        },
         {
             "description": "Capacity values are non-negative.",
             "formulation": "\\text{cap}_{a,t} \\geq 0 \\quad \\forall a \\in A, t \\in T",
@@ -84,7 +92,8 @@
     },
     "metadata": {
         "source": {
-            "dataset": "Ferchtandiker2025"
+            "dataset": "Ferchtandiker2025",
+            "formulation_id": "efficient"
         }
     }
 }
