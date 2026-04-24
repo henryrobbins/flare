@@ -20,7 +20,6 @@ _STAGING_SETTINGS = {
             "mcp__lean-lsp__*",
             "Bash(lake env lean:*)",
             "Bash(lake build:*)",
-            "Bash(lake exe cache get)",
         ],
     },
     "enableAllProjectMcpServers": True,
@@ -156,11 +155,12 @@ class ClaudeCodeChecker(EquivalenceChecker):
 
         (wd / "Equivalence.lean").write_text("")
 
-        subprocess.run(
-            ["lake", "exe", "cache", "get"],
-            cwd=wd,
-            capture_output=True,
-        )
+        # Share the repo's pre-built Mathlib oleans instead of downloading a
+        # fresh copy per pair. Each wd still gets its own .lake/build/ for
+        # A/B/Equivalence modules, so parallel runs don't conflict.
+        wd_lake = wd / ".lake"
+        wd_lake.mkdir(parents=True, exist_ok=True)
+        (wd_lake / "packages").symlink_to(self.repo_root / ".lake" / "packages")
 
     def _run_claude(self, prompt: str, wd: Path, jsonl_path: Path) -> dict:
         cmd = [
