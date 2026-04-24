@@ -18,6 +18,7 @@ class Variable:
 class VariableType(str, Enum):
     continuous = "continuous"
     integer = "integer"
+    binary = "binary"
 
 
 @dataclass(frozen=True)
