@@ -56,16 +56,8 @@ def main(params_path: str, solution_path: str) -> None:
         model.addConstr(S[j2, k2] + p[j2][k2] <= S[j1, k1] + M_big * y[j1, k1, j2, k2])
     # @Constraint Constr_4 @Def: Makespan is at least the completion time of each job's last operation.
     model.addConstrs(C_max >= S[j, m - 1] + p[j][m - 1] for j in range(n))
-    # @Constraint Constr_5 @Def: Job Interference Bound (EC3, Version 1): makespan >= total processing of job j plus minimum interference from other jobs on shared machines.
-    for j in range(n):
-        total_j = sum(p[j][k] for k in range(m))
-        interf = 0
-        for k in range(m):
-            machine = Om[j][k]
-            others = [p[j2][k2] for j2 in range(n) if j2 != j for k2 in range(m) if Om[j2][k2] == machine]
-            if others:
-                interf += min(others)
-        model.addConstr(C_max >= total_j + interf)
+    # @Constraint Constr_5 @Def: Average Load Bound (EC1, Version 2): makespan >= total processing time / number of machines.
+    model.addConstr(C_max >= sum(p[j][k] for j in range(n) for k in range(m)) / m)
 
     # Objective
     # @Objective Objective @Def: Minimize the makespan.

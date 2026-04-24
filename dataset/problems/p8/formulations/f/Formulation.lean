@@ -21,14 +21,6 @@ structure Vars (nJ nM : ℕ) where
   y    : Fin nJ → Fin nM → Fin nJ → Fin nM → ℤ
   Cmax : ℝ
 
--- Head of operation (j,k): total processing time of earlier ops in job j
-private def head (p : Fin nJ → Fin nM → ℝ) (j : Fin nJ) (k : Fin nM) : ℝ :=
-  ∑ t : Fin nM, if t.val < k.val then p j t else 0
-
--- Tail of operation (j,k): total processing time of later ops in job j
-private def tail (p : Fin nJ → Fin nM → ℝ) (j : Fin nJ) (k : Fin nM) : ℝ :=
-  ∑ t : Fin nM, if k.val < t.val then p j t else 0
-
 structure Feasible {nJ nM : ℕ} [NeZero nJ] [NeZero nM]
     (P : Params nJ nM) (v : Vars nJ nM) : Prop where
   hprec : ∀ j k, (h : k.val + 1 < nM) →
@@ -42,13 +34,9 @@ structure Feasible {nJ nM : ℕ} [NeZero nJ] [NeZero nM]
     P.p j ⟨nM - 1, by have := NeZero.pos nM; omega⟩
   hS_nn  : ∀ j k, 0 ≤ v.S j k
   hy_bin : ∀ j1 k1 j2 k2, v.y j1 k1 j2 k2 = 0 ∨ v.y j1 k1 j2 k2 = 1
-  -- EC2 (V2): Machine Critical-Path Bound (with explicit head/tail)
-  -- h_{j,k} = sum of p_{j,t} for t < k; tau_{j,k} = sum of p_{j,t} for t > k
-  -- For each machine and each pair of ops a, b on it: makespan ≥ load + head(a) + tail(b)
-  hec2 : ∀ m, ∀ a ∈ P.Om m, ∀ b ∈ P.Om m,
-    v.Cmax ≥ ∑ jk ∈ P.Om m, P.p jk.1 jk.2
-           + head P.p a.1 a.2
-           + tail P.p b.1 b.2
+  -- EC3 (V2): Longest Job Bound
+  -- Makespan is at least the total processing time of each job chain
+  hec3 : ∀ j : Fin nJ, v.Cmax ≥ ∑ k : Fin nM, P.p j k
 
 def obj {nJ nM : ℕ} (_ : Params nJ nM) (v : Vars nJ nM) : ℝ := v.Cmax
 

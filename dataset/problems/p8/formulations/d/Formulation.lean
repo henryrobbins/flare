@@ -21,11 +21,6 @@ structure Vars (nJ nM : ℕ) where
   y    : Fin nJ → Fin nM → Fin nJ → Fin nM → ℤ
   Cmax : ℝ
 
--- Operations from other jobs assigned to the same machine as operation (j,k)
-private def conflicting (Om : Fin nM → Finset (Fin nJ × Fin nM))
-    (j : Fin nJ) (k : Fin nM) : Finset (Fin nJ × Fin nM) :=
-  (Finset.univ.biUnion Om).filter (fun jk => jk.1 ≠ j ∧ ∃ m, (j, k) ∈ Om m ∧ jk ∈ Om m)
-
 structure Feasible {nJ nM : ℕ} [NeZero nJ] [NeZero nM]
     (P : Params nJ nM) (v : Vars nJ nM) : Prop where
   hprec : ∀ j k, (h : k.val + 1 < nM) →
@@ -39,14 +34,9 @@ structure Feasible {nJ nM : ℕ} [NeZero nJ] [NeZero nM]
     P.p j ⟨nM - 1, by have := NeZero.pos nM; omega⟩
   hS_nn  : ∀ j k, 0 ≤ v.S j k
   hy_bin : ∀ j1 k1 j2 k2, v.y j1 k1 j2 k2 = 0 ∨ v.y j1 k1 j2 k2 = 1
-  -- EC3 (V1): Job Interference Bound
-  -- For each job j and each choice of one conflicting op per operation of j,
-  -- makespan ≥ total processing of j + sum of chosen conflicting ops
-  -- (Universally quantifying over choices linearizes the per-operation min)
-  hec3 : ∀ j : Fin nJ, ∀ sel : Fin nM → Fin nJ × Fin nM,
-    (∀ k, sel k ∈ conflicting P.Om j k) →
-    v.Cmax ≥ ∑ k : Fin nM, P.p j k
-           + ∑ k : Fin nM, P.p (sel k).1 (sel k).2
+  -- EC1 (V2): Average Load Bound
+  -- Makespan is at least the total processing time of all ops divided by number of machines
+  hec1 : v.Cmax ≥ (∑ j : Fin nJ, ∑ k : Fin nM, P.p j k) / nM
 
 def obj {nJ nM : ℕ} (_ : Params nJ nM) (v : Vars nJ nM) : ℝ := v.Cmax
 

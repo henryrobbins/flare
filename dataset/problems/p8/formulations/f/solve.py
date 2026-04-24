@@ -56,13 +56,8 @@ def main(params_path: str, solution_path: str) -> None:
         model.addConstr(S[j2, k2] + p[j2][k2] <= S[j1, k1] + M_big * y[j1, k1, j2, k2])
     # @Constraint Constr_4 @Def: Makespan is at least the completion time of each job's last operation.
     model.addConstrs(C_max >= S[j, m - 1] + p[j][m - 1] for j in range(n))
-    # @Constraint Constr_5 @Def: Machine Critical-Path Bound (EC2, Version 2): CP_m = load_m + min_head + min_tail; makespan >= CP_m for each machine.
-    for machine in range(m):
-        ops_m = [(j, k) for j in range(n) for k in range(m) if Om[j][k] == machine]
-        load_m = sum(p[j][k] for j, k in ops_m)
-        min_head = min(sum(p[j][t] for t in range(k)) for j, k in ops_m)
-        min_tail = min(sum(p[j][t] for t in range(k + 1, m)) for j, k in ops_m)
-        model.addConstr(C_max >= load_m + min_head + min_tail)
+    # @Constraint Constr_5 @Def: Longest Job Bound (EC3, Version 2): makespan >= total processing time of each job.
+    model.addConstrs(C_max >= sum(p[j][k] for k in range(m)) for j in range(n))
 
     # Objective
     # @Objective Objective @Def: Minimize the makespan.

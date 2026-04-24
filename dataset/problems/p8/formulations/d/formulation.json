@@ -81,10 +81,10 @@
             "explicit": true
         },
         {
-            "description": "Job Interference Bound (EC3): for each job j, the makespan is at least the job's total processing time plus the minimum processing time of a conflicting operation from another job on each machine that job j uses.",
-            "formulation": "C_{\\max} \\ge \\sum_{k} p_{j,k} + \\sum_{k=0}^{m-1} \\min_{j' \\neq j,\\, (j',k') \\in O_{\\text{Om}_{j,k}}} p_{j',k'} \\quad \\forall j",
+            "description": "Average Load Bound (EC1): the makespan is at least the total processing time of all operations divided by the number of machines.",
+            "formulation": "C_{\\max} \\ge \\frac{1}{n_{\\text{mach}}} \\sum_{(j,k)\\in O} p_{j,k}",
             "code": {
-                "gurobipy": "for j in range(n):\n    total_j = sum(p[j][k] for k in range(m))\n    interf = 0\n    for k in range(m):\n        machine = Om[j][k]\n        others = [p[j2][k2] for j2 in range(n) if j2 != j for k2 in range(m) if Om[j2][k2] == machine]\n        if others:\n            interf += min(others)\n    model.addConstr(C_max >= total_j + interf)"
+                "gurobipy": "model.addConstr(C_max >= sum(p[j][k] for j in range(n) for k in range(m)) / m)"
             },
             "explicit": true
         }
@@ -99,8 +99,8 @@
     "metadata": {
         "source": {
             "dataset": "EvoCut",
-            "version": 1,
-            "name": "EC3"
+            "version": 2,
+            "name": "EC1"
         }
     }
 }
