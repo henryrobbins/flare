@@ -119,14 +119,6 @@
       }
     },
     {
-      "description": "Each n_i is a multiple of 10.",
-      "formulation": "10 \\mid n_i \\quad \\forall i",
-      "explicit": true,
-      "code": {
-        "gurobipy": "model.addConstrs(n[i] % 10 == 0 for i in range(N))"
-      }
-    },
-    {
       "description": "The scaled beaker count is non-negative for all beakers.",
       "formulation": "n_i \\geq 0 \\quad \\forall i",
       "explicit": false,

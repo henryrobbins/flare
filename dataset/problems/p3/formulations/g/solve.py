@@ -36,7 +36,6 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(quicksum(V[i] * (1 / 10) * n[i] for i in range(N)) <= Z)
     model.addConstr(quicksum(T[i] * (1 / 10) * n[i] for i in range(N)) <= D)
     model.addConstr(quicksum(C[i] * (1 / 10) * n[i] for i in range(N)) <= E)
-    model.addConstrs(n[i] % 10 == 0 for i in range(N))
 
     # Implicit Constraints
     model.addConstrs(n[i] >= 0 for i in range(N))

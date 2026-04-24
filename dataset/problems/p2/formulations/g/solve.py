@@ -1,13 +1,12 @@
 import json
-import gurobipy as gp
-from gurobipy import GRB, quicksum
+from gurobipy import Model, GRB, quicksum
 import argparse
 
 
 def main(params_path: str, solution_path: str) -> None:
 
     # Create a new model
-    model = gp.Model()
+    model = Model()
 
     # Load data
     with open(params_path, "r") as f:
@@ -34,7 +33,7 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstrs(
         quicksum(I[k][i] * (1 / 10) * j[i] for i in range(M)) <= Y[k] for k in range(N)
     )
-    model.addConstrs(j[i] == 10 * gp.Var(model, vtype=GRB.INTEGER) for i in range(M))
+    model.addConstrs(j[i] == 10 * j[i] for i in range(M))
 
     # Implicit Constraints
     model.addConstrs(j[i] >= 0 for i in range(M))

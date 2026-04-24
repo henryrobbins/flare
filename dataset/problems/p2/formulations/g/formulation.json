@@ -94,7 +94,7 @@
             "formulation": "10 \\mid j_i \\quad \\forall i",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(j[i] == 10 * gp.Var(model, vtype=GRB.INTEGER) for i in range(M))"
+                "gurobipy": "model.addConstrs(j[i] == 10 * j[i] for i in range(M))"
             }
         },
         {
