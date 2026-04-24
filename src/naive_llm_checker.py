@@ -5,42 +5,7 @@ from milp_eq_tools import Formulation
 
 from .checker import CheckResult, EquivalenceChecker
 from .llm_client import LLMClient
-
-_SYSTEM = (
-    "You are an expert in mathematical optimization. "
-    "Decide if two formulations represent equivalent optimization problems."
-)
-
-
-def _problem_info(f: Formulation) -> dict:
-    return {
-        "variables": {
-            name: {"description": var.description, "type": var.type.value}
-            for name, var in f.variables.items()
-        },
-        "constraints": [
-            {"description": c.description, "formulation": c.formulation}
-            for c in f.constraints
-            if c.explicit
-        ],
-        "objective": {
-            "description": f.objective.description,
-            "formulation": f.objective.formulation,
-        },
-    }
-
-
-def _build_prompt(info_a: dict, info_b: dict) -> str:
-    return (
-        "You are given two optimization problem formulations.\n"
-        "Decide if they are equivalent formulations.\n\n"
-        f"Formulation A:\n{json.dumps(info_a, indent=2)}\n\n"
-        f"Formulation B:\n{json.dumps(info_b, indent=2)}\n\n"
-        "Provide 1-2 sentences of reasoning, then end your response with exactly one of:\n"
-        "Equivalent\n"
-        "Not Equivalent\n\n"
-        'When uncertain, respond "Not Equivalent".'
-    )
+from .prompts import problem_info, render_equivalence
 
 
 class NaiveLLMChecker(EquivalenceChecker):
@@ -56,15 +21,15 @@ class NaiveLLMChecker(EquivalenceChecker):
         artifacts_dir = self.runs_dir / "pairs" / pair_id / "naive_llm"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-        info_a = _problem_info(a)
-        info_b = _problem_info(b)
+        info_a = problem_info(a)
+        info_b = problem_info(b)
         (artifacts_dir / "problem_info_a.json").write_text(json.dumps(info_a, indent=2))
         (artifacts_dir / "problem_info_b.json").write_text(json.dumps(info_b, indent=2))
 
-        prompt = _build_prompt(info_a, info_b)
-        (artifacts_dir / "prompt.txt").write_text(prompt)
+        rendered = render_equivalence(a, b)
+        (artifacts_dir / "prompt.txt").write_text(rendered.user)
 
-        response = self.client.complete(_SYSTEM, prompt)
+        response = self.client.complete(rendered.system, rendered.user)
         (artifacts_dir / "response.txt").write_text(response)
 
         last_line = next(

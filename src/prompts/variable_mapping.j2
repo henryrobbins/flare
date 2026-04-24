@@ -1,0 +1,28 @@
+You are mapping variables between two equivalent optimization formulations.
+
+Variable from Formulation A:
+- Name: {{ var_name }}
+- Description: {{ var_desc }}
+- Constraints involving {{ var_name }}:
+{% for c in constraints_a %}
+  - {{ c.description }}: {{ c.formulation }}
+{% endfor %}
+- In objective: {{ "Yes" if in_objective_a else "No" }}
+
+Variables from Formulation B:
+{% for var in b_variables %}
+- Name: {{ var.name }}
+  Description: {{ var.description }}
+  Constraints involving {{ var.name }}:
+{% for c in var.constraints %}
+    - {{ c.description }}: {{ c.formulation }}
+{% endfor %}
+  In objective: {{ "Yes" if var.in_objective else "No" }}
+
+{% endfor %}
+Find the best mapping for '{{ var_name }}' from Formulation A as a linear combination
+of variables from Formulation B. Respond with ONLY a valid JSON object:
+{{ mapping_json_example }}
+
+If no mapping exists, respond with:
+{{ no_mapping_example }}

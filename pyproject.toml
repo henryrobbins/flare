@@ -5,6 +5,7 @@ requires-python = ">=3.10"
 dependencies = [
     "anthropic",
     "gurobipy",
+    "jinja2",
     "milp-eq-tools",
     "openai",
     "python-dotenv>=1.2.2",

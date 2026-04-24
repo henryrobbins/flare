@@ -8,109 +8,9 @@ from milp_eq_tools.models import Constraint
 
 from .checker import CheckResult, EquivalenceChecker
 from .llm_client import LLMClient
+from .prompts import problem_info, render_variable_mapping
 
 TOLERANCE = 1e-6
-
-_MAPPING_SYSTEM = (
-    "You are an expert in mathematical optimization and variable mapping. "
-    "Your task is to find mappings between variables in two equivalent optimization formulations."
-)
-
-
-def _problem_info(f: Formulation) -> dict:
-    return {
-        "variables": {
-            name: {"description": var.description, "type": var.type.value}
-            for name, var in f.variables.items()
-        },
-        "constraints": [
-            {"description": c.description, "formulation": c.formulation}
-            for c in f.constraints
-            if c.explicit
-        ],
-        "objective": {
-            "description": f.objective.description,
-            "formulation": f.objective.formulation,
-        },
-    }
-
-
-def _constraints_involving(var_name: str, constraints: list[dict]) -> list[dict]:
-    return [c for c in constraints if var_name in c["formulation"]]
-
-
-def _mapping_prompt(var_name: str, var_desc: str, info_a: dict, info_b: dict) -> str:
-    constraints_a = _constraints_involving(var_name, info_a["constraints"])
-    in_obj_a = var_name in info_a["objective"]["formulation"]
-
-    lines = [
-        "You are mapping variables between two equivalent optimization formulations.",
-        "",
-        f"Variable from Formulation A:",
-        f"- Name: {var_name}",
-        f"- Description: {var_desc}",
-        f"- Constraints involving {var_name}:",
-    ]
-    for c in constraints_a:
-        lines.append(f"  - {c['description']}: {c['formulation']}")
-    lines.append(f"- In objective: {'Yes' if in_obj_a else 'No'}")
-    lines.append("")
-    lines.append("Variables from Formulation B:")
-    for b_name, b_var in info_b["variables"].items():
-        b_constraints = _constraints_involving(b_name, info_b["constraints"])
-        in_obj_b = b_name in info_b["objective"]["formulation"]
-        lines += [
-            f"- Name: {b_name}",
-            f"  Description: {b_var['description']}",
-            f"  Constraints involving {b_name}:",
-        ]
-        for c in b_constraints:
-            lines.append(f"    - {c['description']}: {c['formulation']}")
-        lines.append(f"  In objective: {'Yes' if in_obj_b else 'No'}")
-        lines.append("")
-
-    lines += [
-        f"Find the best mapping for '{var_name}' from Formulation A as a linear combination",
-        "of variables from Formulation B. Respond with ONLY a valid JSON object:",
-        "{",
-        f'  "{var_name}": [',
-        '    {"constant": <number>, "variable": "<b_var_name>"},',
-        "    ...",
-        "  ]",
-        "}",
-        "",
-        "If no mapping exists, respond with:",
-        "{",
-        f'  "{var_name}": [{{"constant": "none", "variable": "none"}}]',
-        "}",
-    ]
-    return "\n".join(lines)
-
-
-def _parse_mapping(response: str, var_name: str, b_variables: dict) -> list[dict] | None:
-    """Parse and validate LLM mapping response. Returns [] for no-mapping, None on parse failure."""
-    match = re.search(r"\{.*\}", response, re.DOTALL)
-    if not match:
-        return None
-    try:
-        parsed = json.loads(match.group(0))
-    except json.JSONDecodeError:
-        return None
-
-    terms = parsed.get(var_name)
-    if not isinstance(terms, list) or not terms:
-        return None
-    if terms[0].get("constant") == "none":
-        return []
-
-    valid: list[dict] = []
-    for term in terms:
-        constant = term.get("constant")
-        variable = term.get("variable")
-        if not isinstance(constant, (int, float)) or variable not in b_variables:
-            return None
-        valid.append({"constant": float(constant), "variable": variable})
-    return valid
 
 
 def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | None:
@@ -159,6 +59,32 @@ def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:
     )
 
 
+def _parse_mapping(response: str, var_name: str, b_variables: dict) -> list[dict] | None:
+    """Parse and validate LLM mapping response. Returns [] for no-mapping, None on parse failure."""
+    match = re.search(r"\{.*\}", response, re.DOTALL)
+    if not match:
+        return None
+    try:
+        parsed = json.loads(match.group(0))
+    except json.JSONDecodeError:
+        return None
+
+    terms = parsed.get(var_name)
+    if not isinstance(terms, list) or not terms:
+        return None
+    if terms[0].get("constant") == "none":
+        return []
+
+    valid: list[dict] = []
+    for term in terms:
+        constant = term.get("constant")
+        variable = term.get("variable")
+        if not isinstance(constant, (int, float)) or variable not in b_variables:
+            return None
+        valid.append({"constant": float(constant), "variable": variable})
+    return valid
+
+
 def _solve(formulation: Formulation, fdir: Path) -> dict:
     """gen_params → write solve.py → run → return solution dict."""
     fdir.mkdir(parents=True, exist_ok=True)
@@ -193,9 +119,9 @@ class EquivaMapChecker(EquivalenceChecker):
         obj_b = float(sol_b["objective"])
         sol_b_vars = sol_b["variables"]
 
-        # Step 2: Build problem_info for prompt context
-        info_a = _problem_info(a)
-        info_b = _problem_info(b)
+        # Step 2: Save problem_info artifacts
+        info_a = problem_info(a)
+        info_b = problem_info(b)
         (artifacts_dir / "problem_info_a.json").write_text(json.dumps(info_a, indent=2))
         (artifacts_dir / "problem_info_b.json").write_text(json.dumps(info_b, indent=2))
 
@@ -204,10 +130,10 @@ class EquivaMapChecker(EquivalenceChecker):
         prompts_dir.mkdir(exist_ok=True)
         variable_mappings: dict[str, list[dict] | None] = {}
 
-        for var_name, var_obj in a.variables.items():
-            prompt = _mapping_prompt(var_name, var_obj.description, info_a, info_b)
-            (prompts_dir / f"{var_name}_prompt.txt").write_text(prompt)
-            response = self.client.complete(_MAPPING_SYSTEM, prompt)
+        for var_name in a.variables:
+            rendered = render_variable_mapping(var_name, a, b)
+            (prompts_dir / f"{var_name}_prompt.txt").write_text(rendered.user)
+            response = self.client.complete(rendered.system, rendered.user)
             (prompts_dir / f"{var_name}_response.txt").write_text(response)
             variable_mappings[var_name] = _parse_mapping(response, var_name, info_b["variables"])
 
