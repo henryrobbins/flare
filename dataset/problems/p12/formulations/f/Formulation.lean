@@ -6,44 +6,47 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P12.Ff
+namespace P12.f
 
-structure Params (n : ℕ) where
+structure Params where
+  n : ℕ  -- number of cities
   c : Fin n → Fin n → ℝ  -- arc cost
+  -- Implicit Assumptions
+  hn : NeZero n
 
-structure Vars (n : ℕ) where
-  x : Fin n → Fin n → ℤ  -- arc indicator
-  u : Fin n → ℝ           -- position
+structure Vars where
+  x : ℕ → ℕ → ℤ  -- arc indicator
+  u : ℕ → ℝ  -- position
 
-structure Feasible {n : ℕ} [NeZero n] (_ : Params n) (v : Vars n) : Prop where
+structure Feasible (p : Params) (v : Vars) : Prop where
   -- Each city has exactly one outgoing arc
-  hout : ∀ i, ∑ j, v.x i j = 1
+  hout : ∀ i : Fin p.n, ∑ j : Fin p.n, v.x i j = 1
   -- Each city has exactly one incoming arc
-  hin : ∀ j, ∑ i, v.x i j = 1
+  hin : ∀ j : Fin p.n, ∑ i : Fin p.n, v.x i j = 1
   -- MTZ subtour elimination
-  hmtz : ∀ i j, i ≠ 0 → j ≠ 0 → i ≠ j →
-    v.u i - v.u j + n * v.x i j ≤ n - 1
+  hmtz : ∀ (i : Fin p.n) (j : Fin p.n), i.val ≠ 0 → j.val ≠ 0 → i ≠ j →
+    v.u i - v.u j + (p.n : ℝ) * (v.x i j : ℝ) ≤ (p.n : ℝ) - 1
   -- Depot position fixed to 1
   hu_depot : v.u 0 = 1
-  hx_bin : ∀ i j, v.x i j = 0 ∨ v.x i j = 1
-  -- No self-loops
-  hx_no_self : ∀ i, v.x i i = 0
+  hx_bin : ∀ (i j : Fin p.n), v.x i j = 0 ∨ v.x i j = 1
   -- u ∈ [2, n] for non-depot cities
-  hu_lo : ∀ i, i ≠ 0 → 2 ≤ v.u i
-  hu_hi : ∀ i, v.u i ≤ n
-  -- EC2 (V2): Depot Triangle
-  -- At most 2 of the 6 arcs in any depot-adjacent triangle can be active
-  hec2 : ∀ i j : Fin n, i ≠ 0 → j ≠ 0 → i < j →
-    (v.x 0 i : ℝ) + v.x i 0 + v.x 0 j + v.x j 0 + v.x i j + v.x j i ≤ 2
+  hu_lo : ∀ i : Fin p.n, i.val ≠ 0 → 2 ≤ v.u i
+  hu_hi : ∀ i : Fin p.n, v.u i ≤ (p.n : ℝ)
+  -- EC2 (V2): at most 2 of the 6 arcs in any depot-adjacent triangle can be active
+  hec2 : ∀ i j : Fin p.n, i.val ≠ 0 → j.val ≠ 0 → i < j →
+    (v.x 0 i : ℝ) + (v.x i 0 : ℝ) + (v.x 0 j : ℝ) + (v.x j 0 : ℝ) + (v.x i j : ℝ) + (v.x j i : ℝ) ≤ 2
+  -- [Implicit Constraints]
+  -- No self-loops
+  hx_no_self : ∀ i : Fin p.n, v.x i i = 0
 
 -- Minimize total arc cost
-def obj {n : ℕ} (p : Params n) (v : Vars n) : ℝ :=
-  ∑ i, ∑ j, p.c i j * (v.x i j : ℝ)
+def obj (p : Params) (v : Vars) : ℝ :=
+  ∑ i : Fin p.n, ∑ j : Fin p.n, p.c i j * (v.x i j : ℝ)
 
-def formulation (n : ℕ) [NeZero n] : MILPFormulation where
-  Params   := Params n
-  Vars     := Vars n
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P12.Ff
+end P12.f
