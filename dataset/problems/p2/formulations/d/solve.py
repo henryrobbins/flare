@@ -23,6 +23,8 @@ def main(params_path: str, solution_path: str) -> None:
     assert all(A[i] >= 0 for i in range(M))
     assert all(Y[j] >= 0 for j in range(N))
     assert all(I[j][i] >= 0 for j in range(N) for i in range(M))
+    assert N >= 1
+    assert M >= 1
 
     # Variables
     j = model.addVars(M, vtype=GRB.INTEGER, name="j")

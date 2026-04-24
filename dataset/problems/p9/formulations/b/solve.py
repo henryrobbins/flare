@@ -1,80 +1,61 @@
 import json
-import math
 import gurobipy as gp
 from gurobipy import GRB
 import argparse
-from itertools import combinations
 
 
 def main(params_path: str, solution_path: str) -> None:
 
     # Create a new model
     model = gp.Model()
-    model.setParam("OutputFlag", 0)
 
     # Load data
     with open(params_path, "r") as f:
         data = json.load(f)
 
-    # @Def: definition of a target
-    # @Shape: shape of a target
-
     # Parameters
-    # @Parameter n @Def: Number of network nodes @Shape: []
-    n = data['n']
-    # @Parameter m @Def: Number of candidate directed arcs @Shape: []
-    m = data['m']
-    # @Parameter K @Def: Number of commodities @Shape: []
-    K = data['K']
-    # @Parameter tail @Def: Source node index of each arc @Shape: [m]
-    tail = data['tail']
-    # @Parameter head @Def: Destination node index of each arc @Shape: [m]
-    head = data['head']
-    # @Parameter c @Def: Unit transportation cost on each arc @Shape: [m]
-    c = data['c']
-    # @Parameter f @Def: Fixed cost to activate each arc @Shape: [m]
-    f = data['f']
-    # @Parameter u @Def: Capacity of each arc @Shape: [m]
-    u = data['u']
-    # @Parameter O @Def: Origin node of each commodity @Shape: [K]
-    O = data['O']
-    # @Parameter D @Def: Destination node of each commodity @Shape: [K]
-    D = data['D']
-    # @Parameter d @Def: Demand of each commodity @Shape: [K]
-    d = data['d']
+    n = data["n"]
+    m = data["m"]
+    K = data["K"]
+    tail = data["tail"]
+    head = data["head"]
+    c = data["c"]
+    f = data["f"]
+    u = data["u"]
+    O = data["O"]
+    D = data["D"]
+    d = data["d"]
 
-    # Arc adjacency helpers
-    out = {i: [a for a in range(m) if tail[a] == i] for i in range(n)}
-    inc = {i: [a for a in range(m) if head[a] == i] for i in range(n)}
+    # Parameter Validation
+    assert all(c[a] >= 0 for a in range(m))
+    assert all(f[a] >= 0 for a in range(m))
+    assert all(d[k] > 0 for k in range(K))
+    assert all(u[a] >= 0 for a in range(m))
+
+    # Definitions
+    out = [[] for _ in range(n)]
+    for a in range(m):
+        out[tail[a]].append(a)
+    inc = [[] for _ in range(n)]
+    for a in range(m):
+        inc[head[a]].append(a)
 
     # Variables
-    # @Variable x @Def: Flow of commodity k on arc a @Shape: [m, K]
-    x = model.addVars(m, K, lb=0, vtype=GRB.CONTINUOUS, name="x")
-    # @Variable y @Def: 1 if arc a is activated, 0 otherwise @Shape: [m]
-    y = model.addVars(m, vtype=GRB.BINARY, name="y")
+    x = model.addVars(m, K, vtype=GRB.CONTINUOUS, name="x")
+    y = model.addVars(m, vtype=GRB.INTEGER, name="y")
 
     # Constraints
-    # @Constraint Constr_1 @Def: Commodity source outflow equals demand.
-    model.addConstrs(
-        gp.quicksum(x[a, k] for a in out[O[k]]) == d[k]
-        for k in range(K)
-    )
-    # @Constraint Constr_2 @Def: Commodity sink inflow equals demand.
-    model.addConstrs(
-        gp.quicksum(x[a, k] for a in inc[D[k]]) == d[k]
-        for k in range(K)
-    )
-    # @Constraint Constr_3 @Def: Flow conservation at intermediate nodes.
+    model.addConstrs(gp.quicksum(x[a, k] for a in out[O[k]]) == d[k] for k in range(K))
+    model.addConstrs(gp.quicksum(x[a, k] for a in inc[D[k]]) == d[k] for k in range(K))
     model.addConstrs(
         gp.quicksum(x[a, k] for a in out[i]) - gp.quicksum(x[a, k] for a in inc[i]) == 0
-        for k in range(K) for i in range(n) if i != O[k] and i != D[k]
+        for k in range(K)
+        for i in range(n)
+        if i != O[k] and i != D[k]
     )
-    # @Constraint Constr_4 @Def: Arc capacity: total flow cannot exceed capacity times activation.
     model.addConstrs(
-        gp.quicksum(x[a, k] for k in range(K)) <= u[a] * y[a]
-        for a in range(m)
+        gp.quicksum(x[a, k] for k in range(K)) <= u[a] * y[a] for a in range(m)
     )
-    # @Constraint Constr_5 @Def: Destination In-Cut Bound (V1 EC1).
     for k in range(K):
         inc_dk = inc[D[k]]
         if not inc_dk:
@@ -84,12 +65,14 @@ def main(params_path: str, solution_path: str) -> None:
             gp.quicksum((u[a] + u_max_k) * y[a] for a in inc_dk) >= d[k] + u_max_k
         )
 
+    # Implicit Constraints
+    model.addConstrs(gp.quicksum(x[a, k] for a in out[D[k]]) == 0 for k in range(K))
+
     # Objective
-    # @Objective Objective @Def: Minimize total flow cost plus fixed arc activation cost.
     model.setObjective(
-        gp.quicksum(c[a] * x[a, k] for a in range(m) for k in range(K)) +
-        gp.quicksum(f[a] * y[a] for a in range(m)),
-        GRB.MINIMIZE
+        gp.quicksum(c[a] * x[a, k] for a in range(m) for k in range(K))
+        + gp.quicksum(f[a] * y[a] for a in range(m)),
+        GRB.MINIMIZE,
     )
 
     # Solve
@@ -98,12 +81,12 @@ def main(params_path: str, solution_path: str) -> None:
     # Extract solution
     solution = {}
     variables = {}
-    variables['x'] = [[x[a, k].x for k in range(K)] for a in range(m)]
-    variables['y'] = [y[a].x for a in range(m)]
-    solution['variables'] = variables
-    solution['objective'] = model.objVal
-    with open(solution_path, 'w') as f_out:
-        json.dump(solution, f_out, indent=4)
+    variables["x"] = [[x[i, j].x for j in range(K)] for i in range(m)]
+    variables["y"] = [y[i].x for i in range(m)]
+    solution["variables"] = variables
+    solution["objective"] = model.objVal
+    with open(solution_path, "w") as f:
+        json.dump(solution, f, indent=4)
 
 
 if __name__ == "__main__":

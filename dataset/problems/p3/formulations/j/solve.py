@@ -30,7 +30,7 @@ def main(params_path: str, solution_path: str) -> None:
     assert all(V[i] >= 0 for i in range(N))
 
     # Variables
-    n = model.addVars(N, vtype=GRB.CONTINUOUS, name="n")
+    n = model.addVars(N, vtype=GRB.INTEGER, name="n")
 
     # Constraints
     model.addConstr(quicksum(V[i] * n[i] for i in range(N)) <= Z)

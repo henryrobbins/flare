@@ -18,6 +18,12 @@ def main(params_path: str, solution_path: str) -> None:
     p = data["p"]
     Om = data["Om"]
 
+    # Parameter Validation
+    assert all(p[j][k] >= 0 for j in range(n) for k in range(m))
+    assert n >= 1 and m >= 1
+    assert all(0 <= Om[j][k] < m for j in range(n) for k in range(m))
+    assert all(sorted(Om[j]) == list(range(m)) for j in range(n))
+
     # Definitions
     P = []
     for machine in range(m):

@@ -27,6 +27,8 @@ def main(params_path: str, solution_path: str) -> None:
         for i in range(NumExperiments)
     )
     assert all(ResourceAvailable[j] >= 0 for j in range(NumResources))
+    assert NumResources >= 1
+    assert NumExperiments >= 1
 
     # Variables
     ConductExperiment = model.addVars(

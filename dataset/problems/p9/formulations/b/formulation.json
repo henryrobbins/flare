@@ -96,6 +96,20 @@
             }
         }
     ],
+    "definitions": {
+        "out": {
+            "description": "Adjacency list of outgoing arcs for each node",
+            "code": {
+                "python": "out = [[] for _ in range(n)]\nfor a in range(m):\n    out[tail[a]].append(a)"
+            }
+        },
+        "inc": {
+            "description": "Adjacency list of incoming arcs for each node",
+            "code": {
+                "python": "inc = [[] for _ in range(n)]\nfor a in range(m):\n    inc[head[a]].append(a)"
+            }
+        }
+    },
     "variables": {
         "x": {
             "description": "Flow of commodity k on arc a",
