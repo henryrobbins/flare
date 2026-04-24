@@ -1,3 +1,4 @@
+import copy
 import json
 import subprocess
 from pathlib import Path
@@ -11,7 +12,9 @@ class Formulation:
         self.path = Path(path).resolve()
         raw = json.loads((self.path / "formulation.json").read_text())
         self._raw = raw
+        self._load_from_raw(raw)
 
+    def _load_from_raw(self, raw: dict) -> None:
         self.valid: bool = raw["valid"]
         self.parameters: dict[str, Parameter] = {
             k: Parameter(description=v["description"], shape=v["shape"])
@@ -55,6 +58,26 @@ class Formulation:
         )
         self.imports: list[str] = list(raw.get("imports", []))
         self.metadata: dict[str, object] = raw.get("metadata", {})
+
+    @classmethod
+    def from_raw(cls, raw: dict, path: Path) -> "Formulation":
+        """Construct a Formulation directly from a raw dict without reading from disk."""
+        obj = cls.__new__(cls)
+        obj.path = Path(path)
+        obj._raw = raw
+        obj._load_from_raw(raw)
+        return obj
+
+    def with_constraint(self, constraint: Constraint) -> "Formulation":
+        """Return a new Formulation with one additional constraint appended."""
+        new_raw = copy.deepcopy(self._raw)
+        new_raw["constraints"].append({
+            "description": constraint.description,
+            "formulation": constraint.formulation,
+            "explicit": constraint.explicit,
+            "code": constraint.code,
+        })
+        return Formulation.from_raw(new_raw, self.path)
 
     @property
     def gurobipy_code(self) -> str:

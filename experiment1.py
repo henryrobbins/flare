@@ -22,6 +22,7 @@ load_dotenv()
 from milp_eq_tools import Dataset, Formulation, Pair
 
 from src.checker import EquivalenceChecker
+from src.equivamap_checker import EquivaMapChecker
 from src.execution_checker import ExecutionChecker
 from src.llm_client import AnthropicClient
 from src.naive_llm_checker import NaiveLLMChecker
@@ -95,6 +96,7 @@ def main(workers: int = DEFAULT_WORKERS) -> None:
     checkers: list[EquivalenceChecker] = [
         ExecutionChecker(run_dir),
         NaiveLLMChecker(run_dir, client),
+        EquivaMapChecker(run_dir, client),
     ]
 
     results_path = run_dir / "results.jsonl"
