@@ -1,5 +1,4 @@
 import json
-import math
 import gurobipy as gp
 from gurobipy import GRB
 import argparse
@@ -9,56 +8,49 @@ def main(params_path: str, solution_path: str) -> None:
 
     # Create a new model
     model = gp.Model()
-    model.setParam("OutputFlag", 0)
 
     # Load data
     with open(params_path, "r") as f:
         data = json.load(f)
 
-    # @Def: definition of a target
-    # @Shape: shape of a target
-
     # Parameters
-    # @Parameter n @Def: Number of customers @Shape: []
-    n = data['n']
-    # @Parameter m @Def: Number of candidate warehouses @Shape: []
-    m = data['m']
-    # @Parameter d @Def: Demand of customer i @Shape: [n]
-    d = data['d']
-    # @Parameter u @Def: Capacity of warehouse j @Shape: [m]
-    u = data['u']
-    # @Parameter f @Def: Fixed cost to open warehouse j @Shape: [m]
-    f = data['f']
-    # @Parameter c @Def: Transportation cost from warehouse j to customer i @Shape: [n, m]
-    c = data['c']
+    n = data["n"]
+    m = data["m"]
+    d = data["d"]
+    u = data["u"]
+    f = data["f"]
+    c = data["c"]
+
+    # Parameter Validation
+    assert all(d[i] > 0 for i in range(n))
+    assert all(u[j] >= 0 for j in range(m))
+    assert all(c[i][j] >= 0 for i in range(n) for j in range(m))
+    assert all(f[j] >= 0 for j in range(m))
 
     # Variables
-    # @Variable x @Def: 1 if customer i is assigned to warehouse j, 0 otherwise @Shape: [n, m]
     x = model.addVars(n, m, vtype=GRB.BINARY, name="x")
-    # @Variable y @Def: 1 if warehouse j is opened, 0 otherwise @Shape: [m]
     y = model.addVars(m, vtype=GRB.BINARY, name="y")
 
     # Constraints
-    # @Constraint Constr_1 @Def: Each customer is assigned to exactly one warehouse.
     model.addConstrs(gp.quicksum(x[i, j] for j in range(m)) == 1 for i in range(n))
-    # @Constraint Constr_2 @Def: Capacity constraint for each warehouse.
-    model.addConstrs(gp.quicksum(d[i] * x[i, j] for i in range(n)) <= u[j] * y[j] for j in range(m))
-    # @Constraint Constr_3 @Def: Demand-Cover Bound (EC2, Version 1).
+    model.addConstrs(
+        gp.quicksum(d[i] * x[i, j] for i in range(n)) <= u[j] * y[j] for j in range(m)
+    )
     D = sum(d)
     u_sorted = sorted(u, reverse=True)
     cumsum, k_dem = 0, 0
     for ui in u_sorted:
-        cumsum += ui; k_dem += 1
+        cumsum += ui
+        k_dem += 1
         if cumsum >= D:
             break
     model.addConstr(gp.quicksum(y[j] for j in range(m)) >= k_dem)
 
     # Objective
-    # @Objective Objective @Def: Minimize total fixed opening cost plus transportation cost.
     model.setObjective(
-        gp.quicksum(f[j] * y[j] for j in range(m)) +
-        gp.quicksum(c[i][j] * x[i, j] for i in range(n) for j in range(m)),
-        GRB.MINIMIZE
+        gp.quicksum(f[j] * y[j] for j in range(m))
+        + gp.quicksum(c[i][j] * x[i, j] for i in range(n) for j in range(m)),
+        GRB.MINIMIZE,
     )
 
     # Solve
@@ -67,12 +59,12 @@ def main(params_path: str, solution_path: str) -> None:
     # Extract solution
     solution = {}
     variables = {}
-    variables['x'] = [[x[i, j].x for j in range(m)] for i in range(n)]
-    variables['y'] = [y[j].x for j in range(m)]
-    solution['variables'] = variables
-    solution['objective'] = model.objVal
-    with open(solution_path, 'w') as f_out:
-        json.dump(solution, f_out, indent=4)
+    variables["x"] = [[x[i, j].x for j in range(m)] for i in range(n)]
+    variables["y"] = [y[i].x for i in range(m)]
+    solution["variables"] = variables
+    solution["objective"] = model.objVal
+    with open(solution_path, "w") as f:
+        json.dump(solution, f, indent=4)
 
 
 if __name__ == "__main__":

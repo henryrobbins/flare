@@ -35,11 +35,44 @@
             ]
         }
     },
-    "assumptions": [],
+    "assumptions": [
+        {
+            "description": "Demand of each customer is positive.",
+            "formulation": "d_i > 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(d[i] > 0 for i in range(n))"
+            }
+        },
+        {
+            "description": "Capacity of each warehouse is non-negative.",
+            "formulation": "u_j \\geq 0 \\quad \\forall j \\in J",
+            "explicit": false,
+            "code": {
+                "python": "assert all(u[j] >= 0 for j in range(m))"
+            }
+        },
+        {
+            "description": "Transportation cost for each customer-warehouse pair is non-negative.",
+            "formulation": "c_{ij} \\geq 0 \\quad \\forall i \\in I, j \\in J",
+            "explicit": false,
+            "code": {
+                "python": "assert all(c[i][j] >= 0 for i in range(n) for j in range(m))"
+            }
+        },
+        {
+            "description": "Fixed cost to open each warehouse is non-negative.",
+            "formulation": "f_j \\geq 0 \\quad \\forall j \\in J",
+            "explicit": false,
+            "code": {
+                "python": "assert all(f[j] >= 0 for j in range(m))"
+            }
+        }
+    ],
     "variables": {
         "x": {
             "description": "1 if customer i is assigned to warehouse j, 0 otherwise",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "n",
                 "m"
@@ -47,7 +80,7 @@
         },
         "y": {
             "description": "1 if warehouse j is opened, 0 otherwise",
-            "type": "integer",
+            "type": "binary",
             "shape": [
                 "m"
             ]
