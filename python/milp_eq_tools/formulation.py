@@ -2,6 +2,7 @@ import json
 import subprocess
 from pathlib import Path
 
+from .codegen import generate
 from .models import Assumption, Constraint, Definition, Objective, Parameter, Variable, VariableType
 
 
@@ -9,6 +10,7 @@ class Formulation:
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path).resolve()
         raw = json.loads((self.path / "formulation.json").read_text())
+        self._raw = raw
 
         self.valid: bool = raw["valid"]
         self.parameters: dict[str, Parameter] = {
@@ -53,6 +55,11 @@ class Formulation:
         )
         self.imports: list[str] = list(raw.get("imports", []))
         self.metadata: dict[str, object] = raw.get("metadata", {})
+
+    @property
+    def gurobipy_code(self) -> str:
+        """Return complete gurobipy solve.py source for this formulation."""
+        return generate(self._raw)
 
     def gen_params(
         self,
