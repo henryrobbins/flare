@@ -130,6 +130,7 @@ def generate(formulation_json: dict[str, object]) -> str:
     variables = dict(formulation_json.get("variables", {}))  # type: ignore[arg-type]
     constraints = list(formulation_json.get("constraints", []))  # type: ignore[arg-type]
     objective = dict(formulation_json.get("objective", {}))  # type: ignore[arg-type]
+    extra_imports = list(formulation_json.get("imports", []))  # type: ignore[arg-type]
 
     explicit_constraints = [c for c in constraints if c.get("explicit", True)]  # type: ignore[union-attr]
     implicit_constraints = [c for c in constraints if not c.get("explicit", True)]  # type: ignore[union-attr]
@@ -151,6 +152,8 @@ def generate(formulation_json: dict[str, object]) -> str:
         gurobi_imports = "Model, GRB, quicksum" if bare_quicksum else "Model, GRB"
         L.append(f"from gurobipy import {gurobi_imports}")
     L.append("import argparse")
+    for imp in extra_imports:
+        L.append(str(imp))
     L.append("")
     L.append("")
 

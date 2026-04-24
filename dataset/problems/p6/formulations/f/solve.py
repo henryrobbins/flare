@@ -2,6 +2,7 @@ import json
 import gurobipy as gp
 from gurobipy import GRB
 import argparse
+import math
 
 
 def main(params_path: str, solution_path: str) -> None:

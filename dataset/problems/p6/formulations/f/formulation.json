@@ -119,6 +119,9 @@
             "gurobipy": "model.setObjective(\n    gp.quicksum(f[j] * y[j] for j in range(m)) +\n    gp.quicksum(c[i][j] * x[i, j] for i in range(n) for j in range(m)),\n    GRB.MINIMIZE\n)"
         }
     },
+    "imports": [
+        "import math"
+    ],
     "metadata": {
         "source": {
             "dataset": "EvoCut",
