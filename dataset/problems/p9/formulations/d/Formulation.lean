@@ -6,73 +6,83 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P9.Fd
+namespace P9.d
 
-structure Params (nN nA nK : ℕ) where
-  tail : Fin nA → Fin nN  -- arc source
-  head : Fin nA → Fin nN  -- arc destination
-  u    : Fin nA → ℝ       -- arc capacity
-  O    : Fin nK → Fin nN  -- commodity origin
-  D    : Fin nK → Fin nN  -- commodity destination
-  d    : Fin nK → ℝ       -- commodity demand
-  c    : Fin nA → ℝ       -- unit transportation cost
-  f    : Fin nA → ℝ       -- fixed activation cost
-  hd_pos : ∀ k, 0 < d k
-  hu_nn  : ∀ e, 0 ≤ u e
+structure Params where
+  n : ℕ  -- number of network nodes
+  m : ℕ  -- number of candidate directed arcs
+  K : ℕ  -- number of commodities
+  tail : Fin m → Fin n  -- arc source node
+  head : Fin m → Fin n  -- arc destination node
+  c : Fin m → ℝ  -- unit transportation cost on each arc
+  f : Fin m → ℝ  -- fixed cost to activate each arc
+  u : Fin m → ℝ  -- capacity of each arc
+  O : Fin K → Fin n  -- origin node of each commodity
+  D : Fin K → Fin n  -- destination node of each commodity
+  d : Fin K → ℝ  -- demand of each commodity
+  -- Implicit Assumptions
+  hn : NeZero n
+  hm : NeZero m
+  hK : NeZero K
+  hc_nn : ∀ e : Fin m, 0 ≤ c e
+  hf_nn : ∀ e : Fin m, 0 ≤ f e
+  hd_pos : ∀ k : Fin K, 0 < d k
+  hu_nn : ∀ e : Fin m, 0 ≤ u e
 
-structure Vars (nA nK : ℕ) where
-  x : Fin nA → Fin nK → ℝ  -- flow of commodity k on arc e
-  y : Fin nA → ℤ            -- arc activation
+structure Vars where
+  x : ℕ → ℕ → ℝ  -- flow on arc e for commodity k
+  y : ℕ → ℤ       -- 1 if arc e is activated, 0 otherwise
 
 -- Outgoing cut arcs: δ⁺(S)
-private abbrev cut {nN nA : ℕ} (tail head : Fin nA → Fin nN)
-    (S : Finset (Fin nN)) : Finset (Fin nA) :=
+private abbrev cut {n m : ℕ} (tail head : Fin m → Fin n)
+    (S : Finset (Fin n)) : Finset (Fin m) :=
   univ.filter (fun e => tail e ∈ S ∧ head e ∉ S)
 
 -- Commodities crossing the cut: K(S)
-private abbrev KS {nN nK : ℕ} (O D : Fin nK → Fin nN)
-    (S : Finset (Fin nN)) : Finset (Fin nK) :=
+private abbrev KS {n K : ℕ} (O D : Fin K → Fin n)
+    (S : Finset (Fin n)) : Finset (Fin K) :=
   univ.filter (fun k => O k ∈ S ∧ D k ∉ S)
 
-structure Feasible {nN nA nK : ℕ} [NeZero nN] [NeZero nA] [NeZero nK]
-    (p : Params nN nA nK) (v : Vars nA nK) : Prop where
+structure Feasible (p : Params) (v : Vars) : Prop where
   -- Commodity source outflow equals demand
-  hout : ∀ k, (univ.filter (fun e => p.tail e = p.O k)).sum (v.x · k) = p.d k
+  hout : ∀ k : Fin p.K,
+    (univ.filter (fun e : Fin p.m => p.tail e = p.O k)).sum (fun e => v.x e k) = p.d k
   -- Commodity sink inflow equals demand
-  hin  : ∀ k, (univ.filter (fun e => p.head e = p.D k)).sum (v.x · k) = p.d k
+  hin : ∀ k : Fin p.K,
+    (univ.filter (fun e : Fin p.m => p.head e = p.D k)).sum (fun e => v.x e k) = p.d k
   -- Flow conservation at intermediate nodes
-  hbal : ∀ k i, i ≠ p.O k → i ≠ p.D k →
-    (univ.filter (fun e => p.tail e = i)).sum (v.x · k) =
-    (univ.filter (fun e => p.head e = i)).sum (v.x · k)
+  hbal : ∀ k : Fin p.K, ∀ i : Fin p.n, i ≠ p.O k → i ≠ p.D k →
+    (univ.filter (fun e : Fin p.m => p.tail e = i)).sum (fun e => v.x e k) =
+    (univ.filter (fun e : Fin p.m => p.head e = i)).sum (fun e => v.x e k)
   -- Arc capacity tied to activation
-  hcap : ∀ e, ∑ k, v.x e k ≤ p.u e * v.y e
-  hx_nn  : ∀ e k, 0 ≤ v.x e k
-  hy_bin : ∀ e, v.y e = 0 ∨ v.y e = 1
+  hcap : ∀ e : Fin p.m,
+    ∑ k : Fin p.K, v.x e k ≤ p.u e * (v.y e : ℝ)
+  hx_nn : ∀ e : Fin p.m, ∀ k : Fin p.K, 0 ≤ v.x e k
+  hy_bin : ∀ e : Fin p.m, v.y e = 0 ∨ v.y e = 1
+  -- [Implicit Constraints]
   -- No outflow from any commodity's destination
-  hsink : ∀ k e, p.tail e = p.D k → v.x e k = 0
+  hsink : ∀ k : Fin p.K,
+    (univ.filter (fun e : Fin p.m => p.tail e = p.D k)).sum (fun e => v.x e k) = 0
   -- EC2 (V2): Cardinality Cut
-  -- For every non-trivial node subset S and commodity bundle B ⊆ K(S), the number
-  -- of activated arcs in δ⁺(S) is at least q_{S,B}: the minimum number of arcs
-  -- from δ⁺(S) (taken greedily by decreasing capacity) needed to cover D_B.
-  -- Expressed as: for any q, if every subset of fewer than q cut arcs fails to cover
-  -- D_B, then at least q cut arcs must be activated.
-  hec2 : ∀ (S : Finset (Fin nN)), S.Nonempty → S ≠ univ →
-    ∀ (B : Finset (Fin nK)), B ⊆ KS p.O p.D S →
+  -- q is the minimum number of (largest-capacity-first) cut arcs needed to cover D_B;
+  -- equivalently, every size-(q-1) subset of the cut has total capacity < D_B
+  hec2 : ∀ (S : Finset (Fin p.n)), S.Nonempty → S ≠ univ →
     let cutS := cut p.tail p.head S
-    let D_B  := B.sum p.d
+    let B := KS p.O p.D S
+    let D_B := B.sum p.d
     ∀ q : ℕ,
-      (∀ T : Finset (Fin nA), T ⊆ cutS → T.card < q → T.sum p.u < D_B) →
+      (∀ T : Finset (Fin p.m), T ⊆ cutS → T.card < q → T.sum p.u < D_B) →
       (q : ℝ) ≤ cutS.sum (fun e => (v.y e : ℝ))
 
 -- Minimize total flow cost plus fixed arc activation cost
-def obj {nN nA nK : ℕ} (p : Params nN nA nK) (v : Vars nA nK) : ℝ :=
-  (∑ e, ∑ k, p.c e * v.x e k) + ∑ e, p.f e * (v.y e : ℝ)
+def obj (p : Params) (v : Vars) : ℝ :=
+  (∑ e : Fin p.m, ∑ k : Fin p.K, p.c e * v.x e k) +
+  ∑ e : Fin p.m, p.f e * (v.y e : ℝ)
 
-def formulation (nN nA nK : ℕ) [NeZero nN] [NeZero nA] [NeZero nK] :
-    MILPFormulation where
-  Params   := Params nN nA nK
-  Vars     := Vars nA nK
+def formulation : MILPFormulation where
+  Params   := Params
+  Vars     := Vars
   feasible := Feasible
   obj      := obj
 
-end P9.Fd
+end P9.d

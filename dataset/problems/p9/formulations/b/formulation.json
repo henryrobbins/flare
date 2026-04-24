@@ -62,7 +62,40 @@
             ]
         }
     },
-    "assumptions": [],
+    "assumptions": [
+        {
+            "description": "Unit transportation costs are non-negative.",
+            "formulation": "c_a \\geq 0 \\quad \\forall a \\in A",
+            "explicit": false,
+            "code": {
+                "python": "assert all(c[a] >= 0 for a in range(m))"
+            }
+        },
+        {
+            "description": "Fixed arc activation costs are non-negative.",
+            "formulation": "f_a \\geq 0 \\quad \\forall a \\in A",
+            "explicit": false,
+            "code": {
+                "python": "assert all(f[a] >= 0 for a in range(m))"
+            }
+        },
+        {
+            "description": "Commodity demands are strictly positive.",
+            "formulation": "d_k > 0 \\quad \\forall k \\in K",
+            "explicit": false,
+            "code": {
+                "python": "assert all(d[k] > 0 for k in range(K))"
+            }
+        },
+        {
+            "description": "Arc capacities are non-negative.",
+            "formulation": "u_a \\geq 0 \\quad \\forall a \\in A",
+            "explicit": false,
+            "code": {
+                "python": "assert all(u[a] >= 0 for a in range(m))"
+            }
+        }
+    ],
     "variables": {
         "x": {
             "description": "Flow of commodity k on arc a",
@@ -112,6 +145,14 @@
                 "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for k in range(K)) <= u[a] * y[a]\n    for a in range(m)\n)"
             },
             "explicit": true
+        },
+        {
+            "description": "No outflow from any commodity's destination: commodity k has zero outflow from node D_k.",
+            "formulation": "\\sum_{a \\in \\delta^+(D_k)} x_{ak} = 0 \\quad \\forall k \\in K",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[a, k] for a in out[D[k]]) == 0\n    for k in range(K)\n)"
+            },
+            "explicit": false
         },
         {
             "description": "Destination In-Cut Bound (V1 EC1): for each commodity k, the incoming arcs to its destination, weighted by capacity plus the maximum incoming capacity, must jointly cover the demand plus that maximum.",
