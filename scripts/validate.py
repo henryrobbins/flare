@@ -22,13 +22,24 @@ def main() -> None:
         default="dataset",
         help="path to the dataset root (default: ./dataset)",
     )
+    parser.add_argument(
+        "--problems",
+        "-p",
+        help="comma-separated problem numbers to validate (e.g. 1,2,3; default: all)",
+    )
     args = parser.parse_args()
 
     dataset = Dataset(args.dataset)
 
+    if args.problems is not None:
+        problem_nums = {int(x.strip()) for x in args.problems.split(",")}
+    else:
+        problem_nums = None
+
     formulations = [
         (pid, problem, fid, f)
         for pid, problem in dataset.problems.items()
+        if problem_nums is None or pid in problem_nums
         for fid, f in problem.formulations.items()
     ]
 
