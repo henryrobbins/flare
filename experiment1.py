@@ -1,27 +1,35 @@
 """
 experiment1.py — run all equivalence checkers on every pair in dataset/pairs.json.
 
-Results are written to runs/results.jsonl (one JSON object per line).
-Intermediate artifacts for each checker land in runs/pairs/{pair_id}/{method}/.
+Each invocation creates a fresh timestamped subdirectory under runs/, e.g.
+runs/20260424T093000Z/. Results stream to results.jsonl inside that directory;
+intermediate artifacts land in pairs/{pair_id}/{method}/ alongside it.
+
+Pairs are processed in parallel (default: 10 at a time).
 """
 
 import json
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime, timezone
 from pathlib import Path
+from threading import Lock
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from milp_eq_tools import Dataset, Formulation
+from milp_eq_tools import Dataset, Formulation, Pair
 
+from src.checker import EquivalenceChecker
 from src.execution_checker import ExecutionChecker
 from src.llm_client import AnthropicClient
 from src.naive_llm_checker import NaiveLLMChecker
 
+DEFAULT_WORKERS = 10
+
 
 def pair_id(a: Formulation, b: Formulation) -> str:
-    # path: .../problems/pN/formulations/X
     def parts(f: Formulation) -> tuple[str, str]:
         problem = f.path.parent.parent.name  # "p1"
         formulation = f.path.name            # "a"
@@ -32,46 +40,37 @@ def pair_id(a: Formulation, b: Formulation) -> str:
     return f"{pa}_{fa}__{pb}_{fb}"
 
 
-def main() -> None:
-    runs_dir = Path("runs")
-    runs_dir.mkdir(exist_ok=True)
+def process_pair(
+    pair: Pair,
+    checkers: list[EquivalenceChecker],
+    results_path: Path,
+    write_lock: Lock,
+) -> None:
+    pid = pair_id(pair.a, pair.b)
+    pa, fa = pid.split("__")[0].split("_", 1)
+    pb, fb = pid.split("__")[1].split("_", 1)
 
-    dataset = Dataset(Path("dataset"))
-    client = AnthropicClient()
+    for checker in checkers:
+        entry: dict = {
+            "pair_id": pid,
+            "problem_a": pa,
+            "formulation_a": fa,
+            "problem_b": pb,
+            "formulation_b": fb,
+            "ground_truth": pair.equivalent,
+            "method": checker.name,
+            "is_equivalent": None,
+            "artifacts_dir": None,
+            "error": None,
+        }
+        try:
+            result = checker.check(pair.a, pair.b, pid)
+            entry["is_equivalent"] = result.is_equivalent
+            entry["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
+        except Exception:
+            entry["error"] = traceback.format_exc()
 
-    checkers = [
-        ExecutionChecker(runs_dir),
-        NaiveLLMChecker(runs_dir, client),
-    ]
-
-    results_path = runs_dir / "results.jsonl"
-
-    for pair in dataset.pairs:
-        pid = pair_id(pair.a, pair.b)
-        pa, fa = pid.split("__")[0].split("_", 1)
-        pb, fb = pid.split("__")[1].split("_", 1)
-
-        for checker in checkers:
-            entry: dict = {
-                "pair_id": pid,
-                "problem_a": pa,
-                "formulation_a": fa,
-                "problem_b": pb,
-                "formulation_b": fb,
-                "ground_truth": pair.equivalent,
-                "method": checker.name,
-                "is_equivalent": None,
-                "artifacts_dir": None,
-                "error": None,
-            }
-            try:
-                result = checker.check(pair.a, pair.b, pid)
-                entry["is_equivalent"] = result.is_equivalent
-                entry["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
-            except Exception:
-                entry["error"] = traceback.format_exc()
-                print(f"  ERROR [{checker.name}] {pid}:\n{entry['error']}")
-
+        with write_lock:
             with results_path.open("a") as f:
                 f.write(json.dumps(entry) + "\n")
 
@@ -79,7 +78,42 @@ def main() -> None:
             equiv = entry["is_equivalent"]
             gt = pair.equivalent
             match = equiv == gt if equiv is not None else None
-            print(f"  {status} [{checker.name}] {pid}  equiv={equiv}  gt={gt}  correct={match}")
+            if entry["error"]:
+                print(f"  {status} [{checker.name}] {pid}\n{entry['error']}")
+            else:
+                print(f"  {status} [{checker.name}] {pid}  equiv={equiv}  gt={gt}  correct={match}")
+
+
+def main(workers: int = DEFAULT_WORKERS) -> None:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    run_dir = Path("runs") / timestamp
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    dataset = Dataset(Path("dataset"))
+    client = AnthropicClient()
+
+    checkers: list[EquivalenceChecker] = [
+        ExecutionChecker(run_dir),
+        NaiveLLMChecker(run_dir, client),
+    ]
+
+    results_path = run_dir / "results.jsonl"
+    write_lock = Lock()
+
+    print(f"Run directory: {run_dir}")
+    print(f"Pairs: {len(dataset.pairs)}  Workers: {workers}\n")
+
+    with ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = {
+            executor.submit(process_pair, pair, checkers, results_path, write_lock): pair
+            for pair in dataset.pairs
+        }
+        for future in as_completed(futures):
+            exc = future.exception()
+            if exc:
+                pair = futures[future]
+                pid = pair_id(pair.a, pair.b)
+                print(f"  FATAL [{pid}]: {exc}")
 
 
 if __name__ == "__main__":
