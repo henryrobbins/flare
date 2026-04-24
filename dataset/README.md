@@ -67,11 +67,26 @@ For each formulation `pN/formulations/x/`:
 
 - **`formulation.json`** — Structured description of the MILP:
   - `valid` — boolean indicating whether the formulation is a valid formulation for the parent problem; all formulations of a problem marked as valid should be equivalent to one another.
-  - `parameters` — parameters for the MILP formulation; should be a function of problem parameters provided in `data.json`.
+  - `parameters` — parameters for the MILP formulation; should be a function of problem parameters provided in `data.json`. Each parameter has `{description, shape}`. Shapes use the same notation as variable shapes (see below).
   - `assumptions` — list of parameter assumptions, each with `{description, formulation (LaTeX), explicit (bool), code.python}`. The `explicit` flag is `true` when the assumption is stated explicitly in the original problem text; `false` when it is implicit (e.g., non-negativity of a rate that is obviously physical). Assumptions on parameters are distinct from constraints on decision variables.
-  - `variables` — name, description, type (`integer`, `continuous`, `binary`), and shape.
+  - `definitions` — *(optional)* ordered dict of named derived quantities computed from parameters before variables are declared, each with `{description, code.python}`. Typical uses: big-M constants, pre-computed index sets, and other values referenced in variable or constraint code. Definitions are emitted into `solve.py` in declaration order.
+  - `variables` — dict of decision variables, each with `{description, type, shape}` and optionally `indices`. `type` is one of `"integer"`, `"continuous"`, or `"binary"`. The `shape` field and `indices` field are mutually exclusive ways of specifying the variable's index structure (see below).
   - `constraints` — list of `{description, formulation (LaTeX), explicit (bool), code.gurobipy}`. The `explicit` flag is `true` when the constraint appears explicitly in the problem statement; `false` for implied constraints such as non-negativity bounds.
   - `objective` — `{description, formulation (LaTeX), code.gurobipy}`.
+  - `imports` — *(optional)* list of additional Python import statements to include in the generated `solve.py` (e.g., `["import math"]`). These are emitted after the standard gurobipy imports.
+
+### Variable Shape Notation
+
+The `shape` field of a variable (and of parameters) encodes the index dimensions as a list of strings or integers:
+
+- **Scalar** — `[]` (empty list): the variable is a single scalar.
+- **Fixed dimension** — a string naming a scalar parameter (e.g., `"n"`, `"T"`): the dimension ranges over `range(param)`.
+- **Expression dimension** — a string containing an arithmetic expression over scalar parameters (e.g., `"K+N"`): used as-is in generated code.
+- **Ragged dimension** — a string of the form `"X[Y]"` where `X` is a parameter array and `Y` is another dimension name already in the shape: the size of this dimension depends on the value of `X` at the outer index `Y`. For example, `["n_G", "n_S[n_G]"]` means for each generator `g in range(n_G)`, the second dimension ranges over `range(n_S[g])`. Ragged variables are represented as dicts in generated code.
+- **Cardinality notation** — a string of the form `"|X|"` where `X` is a definition or set: used in the mathematical `formulation` field to denote the cardinality of set `X`. When `|X|` appears in `shape`, an `indices` expression must be provided.
+
+The `indices` field is an alternative to `shape` for variables indexed by an explicit, possibly irregular set. It contains a Python expression (a generator or comprehension) that produces the keys used to call `model.addVars(...)`. When `indices` is present, `shape` still appears (typically with `|X|` notation) to document the conceptual size in the mathematical formulation, but `indices` is what drives code generation.
+
 - **`gen_params.py`** — Generates `parameters.json` (a map of `parameters`) from the shared `data.json` (with stores problem-level `parameters`).
 - **`solve.py`** — A Gurobi script that loads `parameters.json` and writes `solution.json`. Equivalent formulations on the same instance produce the same objective. Note this scripts is deterministically generated from the code defined in the `formulation.json`.
 - **`Formulation.lean`** — A Lean 4 encoding of the MILP as a `MILPFormulation` (defined in `Common.lean`).

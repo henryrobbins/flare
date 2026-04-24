@@ -19,6 +19,12 @@ def formulation_with_definitions() -> Formulation:
     return Formulation(DATASET_ROOT / "p8" / "formulations" / "a")
 
 
+@pytest.fixture
+def formulation_with_imports() -> Formulation:
+    """p6.f has a non-empty imports field."""
+    return Formulation(DATASET_ROOT / "p6" / "formulations" / "f")
+
+
 def test_valid(formulation_a: Formulation) -> None:
     assert formulation_a.valid is True
 
@@ -122,5 +128,19 @@ def test_definitions_code(formulation_with_definitions: Formulation) -> None:
     assert "P" in p_def.code["python"]
     m_def = formulation_with_definitions.definitions["M"]
     assert "M" in m_def.code["python"]
+
+
+def test_imports_empty(formulation_a: Formulation) -> None:
+    assert formulation_a.imports == []
+
+
+def test_imports_parsed(formulation_with_imports: Formulation) -> None:
+    imports = formulation_with_imports.imports
+    assert len(imports) > 0
+    assert all(isinstance(s, str) for s in imports)
+
+
+def test_imports_content(formulation_with_imports: Formulation) -> None:
+    assert "import math" in formulation_with_imports.imports
 
 

@@ -51,6 +51,7 @@ class Formulation:
             formulation=raw["objective"]["formulation"],
             code=raw["objective"]["code"],
         )
+        self.imports: list[str] = list(raw.get("imports", []))
         self.metadata: dict[str, object] = raw.get("metadata", {})
 
     def gen_params(
