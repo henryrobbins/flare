@@ -49,7 +49,7 @@
         {
             "description": "Feasibility indicators are binary.",
             "formulation": "F_{shp} \\in \\{0, 1\\} \\quad \\forall s \\in S, h \\in H, p \\in P",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert all(F[s][h][p] in (0, 1) for s in range(nS) for h in range(M) for p in range(nP))"
             }
@@ -68,6 +68,30 @@
             "explicit": false,
             "code": {
                 "python": "assert U >= 0"
+            }
+        },
+        {
+            "description": "Number of Points of Interest is positive.",
+            "formulation": "nP > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nP > 0"
+            }
+        },
+        {
+            "description": "Number of junction roads is positive.",
+            "formulation": "nS > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nS > 0"
+            }
+        },
+        {
+            "description": "Total number of hub locations is positive.",
+            "formulation": "M > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert M > 0"
             }
         }
     ],
@@ -124,7 +148,7 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025",
-            "variation_id": "efficient"
+            "formulation_id": "efficient"
         }
     }
 }

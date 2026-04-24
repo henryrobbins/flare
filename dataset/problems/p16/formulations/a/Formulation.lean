@@ -18,12 +18,12 @@ structure Params where
   U : ℤ  -- maximum number of new hubs that can be opened
   -- Assumptions
   hN_le_M : N ≤ M  -- existing hub count bounded by total hub count
+  hF_bin : ∀ s h p, F s h p = 0 ∨ F s h p = 1
+  -- Implicit Assumptions
   hNP : NeZero nP
   hNS : NeZero nS
   hM : NeZero M
-  -- Implicit Assumptions
   hv_nn : ∀ s p, 0 ≤ v s p
-  hF_bin : ∀ s h p, F s h p = 0 ∨ F s h p = 1
   hU_nn : 0 ≤ U
 
 structure Vars where

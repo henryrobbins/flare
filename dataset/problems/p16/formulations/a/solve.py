@@ -29,6 +29,9 @@ def main(params_path: str, solution_path: str) -> None:
     )
     assert N <= M
     assert U >= 0
+    assert nP > 0
+    assert nS > 0
+    assert M > 0
 
     # Variables
     y = model.addVars(M, vtype=GRB.BINARY, name="y")
