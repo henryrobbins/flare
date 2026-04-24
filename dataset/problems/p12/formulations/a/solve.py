@@ -36,7 +36,7 @@ def main(params_path: str, solution_path: str) -> None:
     )
     model.addConstr(u[0] == 1)
     model.addConstrs(u[i] >= 2 for i in range(1, n))
-    model.addConstrs(u[i] <= n - 1 for i in range(1, n))
+    model.addConstrs(u[i] <= n for i in range(1, n))
 
     # Implicit Constraints
     model.addConstrs(x[i, i] == 0 for i in range(n))
