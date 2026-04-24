@@ -170,7 +170,17 @@ class EquivaMapChecker(EquivalenceChecker):
         (artifacts_dir / "map_constraints.py").write_text("\n".join(map_lines))
 
         # Step 5: Solve A with pinning constraints
-        sol_a = _solve(pinned_a, artifacts_dir / "a_constrained")
+        try:
+            sol_a = _solve(pinned_a, artifacts_dir / "a_constrained")
+        except subprocess.CalledProcessError:
+            meta = {"is_equivalent": False, "obj_b": obj_b, "infeasible": True}
+            (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
+            return CheckResult(
+                is_equivalent=False,
+                method=self.name,
+                artifacts_dir=artifacts_dir,
+                metadata=meta,
+            )
         obj_a_constrained = float(sol_a["objective"])
 
         # Step 6: Compare objectives
