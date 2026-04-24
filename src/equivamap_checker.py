@@ -23,7 +23,12 @@ def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | N
         c = term["constant"]
         if isinstance(value, list):
             for i, v in enumerate(value):
-                acc[i] = acc.get(i, 0.0) + c * v
+                if isinstance(v, list):
+                    for j, vv in enumerate(v):
+                        key = (i, j)
+                        acc[key] = acc.get(key, 0.0) + c * float(vv)
+                else:
+                    acc[i] = acc.get(i, 0.0) + c * float(v)
         elif isinstance(value, dict):
             for k, v in value.items():
                 acc[k] = acc.get(k, 0.0) + c * v
@@ -33,6 +38,10 @@ def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | N
     if None in acc and len(acc) == 1:
         return acc[None]
     if None not in acc:
+        if all(isinstance(k, tuple) and len(k) == 2 for k in acc):
+            max_i = max(k[0] for k in acc)
+            max_j = max(k[1] for k in acc)
+            return [[acc.get((i, j), 0.0) for j in range(max_j + 1)] for i in range(max_i + 1)]
         if all(isinstance(k, int) for k in acc):
             return [acc[k] for k in sorted(acc)]
         return acc
@@ -44,6 +53,9 @@ def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:
     if isinstance(rhs, (int, float)):
         code = f"model.addConstr({var_name} == {rhs!r})"
         formulation = f"{var_name} = {rhs}"
+    elif isinstance(rhs, list) and rhs and isinstance(rhs[0], list):
+        code = f"for _i, _row in enumerate({rhs!r}):\n    for _j, _v in enumerate(_row): model.addConstr({var_name}[_i, _j] == _v)"
+        formulation = f"{var_name}[i,j] = rhs[i][j] for all i,j"
     elif isinstance(rhs, list):
         code = f"for _i, _v in enumerate({rhs!r}): model.addConstr({var_name}[_i] == _v)"
         formulation = f"{var_name}[i] = rhs[i] for all i"
