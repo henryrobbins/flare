@@ -28,6 +28,52 @@ def _detect_imports(codes: list[str]) -> tuple[bool, bool]:
     return use_gp, bare_quicksum
 
 
+def _has_ragged(shape: list) -> bool:
+    return any(re.match(r"^\w+\[\w+\]$", str(d)) for d in shape)
+
+
+def _build_loops(shape: list) -> list[tuple[str, str]]:
+    """Return [(index_var, range_expr)] for each shape dimension."""
+    parsed = []
+    for d in shape:
+        m = re.match(r"^(\w+)\[(\w+)\]$", str(d))
+        if m:
+            parsed.append({"ragged": True, "array": m.group(1), "indexed_by": m.group(2)})
+        else:
+            parsed.append({"ragged": False, "param": str(d)})
+
+    def _suggest_idx(param: str) -> str:
+        if param.startswith("n_") and len(param) > 2:
+            return param[2:].lower()[0]
+        return param.lower()[0]
+
+    used: set[str] = set()
+    idx_vars: list[str] = []
+    for p in parsed:
+        base = p["array"] if p["ragged"] else p["param"]
+        cand = _suggest_idx(base)
+        if cand in used:
+            for fb in "ijklmn":
+                if fb not in used:
+                    cand = fb
+                    break
+        used.add(cand)
+        idx_vars.append(cand)
+
+    param_to_idx = {
+        p["param"]: idx for p, idx in zip(parsed, idx_vars) if not p["ragged"]
+    }
+
+    loops = []
+    for p, idx in zip(parsed, idx_vars):
+        if p["ragged"]:
+            outer = param_to_idx[p["indexed_by"]]
+            loops.append((idx, f"range({p['array']}[{outer}])"))
+        else:
+            loops.append((idx, f"range({p['param']})"))
+    return loops
+
+
 def _var_decl(name: str, var: dict[str, object]) -> str:
     vtype = _gurobi_type(var)
     indices = var.get("indices")
@@ -36,6 +82,12 @@ def _var_decl(name: str, var: dict[str, object]) -> str:
     shape = list(var.get("shape", []))  # type: ignore[arg-type]
     if not shape:
         return f'{name} = model.addVar(vtype={vtype}, name="{name}")'
+    if _has_ragged(shape):
+        loops = _build_loops(shape)
+        key = "({})".format(", ".join(idx for idx, _ in loops)) if len(loops) > 1 else loops[0][0]
+        name_fmt = "_".join(f"{{{idx}}}" for idx, _ in loops)
+        loop_str = " ".join(f"for {idx} in {rng}" for idx, rng in loops)
+        return f'{name} = {{{key}: model.addVar(vtype={vtype}, name=f"{name}_{name_fmt}") {loop_str}}}'
     dims = ", ".join(str(d) for d in shape)
     return f'{name} = model.addVars({dims}, vtype={vtype}, name="{name}")'
 
@@ -46,6 +98,13 @@ def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
     shape = list(var.get("shape", []))  # type: ignore[arg-type]
     if not shape:
         return [f'variables["{name}"] = {name}.x']
+    if _has_ragged(shape):
+        loops = _build_loops(shape)
+        idx_tuple = ", ".join(idx for idx, _ in loops)
+        result: str = f"{name}[{idx_tuple}].x"
+        for idx, rng in reversed(loops):
+            result = f"[{result} for {idx} in {rng}]"
+        return [f'variables["{name}"] = {result}']
     if len(shape) == 1:
         d = shape[0]
         return [f'variables["{name}"] = [{name}[i].x for i in range({d})]']
@@ -58,7 +117,7 @@ def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
     # Higher-dimensional: nested list comprehension
     iters = ["i", "j", "k", "l"][: len(shape)]
     idx = ", ".join(iters)
-    result: str = f"{name}[{idx}].x"
+    result = f"{name}[{idx}].x"
     for iter_var, dim in reversed(list(zip(iters, shape))):
         result = f"[{result} for {iter_var} in range({dim})]"
     return [f'variables["{name}"] = {result}']
