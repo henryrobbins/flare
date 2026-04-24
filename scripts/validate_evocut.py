@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Verify EvoCut formulation structure: each non-a formulation equals a plus one extra constraint."""
+"""Verify EvoCut formulation structure: each non-a formulation is a superset of a.
+
+Checks that every non-base formulation contains all of a's parameters, assumptions,
+variables, and constraints (as a prefix), and may additionally introduce new variables,
+definitions, or constraints.
+"""
 
 import argparse
 import json
@@ -8,17 +13,11 @@ from pathlib import Path
 from typing import cast
 
 EVOCUT_PROBLEM_NUMS = set(range(6, 13))
-COMPARED_KEYS = ("valid", "parameters", "assumptions", "variables", "objective")
+EXACT_KEYS = ("parameters", "assumptions", "objective")
 
 
 def load_json(path: Path) -> dict[str, object]:
     return json.loads(path.read_text())  # type: ignore[no-any-return]
-
-
-def diff_summary(a_val: object, b_val: object, key: str) -> list[str]:
-    if a_val == b_val:
-        return []
-    return [f"  {key} differs"]
 
 
 def check_formulation(
@@ -28,28 +27,39 @@ def check_formulation(
     other: dict[str, object],
     verbose: bool,
 ) -> bool:
-    """Return True if other == base + exactly one extra explicit constraint."""
+    """Return True if other is a superset of base (base's content is preserved in other)."""
     mismatches: list[str] = []
 
-    for key in COMPARED_KEYS:
-        mismatches += diff_summary(base.get(key), other.get(key), key)
+    # Parameters, assumptions, and objective must be identical.
+    for key in EXACT_KEYS:
+        if base.get(key) != other.get(key):
+            mismatches.append(f"  {key} differs")
 
+    # Variables: all of a's variables must be present and unchanged in other.
+    base_vars = cast(dict[str, object], base.get("variables", {}))
+    other_vars = cast(dict[str, object], other.get("variables", {}))
+    for vname, vval in base_vars.items():
+        if vname not in other_vars:
+            mismatches.append(f"  variables[{vname!r}] missing")
+        elif other_vars[vname] != vval:
+            mismatches.append(f"  variables[{vname!r}] differs")
+
+    # Constraints: a's constraints must appear as a prefix of other's constraints.
     base_constraints = cast(list[dict[str, object]], base.get("constraints", []))
     other_constraints = cast(list[dict[str, object]], other.get("constraints", []))
-
     n_base = len(base_constraints)
     n_other = len(other_constraints)
 
-    if n_other != n_base + 1:
+    if n_other < n_base:
         mismatches.append(
-            f"  constraints: expected {n_base + 1} (a's {n_base} + 1), got {n_other}"
+            f"  constraints: other has {n_other}, fewer than a's {n_base}"
         )
+    elif n_other == n_base:
+        mismatches.append("  constraints: no extra constraints beyond a's")
     else:
         for i, (bc, oc) in enumerate(zip(base_constraints, other_constraints)):
             if bc != oc:
-                mismatches.append(
-                    f"  constraints[{i}] differs from a's constraint[{i}]"
-                )
+                mismatches.append(f"  constraints[{i}] differs from a's constraint[{i}]")
 
     label = f"{problem_id}.{formulation_id}"
     if mismatches:
@@ -59,9 +69,16 @@ def check_formulation(
                 print(m)
         return False
 
-    if verbose and n_other == n_base + 1:
-        extra = other_constraints[-1]
-        print(f"OK    {label}  +  {extra.get('description', '(no description)')}")
+    extra_vars = [k for k in other_vars if k not in base_vars]
+    extra_constraints = other_constraints[n_base:]
+    extra_descs = [c.get("description", "(no description)") for c in extra_constraints]
+    if verbose:
+        extras = []
+        if extra_vars:
+            extras.append(f"vars={extra_vars}")
+        if extra_descs:
+            extras.append(f"constraints={extra_descs}")
+        print(f"OK    {label}  +  {'; '.join(extras)}")
     else:
         print(f"OK    {label}")
     return True
@@ -84,7 +101,7 @@ def main() -> None:
         "-v",
         "--verbose",
         action="store_true",
-        help="show extra constraint description on pass, mismatch details on fail",
+        help="show extra variables/constraints on pass, mismatch details on fail",
     )
     args = parser.parse_args()
 
