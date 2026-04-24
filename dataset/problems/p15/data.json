@@ -11,11 +11,7 @@
     52,
     58,
     60,
-    68,
-    70,
-    71,
-    96,
-    131
+    71
   ],
   "owners": [
     "corporation",
@@ -26,18 +22,9 @@
     "aa",
     "ab",
     "ac",
-    "ad",
-    "ae",
     "bb",
     "bc",
-    "bd",
-    "be",
-    "cc",
-    "cd",
-    "ce",
-    "dd",
-    "de",
-    "ee"
+    "cc"
   ],
   "apartments_in_config": {
     "aa": [
@@ -79,27 +66,6 @@
       "apt9",
       "apt10"
     ],
-    "ad": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4",
-      "apt5",
-      "apt6",
-      "apt7",
-      "apt8",
-      "apt9"
-    ],
-    "ae": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4",
-      "apt5",
-      "apt6",
-      "apt7",
-      "apt8"
-    ],
     "bb": [
       "apt1",
       "apt2",
@@ -123,25 +89,6 @@
       "apt8",
       "apt9"
     ],
-    "bd": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4",
-      "apt5",
-      "apt6",
-      "apt7",
-      "apt8"
-    ],
-    "be": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4",
-      "apt5",
-      "apt6",
-      "apt7"
-    ],
     "cc": [
       "apt1",
       "apt2",
@@ -151,44 +98,6 @@
       "apt6",
       "apt7",
       "apt8"
-    ],
-    "cd": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4",
-      "apt5",
-      "apt6",
-      "apt7"
-    ],
-    "ce": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4",
-      "apt5",
-      "apt6"
-    ],
-    "dd": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4",
-      "apt5",
-      "apt6"
-    ],
-    "de": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4",
-      "apt5"
-    ],
-    "ee": [
-      "apt1",
-      "apt2",
-      "apt3",
-      "apt4"
     ]
   },
   "apartment_area": {
@@ -231,27 +140,6 @@
       "apt9": 71,
       "apt10": 71
     },
-    "ad": {
-      "apt1": 36,
-      "apt2": 36,
-      "apt3": 42,
-      "apt4": 42,
-      "apt5": 48,
-      "apt6": 48,
-      "apt7": 70,
-      "apt8": 96,
-      "apt9": 96
-    },
-    "ae": {
-      "apt1": 36,
-      "apt2": 36,
-      "apt3": 42,
-      "apt4": 42,
-      "apt5": 48,
-      "apt6": 48,
-      "apt7": 131,
-      "apt8": 131
-    },
     "bb": {
       "apt1": 42,
       "apt2": 42,
@@ -275,25 +163,6 @@
       "apt8": 71,
       "apt9": 71
     },
-    "bd": {
-      "apt1": 42,
-      "apt2": 42,
-      "apt3": 52,
-      "apt4": 52,
-      "apt5": 58,
-      "apt6": 70,
-      "apt7": 96,
-      "apt8": 96
-    },
-    "be": {
-      "apt1": 42,
-      "apt2": 42,
-      "apt3": 52,
-      "apt4": 52,
-      "apt5": 58,
-      "apt6": 131,
-      "apt7": 131
-    },
     "cc": {
       "apt1": 60,
       "apt2": 60,
@@ -303,250 +172,72 @@
       "apt6": 60,
       "apt7": 71,
       "apt8": 71
-    },
-    "cd": {
-      "apt1": 60,
-      "apt2": 60,
-      "apt3": 71,
-      "apt4": 71,
-      "apt5": 70,
-      "apt6": 96,
-      "apt7": 96
-    },
-    "ce": {
-      "apt1": 60,
-      "apt2": 60,
-      "apt3": 71,
-      "apt4": 71,
-      "apt5": 131,
-      "apt6": 131
-    },
-    "dd": {
-      "apt1": 70,
-      "apt2": 96,
-      "apt3": 96,
-      "apt4": 70,
-      "apt5": 96,
-      "apt6": 96
-    },
-    "de": {
-      "apt1": 70,
-      "apt2": 96,
-      "apt3": 96,
-      "apt4": 131,
-      "apt5": 131
-    },
-    "ee": {
-      "apt1": 131,
-      "apt2": 131,
-      "apt3": 131,
-      "apt4": 131
     }
   },
   "apartments_per_config": {
     "aa": 12,
     "ab": 11,
     "ac": 10,
-    "ad": 9,
-    "ae": 8,
     "bb": 10,
     "bc": 9,
-    "bd": 8,
-    "be": 7,
-    "cc": 8,
-    "cd": 7,
-    "ce": 6,
-    "dd": 6,
-    "de": 5,
-    "ee": 4
+    "cc": 8
   },
   "apartments_by_area_config": {
     "36": {
       "aa": 4,
       "ab": 2,
       "ac": 2,
-      "ad": 2,
-      "ae": 2,
       "bb": 0,
       "bc": 0,
-      "bd": 0,
-      "be": 0,
-      "cc": 0,
-      "cd": 0,
-      "ce": 0,
-      "dd": 0,
-      "de": 0,
-      "ee": 0
+      "cc": 0
     },
     "42": {
       "aa": 4,
       "ab": 4,
       "ac": 2,
-      "ad": 2,
-      "ae": 2,
       "bb": 4,
       "bc": 2,
-      "bd": 2,
-      "be": 2,
-      "cc": 0,
-      "cd": 0,
-      "ce": 0,
-      "dd": 0,
-      "de": 0,
-      "ee": 0
+      "cc": 0
     },
     "48": {
       "aa": 4,
       "ab": 2,
       "ac": 2,
-      "ad": 2,
-      "ae": 2,
       "bb": 0,
       "bc": 0,
-      "bd": 0,
-      "be": 0,
-      "cc": 0,
-      "cd": 0,
-      "ce": 0,
-      "dd": 0,
-      "de": 0,
-      "ee": 0
+      "cc": 0
     },
     "52": {
       "aa": 0,
       "ab": 2,
       "ac": 0,
-      "ad": 0,
-      "ae": 0,
       "bb": 4,
       "bc": 2,
-      "bd": 2,
-      "be": 2,
-      "cc": 0,
-      "cd": 0,
-      "ce": 0,
-      "dd": 0,
-      "de": 0,
-      "ee": 0
+      "cc": 0
     },
     "58": {
       "aa": 0,
       "ab": 1,
       "ac": 0,
-      "ad": 0,
-      "ae": 0,
       "bb": 2,
       "bc": 1,
-      "bd": 1,
-      "be": 1,
-      "cc": 0,
-      "cd": 0,
-      "ce": 0,
-      "dd": 0,
-      "de": 0,
-      "ee": 0
+      "cc": 0
     },
     "60": {
       "aa": 0,
       "ab": 0,
       "ac": 2,
-      "ad": 0,
-      "ae": 0,
       "bb": 0,
       "bc": 2,
-      "bd": 0,
-      "be": 0,
-      "cc": 4,
-      "cd": 2,
-      "ce": 2,
-      "dd": 0,
-      "de": 0,
-      "ee": 0
-    },
-    "68": {
-      "aa": 0,
-      "ab": 0,
-      "ac": 0,
-      "ad": 0,
-      "ae": 0,
-      "bb": 0,
-      "bc": 0,
-      "bd": 0,
-      "be": 0,
-      "cc": 0,
-      "cd": 0,
-      "ce": 0,
-      "dd": 0,
-      "de": 0,
-      "ee": 0
-    },
-    "70": {
-      "aa": 0,
-      "ab": 0,
-      "ac": 0,
-      "ad": 1,
-      "ae": 0,
-      "bb": 0,
-      "bc": 0,
-      "bd": 1,
-      "be": 0,
-      "cc": 0,
-      "cd": 1,
-      "ce": 0,
-      "dd": 2,
-      "de": 1,
-      "ee": 0
+      "cc": 4
     },
     "71": {
       "aa": 0,
       "ab": 0,
       "ac": 2,
-      "ad": 0,
-      "ae": 0,
       "bb": 0,
       "bc": 2,
-      "bd": 0,
-      "be": 0,
-      "cc": 4,
-      "cd": 2,
-      "ce": 2,
-      "dd": 0,
-      "de": 0,
-      "ee": 0
-    },
-    "96": {
-      "aa": 0,
-      "ab": 0,
-      "ac": 0,
-      "ad": 2,
-      "ae": 0,
-      "bb": 0,
-      "bc": 0,
-      "bd": 2,
-      "be": 0,
-      "cc": 0,
-      "cd": 2,
-      "ce": 0,
-      "dd": 4,
-      "de": 2,
-      "ee": 0
-    },
-    "131": {
-      "aa": 0,
-      "ab": 0,
-      "ac": 0,
-      "ad": 0,
-      "ae": 2,
-      "bb": 0,
-      "bc": 0,
-      "bd": 0,
-      "be": 2,
-      "cc": 0,
-      "cd": 0,
-      "ce": 2,
-      "dd": 0,
-      "de": 2,
-      "ee": 4
+      "cc": 4
     }
   },
   "floors": [
@@ -554,14 +245,9 @@
     2,
     3,
     4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10
+    5
   ],
-  "total_floors": 10,
+  "total_floors": 5,
   "profit_per_apartment": {
     "social": {
       "36": {
@@ -570,168 +256,108 @@
         "private": 8051
       },
       "42": {
-        "corporation": 8770,
-        "investor": 9878,
-        "private": 8785
+        "corporation": 9203,
+        "investor": 10420,
+        "private": 9272
       },
       "48": {
-        "corporation": 7962,
-        "investor": 9916,
-        "private": 10076
+        "corporation": 8828,
+        "investor": 10999,
+        "private": 11050
       },
       "52": {
-        "corporation": 7882,
-        "investor": 11227,
-        "private": 10273
+        "corporation": 9037,
+        "investor": 12670,
+        "private": 11573
       },
       "58": {
-        "corporation": 9753,
-        "investor": 11273,
-        "private": 9220
+        "corporation": 11341,
+        "investor": 13258,
+        "private": 11006
       },
       "60": {
-        "corporation": 9219,
-        "investor": 11127,
-        "private": 9201
-      },
-      "68": {
-        "corporation": 8408,
-        "investor": 10875,
-        "private": 9962
-      },
-      "70": {
-        "corporation": 8907,
-        "investor": 11823,
-        "private": 10842
+        "corporation": 10951,
+        "investor": 13292,
+        "private": 11150
       },
       "71": {
-        "corporation": 8527,
-        "investor": 11991,
-        "private": 10064
-      },
-      "96": {
-        "corporation": 10992,
-        "investor": 13487,
-        "private": 12278
-      },
-      "131": {
-        "corporation": 12116,
-        "investor": 14859,
-        "private": 12951
+        "corporation": 11061,
+        "investor": 14191,
+        "private": 12947
       }
     },
     "middle": {
       "36": {
-        "corporation": 15919,
-        "investor": 20206,
-        "private": 17569
+        "corporation": 15476,
+        "investor": 20034,
+        "private": 18232
       },
       "42": {
-        "corporation": 17162,
-        "investor": 21411,
-        "private": 17581
+        "corporation": 16425,
+        "investor": 21863,
+        "private": 18949
       },
       "48": {
-        "corporation": 17564,
-        "investor": 21913,
-        "private": 18462
+        "corporation": 19208,
+        "investor": 23758,
+        "private": 21521
       },
       "52": {
-        "corporation": 17776,
-        "investor": 21549,
-        "private": 19211
+        "corporation": 19773,
+        "investor": 24430,
+        "private": 21565
       },
       "58": {
-        "corporation": 17421,
-        "investor": 21633,
-        "private": 19524
+        "corporation": 20947,
+        "investor": 26491,
+        "private": 23226
       },
       "60": {
-        "corporation": 18981,
-        "investor": 23089,
-        "private": 19962
-      },
-      "68": {
-        "corporation": 17903,
-        "investor": 22557,
-        "private": 20809
-      },
-      "70": {
-        "corporation": 18061,
-        "investor": 23313,
-        "private": 21956
+        "corporation": 22142,
+        "investor": 27637,
+        "private": 23184
       },
       "71": {
-        "corporation": 18651,
-        "investor": 23920,
-        "private": 20856
-      },
-      "96": {
-        "corporation": 21704,
-        "investor": 25403,
-        "private": 24178
-      },
-      "131": {
-        "corporation": 23940,
-        "investor": 30098,
-        "private": 26255
+        "corporation": 24554,
+        "investor": 30650,
+        "private": 26326
       }
     },
     "free": {
       "36": {
-        "corporation": 24992,
-        "investor": 30888,
-        "private": 26775
+        "corporation": 24429,
+        "investor": 29865,
+        "private": 26696
       },
       "42": {
-        "corporation": 23918,
-        "investor": 31077,
-        "private": 27452
+        "corporation": 25626,
+        "investor": 31889,
+        "private": 28754
       },
       "48": {
-        "corporation": 26213,
-        "investor": 32181,
-        "private": 28971
+        "corporation": 29074,
+        "investor": 35705,
+        "private": 31317
       },
       "52": {
-        "corporation": 26834,
-        "investor": 33290,
-        "private": 29013
+        "corporation": 28694,
+        "investor": 36046,
+        "private": 32949
       },
       "58": {
-        "corporation": 26960,
-        "investor": 32866,
-        "private": 30568
+        "corporation": 30740,
+        "investor": 39163,
+        "private": 36220
       },
       "60": {
-        "corporation": 26173,
-        "investor": 32882,
-        "private": 30764
-      },
-      "68": {
-        "corporation": 27508,
-        "investor": 35635,
-        "private": 31139
-      },
-      "70": {
-        "corporation": 27457,
-        "investor": 36119,
-        "private": 31307
+        "corporation": 31932,
+        "investor": 40521,
+        "private": 35798
       },
       "71": {
-        "corporation": 29195,
-        "investor": 34732,
-        "private": 31751
-      },
-      "96": {
-        "corporation": 31147,
-        "investor": 39401,
-        "private": 35827
-      },
-      "131": {
-        "corporation": 36708,
-        "investor": 44747,
-        "private": 39833
+        "corporation": 36652,
+        "investor": 44088,
+        "private": 40994
       }
     }
   },

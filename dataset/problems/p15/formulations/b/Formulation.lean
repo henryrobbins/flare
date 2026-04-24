@@ -10,7 +10,7 @@ namespace P15.b
 
 /-- The set of apartments `A_v` for configuration `v`, encoded as
     `{a : Fin nA | a.val < cap v}`. -/
-abbrev apts (cap : ℕ → ℕ) (cfg : ℕ) (nA : ℕ) : Finset (Fin nA) :=
+abbrev apts {nV : ℕ} (cap : Fin nV → ℕ) (cfg : Fin nV) (nA : ℕ) : Finset (Fin nA) :=
   (univ : Finset (Fin nA)).filter (fun a => a.val < cap cfg)
 
 structure Params where
@@ -20,26 +20,27 @@ structure Params where
   nI : ℕ  -- number of sectors
   nJ : ℕ  -- number of distinct apartment floor areas
   nA : ℕ  -- maximum number of apartments across all configurations
-  cap : ℕ → ℕ  -- number of apartments in configuration v (|A_v|)
-  jApt : ℕ → ℕ → ℕ  -- area index of apartment a in configuration v; maps (v, a) to Fin nJ value
-  pProfit : ℕ → ℕ → ℕ → ℝ  -- profit for sector i, area index j, owner h; maps (i, j, h) to ℝ
+  cap : Fin nV → ℕ  -- number of apartments in configuration v (|A_v|)
+  jApt : Fin nV → Fin nA → Fin nJ  -- area index of apartment a in configuration v
+  pProfit : Fin nI → Fin nJ → Fin nH → ℝ  -- profit for sector i, area index j, owner h
   area : Fin nJ → ℝ  -- actual floor area value for area index j
-  m : ℕ → ℕ → ℝ  -- minimum area for sector i and owner h; maps (i, h) to ℝ
+  m : Fin nI → Fin nH → ℝ  -- minimum area for sector i and owner h
   b : Fin nI → ℝ  -- minimum fraction of apartments in sector i
   s : Fin nI → ℝ  -- minimum average area for sector i
   o : Fin nH → ℝ  -- minimum ownership fraction for owner h
-  iFree : Fin nI  -- index of the free sector
-  hCorp : Fin nH  -- index of the corporation owner
+  iFree : ℕ  -- index of the free sector
+  hCorp : ℕ  -- index of the corporation owner
   -- Assumptions
+  hiFree : iFree < nI
+  hhCorp : hCorp < nH
+  -- Implicit Assumptions
   hnK : NeZero nK
   hnV : NeZero nV
   hnH : NeZero nH
   hnI : NeZero nI
   hnJ : NeZero nJ
   hnA : NeZero nA
-  -- Implicit Assumptions
   hcap_le : ∀ cfg : Fin nV, cap cfg ≤ nA
-  hjApt_bound : ∀ (cfg : Fin nV) (a : Fin nA), jApt cfg a < nJ
   harea_nn : ∀ j : Fin nJ, 0 ≤ area j
   hm_nn : ∀ (i : Fin nI) (h : Fin nH), 0 ≤ m i h
   hb_nn : ∀ i : Fin nI, 0 ≤ b i
@@ -71,13 +72,13 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   havg_area : ∀ i : Fin p.nI,
     (∑ k : Fin p.nK, ∑ cfg : Fin p.nV, ∑ h : Fin p.nH,
         ∑ a ∈ apts p.cap cfg p.nA,
-          p.area ⟨p.jApt cfg a, p.hjApt_bound cfg a⟩ * (v.y k cfg h i a : ℝ)) ≥
+          p.area (p.jApt cfg a) * (v.y k cfg h i a : ℝ)) ≥
       p.s i * ((∑ k : Fin p.nK, ∑ cfg : Fin p.nV, ∑ h : Fin p.nH,
         ∑ a ∈ apts p.cap cfg p.nA, v.y k cfg h i a : ℤ) : ℝ)
   -- Enforce minimum area requirements per sector-owner pair
   hmin_area : ∀ (k : Fin p.nK) (cfg : Fin p.nV) (h : Fin p.nH) (i : Fin p.nI) (a : Fin p.nA),
     a ∈ apts p.cap cfg p.nA →
-    p.area ⟨p.jApt cfg a, p.hjApt_bound cfg a⟩ < p.m i h →
+    p.area (p.jApt cfg a) < p.m i h →
     v.y k cfg h i a = 0
   -- Corporations cannot own free sector apartments
   hno_free_corp : ∀ (k : Fin p.nK) (cfg : Fin p.nV) (a : Fin p.nA),

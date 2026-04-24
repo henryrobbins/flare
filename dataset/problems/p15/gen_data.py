@@ -16,8 +16,7 @@ import numpy as np
 
 OUTPUT_PATH = Path(__file__).parent / "data.json"
 
-# Small instance: 10 floors instead of the large dataset's 23/40/56
-TOTAL_FLOORS = 10
+TOTAL_FLOORS = 5
 SEED = 42
 
 
@@ -27,7 +26,9 @@ def generate_data(seed: int = SEED, total_floors: int = TOTAL_FLOORS) -> dict:
 
     # Sets
     sectors = ["social", "middle", "free"]  # I
-    areas = [36, 42, 48, 52, 58, 60, 68, 70, 71, 96, 131]  # J
+    areas = [36, 42, 48, 52, 58, 60, 71]  # J
+    # NOTE: We're using a smaller instance than considered in the original paper
+    # areas = [36, 42, 48, 52, 58, 60, 68, 70, 71, 96, 131]  # J
     owners = ["corporation", "investor", "private"]  # H
 
     # Floor parts and their apartment areas
@@ -35,8 +36,9 @@ def generate_data(seed: int = SEED, total_floors: int = TOTAL_FLOORS) -> dict:
         "a": [36, 36, 42, 42, 48, 48],
         "b": [42, 42, 52, 52, 58],
         "c": [60, 60, 71, 71],
-        "d": [70, 96, 96],
-        "e": [131, 131],
+        # NOTE: We're using a smaller instance than considered in the original paper
+        # "d": [70, 96, 96],
+        # "e": [131, 131],
     }
 
     # Generate all possible floor configurations (V) as all 2-part combinations
@@ -67,7 +69,9 @@ def generate_data(seed: int = SEED, total_floors: int = TOTAL_FLOORS) -> dict:
             apartments_by_area_config[area_key][v] = apt_areas.count(area)
 
     # Number of apartments in each configuration
-    apartments_per_config = {v: len(apartments_in_config[v]) for v in floor_configurations}
+    apartments_per_config = {
+        v: len(apartments_in_config[v]) for v in floor_configurations
+    }
 
     floors = list(range(1, total_floors + 1))
 

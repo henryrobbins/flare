@@ -21,14 +21,16 @@ structure Params where
   a : Fin nI → ℝ  -- minimum fraction of total apartments in sector i
   s : Fin nI → ℝ  -- minimum average floor area for sector i
   o : Fin nH → ℝ  -- minimum fraction of total apartments for owner h
-  iFree : Fin nI  -- index of the free sector
-  hCorp : Fin nH  -- index of the corporation owner
+  iFree : ℕ  -- index of the free sector
+  hCorp : ℕ  -- index of the corporation owner
   -- Assumptions
+  hiFree : iFree < nI
+  hhCorp : hCorp < nH
+  -- Implicit Assumptions
   hnI : NeZero nI
   hnJ : NeZero nJ
   hnH : NeZero nH
   hnV : NeZero nV
-  -- Implicit Assumptions
   hR_nn : ∀ j v, 0 ≤ R j v
   harea_nn : ∀ j, 0 ≤ area j
   hm_nn : ∀ i h, 0 ≤ m i h

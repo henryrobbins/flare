@@ -78,6 +78,38 @@
     },
     "assumptions": [
         {
+            "description": "Number of sectors is positive.",
+            "formulation": "nI > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nI > 0"
+            }
+        },
+        {
+            "description": "Number of distinct apartment floor areas is positive.",
+            "formulation": "nJ > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nJ > 0"
+            }
+        },
+        {
+            "description": "Number of owner classes is positive.",
+            "formulation": "nH > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nH > 0"
+            }
+        },
+        {
+            "description": "Number of floor configurations is positive.",
+            "formulation": "nV > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nV > 0"
+            }
+        },
+        {
             "description": "R is non-negative.",
             "formulation": "R_{jv} \\geq 0 \\quad \\forall j \\in J, v \\in V",
             "explicit": false,
@@ -128,7 +160,7 @@
         {
             "description": "iFree is a valid sector index.",
             "formulation": "0 \\leq \\text{iFree} < nI",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert 0 <= iFree < nI"
             }
@@ -136,7 +168,7 @@
         {
             "description": "hCorp is a valid owner index.",
             "formulation": "0 \\leq \\text{hCorp} < nH",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert 0 <= hCorp < nH"
             }
@@ -245,7 +277,7 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025",
-            "variation_id": "efficient"
+            "formulation_id": "efficient"
         }
     }
 }

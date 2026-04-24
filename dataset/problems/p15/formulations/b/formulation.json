@@ -1,5 +1,5 @@
 {
-    "valid": true,
+    "valid": false,
     "parameters": {
         "nK": {
             "description": "Number of floors in the tower",
@@ -88,6 +88,54 @@
     },
     "assumptions": [
         {
+            "description": "Number of floors is positive.",
+            "formulation": "nK > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nK > 0"
+            }
+        },
+        {
+            "description": "Number of floor configurations is positive.",
+            "formulation": "nV > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nV > 0"
+            }
+        },
+        {
+            "description": "Number of owner classes is positive.",
+            "formulation": "nH > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nH > 0"
+            }
+        },
+        {
+            "description": "Number of sectors is positive.",
+            "formulation": "nI > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nI > 0"
+            }
+        },
+        {
+            "description": "Number of distinct apartment floor areas is positive.",
+            "formulation": "nJ > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nJ > 0"
+            }
+        },
+        {
+            "description": "Maximum number of apartments across all configurations is positive.",
+            "formulation": "nA > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert nA > 0"
+            }
+        },
+        {
             "description": "cap is non-negative and at most nA for each configuration.",
             "formulation": "0 \\leq \\text{cap}_v \\leq nA \\quad \\forall v \\in V",
             "explicit": false,
@@ -146,7 +194,7 @@
         {
             "description": "iFree is a valid sector index.",
             "formulation": "0 \\leq \\text{iFree} < nI",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert 0 <= iFree < nI"
             }
@@ -154,7 +202,7 @@
         {
             "description": "hCorp is a valid owner index.",
             "formulation": "0 \\leq \\text{hCorp} < nH",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert 0 <= hCorp < nH"
             }

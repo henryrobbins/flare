@@ -32,6 +32,12 @@ def main(params_path: str, solution_path: str) -> None:
     hCorp = data["hCorp"]
 
     # Parameter Validation
+    assert nK > 0
+    assert nV > 0
+    assert nH > 0
+    assert nI > 0
+    assert nJ > 0
+    assert nA > 0
     assert all(0 <= cap[v] <= nA for v in range(nV))
     assert all(0 <= jApt[v][a] < nJ for v in range(nV) for a in range(cap[v]))
     assert all(area[j] >= 0 for j in range(nJ))
