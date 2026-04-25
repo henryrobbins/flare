@@ -20,24 +20,24 @@ structure Params where
   hP_nn : 0 ≤ P
 
 structure Vars where
-  e : ℝ  -- number of runners used
-  p : ℝ  -- number of canoe trips
-  a : ℝ  -- number of runner trips
+  e : ℤ  -- number of runners used
+  p : ℤ  -- number of canoe trips
+  a : ℤ  -- number of runner trips
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Canoe deliveries ≤ fraction P of total deliveries
-  hcanoe_frac : v.p * p.Z ≤ p.P * (v.p * p.Z + v.a * p.V)
+  hcanoe_frac : (v.p : ℝ) * p.Z ≤ p.P * ((v.p : ℝ) * p.Z + (v.a : ℝ) * p.V)
   -- Total delivery time ≤ available
-  htime : p.U * v.a + p.N * v.p ≤ p.C
+  htime : p.U * (v.a : ℝ) + p.N * (v.p : ℝ) ≤ p.C
   -- At least E runners required
-  hmin_runners : p.E ≤ v.e
+  hmin_runners : p.E ≤ (v.e : ℝ)
   -- [Implicit Constraints]
   he_nn : 0 ≤ v.e
   hp_nn : 0 ≤ v.p
   ha_nn : 0 ≤ v.a
 
--- Maximize total mail delivered
-def obj (p : Params) (v : Vars) : ℝ := -(v.a * p.V + v.p * p.Z)
+-- Objective replaced by optimal solution value
+def obj (_ : Params) (_ : Vars) : ℝ := -670
 
 def formulation : MILPFormulation where
   Params   := Params

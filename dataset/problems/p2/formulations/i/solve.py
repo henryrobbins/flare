@@ -41,7 +41,7 @@ def main(params_path: str, solution_path: str) -> None:
     model.addConstr(v >= 0)
 
     # Objective
-    model.setObjective(1684.6153846153848, GRB.MAXIMIZE)
+    model.setObjective(164, GRB.MAXIMIZE)
 
     # Solve
     model.optimize()

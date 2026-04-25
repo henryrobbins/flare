@@ -2,8 +2,8 @@
     "NumExperiments": 2,
     "NumResources": 2,
     "ResourceAvailable": [
-        800,
-        750
+        80,
+        75
     ],
     "ResourceRequired": [
         [

@@ -124,9 +124,9 @@
     ],
     "objective": {
         "description": "The objective has been replaced by the solution value.",
-        "formulation": "Max(1684.6153846153848)",
+        "formulation": "Max(164)",
         "code": {
-            "gurobipy": "model.setObjective(1684.6153846153848, GRB.MAXIMIZE)"
+            "gurobipy": "model.setObjective(164, GRB.MAXIMIZE)"
         }
     },
     "metadata": {
