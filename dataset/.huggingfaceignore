@@ -1,5 +1,6 @@
-# HuggingFace Dataset
-data
+# Python bytecode
+__pycache__/
+*.py[codz]
 
 # Generated solver artifacts
 **/formulations/*/parameters.json
@@ -7,3 +8,6 @@ data
 
 # Internal dataset source metadata
 problems/*/data_source
+
+# Dataset sources
+sources

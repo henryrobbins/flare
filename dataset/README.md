@@ -17,6 +17,11 @@ language:
 pretty_name: MILP Formulation Equivalence (Lean 4)
 size_categories:
   - n<1K
+configs:
+  - config_name: formulations
+    data_files: data/formulations.jsonl
+  - config_name: pairs
+    data_files: data/pairs.jsonl
 ---
 
 # MILP Formulation Equivalence Dataset
