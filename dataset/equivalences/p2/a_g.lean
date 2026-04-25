@@ -85,7 +85,7 @@ noncomputable def aGEquiv : MILPEquiv P2.a.formulation P2.g.formulation where
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := monotone_id
+  objMap_mono := Or.inl strictMono_id
   fwd_obj     := fun _ v _ => by
     simp only [P2.g.formulation, P2.a.formulation, P2.g.obj, P2.a.obj, fwd, paramMap, id]
     congr 1

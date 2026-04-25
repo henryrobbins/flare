@@ -67,7 +67,7 @@ def agEquiv : MILPEquiv P1.a.formulation P1.g.formulation where
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := fun x => 2 * x
-  objMap_mono := fun _ _ h => by linarith
+  objMap_mono := Or.inl (fun _ _ h => by linarith)
   fwd_obj     := fun _ v _ => by simp only [P1.g.formulation, P1.g.obj, P1.a.formulation, P1.a.obj, fwd]
   bwd_obj     := fun _ v _ => by simp only [P1.g.formulation, P1.g.obj, P1.a.formulation, P1.a.obj, bwd]
 

@@ -87,7 +87,7 @@ def afEquiv : MILPEquiv P1.a.formulation P1.f.formulation where
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := monotone_id
+  objMap_mono := Or.inl strictMono_id
   fwd_obj     := fwd_obj
   bwd_obj     := bwd_obj
 

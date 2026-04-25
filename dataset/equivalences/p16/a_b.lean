@@ -366,7 +366,7 @@ noncomputable def aBEquiv : MILPEquiv P16.a.formulation P16.b.formulation where
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := monotone_id
+  objMap_mono := Or.inl strictMono_id
   fwd_obj p v h := fwd_obj p v h
   bwd_obj p v h := bwd_obj p v h
 

@@ -15,7 +15,7 @@ structure MILPEquiv (F G : MILPFormulation) where
   fwd_feas    : ∀ p v, F.feasible p v → G.feasible (paramMap p) (fwd p v)
   bwd_feas    : ∀ p v, G.feasible (paramMap p) v → F.feasible p (bwd p v)
   objMap      : ℝ → ℝ
-  objMap_mono : Monotone objMap
+  objMap_mono : StrictMono objMap ∨ StrictAnti objMap
   fwd_obj     : ∀ p v, F.feasible p v →
                   G.obj (paramMap p) (fwd p v) = objMap (F.obj p v)
   bwd_obj     : ∀ p v, G.feasible (paramMap p) v →

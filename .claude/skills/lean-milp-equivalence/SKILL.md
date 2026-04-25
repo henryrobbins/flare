@@ -11,8 +11,8 @@ description: >
 An equivalence proof file shows that two MILP formulations `A` and `B` are
 equivalent under the project's `MILPEquiv` structure: it produces a
 parameter map `A.Params → B.Params`, mutually inverse feasibility-preserving
-variable maps, and a monotone objective map that makes forward and backward
-objective diagrams commute.
+variable maps, and a strictly monotone (increasing or decreasing) objective
+map that makes forward and backward objective diagrams commute.
 
 ## `MILPEquiv` at a glance
 
@@ -24,7 +24,7 @@ The project's common MILP module defines `MILPEquiv F G` with fields:
 - `fwd_feas    : ∀ p v, F.feasible p v → G.feasible (paramMap p) (fwd p v)`
 - `bwd_feas    : ∀ p v, G.feasible (paramMap p) v → F.feasible p (bwd p v)`
 - `objMap      : ℝ → ℝ`
-- `objMap_mono : Monotone objMap`
+- `objMap_mono : StrictMono objMap ∨ StrictAnti objMap`
 - `fwd_obj     : ∀ p v, F.feasible p v → G.obj (paramMap p) (fwd p v) = objMap (F.obj p v)`
 - `bwd_obj     : ∀ p v, G.feasible (paramMap p) v → G.obj (paramMap p) v = objMap (F.obj p (bwd p v))`
 
@@ -67,7 +67,8 @@ mapping has a dedicated optional section. Use these rules:
 - **Inline in the `MILPEquiv` structure** when the body is a single line or
   a trivial expression. Examples: `paramMap := id` (but see the pitfall
   below), `paramMap p := { c := p.c }`, `fwd _ v := { a := v.x }`,
-  `fwd_obj _ _ _ := rfl`, `objMap := id`, `objMap_mono := monotone_id`.
+  `fwd_obj _ _ _ := rfl`, `objMap := id`,
+  `objMap_mono := Or.inl strictMono_id`.
 - **Extract to a `private def`/`lemma` above the structure** when the body
   is multi-line or the proof is non-trivial.
 - Do NOT leave empty section headers. If a section is not needed, remove

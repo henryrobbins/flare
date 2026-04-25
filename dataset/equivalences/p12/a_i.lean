@@ -582,7 +582,7 @@ def aIEquiv : MILPEquiv P12.a.formulation P12.i.formulation where
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := monotone_id
+  objMap_mono := Or.inl strictMono_id
   fwd_obj p v _ := by
     simp only [P12.a.formulation, P12.i.formulation, P12.a.obj, P12.i.obj,
       fwd, paramMap, id]

@@ -70,7 +70,7 @@ def aFEquiv : MILPEquiv P2.a.formulation P2.f.formulation where
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := monotone_id
+  objMap_mono := Or.inl strictMono_id
   fwd_obj     := fun _ v _ => by
     simp only [P2.f.formulation, P2.a.formulation, P2.f.obj, P2.a.obj, fwd, paramMap, id,
                Int.cast_zero, add_zero]
