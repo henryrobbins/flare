@@ -160,7 +160,7 @@ class ClaudeCodeChecker(EquivalenceChecker):
         # A/B/Equivalence modules, so parallel runs don't conflict.
         wd_lake = wd / ".lake"
         wd_lake.mkdir(parents=True, exist_ok=True)
-        (wd_lake / "packages").symlink_to(self.repo_root / ".lake" / "packages")
+        (wd_lake / "packages").symlink_to((self.repo_root / ".lake" / "packages").resolve())
 
     def _run_claude(self, prompt: str, wd: Path, jsonl_path: Path) -> dict:
         cmd = [

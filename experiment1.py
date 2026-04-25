@@ -98,7 +98,7 @@ def main(workers: int = DEFAULT_WORKERS) -> None:
         ExecutionChecker(run_dir),
         NaiveLLMChecker(run_dir, client),
         EquivaMapChecker(run_dir, client),
-        ClaudeCodeChecker(run_dir, repo_root=Path(".")),
+        ClaudeCodeChecker(run_dir, repo_root=Path(".").resolve()),
     ]
 
     results_path = run_dir / "results.jsonl"
