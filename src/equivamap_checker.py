@@ -25,12 +25,24 @@ def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | N
             for i, v in enumerate(value):
                 if isinstance(v, list):
                     for j, vv in enumerate(v):
-                        key = (i, j)
-                        acc[key] = acc.get(key, 0.0) + c * float(vv)
+                        if isinstance(vv, list):
+                            for k_idx, vvv in enumerate(vv):
+                                key = (i, j, k_idx)
+                                acc[key] = acc.get(key, 0.0) + c * float(vvv)
+                        else:
+                            key = (i, j)
+                            acc[key] = acc.get(key, 0.0) + c * float(vv)
                 else:
                     acc[i] = acc.get(i, 0.0) + c * float(v)
         elif isinstance(value, dict):
             for k, v in value.items():
+                if isinstance(k, str):
+                    try:
+                        parsed = json.loads(k)
+                        if isinstance(parsed, list):
+                            k = tuple(parsed)
+                    except (json.JSONDecodeError, ValueError):
+                        pass
                 acc[k] = acc.get(k, 0.0) + c * v
         else:
             acc[None] = acc.get(None, 0.0) + c * float(value)
