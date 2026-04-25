@@ -749,50 +749,6 @@
     },
     {
         "a": {
-            "problem": 10,
-            "formulation": "a"
-        },
-        "b": {
-            "problem": 10,
-            "formulation": "b"
-        },
-        "equivalent": true
-    },
-    {
-        "a": {
-            "problem": 10,
-            "formulation": "a"
-        },
-        "b": {
-            "problem": 10,
-            "formulation": "c"
-        },
-        "equivalent": true
-    },
-    {
-        "a": {
-            "problem": 10,
-            "formulation": "a"
-        },
-        "b": {
-            "problem": 10,
-            "formulation": "d"
-        },
-        "equivalent": true
-    },
-    {
-        "a": {
-            "problem": 10,
-            "formulation": "a"
-        },
-        "b": {
-            "problem": 10,
-            "formulation": "e"
-        },
-        "equivalent": true
-    },
-    {
-        "a": {
             "problem": 11,
             "formulation": "a"
         },
