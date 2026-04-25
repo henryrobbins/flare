@@ -8,37 +8,41 @@ open BigOperators Finset
 
 namespace P20.a
 
-/-
-Efficient formulation of the WFP food distribution problem.
-Models flow on each edge of the supply network.
-
-Dimensions:
-- `nN` : total number of nodes (suppliers, transshipment points, beneficiary camps)
-- `nK` : number of food commodities
-- `nL` : number of nutritional requirements
-
-Beneficiary camps are identified by the indicator `isB`.
--/
-
 structure Params where
   nN : ℕ  -- total number of nodes
+  nS : ℕ  -- number of supplier nodes
+  nT : ℕ  -- number of transshipment nodes
+  nB : ℕ  -- number of beneficiary camps
   nK : ℕ  -- number of commodities
   nL : ℕ  -- number of nutrients
-  isB : ℕ → ℤ  -- beneficiary-camp indicator (1 if node is a camp, 0 otherwise)
-  E : ℕ → ℕ → ℤ  -- adjacency matrix (1 if edge exists, 0 otherwise)
-  dem : ℕ → ℝ  -- number of beneficiaries at each node (0 for non-beneficiary nodes)
-  pc : ℕ → ℝ  -- procurement cost per kg of each commodity
-  tc : ℕ → ℕ → ℕ → ℝ  -- transportation cost per kg along each arc per commodity
-  nutreq : ℕ → ℝ  -- per-person nutritional requirement for each nutrient
-  nutval : ℕ → ℕ → ℝ  -- nutritional value per kg of each commodity for each nutrient
+  S : Fin nS → Fin nN  -- maps supplier index to node index
+  T : Fin nT → Fin nN  -- maps transshipment index to node index
+  B : Fin nB → Fin nN  -- maps beneficiary camp index to node index
+  E : Fin nN → Fin nN → ℤ  -- adjacency matrix (1 if edge exists, 0 otherwise)
+  dem : Fin nB → ℝ  -- number of beneficiaries at each beneficiary camp
+  pc : Fin nK → ℝ  -- procurement cost per kg of each commodity
+  tc : Fin nN → Fin nN → Fin nK → ℝ  -- transportation cost per kg along each arc per commodity
+  nutreq : Fin nL → ℝ  -- per-person nutritional requirement for each nutrient
+  nutval : Fin nK → Fin nL → ℝ  -- nutritional value per kg of each commodity for each nutrient
   -- Assumptions
+  hE_bin : ∀ i j : Fin nN, E i j = 0 ∨ E i j = 1
+  -- The supplier, transshipment, and beneficiary node-class maps partition N
+  hSTB_partition : ∀ v : Fin nN,
+    (∃ s : Fin nS, S s = v) ∨ (∃ t : Fin nT, T t = v) ∨ (∃ b : Fin nB, B b = v)
+  hSTB_disj_ST : ∀ (s : Fin nS) (t : Fin nT), S s ≠ T t
+  hSTB_disj_SB : ∀ (s : Fin nS) (b : Fin nB), S s ≠ B b
+  hSTB_disj_TB : ∀ (t : Fin nT) (b : Fin nB), T t ≠ B b
+  hS_inj : Function.Injective S
+  hT_inj : Function.Injective T
+  hB_inj : Function.Injective B
+  -- Implicit Assumptions
   hnN : NeZero nN
+  hnS : NeZero nS
+  hnT : NeZero nT
+  hnB : NeZero nB
   hnK : NeZero nK
   hnL : NeZero nL
-  -- Implicit Assumptions
-  hisB_bin : ∀ j : Fin nN, isB j = 0 ∨ isB j = 1
-  hE_bin : ∀ i j : Fin nN, E i j = 0 ∨ E i j = 1
-  hdem_nn : ∀ j : Fin nN, 0 ≤ dem j
+  hdem_nn : ∀ j : Fin nB, 0 ≤ dem j
   hpc_nn : ∀ k : Fin nK, 0 ≤ pc k
   htc_nn : ∀ i j : Fin nN, ∀ k : Fin nK, 0 ≤ tc i j k
   hnutreq_nn : ∀ l : Fin nL, 0 ≤ nutreq l
@@ -49,24 +53,38 @@ structure Vars where
   R : ℕ → ℝ  -- ration size per person of each commodity (kg)
 
 structure Feasible (p : Params) (v : Vars) : Prop where
-  -- Flow conservation at every node for each commodity (no storage)
-  hflow : ∀ j : Fin p.nN, ∀ k : Fin p.nK,
-    ∑ i : Fin p.nN, (p.E i j : ℝ) * v.F i j k =
-    ∑ i : Fin p.nN, (p.E j i : ℝ) * v.F j i k
+  -- Suppliers are pure sources: no inflow on incoming edges
+  hS_noinflow : ∀ s : Fin p.nS, ∀ k : Fin p.nK,
+    ∑ i : Fin p.nN, (p.E i (p.S s) : ℝ) * v.F i (p.S s) k = 0
+  -- Flow conservation at transshipment nodes for each commodity (no storage)
+  hflow : ∀ j : Fin p.nT, ∀ k : Fin p.nK,
+    ∑ i : Fin p.nN, (p.E i (p.T j) : ℝ) * v.F i (p.T j) k =
+    ∑ i : Fin p.nN, (p.E (p.T j) i : ℝ) * v.F (p.T j) i k
+  -- Beneficiaries are pure sinks: no outflow on outgoing edges
+  hB_nooutflow : ∀ b : Fin p.nB, ∀ k : Fin p.nK,
+    ∑ j : Fin p.nN, (p.E (p.B b) j : ℝ) * v.F (p.B b) j k = 0
   -- Beneficiary camps receive at least their ration demand
-  hdemand : ∀ j : Fin p.nN, ∀ k : Fin p.nK,
-    p.isB j = 1 →
-    p.dem j * v.R k ≤ ∑ i : Fin p.nN, (p.E i j : ℝ) * v.F i j k
+  hdemand : ∀ j : Fin p.nB, ∀ k : Fin p.nK,
+    p.dem j * v.R k ≤ ∑ i : Fin p.nN, (p.E i (p.B j) : ℝ) * v.F i (p.B j) k
   -- Rations satisfy all nutritional requirements
   hnutrition : ∀ l : Fin p.nL,
     p.nutreq l ≤ ∑ k : Fin p.nK, p.nutval k l * v.R k
+  -- Flow support is acyclic per commodity: a rank labeling exists that
+  -- strictly increases along positive-flow edges
+  hF_acyclic : ∀ k : Fin p.nK, ∃ rank : Fin p.nN → ℕ,
+    ∀ i j : Fin p.nN, p.E i j = 1 → 0 < v.F i j k → rank i < rank j
+  -- Flow is supported on graph edges (no flow on non-edges)
+  hF_offedge : ∀ i j : Fin p.nN, ∀ k : Fin p.nK,
+    p.E i j = 0 → v.F i j k = 0
   -- [Implicit Constraints]
   hF_nn : ∀ i j : Fin p.nN, ∀ k : Fin p.nK, 0 ≤ v.F i j k
   hR_nn : ∀ k : Fin p.nK, 0 ≤ v.R k
 
--- Minimize total procurement and transportation cost
+-- Minimize total procurement and transportation cost.
+-- Procurement cost is charged on the outflow of each commodity leaving supplier nodes.
 def obj (p : Params) (v : Vars) : ℝ :=
-  (∑ k : Fin p.nK, p.pc k * (∑ j : Fin p.nN, (p.isB j : ℝ) * p.dem j * v.R k))
+  (∑ k : Fin p.nK, p.pc k *
+    (∑ s : Fin p.nS, ∑ j : Fin p.nN, (p.E (p.S s) j : ℝ) * v.F (p.S s) j k))
     + ∑ i : Fin p.nN, ∑ j : Fin p.nN, ∑ k : Fin p.nK, p.tc i j k * v.F i j k
 
 def formulation : MILPFormulation where

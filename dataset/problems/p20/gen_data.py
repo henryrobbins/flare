@@ -127,17 +127,19 @@ def generate_data(seed: int = SEED) -> dict:
                     base = 1.5
                 edge_costs[i][j][k] = round(base + random.uniform(0.2, 0.5), 2)
 
-    # Path costs: sum of edge costs along the path, with a commodity factor
+    # Path costs: exact sum of edge costs along the path (no perturbation,
+    # so c[p][k] = sum of tc[i][j][k] over edges (i, j) in path p)
     path_costs = {p: {k: 0.0 for k in foods} for p in paths}
     for p in paths:
         path_nodes = p.split("-")
         for k in foods:
-            raw = sum(
-                edge_costs[path_nodes[idx]][path_nodes[idx + 1]][k]
-                for idx in range(len(path_nodes) - 1)
+            path_costs[p][k] = round(
+                sum(
+                    edge_costs[path_nodes[idx]][path_nodes[idx + 1]][k]
+                    for idx in range(len(path_nodes) - 1)
+                ),
+                2,
             )
-            factor = random.uniform(0.9, 1.1)
-            path_costs[p][k] = round(raw * factor, 2)
 
     # Path-end indicators: e[j][p] = 1 if path p terminates at beneficiary j
     path_end_indicators = {

@@ -5,6 +5,18 @@
             "description": "Total number of nodes in the supply network (suppliers, transshipment points, and beneficiary camps)",
             "shape": []
         },
+        "nS": {
+            "description": "Number of supplier nodes",
+            "shape": []
+        },
+        "nT": {
+            "description": "Number of transshipment nodes",
+            "shape": []
+        },
+        "nB": {
+            "description": "Number of beneficiary camps",
+            "shape": []
+        },
         "nK": {
             "description": "Number of food commodities",
             "shape": []
@@ -13,10 +25,22 @@
             "description": "Number of nutritional requirements",
             "shape": []
         },
-        "isB": {
-            "description": "Beneficiary-camp indicator: 1 if node j is a beneficiary camp, 0 otherwise",
+        "S": {
+            "description": "Supplier node indices: S[s] is the index in N of supplier s",
             "shape": [
-                "nN"
+                "nS"
+            ]
+        },
+        "T": {
+            "description": "Transshipment node indices: T[t] is the index in N of transshipment node t",
+            "shape": [
+                "nT"
+            ]
+        },
+        "B": {
+            "description": "Beneficiary camp node indices: B[j] is the index in N of beneficiary camp j",
+            "shape": [
+                "nB"
             ]
         },
         "E": {
@@ -27,9 +51,9 @@
             ]
         },
         "dem": {
-            "description": "Number of beneficiaries at each node (0 for non-beneficiary nodes)",
+            "description": "Number of beneficiaries at each beneficiary camp",
             "shape": [
-                "nN"
+                "nB"
             ]
         },
         "pc": {
@@ -62,11 +86,99 @@
     },
     "assumptions": [
         {
-            "description": "Number of beneficiaries at each node is non-negative.",
-            "formulation": "\\mathrm{dem}_j \\geq 0 \\quad \\forall j \\in N",
+            "description": "There is at least one node.",
+            "formulation": "n_N \\geq 1",
             "explicit": false,
             "code": {
-                "python": "assert all(dem[j] >= 0 for j in range(nN))"
+                "python": "assert nN >= 1"
+            }
+        },
+        {
+            "description": "There is at least one supplier node.",
+            "formulation": "n_S \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nS >= 1"
+            }
+        },
+        {
+            "description": "There is at least one transshipment node.",
+            "formulation": "n_T \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nT >= 1"
+            }
+        },
+        {
+            "description": "There is at least one beneficiary camp.",
+            "formulation": "n_B \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nB >= 1"
+            }
+        },
+        {
+            "description": "There is at least one commodity.",
+            "formulation": "n_K \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nK >= 1"
+            }
+        },
+        {
+            "description": "There is at least one nutrient.",
+            "formulation": "n_L \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nL >= 1"
+            }
+        },
+        {
+            "description": "Each supplier node index is a valid node index (in range [0, nN)).",
+            "formulation": "S_s \\in N \\quad \\forall s \\in N_S",
+            "explicit": true,
+            "code": {
+                "python": "assert all(0 <= S[s] < nN for s in range(nS))"
+            }
+        },
+        {
+            "description": "Each transshipment node index is a valid node index (in range [0, nN)).",
+            "formulation": "T_t \\in N \\quad \\forall t \\in N_T",
+            "explicit": true,
+            "code": {
+                "python": "assert all(0 <= T[t] < nN for t in range(nT))"
+            }
+        },
+        {
+            "description": "Each beneficiary camp node index is a valid node index (in range [0, nN)).",
+            "formulation": "B_j \\in N \\quad \\forall j \\in N_B",
+            "explicit": true,
+            "code": {
+                "python": "assert all(0 <= B[j] < nN for j in range(nB))"
+            }
+        },
+        {
+            "description": "The supplier, transshipment, and beneficiary node-class maps partition N (every node belongs to exactly one class).",
+            "formulation": "N = N_S \\sqcup N_T \\sqcup N_B",
+            "explicit": true,
+            "code": {
+                "python": "assert set(S) | set(T) | set(B) == set(range(nN)) and set(S).isdisjoint(T) and set(S).isdisjoint(B) and set(T).isdisjoint(B)"
+            }
+        },
+        {
+            "description": "The supplier, transshipment, and beneficiary node-class maps are each injective.",
+            "formulation": "S, T, B \\text{ are injective}",
+            "explicit": true,
+            "code": {
+                "python": "assert len(set(S)) == nS and len(set(T)) == nT and len(set(B)) == nB"
+            }
+        },
+        {
+            "description": "Number of beneficiaries at each camp is non-negative.",
+            "formulation": "\\mathrm{dem}_j \\geq 0 \\quad \\forall j \\in N_B",
+            "explicit": false,
+            "code": {
+                "python": "assert all(dem[j] >= 0 for j in range(nB))"
             }
         },
         {
@@ -122,19 +234,35 @@
     },
     "constraints": [
         {
-            "description": "Flow conservation at every node for each commodity: total inflow equals total outflow (no storage).",
-            "formulation": "\\sum_{i \\in N} E_{ij} F_{ijk} = \\sum_{i \\in N} E_{ji} F_{jik} \\quad \\forall j \\in N, k \\in K",
+            "description": "Suppliers are pure sources: no inflow on incoming edges.",
+            "formulation": "\\sum_{i \\in N} E_{i, S_s} F_{i, S_s, k} = 0 \\quad \\forall s \\in N_S, k \\in K",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(\n    gp.quicksum(E[i][j] * F[i, j, k] for i in range(nN)) ==\n    gp.quicksum(E[j][i] * F[j, i, k] for i in range(nN))\n    for j in range(nN) for k in range(nK)\n)"
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(E[i][S[s]] * F[i, S[s], k] for i in range(nN)) == 0\n    for s in range(nS) for k in range(nK)\n)"
+            }
+        },
+        {
+            "description": "Flow conservation at transshipment nodes for each commodity: total inflow equals total outflow (no storage).",
+            "formulation": "\\sum_{i \\in N} E_{ij} F_{ijk} = \\sum_{i \\in N} E_{ji} F_{jik} \\quad \\forall j \\in N_T, k \\in K",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(E[i][T[j]] * F[i, T[j], k] for i in range(nN)) ==\n    gp.quicksum(E[T[j]][i] * F[T[j], i, k] for i in range(nN))\n    for j in range(nT) for k in range(nK)\n)"
+            }
+        },
+        {
+            "description": "Beneficiaries are pure sinks: no outflow on outgoing edges.",
+            "formulation": "\\sum_{j \\in N} E_{B_b, j} F_{B_b, j, k} = 0 \\quad \\forall b \\in N_B, k \\in K",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(E[B[b]][j] * F[B[b], j, k] for j in range(nN)) == 0\n    for b in range(nB) for k in range(nK)\n)"
             }
         },
         {
             "description": "Each beneficiary camp receives at least its ration demand on incoming edges for each commodity.",
-            "formulation": "\\sum_{i \\in N} E_{ij} F_{ijk} \\geq \\mathrm{dem}_j R_k \\quad \\forall j \\in N_B, k \\in K",
+            "formulation": "\\sum_{i \\in N} E_{i,B_j} F_{i,B_j,k} \\geq \\mathrm{dem}_j R_k \\quad \\forall j \\in N_B, k \\in K",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(\n    gp.quicksum(E[i][j] * F[i, j, k] for i in range(nN)) >= dem[j] * R[k]\n    for j in range(nN) for k in range(nK) if isB[j] == 1\n)"
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(E[i][B[j]] * F[i, B[j], k] for i in range(nN)) >= dem[j] * R[k]\n    for j in range(nB) for k in range(nK)\n)"
             }
         },
         {
@@ -143,6 +271,22 @@
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(\n    gp.quicksum(nutval[k][l] * R[k] for k in range(nK)) >= nutreq[l]\n    for l in range(nL)\n)"
+            }
+        },
+        {
+            "description": "Flow support is acyclic per commodity: there exists a rank labeling that strictly increases along positive-flow edges.",
+            "formulation": "\\forall k \\in K, \\exists r : N \\to \\mathbb{N}, \\forall i, j \\in N : E_{ij} = 1 \\land F_{ijk} > 0 \\implies r_i < r_j",
+            "explicit": false,
+            "code": {
+                "python": "# Acyclicity is verified post-solve via topological sort on the positive-flow support."
+            }
+        },
+        {
+            "description": "Flow is supported on graph edges: no flow on non-edges.",
+            "formulation": "E_{ij} = 0 \\implies F_{ijk} = 0 \\quad \\forall i,j \\in N, k \\in K",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstrs(F[i, j, k] == 0 for i in range(nN) for j in range(nN) for k in range(nK) if E[i][j] == 0)"
             }
         },
         {
@@ -163,16 +307,16 @@
         }
     ],
     "objective": {
-        "description": "Minimize total procurement cost plus total transportation cost.",
-        "formulation": "\\min \\sum_{k \\in K} \\mathrm{pc}_k \\left( \\sum_{j \\in N_B} \\mathrm{dem}_j R_k \\right) + \\sum_{i \\in N} \\sum_{j \\in N} \\sum_{k \\in K} \\mathrm{tc}_{ijk} F_{ijk}",
+        "description": "Minimize total procurement cost plus total transportation cost. Procurement cost is charged on the outflow of each commodity leaving supplier nodes.",
+        "formulation": "\\min \\sum_{k \\in K} \\mathrm{pc}_k \\left( \\sum_{s \\in N_S} \\sum_{j \\in N} E_{S_s, j} F_{S_s, j, k} \\right) + \\sum_{i \\in N} \\sum_{j \\in N} \\sum_{k \\in K} \\mathrm{tc}_{ijk} F_{ijk}",
         "code": {
-            "gurobipy": "model.setObjective(\n    gp.quicksum(pc[k] * gp.quicksum(isB[j] * dem[j] * R[k] for j in range(nN)) for k in range(nK))\n    + gp.quicksum(tc[i][j][k] * F[i, j, k] for i in range(nN) for j in range(nN) for k in range(nK)),\n    GRB.MINIMIZE\n)"
+            "gurobipy": "model.setObjective(\n    gp.quicksum(pc[k] * gp.quicksum(E[S[s]][j] * F[S[s], j, k] for s in range(nS) for j in range(nN)) for k in range(nK))\n    + gp.quicksum(tc[i][j][k] * F[i, j, k] for i in range(nN) for j in range(nN) for k in range(nK)),\n    GRB.MINIMIZE\n)"
         }
     },
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025",
-            "variation_id": "efficient"
+            "formulation_id": "efficient"
         }
     }
 }

@@ -1,6 +1,22 @@
 {
     "valid": true,
     "parameters": {
+        "nN": {
+            "description": "Total number of nodes in the supply network (suppliers, transshipment points, and beneficiary camps)",
+            "shape": []
+        },
+        "nS": {
+            "description": "Number of supplier nodes",
+            "shape": []
+        },
+        "nT": {
+            "description": "Number of transshipment nodes",
+            "shape": []
+        },
+        "nB": {
+            "description": "Number of beneficiary camps",
+            "shape": []
+        },
         "nP": {
             "description": "Number of simple paths from a supplier to a beneficiary camp",
             "shape": []
@@ -13,9 +29,45 @@
             "description": "Number of nutritional requirements",
             "shape": []
         },
-        "nB": {
-            "description": "Number of beneficiary camps",
-            "shape": []
+        "S": {
+            "description": "Supplier node indices: S[s] is the index in N of supplier s",
+            "shape": [
+                "nS"
+            ]
+        },
+        "T": {
+            "description": "Transshipment node indices: T[t] is the index in N of transshipment node t",
+            "shape": [
+                "nT"
+            ]
+        },
+        "B": {
+            "description": "Beneficiary camp node indices: B[j] is the index in N of beneficiary camp j",
+            "shape": [
+                "nB"
+            ]
+        },
+        "E": {
+            "description": "Adjacency matrix: 1 if a directed edge exists from node i to node j, 0 otherwise",
+            "shape": [
+                "nN",
+                "nN"
+            ]
+        },
+        "pE": {
+            "description": "Path-edge indicator: 1 if edge (i, j) is part of path p, 0 otherwise",
+            "shape": [
+                "nP",
+                "nN",
+                "nN"
+            ]
+        },
+        "pRank": {
+            "description": "Rank/position of node v within path p; strictly increases along path edges",
+            "shape": [
+                "nP",
+                "nN"
+            ]
         },
         "c": {
             "description": "Shipping cost per kg of commodity k along path p",
@@ -58,6 +110,190 @@
         }
     },
     "assumptions": [
+        {
+            "description": "There is at least one node.",
+            "formulation": "n_N \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nN >= 1"
+            }
+        },
+        {
+            "description": "There is at least one supplier node.",
+            "formulation": "n_S \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nS >= 1"
+            }
+        },
+        {
+            "description": "There is at least one transshipment node.",
+            "formulation": "n_T \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nT >= 1"
+            }
+        },
+        {
+            "description": "There is at least one beneficiary camp.",
+            "formulation": "n_B \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nB >= 1"
+            }
+        },
+        {
+            "description": "There is at least one commodity.",
+            "formulation": "n_K \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nK >= 1"
+            }
+        },
+        {
+            "description": "There is at least one nutrient.",
+            "formulation": "n_L \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert nL >= 1"
+            }
+        },
+        {
+            "description": "Each supplier node index is a valid node index (in range [0, nN)).",
+            "formulation": "S_s \\in N \\quad \\forall s \\in N_S",
+            "explicit": true,
+            "code": {
+                "python": "assert all(0 <= S[s] < nN for s in range(nS))"
+            }
+        },
+        {
+            "description": "Each transshipment node index is a valid node index (in range [0, nN)).",
+            "formulation": "T_t \\in N \\quad \\forall t \\in N_T",
+            "explicit": true,
+            "code": {
+                "python": "assert all(0 <= T[t] < nN for t in range(nT))"
+            }
+        },
+        {
+            "description": "Each beneficiary camp node index is a valid node index (in range [0, nN)).",
+            "formulation": "B_j \\in N \\quad \\forall j \\in N_B",
+            "explicit": true,
+            "code": {
+                "python": "assert all(0 <= B[j] < nN for j in range(nB))"
+            }
+        },
+        {
+            "description": "The supplier, transshipment, and beneficiary node-class maps partition N (every node belongs to exactly one class).",
+            "formulation": "N = N_S \\sqcup N_T \\sqcup N_B",
+            "explicit": true,
+            "code": {
+                "python": "assert set(S) | set(T) | set(B) == set(range(nN)) and set(S).isdisjoint(T) and set(S).isdisjoint(B) and set(T).isdisjoint(B)"
+            }
+        },
+        {
+            "description": "The supplier, transshipment, and beneficiary node-class maps are each injective.",
+            "formulation": "S, T, B \\text{ are injective}",
+            "explicit": true,
+            "code": {
+                "python": "assert len(set(S)) == nS and len(set(T)) == nT and len(set(B)) == nB"
+            }
+        },
+        {
+            "description": "Adjacency matrix entries are binary (0 or 1).",
+            "formulation": "E_{ij} \\in \\{0, 1\\} \\quad \\forall i, j \\in N",
+            "explicit": false,
+            "code": {
+                "python": "assert all(E[i][j] in (0, 1) for i in range(nN) for j in range(nN))"
+            }
+        },
+        {
+            "description": "Path-end indicator entries are binary (0 or 1).",
+            "formulation": "e_{jp} \\in \\{0, 1\\} \\quad \\forall j \\in N_B, p \\in P",
+            "explicit": false,
+            "code": {
+                "python": "assert all(e[j][p] in (0, 1) for j in range(nB) for p in range(nP))"
+            }
+        },
+        {
+            "description": "Path-edge indicator entries are binary (0 or 1).",
+            "formulation": "pE_{p,i,j} \\in \\{0, 1\\} \\quad \\forall p \\in P, i, j \\in N",
+            "explicit": false,
+            "code": {
+                "python": "assert all(pE[p][i][j] in (0, 1) for p in range(nP) for i in range(nN) for j in range(nN))"
+            }
+        },
+        {
+            "description": "Each path edge must be a graph edge.",
+            "formulation": "pE_{p,i,j} \\leq E_{ij} \\quad \\forall p \\in P, i, j \\in N",
+            "explicit": false,
+            "code": {
+                "python": "assert all(pE[p][i][j] <= E[i][j] for p in range(nP) for i in range(nN) for j in range(nN))"
+            }
+        },
+        {
+            "description": "Within each path, every node has in-degree at most 1.",
+            "formulation": "\\sum_{i \\in N} pE_{p,i,v} \\leq 1 \\quad \\forall p \\in P, v \\in N",
+            "explicit": false,
+            "code": {
+                "python": "assert all(sum(pE[p][i][v] for i in range(nN)) <= 1 for p in range(nP) for v in range(nN))"
+            }
+        },
+        {
+            "description": "Within each path, every node has out-degree at most 1.",
+            "formulation": "\\sum_{j \\in N} pE_{p,v,j} \\leq 1 \\quad \\forall p \\in P, v \\in N",
+            "explicit": false,
+            "code": {
+                "python": "assert all(sum(pE[p][v][j] for j in range(nN)) <= 1 for p in range(nP) for v in range(nN))"
+            }
+        },
+        {
+            "description": "Each path has a unique source node (in-degree 0, out-degree 1) and that node is a supplier.",
+            "formulation": "\\forall p \\in P, \\exists! v \\in N : \\sum_{j \\in N} pE_{p,v,j} = 1 \\land \\sum_{i \\in N} pE_{p,i,v} = 0; \\text{ moreover } v \\in \\{S_s : s \\in N_S\\}",
+            "explicit": false,
+            "code": {
+                "python": "for p in range(nP):\n    sources = [v for v in range(nN) if sum(pE[p][v][j] for j in range(nN)) == 1 and sum(pE[p][i][v] for i in range(nN)) == 0]\n    assert len(sources) == 1 and sources[0] in S"
+            }
+        },
+        {
+            "description": "Each path has a unique sink node (in-degree 1, out-degree 0) and that node is a beneficiary camp.",
+            "formulation": "\\forall p \\in P, \\exists! v \\in N : \\sum_{i \\in N} pE_{p,i,v} = 1 \\land \\sum_{j \\in N} pE_{p,v,j} = 0; \\text{ moreover } v \\in \\{B_b : b \\in N_B\\}",
+            "explicit": false,
+            "code": {
+                "python": "for p in range(nP):\n    sinks = [v for v in range(nN) if sum(pE[p][i][v] for i in range(nN)) == 1 and sum(pE[p][v][j] for j in range(nN)) == 0]\n    assert len(sinks) == 1 and sinks[0] in B"
+            }
+        },
+        {
+            "description": "End indicator e is consistent with pE: e_{j,p} = 1 iff path p ends at beneficiary camp j.",
+            "formulation": "e_{j,p} = \\sum_{i \\in N} pE_{p,i,B_j} - \\sum_{k \\in N} pE_{p,B_j,k} \\quad \\forall j \\in N_B, p \\in P",
+            "explicit": false,
+            "code": {
+                "python": "assert all(e[j][p] == sum(pE[p][i][B[j]] for i in range(nN)) - sum(pE[p][B[j]][k] for k in range(nN)) for j in range(nB) for p in range(nP))"
+            }
+        },
+        {
+            "description": "Each path is acyclic: rank strictly increases along path edges.",
+            "formulation": "pE_{p,i,j} = 1 \\implies pRank_{p,j} = pRank_{p,i} + 1 \\quad \\forall p \\in P, i, j \\in N",
+            "explicit": false,
+            "code": {
+                "python": "assert all(pRank[p][j] == pRank[p][i] + 1 for p in range(nP) for i in range(nN) for j in range(nN) if pE[p][i][j] == 1)"
+            }
+        },
+        {
+            "description": "Path indexing is complete: every valid simple supplier-to-beneficiary path is indexed by some p in P.",
+            "formulation": "\\forall \\text{ valid simple } S\\text{-to-}B \\text{ path } \\pi, \\exists p \\in P : pE_p = \\pi",
+            "explicit": false,
+            "code": {
+                "python": "# Completeness must be verified by external path enumeration; not asserted here."
+            }
+        },
+        {
+            "description": "Path indexing is injective: distinct path indices give distinct edge sets.",
+            "formulation": "p_1 \\neq p_2 \\implies \\exists i, j \\in N : pE_{p_1,i,j} \\neq pE_{p_2,i,j}",
+            "explicit": false,
+            "code": {
+                "python": "assert len({tuple(tuple(row) for row in pE[p]) for p in range(nP)}) == nP"
+            }
+        },
         {
             "description": "Shipping cost along each path for each commodity is non-negative.",
             "formulation": "c_{pk} \\geq 0 \\quad \\forall p \\in P, k \\in K",

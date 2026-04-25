@@ -15,9 +15,14 @@ def main(params_path: str, solution_path: str) -> None:
 
     # Parameters
     nN = data["nN"]
+    nS = data["nS"]
+    nT = data["nT"]
+    nB = data["nB"]
     nK = data["nK"]
     nL = data["nL"]
-    isB = data["isB"]
+    S = data["S"]
+    T = data["T"]
+    B = data["B"]
     E = data["E"]
     dem = data["dem"]
     pc = data["pc"]
@@ -26,7 +31,23 @@ def main(params_path: str, solution_path: str) -> None:
     nutval = data["nutval"]
 
     # Parameter Validation
-    assert all(dem[j] >= 0 for j in range(nN))
+    assert nN >= 1
+    assert nS >= 1
+    assert nT >= 1
+    assert nB >= 1
+    assert nK >= 1
+    assert nL >= 1
+    assert all(0 <= S[s] < nN for s in range(nS))
+    assert all(0 <= T[t] < nN for t in range(nT))
+    assert all(0 <= B[j] < nN for j in range(nB))
+    assert (
+        set(S) | set(T) | set(B) == set(range(nN))
+        and set(S).isdisjoint(T)
+        and set(S).isdisjoint(B)
+        and set(T).isdisjoint(B)
+    )
+    assert len(set(S)) == nS and len(set(T)) == nT and len(set(B)) == nB
+    assert all(dem[j] >= 0 for j in range(nB))
     assert all(pc[k] >= 0 for k in range(nK))
     assert all(
         tc[i][j][k] >= 0 for i in range(nN) for j in range(nN) for k in range(nK)
@@ -40,16 +61,25 @@ def main(params_path: str, solution_path: str) -> None:
 
     # Constraints
     model.addConstrs(
-        gp.quicksum(E[i][j] * F[i, j, k] for i in range(nN))
-        == gp.quicksum(E[j][i] * F[j, i, k] for i in range(nN))
-        for j in range(nN)
+        gp.quicksum(E[i][S[s]] * F[i, S[s], k] for i in range(nN)) == 0
+        for s in range(nS)
         for k in range(nK)
     )
     model.addConstrs(
-        gp.quicksum(E[i][j] * F[i, j, k] for i in range(nN)) >= dem[j] * R[k]
-        for j in range(nN)
+        gp.quicksum(E[i][T[j]] * F[i, T[j], k] for i in range(nN))
+        == gp.quicksum(E[T[j]][i] * F[T[j], i, k] for i in range(nN))
+        for j in range(nT)
         for k in range(nK)
-        if isB[j] == 1
+    )
+    model.addConstrs(
+        gp.quicksum(E[B[b]][j] * F[B[b], j, k] for j in range(nN)) == 0
+        for b in range(nB)
+        for k in range(nK)
+    )
+    model.addConstrs(
+        gp.quicksum(E[i][B[j]] * F[i, B[j], k] for i in range(nN)) >= dem[j] * R[k]
+        for j in range(nB)
+        for k in range(nK)
     )
     model.addConstrs(
         gp.quicksum(nutval[k][l] * R[k] for k in range(nK)) >= nutreq[l]
@@ -65,7 +95,10 @@ def main(params_path: str, solution_path: str) -> None:
     # Objective
     model.setObjective(
         gp.quicksum(
-            pc[k] * gp.quicksum(isB[j] * dem[j] * R[k] for j in range(nN))
+            pc[k]
+            * gp.quicksum(
+                E[S[s]][j] * F[S[s], j, k] for s in range(nS) for j in range(nN)
+            )
             for k in range(nK)
         )
         + gp.quicksum(
