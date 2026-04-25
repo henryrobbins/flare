@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "terms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "constant": { "type": "string" },
+          "variable": { "type": "string" }
+        },
+        "required": ["constant", "variable"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["terms"],
+  "additionalProperties": false
+}

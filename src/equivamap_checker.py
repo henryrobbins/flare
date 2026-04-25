@@ -1,5 +1,4 @@
 import json
-import re
 import subprocess
 from pathlib import Path
 
@@ -8,7 +7,7 @@ from milp_eq_tools.models import Constraint
 
 from .checker import CheckResult, EquivalenceChecker
 from .llm_client import LLMClient
-from .prompts import problem_info, render_variable_mapping
+from .prompts import VARIABLE_MAPPING_SCHEMA, problem_info, render_variable_mapping
 
 TOLERANCE = 1e-6
 
@@ -83,29 +82,24 @@ def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:
     )
 
 
-def _parse_mapping(response: str, var_name: str, b_variables: dict) -> list[dict] | None:
-    """Parse and validate LLM mapping response. Returns [] for no-mapping, None on parse failure."""
-    match = re.search(r"\{.*\}", response, re.DOTALL)
-    if not match:
-        return None
-    try:
-        parsed = json.loads(match.group(0))
-    except json.JSONDecodeError:
-        return None
-
-    terms = parsed.get(var_name)
+def _validate_mapping(parsed: dict, b_variables: dict) -> list[dict] | None:
+    """Validate structured mapping dict. Returns [] for no-mapping, None on invalid."""
+    terms = parsed.get("terms")
     if not isinstance(terms, list) or not terms:
         return None
     if terms[0].get("constant") == "none":
         return []
-
     valid: list[dict] = []
     for term in terms:
-        constant = term.get("constant")
+        raw = term.get("constant")
         variable = term.get("variable")
-        if not isinstance(constant, (int, float)) or variable not in b_variables:
+        try:
+            constant = float(raw)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
             return None
-        valid.append({"constant": float(constant), "variable": variable})
+        if variable not in b_variables:
+            return None
+        valid.append({"constant": constant, "variable": variable})
     return valid
 
 
@@ -159,9 +153,13 @@ class EquivaMapChecker(EquivalenceChecker):
         for var_name in a.variables:
             rendered = render_variable_mapping(var_name, a, b)
             (prompts_dir / f"{var_name}_prompt.txt").write_text(rendered.user)
-            response = self.client.complete(rendered.system, rendered.user)
-            (prompts_dir / f"{var_name}_response.txt").write_text(response)
-            variable_mappings[var_name] = _parse_mapping(response, var_name, info_b["variables"])
+            parsed = self.client.complete_json(
+                rendered.system, rendered.user, VARIABLE_MAPPING_SCHEMA
+            )
+            (prompts_dir / f"{var_name}_response.json").write_text(
+                json.dumps(parsed, indent=2)
+            )
+            variable_mappings[var_name] = _validate_mapping(parsed, info_b["variables"])
 
         (artifacts_dir / "variable_mappings.json").write_text(
             json.dumps(variable_mappings, indent=2)

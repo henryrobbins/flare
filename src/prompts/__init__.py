@@ -6,6 +6,10 @@ from jinja2 import Environment, FileSystemLoader
 
 from milp_eq_tools import Formulation
 
+VARIABLE_MAPPING_SCHEMA: dict = json.loads(
+    (Path(__file__).parent / "variable_mapping_schema.json").read_text()
+)
+
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent),
     trim_blocks=True,

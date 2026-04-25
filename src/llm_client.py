@@ -1,9 +1,14 @@
+import json
 from abc import ABC, abstractmethod
 
 
 class LLMClient(ABC):
     @abstractmethod
     def complete(self, system: str, user: str) -> str: ...
+
+    @abstractmethod
+    def complete_json(self, system: str, user: str, schema: dict) -> dict:
+        raise NotImplementedError
 
 
 class AnthropicClient(LLMClient):
@@ -21,6 +26,16 @@ class AnthropicClient(LLMClient):
             messages=[{"role": "user", "content": user}],
         )
         return message.content[0].text
+
+    def complete_json(self, system: str, user: str, schema: dict) -> dict:
+        message = self._client.messages.create(
+            model=self.model,
+            max_tokens=1024,
+            system=system,
+            messages=[{"role": "user", "content": user}],
+            output_config={"format": {"type": "json_schema", "schema": schema}},
+        )
+        return json.loads(message.content[0].text)
 
 
 class OpenAIClient(LLMClient):
