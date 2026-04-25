@@ -29,12 +29,13 @@ def main(params_path: str, solution_path: str) -> None:
     P = data["P"]
 
     # Parameter Validation
-    assert all(O[i] >= 0 for i in range(n))
-    assert all(W[i] >= 0 for i in range(n))
-    assert all(g[i] <= 1 for i in range(n))
     assert all(P[i][j] in (0, 1) for i in range(n) for j in range(n))
     assert n >= 1
     assert t >= 1
+    assert all(c[i][tau] >= 0 for i in range(n) for tau in range(t))
+    assert all(g[i] >= 0 for i in range(n))
+    assert all(O[i] >= 0 for i in range(n))
+    assert all(W[i] >= 0 for i in range(n))
 
     # Definitions
     I0 = [i for i in range(n) if g[i] < 1]

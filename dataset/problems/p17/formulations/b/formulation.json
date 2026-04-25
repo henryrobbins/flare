@@ -1,5 +1,5 @@
 {
-    "valid": true,
+    "valid": false,
     "parameters": {
         "n": {
             "description": "Number of blocks",
@@ -56,22 +56,6 @@
     },
     "assumptions": [
         {
-            "description": "Ore tonnage of each block is non-negative.",
-            "formulation": "O_i \\geq 0 \\quad \\forall i \\in I",
-            "explicit": false,
-            "code": {
-                "python": "assert all(O[i] >= 0 for i in range(n))"
-            }
-        },
-        {
-            "description": "Waste tonnage of each block is non-negative.",
-            "formulation": "W_i \\geq 0 \\quad \\forall i \\in I",
-            "explicit": false,
-            "code": {
-                "python": "assert all(W[i] >= 0 for i in range(n))"
-            }
-        },
-        {
             "description": "Precedence matrix entries are binary.",
             "formulation": "P_{ij} \\in \\{0,1\\} \\quad \\forall i,j \\in I",
             "explicit": true,
@@ -93,6 +77,62 @@
             "explicit": false,
             "code": {
                 "python": "assert t >= 1"
+            }
+        },
+        {
+            "description": "NPV of each block in each period is non-negative.",
+            "formulation": "c_i^\\tau \\geq 0 \\quad \\forall i \\in I,\\; \\tau \\in T",
+            "explicit": false,
+            "code": {
+                "python": "assert all(c[i][tau] >= 0 for i in range(n) for tau in range(t))"
+            }
+        },
+        {
+            "description": "Ore grade of each block is non-negative.",
+            "formulation": "g_i \\geq 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(g[i] >= 0 for i in range(n))"
+            }
+        },
+        {
+            "description": "Ore tonnage of each block is non-negative.",
+            "formulation": "O_i \\geq 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(O[i] >= 0 for i in range(n))"
+            }
+        },
+        {
+            "description": "Waste tonnage of each block is non-negative.",
+            "formulation": "W_i \\geq 0 \\quad \\forall i \\in I",
+            "explicit": false,
+            "code": {
+                "python": "assert all(W[i] >= 0 for i in range(n))"
+            }
+        },
+        {
+            "description": "Minimum grade bound does not exceed maximum grade bound.",
+            "formulation": "G_{\\min} \\leq G_{\\max}",
+            "explicit": false,
+            "code": {
+                "python": "assert G_min <= G_max"
+            }
+        },
+        {
+            "description": "Minimum processing capacity does not exceed maximum processing capacity.",
+            "formulation": "PC_{\\min} \\leq PC_{\\max}",
+            "explicit": false,
+            "code": {
+                "python": "assert PC_min <= PC_max"
+            }
+        },
+        {
+            "description": "Minimum mining capacity does not exceed maximum mining capacity.",
+            "formulation": "MC_{\\min} \\leq MC_{\\max}",
+            "explicit": false,
+            "code": {
+                "python": "assert MC_min <= MC_max"
             }
         }
     ],
@@ -179,7 +219,7 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025",
-            "variation_id": "inefficient"
+            "formulation_id": "inefficient"
         }
     }
 }
