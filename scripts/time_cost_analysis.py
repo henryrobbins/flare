@@ -11,6 +11,7 @@ Run from repo root:
     python scripts/time_analysis.py [runs/.../results.jsonl]
 """
 
+import argparse
 import json
 import sys
 from collections import defaultdict
@@ -65,8 +66,6 @@ def load_pair(path: Path) -> dict | None:
         return None
 
     result = next((e for e in events if e["type"] == "result"), None)
-    if result is None:
-        return None
 
     tool_calls: dict[str, int] = defaultdict(int)
     for e in events:
@@ -77,12 +76,13 @@ def load_pair(path: Path) -> dict | None:
 
     return {
         "pair_id":        path.parts[-3],
-        "duration_ms":    result.get("duration_ms", 0),
-        "duration_api_ms":result.get("duration_api_ms", 0),
-        "cost_usd":       result.get("total_cost_usd", 0.0),
-        "num_turns":      result.get("num_turns", 0),
-        "is_error":       result.get("is_error", False),
-        "usage":          result.get("usage", {}),
+        "finished":       result is not None,
+        "duration_ms":    result.get("duration_ms", 0) if result else 0,
+        "duration_api_ms":result.get("duration_api_ms", 0) if result else 0,
+        "cost_usd":       result.get("total_cost_usd", 0.0) if result else 0.0,
+        "num_turns":      result.get("num_turns", 0) if result else 0,
+        "is_error":       result.get("is_error", False) if result else False,
+        "usage":          result.get("usage", {}) if result else {},
         "tool_calls":     dict(tool_calls),
         "tool_time_ms":   per_tool_time_ms(events),
     }
@@ -103,7 +103,11 @@ def fmt_pct(num, denom) -> str:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 def main():
-    run_root = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("runs/20260425T200341Z")
+    parser = argparse.ArgumentParser(description="Analyse time/cost for claude_code runs.")
+    parser.add_argument("-r", "--run-id", required=True, help="Run ID (e.g. 20260425T200341Z)")
+    args = parser.parse_args()
+
+    run_root = Path("runs") / args.run_id
     files = sorted(run_root.glob("pairs/*/claude_code/claude_output.jsonl"))
 
     if not files:
@@ -111,13 +115,14 @@ def main():
         sys.exit(1)
 
     pairs = [p for p in (load_pair(f) for f in files) if p is not None]
-    print(f"Loaded {len(pairs)} pair(s)\n")
+    finished = sum(1 for p in pairs if p["finished"])
+    print(f"Loaded {len(pairs)} pair(s) ({finished} finished, {len(pairs) - finished} in-progress)\n")
 
     # ── 1. Per-pair summary ────────────────────────────────────────────────
     print("=" * 80)
     print("PER-PAIR SUMMARY")
     print("=" * 80)
-    hdr = f"{'Pair':<22} {'Wall':>6} {'API':>6} {'Wait':>6} {'Cost':>7} {'Turns':>5} {'Tools':>5}"
+    hdr = f"{'Pair':<22} {'Status':>8} {'Wall':>6} {'API':>6} {'Wait':>6} {'Cost':>7} {'Turns':>5} {'Tools':>5}"
     print(hdr)
     print("-" * len(hdr))
     for p in pairs:
@@ -125,7 +130,8 @@ def main():
         api  = p["duration_api_ms"]
         wait = wall - api
         total_tools = sum(p["tool_calls"].values())
-        print(f"{p['pair_id']:<22} {fmt_ms(wall):>6} {fmt_ms(api):>6} "
+        status = "done" if p["finished"] else "running"
+        print(f"{p['pair_id']:<22} {status:>8} {fmt_ms(wall):>6} {fmt_ms(api):>6} "
               f"{fmt_ms(wait):>6} ${p['cost_usd']:>6.2f} {p['num_turns']:>5} {total_tools:>5}")
 
     # ── 2. Aggregate tool-call counts ─────────────────────────────────────
