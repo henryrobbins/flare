@@ -1,4 +1,5 @@
 import json
+import os
 import shutil
 import subprocess
 import time
@@ -73,8 +74,11 @@ Equivalence proof output: Equivalence.lean
 Important:
 - Only read files that exist in this working directory. Do not navigate outside it.
 - The Lean project root is the current directory. Use `import A.Formulation` and `import B.Formulation`.
-- Use the lean-lsp MCP tools to check compilation as you work.
+- You MUST use the lean-lsp MCP tools (mcp__lean-lsp__*) to check compilation as you work. Before doing anything else, verify the lean-lsp MCP server is available by calling `mcp__lean-lsp__lean_diagnostic_messages` on `Common.lean`. If that call fails (e.g., "Failed to start Lean language server" or the tool is unavailable), STOP IMMEDIATELY: write `MCP_UNAVAILABLE: <error>` to Equivalence.lean and exit. Do not fall back to `lake env lean` or `lake build`.
 - Generate both Formulation.lean files before attempting the equivalence proof.
+- After writing `A/Formulation.lean` and `B/Formulation.lean`, validate each with `mcp__lean-lsp__lean_diagnostic_messages`, then run `Bash(lake build A.Formulation B.Formulation)` ONCE to materialize their oleans. Without this, `lean_diagnostic_messages` on `Equivalence.lean` will return `success:false` with empty items because its imports cannot be elaborated. After the build, use `lean_diagnostic_messages` on `Equivalence.lean` for all subsequent proof iteration.
+- Interpret `lean_diagnostic_messages` carefully: `success:true, items:[]` means the file compiles cleanly. `success:false, items:[]` typically means imports aren't built yet — build them, don't assume the file is broken. Real errors come back as `items` with severity/message fields.
+- Confirm the final equivalence proof with `mcp__lean-lsp__lean_verify` on the `MILPEquiv` definition. The returned axioms must NOT contain `sorryAx` — if it does, the proof has a stub and you must finish it.
 """
 
 
@@ -126,6 +130,8 @@ class ClaudeCodeChecker(EquivalenceChecker):
 
         shutil.copy2(self.repo_root / "lean-toolchain", wd / "lean-toolchain")
         shutil.copy2(self.repo_root / "Common.lean", wd / "Common.lean")
+        shutil.copy2(self.repo_root / ".mcp.json", wd / ".mcp.json")
+        shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
         (wd / "lakefile.toml").write_text(_STAGING_LAKEFILE)
 
         # Copy agents/skills but use restricted settings; omit milp-reviewer.
@@ -162,6 +168,18 @@ class ClaudeCodeChecker(EquivalenceChecker):
         wd_lake.mkdir(parents=True, exist_ok=True)
         (wd_lake / "packages").symlink_to((self.repo_root / ".lake" / "packages").resolve())
 
+        # Pre-build Common.olean so the agent's first lean-lsp diagnostic call
+        # on a freshly-written Formulation.lean (which imports Common) returns
+        # real diagnostics instead of an opaque `success:false`.
+        subprocess.run(
+            ["lake", "build", "Common"],
+            cwd=wd,
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=180,
+        )
+
     def _run_claude(self, prompt: str, wd: Path, jsonl_path: Path) -> dict:
         cmd = [
             "claude",
@@ -173,6 +191,10 @@ class ClaudeCodeChecker(EquivalenceChecker):
         start = time.time()
         stdout_lines: list[str] = []
 
+        # Strip ANTHROPIC_API_KEY so claude uses the Claude.ai plan (OAuth
+        # session) rather than API credits, with automatic extra-usage overage.
+        subprocess_env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+
         with jsonl_path.open("w") as jsonl_f:
             with subprocess.Popen(
                 cmd,
@@ -180,6 +202,7 @@ class ClaudeCodeChecker(EquivalenceChecker):
                 stderr=subprocess.PIPE,
                 text=True,
                 cwd=wd,
+                env=subprocess_env,
             ) as proc:
                 assert proc.stdout is not None
                 for line in proc.stdout:
@@ -216,13 +239,37 @@ class ClaudeCodeChecker(EquivalenceChecker):
                 "has_sorry": None,
             }
 
+        if equiv_content.upper().startswith("MCP_UNAVAILABLE"):
+            return {
+                "is_equivalent": False,
+                "agent_decision": "mcp_unavailable",
+                "agent_reason": equiv_content,
+                "form_a_written": form_a_lean.exists() and form_a_lean.stat().st_size > 0,
+                "form_b_written": form_b_lean.exists() and form_b_lean.stat().st_size > 0,
+                "form_a_compiled": None,
+                "form_b_compiled": None,
+                "proof_compiled": None,
+                "has_sorry": None,
+            }
+
         form_a_written = form_a_lean.exists() and form_a_lean.stat().st_size > 0
         form_b_written = form_b_lean.exists() and form_b_lean.stat().st_size > 0
         proof_written = bool(equiv_content)
 
-        form_a_compiled = _lean_compiles(wd, form_a_lean) if form_a_written else False
-        form_b_compiled = _lean_compiles(wd, form_b_lean) if form_b_written else False
-        proof_compiled = _lean_compiles(wd, equiv_file) if proof_written else False
+        compile_log_path = wd.parent / "compile_log.txt"
+        with compile_log_path.open("w") as log:
+            form_a_compiled = (
+                _lean_compiles(wd, form_a_lean, log, "A/Formulation.lean")
+                if form_a_written else False
+            )
+            form_b_compiled = (
+                _lean_compiles(wd, form_b_lean, log, "B/Formulation.lean")
+                if form_b_written else False
+            )
+            proof_compiled = (
+                _lean_compiles(wd, equiv_file, log, "Equivalence.lean")
+                if proof_written else False
+            )
         has_sorry = "sorry" in equiv_content if proof_written else None
 
         is_equivalent = proof_compiled and not has_sorry
@@ -239,17 +286,44 @@ class ClaudeCodeChecker(EquivalenceChecker):
         }
 
 
-def _lean_compiles(cwd: Path, lean_file: Path) -> bool:
+def _lean_compiles(cwd: Path, lean_file: Path, log, label: str) -> bool:
+    start = time.time()
+    cwd_abs = cwd.resolve()
+    lean_file_abs = lean_file.resolve()
+    log.write(f"=== {label} ===\n")
+    log.write(f"cmd: lake env lean {lean_file_abs}\n")
+    log.write(f"cwd: {cwd_abs}\n")
     try:
         result = subprocess.run(
-            ["lake", "env", "lean", str(lean_file)],
-            cwd=cwd,
+            ["lake", "env", "lean", str(lean_file_abs)],
+            cwd=cwd_abs,
             capture_output=True,
             text=True,
             timeout=300,
         )
+        duration = time.time() - start
+        log.write(f"returncode: {result.returncode}\n")
+        log.write(f"duration_s: {duration:.1f}\n")
+        if result.stdout:
+            log.write(f"--- stdout ---\n{result.stdout}\n")
+        if result.stderr:
+            log.write(f"--- stderr ---\n{result.stderr}\n")
+        log.write("\n")
+        log.flush()
         return result.returncode == 0
-    except (subprocess.TimeoutExpired, FileNotFoundError):
+    except subprocess.TimeoutExpired as e:
+        duration = time.time() - start
+        log.write(f"TIMEOUT after {duration:.1f}s (limit 300s)\n")
+        if e.stdout:
+            log.write(f"--- partial stdout ---\n{e.stdout.decode(errors='replace') if isinstance(e.stdout, bytes) else e.stdout}\n")
+        if e.stderr:
+            log.write(f"--- partial stderr ---\n{e.stderr.decode(errors='replace') if isinstance(e.stderr, bytes) else e.stderr}\n")
+        log.write("\n")
+        log.flush()
+        return False
+    except FileNotFoundError as e:
+        log.write(f"FileNotFoundError: {e}\n\n")
+        log.flush()
         return False
 
 
