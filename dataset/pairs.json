@@ -602,7 +602,7 @@
             "problem": 7,
             "formulation": "b"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
@@ -613,7 +613,7 @@
             "problem": 7,
             "formulation": "c"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
