@@ -155,6 +155,22 @@ class EquivaMapChecker(EquivalenceChecker):
             json.dumps(variable_mappings, indent=2)
         )
 
+        # If any variable could not be mapped, the check is invalid — return False.
+        if any(not terms for terms in variable_mappings.values()):
+            meta = {
+                "is_equivalent": False,
+                "obj_a": obj_a,
+                "obj_b": obj_b,
+                "incomplete_mapping": True,
+            }
+            (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
+            return CheckResult(
+                is_equivalent=False,
+                method=self.name,
+                artifacts_dir=artifacts_dir,
+                metadata=meta,
+            )
+
         # Step 4: Compute pinning constraints and build modified formulation A
         map_lines: list[str] = []
         pinned_a = a
