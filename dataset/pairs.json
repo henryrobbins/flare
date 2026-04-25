@@ -922,5 +922,71 @@
             "formulation": "i"
         },
         "equivalent": true
+    },
+    {
+        "a": {
+            "problem": 14,
+            "formulation": "a"
+        },
+        "b": {
+            "problem": 14,
+            "formulation": "b"
+        },
+        "equivalent": true
+    },
+    {
+        "a": {
+            "problem": 16,
+            "formulation": "a"
+        },
+        "b": {
+            "problem": 16,
+            "formulation": "b"
+        },
+        "equivalent": true
+    },
+    {
+        "a": {
+            "problem": 17,
+            "formulation": "a"
+        },
+        "b": {
+            "problem": 17,
+            "formulation": "b"
+        },
+        "equivalent": false
+    },
+    {
+        "a": {
+            "problem": 18,
+            "formulation": "a"
+        },
+        "b": {
+            "problem": 18,
+            "formulation": "b"
+        },
+        "equivalent": true
+    },
+    {
+        "a": {
+            "problem": 19,
+            "formulation": "a"
+        },
+        "b": {
+            "problem": 19,
+            "formulation": "b"
+        },
+        "equivalent": true
+    },
+    {
+        "a": {
+            "problem": 20,
+            "formulation": "a"
+        },
+        "b": {
+            "problem": 20,
+            "formulation": "b"
+        },
+        "equivalent": true
     }
 ]
