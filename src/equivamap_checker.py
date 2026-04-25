@@ -126,7 +126,9 @@ class EquivaMapChecker(EquivalenceChecker):
         artifacts_dir = self.runs_dir / "pairs" / pair_id / "equivamap"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-        # Step 1: Solve B
+        # Step 1: Solve A and B independently
+        sol_a = _solve(a, artifacts_dir / "a")
+        obj_a = float(sol_a["objective"])
         sol_b = _solve(b, artifacts_dir / "b")
         obj_b = float(sol_b["objective"])
         sol_b_vars = sol_b["variables"]
@@ -171,9 +173,14 @@ class EquivaMapChecker(EquivalenceChecker):
 
         # Step 5: Solve A with pinning constraints
         try:
-            sol_a = _solve(pinned_a, artifacts_dir / "a_constrained")
+            sol_a_constrained = _solve(pinned_a, artifacts_dir / "a_constrained")
         except subprocess.CalledProcessError:
-            meta = {"is_equivalent": False, "obj_b": obj_b, "infeasible": True}
+            meta = {
+                "is_equivalent": False,
+                "obj_a": obj_a,
+                "obj_b": obj_b,
+                "infeasible": True,
+            }
             (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
             return CheckResult(
                 is_equivalent=False,
@@ -181,12 +188,15 @@ class EquivaMapChecker(EquivalenceChecker):
                 artifacts_dir=artifacts_dir,
                 metadata=meta,
             )
-        obj_a_constrained = float(sol_a["objective"])
+        obj_a_constrained = float(sol_a_constrained["objective"])
 
-        # Step 6: Compare objectives
-        is_equiv = abs(obj_b - obj_a_constrained) < TOLERANCE
+        # Step 6: Check that B's optimum, mapped into A's variables, is optimal in A.
+        # Comparing against A's own optimum (rather than B's) keeps the test invariant
+        # to differences in how A and B express their objectives.
+        is_equiv = abs(obj_a - obj_a_constrained) < TOLERANCE
         meta = {
             "is_equivalent": is_equiv,
+            "obj_a": obj_a,
             "obj_b": obj_b,
             "obj_a_constrained": obj_a_constrained,
         }
