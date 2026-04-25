@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import subprocess
 import time
@@ -228,34 +229,31 @@ class ClaudeCodeChecker(EquivalenceChecker):
 
         equiv_content = equiv_file.read_text().strip() if equiv_file.exists() else ""
 
-        if equiv_content.upper().startswith("NOT EQUIVALENT"):
-            return {
-                "is_equivalent": False,
-                "agent_decision": "not_equivalent",
-                "agent_reason": equiv_content,
-                "form_a_written": form_a_lean.exists() and form_a_lean.stat().st_size > 0,
-                "form_b_written": form_b_lean.exists() and form_b_lean.stat().st_size > 0,
-                "form_a_compiled": None,
-                "form_b_compiled": None,
-                "proof_compiled": None,
-                "has_sorry": None,
-            }
+        # Normalize the first meaningful line: strip Lean comment markers so
+        # "-- NOT EQUIVALENT: ..." is detected the same as "NOT EQUIVALENT: ...".
+        first_line = next((l.strip() for l in equiv_content.splitlines() if l.strip()), "")
+        normalized = re.sub(r"^-+\s*", "", first_line).upper()
 
-        if equiv_content.upper().startswith("MCP_UNAVAILABLE"):
-            return {
-                "is_equivalent": False,
-                "agent_decision": "mcp_unavailable",
-                "agent_reason": equiv_content,
-                "form_a_written": form_a_lean.exists() and form_a_lean.stat().st_size > 0,
-                "form_b_written": form_b_lean.exists() and form_b_lean.stat().st_size > 0,
-                "form_a_compiled": None,
-                "form_b_compiled": None,
-                "proof_compiled": None,
-                "has_sorry": None,
-            }
+        base = {
+            "form_a_written": form_a_lean.exists() and form_a_lean.stat().st_size > 0,
+            "form_b_written": form_b_lean.exists() and form_b_lean.stat().st_size > 0,
+            "form_a_compiled": None,
+            "form_b_compiled": None,
+            "proof_compiled": None,
+            "milp_equiv_found": None,
+            "sorry_free": None,
+        }
 
-        form_a_written = form_a_lean.exists() and form_a_lean.stat().st_size > 0
-        form_b_written = form_b_lean.exists() and form_b_lean.stat().st_size > 0
+        if normalized.startswith("NOT EQUIVALENT"):
+            return {"is_equivalent": False, "agent_decision": "not_equivalent",
+                    "agent_reason": equiv_content, **base}
+
+        if normalized.startswith("MCP_UNAVAILABLE"):
+            return {"is_equivalent": False, "agent_decision": "mcp_unavailable",
+                    "agent_reason": equiv_content, **base}
+
+        form_a_written = base["form_a_written"]
+        form_b_written = base["form_b_written"]
         proof_written = bool(equiv_content)
 
         compile_log_path = wd.parent / "compile_log.txt"
@@ -268,13 +266,25 @@ class ClaudeCodeChecker(EquivalenceChecker):
                 _lean_compiles(wd, form_b_lean, log, "B/Formulation.lean")
                 if form_b_written else False
             )
-            proof_compiled = (
-                _lean_compiles(wd, equiv_file, log, "Equivalence.lean")
-                if proof_written else False
+            proof_compiled, proof_output = (
+                _lean_compiles_with_output(wd, equiv_file, log, "Equivalence.lean")
+                if proof_written else (False, "")
             )
-        has_sorry = "sorry" in equiv_content if proof_written else None
+            # MILPEquiv presence: require a 'def _ : MILPEquiv' in the file.
+            milp_equiv_found = bool(re.search(r"\bdef\s+\w+\s*:\s*MILPEquiv\b", equiv_content))
+            # Lean emits "warning: 'X' uses sorry" when sorry is present.
+            # Only meaningful when the file compiled and the def was found.
+            sorry_free = (
+                "uses sorry" not in proof_output
+                if (proof_compiled and milp_equiv_found) else False
+            )
+            log.write(f"=== sorry check ===\nmilp_equiv_found: {milp_equiv_found}\n"
+                      f"sorry_free: {sorry_free}\n\n")
 
-        is_equivalent = proof_compiled and not has_sorry
+        is_equivalent = (
+            form_a_compiled and form_b_compiled
+            and proof_compiled and milp_equiv_found and sorry_free
+        )
 
         return {
             "is_equivalent": is_equivalent,
@@ -284,11 +294,16 @@ class ClaudeCodeChecker(EquivalenceChecker):
             "form_a_compiled": form_a_compiled,
             "form_b_compiled": form_b_compiled,
             "proof_compiled": proof_compiled,
-            "has_sorry": has_sorry,
+            "milp_equiv_found": milp_equiv_found,
+            "sorry_free": sorry_free,
         }
 
-
 def _lean_compiles(cwd: Path, lean_file: Path, log, label: str) -> bool:
+    compiled, _ = _lean_compiles_with_output(cwd, lean_file, log, label)
+    return compiled
+
+
+def _lean_compiles_with_output(cwd: Path, lean_file: Path, log, label: str) -> tuple[bool, str]:
     start = time.time()
     cwd_abs = cwd.resolve()
     lean_file_abs = lean_file.resolve()
@@ -310,23 +325,27 @@ def _lean_compiles(cwd: Path, lean_file: Path, log, label: str) -> bool:
             log.write(f"--- stdout ---\n{result.stdout}\n")
         if result.stderr:
             log.write(f"--- stderr ---\n{result.stderr}\n")
+        combined = result.stdout + result.stderr
         log.write("\n")
         log.flush()
-        return result.returncode == 0
+        return result.returncode == 0, combined
     except subprocess.TimeoutExpired as e:
         duration = time.time() - start
         log.write(f"TIMEOUT after {duration:.1f}s (limit 300s)\n")
+        partial = ""
         if e.stdout:
-            log.write(f"--- partial stdout ---\n{e.stdout.decode(errors='replace') if isinstance(e.stdout, bytes) else e.stdout}\n")
+            s = e.stdout.decode(errors='replace') if isinstance(e.stdout, bytes) else e.stdout
+            log.write(f"--- partial stdout ---\n{s}\n"); partial += s
         if e.stderr:
-            log.write(f"--- partial stderr ---\n{e.stderr.decode(errors='replace') if isinstance(e.stderr, bytes) else e.stderr}\n")
+            s = e.stderr.decode(errors='replace') if isinstance(e.stderr, bytes) else e.stderr
+            log.write(f"--- partial stderr ---\n{s}\n"); partial += s
         log.write("\n")
         log.flush()
-        return False
+        return False, partial
     except FileNotFoundError as e:
         log.write(f"FileNotFoundError: {e}\n\n")
         log.flush()
-        return False
+        return False, ""
 
 
 def _parse_stream(lines: list[str]) -> dict:
