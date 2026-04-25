@@ -109,6 +109,12 @@ def main() -> None:
         default=DEFAULT_WORKERS,
         help=f"parallel workers (default: {DEFAULT_WORKERS})",
     )
+    parser.add_argument(
+        "--claude-model",
+        "-m",
+        default=None,
+        help="model to pass to claude CLI for ClaudeCodeChecker (default: claude-sonnet-4-6)",
+    )
     args = parser.parse_args()
 
     problem_filter = parse_problem_ids(args.problems)
@@ -124,7 +130,7 @@ def main() -> None:
         ExecutionChecker(run_dir),
         NaiveLLMChecker(run_dir, client),
         EquivaMapChecker(run_dir, client),
-        ClaudeCodeChecker(run_dir, repo_root=Path(".").resolve()),
+        ClaudeCodeChecker(run_dir, repo_root=Path(".").resolve(), model=args.claude_model),
     ]
 
     pairs = dataset.pairs

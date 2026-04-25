@@ -83,9 +83,10 @@ Important:
 
 
 class ClaudeCodeChecker(EquivalenceChecker):
-    def __init__(self, runs_dir: Path, repo_root: Path) -> None:
+    def __init__(self, runs_dir: Path, repo_root: Path, model: str = "claude-sonnet-4-6") -> None:
         super().__init__(runs_dir)
         self.repo_root = repo_root
+        self.model = model
 
     @property
     def name(self) -> str:
@@ -188,6 +189,7 @@ class ClaudeCodeChecker(EquivalenceChecker):
             "--verbose",
             "--permission-mode", "bypassPermissions",
         ]
+        cmd += ["--model", self.model]
         start = time.time()
         stdout_lines: list[str] = []
 
