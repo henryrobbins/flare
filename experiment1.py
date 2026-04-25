@@ -112,7 +112,7 @@ def main() -> None:
     parser.add_argument(
         "--claude-model",
         "-m",
-        default=None,
+        default="claude-sonnet-4-6",
         help="model to pass to claude CLI for ClaudeCodeChecker (default: claude-sonnet-4-6)",
     )
     args = parser.parse_args()
