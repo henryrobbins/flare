@@ -855,7 +855,7 @@
             "problem": 12,
             "formulation": "c"
         },
-        "equivalent": false
+        "equivalent": true
     },
     {
         "a": {
@@ -866,7 +866,7 @@
             "problem": 12,
             "formulation": "d"
         },
-        "equivalent": true
+        "equivalent": false
     },
     {
         "a": {
