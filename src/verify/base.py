@@ -13,7 +13,7 @@ class CheckResult:
     metadata: dict = field(default_factory=dict)
 
 
-class EquivalenceChecker(ABC):
+class EquivalenceVerifier(ABC):
     def __init__(self, runs_dir: Path) -> None:
         self.runs_dir = runs_dir
 

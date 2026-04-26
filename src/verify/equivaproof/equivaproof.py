@@ -8,8 +8,8 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
-from .checker import CheckResult, EquivalenceChecker
-from .prompts import render_formulation_description
+from src.verify.base import CheckResult, EquivalenceVerifier
+from src.prompts import render_formulation_description
 
 
 def _staging_settings(wd: Path, repo_root: Path) -> dict:
@@ -121,7 +121,7 @@ Important:
 """
 
 
-class ClaudeCodeChecker(EquivalenceChecker):
+class EquivaProofVerifier(EquivalenceVerifier):
     def __init__(
         self, runs_dir: Path, repo_root: Path, model: str = "claude-sonnet-4-6"
     ) -> None:
@@ -131,7 +131,7 @@ class ClaudeCodeChecker(EquivalenceChecker):
 
     @property
     def name(self) -> str:
-        return "claude_code"
+        return "equivaproof"
 
     def check(self, a: Formulation, b: Formulation, pair_id: str) -> CheckResult:
         artifacts_dir = self.runs_dir / "pairs" / pair_id / self.name
@@ -144,7 +144,7 @@ class ClaudeCodeChecker(EquivalenceChecker):
         (artifacts_dir / "prompt.txt").write_text(_AGENT_PROMPT_TEMPLATE)
 
         jsonl_path = artifacts_dir / "claude_output.jsonl"
-        print(f"  [claude_code] {pair_id} → monitor: tail -f {jsonl_path}")
+        print(f"  [equivaproof] {pair_id} → monitor: tail -f {jsonl_path}")
 
         stream_metrics = self._run_claude(_AGENT_PROMPT_TEMPLATE, wd, jsonl_path)
 

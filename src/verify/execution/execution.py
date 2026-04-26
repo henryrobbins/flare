@@ -4,12 +4,12 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
-from .checker import CheckResult, EquivalenceChecker
+from src.verify.base import CheckResult, EquivalenceVerifier
 
 TOLERANCE = 1e-6
 
 
-class ExecutionChecker(EquivalenceChecker):
+class ExecutionVerifier(EquivalenceVerifier):
     @property
     def name(self) -> str:
         return "execution"

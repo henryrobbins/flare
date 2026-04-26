@@ -22,12 +22,12 @@ load_dotenv()
 
 from milp_eq_tools import Dataset, Formulation, Pair
 
-from src.checker import EquivalenceChecker
-from src.claude_code_checker import ClaudeCodeChecker
-from src.equivamap_checker import EquivaMapChecker
-from src.execution_checker import ExecutionChecker
 from src.llm_client import AnthropicClient
-from src.naive_llm_checker import NaiveLLMChecker
+from src.verify.base import EquivalenceVerifier
+from src.verify.equivamap.equivamap import EquivaMapVerifier
+from src.verify.equivaproof.equivaproof import EquivaProofVerifier
+from src.verify.execution.execution import ExecutionVerifier
+from src.verify.llm.llm import LLMVerifier
 
 DEFAULT_WORKERS = 5
 
@@ -51,7 +51,7 @@ def pair_id(a: Formulation, b: Formulation) -> str:
 
 def process_pair(
     pair: Pair,
-    checkers: list[EquivalenceChecker],
+    checkers: list[EquivalenceVerifier],
     results_path: Path,
     write_lock: Lock,
 ) -> None:
@@ -113,7 +113,7 @@ def main() -> None:
         "--claude-model",
         "-m",
         default="claude-sonnet-4-6",
-        help="model to pass to claude CLI for ClaudeCodeChecker (default: claude-sonnet-4-6)",
+        help="model to pass to claude CLI for EquivaProofVerifier (default: claude-sonnet-4-6)",
     )
     args = parser.parse_args()
 
@@ -126,11 +126,11 @@ def main() -> None:
     dataset = Dataset(Path("dataset"))
     client = AnthropicClient()
 
-    checkers: list[EquivalenceChecker] = [
-        ExecutionChecker(run_dir),
-        NaiveLLMChecker(run_dir, client),
-        EquivaMapChecker(run_dir, client),
-        ClaudeCodeChecker(run_dir, repo_root=Path(".").resolve(), model=args.claude_model),
+    checkers: list[EquivalenceVerifier] = [
+        ExecutionVerifier(run_dir),
+        LLMVerifier(run_dir, client),
+        EquivaMapVerifier(run_dir, client),
+        EquivaProofVerifier(run_dir, repo_root=Path(".").resolve(), model=args.claude_model),
     ]
 
     pairs = dataset.pairs

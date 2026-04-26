@@ -5,9 +5,9 @@ from pathlib import Path
 from milp_eq_tools import Formulation
 from milp_eq_tools.models import Constraint
 
-from .checker import CheckResult, EquivalenceChecker
-from .llm_client import LLMClient
-from .prompts import VARIABLE_MAPPING_SCHEMA, problem_info, render_variable_mapping
+from src.verify.base import CheckResult, EquivalenceVerifier
+from src.llm_client import LLMClient
+from src.prompts import VARIABLE_MAPPING_SCHEMA, problem_info, render_variable_mapping
 
 TOLERANCE = 1e-6
 
@@ -119,7 +119,7 @@ def _solve(formulation: Formulation, fdir: Path) -> dict:
     return json.loads(solution_path.read_text())
 
 
-class EquivaMapChecker(EquivalenceChecker):
+class EquivaMapVerifier(EquivalenceVerifier):
     def __init__(self, runs_dir: Path, client: LLMClient) -> None:
         super().__init__(runs_dir)
         self.client = client

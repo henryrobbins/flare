@@ -3,22 +3,22 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
-from .checker import CheckResult, EquivalenceChecker
-from .llm_client import LLMClient
-from .prompts import problem_info, render_equivalence
+from src.verify.base import CheckResult, EquivalenceVerifier
+from src.llm_client import LLMClient
+from src.prompts import problem_info, render_equivalence
 
 
-class NaiveLLMChecker(EquivalenceChecker):
+class LLMVerifier(EquivalenceVerifier):
     def __init__(self, runs_dir: Path, client: LLMClient) -> None:
         super().__init__(runs_dir)
         self.client = client
 
     @property
     def name(self) -> str:
-        return "naive_llm"
+        return "llm"
 
     def check(self, a: Formulation, b: Formulation, pair_id: str) -> CheckResult:
-        artifacts_dir = self.runs_dir / "pairs" / pair_id / "naive_llm"
+        artifacts_dir = self.runs_dir / "pairs" / pair_id / "llm"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         info_a = problem_info(a)
