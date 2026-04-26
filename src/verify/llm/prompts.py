@@ -8,8 +8,8 @@ from milp_eq_tools import Formulation
 from src.verify.prompts import RenderedPrompt, problem_info
 
 EQUIVALENCE_SYSTEM = (
-    "You are an expert in mathematical optimization. "
-    "Decide if two formulations represent equivalent optimization problems."
+    "You are an expert in mathematical optimization problems. "
+    "You decide if two given formulations represent the same problem."
 )
 
 _env = Environment(
