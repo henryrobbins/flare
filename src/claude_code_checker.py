@@ -11,22 +11,60 @@ from milp_eq_tools import Formulation
 from .checker import CheckResult, EquivalenceChecker
 from .prompts import render_formulation_description
 
-# Settings written into each wd/.claude/ to restrict the agent to the
-# working directory and avoid it reading ground-truth files from the repo.
-_STAGING_SETTINGS = {
-    "env": {
-        "CLAUDE_CODE_THINKING_BUDGET": "10000",
-    },
-    "permissions": {
-        "allow": [
-            "mcp__lean-lsp__*",
-            "Bash(lake env lean:*)",
-            "Bash(lake build:*)",
-        ],
-    },
-    "enableAllProjectMcpServers": True,
-    "enabledMcpjsonServers": ["lean-lsp"],
-}
+
+def _staging_settings(wd: Path, repo_root: Path) -> dict:
+    """Settings written into each wd/.claude/settings.json and passed
+    via --settings so they apply regardless of which git root Claude Code uses.
+
+    Sandbox paths use '/' prefix = absolute. './' = project root (NOT cwd), so
+    we resolve wd and repo_root to absolute paths explicitly.
+
+    denyRead/denyWrite covers the whole repo; allowRead/allowWrite carves out
+    wd (which lives inside the repo under runs/). In the sandbox, allow entries
+    override deny entries for more-specific matches, so wd is accessible while
+    the rest of the repo is blocked. System paths (/usr, /bin, etc.) are not in
+    the deny list, so lake/lean binaries can run normally.
+    """
+    wd_abs = str(wd.resolve())
+    repo_abs = str(repo_root.resolve())
+    return {
+        "env": {
+            "CLAUDE_CODE_THINKING_BUDGET": "10000",
+        },
+        "sandbox": {
+            "enabled": True,
+            "allowUnsandboxedCommands": False,
+            "filesystem": {
+                "denyRead": [repo_abs],
+                "denyWrite": [repo_abs],
+                "allowRead": [wd_abs],
+                "allowWrite": [wd_abs],
+            },
+        },
+        "permissions": {
+            "allow": [
+                "mcp__lean-lsp__*",
+                "ToolSearch",
+                "Bash(lake env lean:*)",
+                "Bash(lake build:*)",
+                "Bash(ls ./*)",
+                "Bash(find ./*)",
+                "Bash(cat ./*)",
+                "Bash(head ./*)",
+                "Bash(tail ./*)",
+                "Bash(less ./*)",
+                "Bash(more ./*)",
+                "Bash(bat ./*)",
+                "Read(./*)",
+                "Glob(./*)",
+                "Edit(./*)",
+                "Write(./*)",
+            ]
+        },
+        "enableAllProjectMcpServers": True,
+        "enabledMcpjsonServers": ["lean-lsp"],
+    }
+
 
 # Lakefile for the isolated working directory — A/ and B/ hold the two
 # formulations; Equivalence.lean lives at the root.
@@ -84,7 +122,9 @@ Important:
 
 
 class ClaudeCodeChecker(EquivalenceChecker):
-    def __init__(self, runs_dir: Path, repo_root: Path, model: str = "claude-sonnet-4-6") -> None:
+    def __init__(
+        self, runs_dir: Path, repo_root: Path, model: str = "claude-sonnet-4-6"
+    ) -> None:
         super().__init__(runs_dir)
         self.repo_root = repo_root
         self.model = model
@@ -142,8 +182,10 @@ class ClaudeCodeChecker(EquivalenceChecker):
         reviewer = claude_dst / "agents" / "milp-reviewer.md"
         if reviewer.exists():
             reviewer.unlink()
-        (claude_dst / "settings.local.json").write_text(
-            json.dumps(_STAGING_SETTINGS, indent=4)
+        for stale in ["settings.json", "settings.local.json"]:
+            (claude_dst / stale).unlink(missing_ok=True)
+        (claude_dst / "settings.json").write_text(
+            json.dumps(_staging_settings(wd, self.repo_root), indent=4)
         )
 
         problem_id = a.path.parent.parent.name
@@ -168,7 +210,9 @@ class ClaudeCodeChecker(EquivalenceChecker):
         # A/B/Equivalence modules, so parallel runs don't conflict.
         wd_lake = wd / ".lake"
         wd_lake.mkdir(parents=True, exist_ok=True)
-        (wd_lake / "packages").symlink_to((self.repo_root / ".lake" / "packages").resolve())
+        (wd_lake / "packages").symlink_to(
+            (self.repo_root / ".lake" / "packages").resolve()
+        )
 
         # Pre-build Common.olean so the agent's first lean-lsp diagnostic call
         # on a freshly-written Formulation.lean (which imports Common) returns
@@ -183,12 +227,18 @@ class ClaudeCodeChecker(EquivalenceChecker):
         )
 
     def _run_claude(self, prompt: str, wd: Path, jsonl_path: Path) -> dict:
+        settings_path = wd / ".claude" / "settings.json"
         cmd = [
             "claude",
-            "-p", prompt,
-            "--output-format", "stream-json",
+            "-p",
+            prompt,
+            "--output-format",
+            "stream-json",
             "--verbose",
-            "--permission-mode", "bypassPermissions",
+            "--permission-mode",
+            "dontAsk",
+            "--settings",
+            str(settings_path.resolve()),
         ]
         cmd += ["--model", self.model]
         start = time.time()
@@ -196,7 +246,9 @@ class ClaudeCodeChecker(EquivalenceChecker):
 
         # Strip ANTHROPIC_API_KEY so claude uses the Claude.ai plan (OAuth
         # session) rather than API credits, with automatic extra-usage overage.
-        subprocess_env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+        subprocess_env = {
+            k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"
+        }
 
         with jsonl_path.open("w") as jsonl_f:
             with subprocess.Popen(
@@ -231,7 +283,9 @@ class ClaudeCodeChecker(EquivalenceChecker):
 
         # Normalize the first meaningful line: strip Lean comment markers so
         # "-- NOT EQUIVALENT: ..." is detected the same as "NOT EQUIVALENT: ...".
-        first_line = next((l.strip() for l in equiv_content.splitlines() if l.strip()), "")
+        first_line = next(
+            (l.strip() for l in equiv_content.splitlines() if l.strip()), ""
+        )
         normalized = re.sub(r"^-+\s*", "", first_line).upper()
 
         base = {
@@ -245,12 +299,20 @@ class ClaudeCodeChecker(EquivalenceChecker):
         }
 
         if normalized.startswith("NOT EQUIVALENT"):
-            return {"is_equivalent": False, "agent_decision": "not_equivalent",
-                    "agent_reason": equiv_content, **base}
+            return {
+                "is_equivalent": False,
+                "agent_decision": "not_equivalent",
+                "agent_reason": equiv_content,
+                **base,
+            }
 
         if normalized.startswith("MCP_UNAVAILABLE"):
-            return {"is_equivalent": False, "agent_decision": "mcp_unavailable",
-                    "agent_reason": equiv_content, **base}
+            return {
+                "is_equivalent": False,
+                "agent_decision": "mcp_unavailable",
+                "agent_reason": equiv_content,
+                **base,
+            }
 
         form_a_written = base["form_a_written"]
         form_b_written = base["form_b_written"]
@@ -260,30 +322,41 @@ class ClaudeCodeChecker(EquivalenceChecker):
         with compile_log_path.open("w") as log:
             form_a_compiled = (
                 _lean_compiles(wd, form_a_lean, log, "A/Formulation.lean")
-                if form_a_written else False
+                if form_a_written
+                else False
             )
             form_b_compiled = (
                 _lean_compiles(wd, form_b_lean, log, "B/Formulation.lean")
-                if form_b_written else False
+                if form_b_written
+                else False
             )
             proof_compiled, proof_output = (
                 _lean_compiles_with_output(wd, equiv_file, log, "Equivalence.lean")
-                if proof_written else (False, "")
+                if proof_written
+                else (False, "")
             )
             # MILPEquiv presence: require a 'def _ : MILPEquiv' in the file.
-            milp_equiv_found = bool(re.search(r"\bdef\s+\w+\s*:\s*MILPEquiv\b", equiv_content))
+            milp_equiv_found = bool(
+                re.search(r"\bdef\s+\w+\s*:\s*MILPEquiv\b", equiv_content)
+            )
             # Lean emits "warning: 'X' uses sorry" when sorry is present.
             # Only meaningful when the file compiled and the def was found.
             sorry_free = (
                 "uses sorry" not in proof_output
-                if (proof_compiled and milp_equiv_found) else False
+                if (proof_compiled and milp_equiv_found)
+                else False
             )
-            log.write(f"=== sorry check ===\nmilp_equiv_found: {milp_equiv_found}\n"
-                      f"sorry_free: {sorry_free}\n\n")
+            log.write(
+                f"=== sorry check ===\nmilp_equiv_found: {milp_equiv_found}\n"
+                f"sorry_free: {sorry_free}\n\n"
+            )
 
         is_equivalent = (
-            form_a_compiled and form_b_compiled
-            and proof_compiled and milp_equiv_found and sorry_free
+            form_a_compiled
+            and form_b_compiled
+            and proof_compiled
+            and milp_equiv_found
+            and sorry_free
         )
 
         return {
@@ -298,12 +371,15 @@ class ClaudeCodeChecker(EquivalenceChecker):
             "sorry_free": sorry_free,
         }
 
+
 def _lean_compiles(cwd: Path, lean_file: Path, log, label: str) -> bool:
     compiled, _ = _lean_compiles_with_output(cwd, lean_file, log, label)
     return compiled
 
 
-def _lean_compiles_with_output(cwd: Path, lean_file: Path, log, label: str) -> tuple[bool, str]:
+def _lean_compiles_with_output(
+    cwd: Path, lean_file: Path, log, label: str
+) -> tuple[bool, str]:
     start = time.time()
     cwd_abs = cwd.resolve()
     lean_file_abs = lean_file.resolve()
@@ -334,11 +410,21 @@ def _lean_compiles_with_output(cwd: Path, lean_file: Path, log, label: str) -> t
         log.write(f"TIMEOUT after {duration:.1f}s (limit 300s)\n")
         partial = ""
         if e.stdout:
-            s = e.stdout.decode(errors='replace') if isinstance(e.stdout, bytes) else e.stdout
-            log.write(f"--- partial stdout ---\n{s}\n"); partial += s
+            s = (
+                e.stdout.decode(errors="replace")
+                if isinstance(e.stdout, bytes)
+                else e.stdout
+            )
+            log.write(f"--- partial stdout ---\n{s}\n")
+            partial += s
         if e.stderr:
-            s = e.stderr.decode(errors='replace') if isinstance(e.stderr, bytes) else e.stderr
-            log.write(f"--- partial stderr ---\n{s}\n"); partial += s
+            s = (
+                e.stderr.decode(errors="replace")
+                if isinstance(e.stderr, bytes)
+                else e.stderr
+            )
+            log.write(f"--- partial stderr ---\n{s}\n")
+            partial += s
         log.write("\n")
         log.flush()
         return False, partial
