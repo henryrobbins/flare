@@ -1,28 +1,100 @@
-You are mapping variables between two equivalent optimization formulations.
+You are an AI language model assisting in mapping variables between two optimization problems by analyzing their roles in constraints and the objective function.
 
-Variable from Formulation A:
-- Name: {{ var_name }}
-- Description: {{ var_desc }}
-- Constraints involving {{ var_name }}:
-{% for c in constraints_a %}
-  - {{ c.description }}: {{ c.formulation }}
+**Variable from Problem 1:**
+- **Name:** {{ var_name }}
+- **Description:** {{ info_a.variables[var_name].description }}
+- **Constraints involving {{ var_name }}:**
+{% for c in constraints_involving(var_name, info_a.constraints) %}
+  - Description: {{ c.description }}
+    Formulation: {{ c.formulation }}
 {% endfor %}
-- In objective: {{ "Yes" if in_objective_a else "No" }}
+- **In Objective Function:** {{ "Yes" if var_name in info_a.objective.formulation else "No" }}
 
-Variables from Formulation B:
-{% for var in b_variables %}
-- Name: {{ var.name }}
-  Description: {{ var.description }}
-  Constraints involving {{ var.name }}:
-{% for c in var.constraints %}
-    - {{ c.description }}: {{ c.formulation }}
+**Variables from Problem 2:**
+{% for b_name, b_var in info_b.variables.items() %}
+- **Name:** {{ b_name }}
+  **Description:** {{ b_var.description }}
+  **Constraints involving {{ b_name }}:**
+{% for c in constraints_involving(b_name, info_b.constraints) %}
+    - Description: {{ c.description }}
+      Formulation: {{ c.formulation }}
 {% endfor %}
-  In objective: {{ "Yes" if var.in_objective else "No" }}
+  **In Objective Function:** {{ "Yes" if b_name in info_b.objective.formulation else "No" }}
 
 {% endfor %}
-Find the best mapping for '{{ var_name }}' from Formulation A as a linear combination
-of variables from Formulation B. Respond with ONLY a valid JSON object:
-{{ mapping_json_example }}
+Based on the above information, find the best mapping from variables in Problem 2 for the variable '{{ var_name }}' from Problem 1. The mapping can be a linear combination of variables from Problem 2, possibly with constant multipliers. Your goal is to express '{{ var_name }}' in terms of variables from Problem 2, as accurately as possible, based on their roles in the constraints and objective functions.
 
-If no mapping exists, respond with:
-{{ no_mapping_example }}
+**Important Instructions:**
+
+- **Provide only the mapping for '{{ var_name }}' as a JSON object.**
+- **Do not include any additional text, explanations, or formatting.**
+- **The JSON object must follow this exact structure:**
+
+{
+  "terms": [
+    {
+      "constant": constant_value_1,
+      "variable": "variable_name_1"
+    },
+    {
+      "constant": constant_value_2,
+      "variable": "variable_name_2"
+    },
+    ...
+  ]
+}
+
+- **If there is only one term in the mapping, the list should contain a single object.**
+- **Use numerical values for constants (decimals), and enclose variable names in double quotes ("").**
+
+**Examples:**
+
+1. If the best mapping is '0.1*a', your response should be:
+
+{
+  "terms": [
+    {
+      "constant": 0.1,
+      "variable": "a"
+    }
+  ]
+}
+
+2. If the best mapping is '0.1*a + 0.01*b', your response should be:
+
+{
+  "terms": [
+    {
+      "constant": 0.1,
+      "variable": "a"
+    },
+    {
+      "constant": 0.01,
+      "variable": "b"
+    }
+  ]
+}
+
+3. If the best mapping is a single variable 'a' with a coefficient of 1, your response should be:
+
+{
+  "terms": [
+    {
+      "constant": 1,
+      "variable": "a"
+    }
+  ]
+}
+
+4. If there is no direct mapping, your response should be:
+
+{
+  "terms": [
+    {
+      "constant": "none",
+      "variable": "none"
+    }
+  ]
+}
+
+Please ensure your response is a valid JSON object that can be parsed by standard JSON parsers.
