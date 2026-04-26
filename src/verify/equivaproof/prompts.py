@@ -12,6 +12,10 @@ _env = Environment(
 )
 
 
+def render_agent_prompt() -> str:
+    return _env.get_template("agent_prompt.j2").render()
+
+
 def render_formulation_description(form: Formulation, problem_description: str) -> str:
     tmpl = _env.get_template("formulation_description.md.j2")
     return tmpl.render(

@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import re
@@ -9,116 +10,31 @@ from pathlib import Path
 from milp_eq_tools import Formulation
 
 from src.verify.base import CheckResult, EquivalenceVerifier
-from src.verify.equivaproof.prompts import render_formulation_description
+from src.verify.equivaproof.prompts import render_agent_prompt, render_formulation_description
+
+_HERE = Path(__file__).parent
+
+_STAGING_LAKEFILE: str = (_HERE / "staging_lakefile.toml").read_text()
+_STAGING_SETTINGS_TEMPLATE: dict = json.loads((_HERE / "staging_settings.json").read_text())
 
 
 def _staging_settings(wd: Path, repo_root: Path) -> dict:
-    """Settings written into each wd/.claude/settings.json and passed
-    via --settings so they apply regardless of which git root Claude Code uses.
-
-    Sandbox paths use '/' prefix = absolute. './' = project root (NOT cwd), so
-    we resolve wd and repo_root to absolute paths explicitly.
-
-    denyRead/denyWrite covers the whole repo; allowRead/allowWrite carves out
-    wd (which lives inside the repo under runs/). In the sandbox, allow entries
-    override deny entries for more-specific matches, so wd is accessible while
-    the rest of the repo is blocked. System paths (/usr, /bin, etc.) are not in
-    the deny list, so lake/lean binaries can run normally.
-    """
+    # Sandbox paths use '/' prefix = absolute. './' = project root (NOT cwd), so
+    # we resolve wd and repo_root to absolute paths explicitly.
+    # denyRead/denyWrite covers the whole repo; allowRead/allowWrite carves out
+    # wd (which lives inside the repo under runs/). In the sandbox, allow entries
+    # override deny entries for more-specific matches, so wd is accessible while
+    # the rest of the repo is blocked. System paths (/usr, /bin, etc.) are not in
+    # the deny list, so lake/lean binaries can run normally.
+    settings = copy.deepcopy(_STAGING_SETTINGS_TEMPLATE)
     wd_abs = str(wd.resolve())
     repo_abs = str(repo_root.resolve())
-    return {
-        "env": {
-            "CLAUDE_CODE_THINKING_BUDGET": "10000",
-        },
-        "sandbox": {
-            "enabled": True,
-            "allowUnsandboxedCommands": False,
-            "filesystem": {
-                "denyRead": [repo_abs],
-                "denyWrite": [repo_abs],
-                "allowRead": [wd_abs],
-                "allowWrite": [wd_abs],
-            },
-        },
-        "permissions": {
-            "allow": [
-                "mcp__lean-lsp__*",
-                "ToolSearch",
-                "Bash(lake env lean:*)",
-                "Bash(lake build:*)",
-                "Bash(ls ./*)",
-                "Bash(find ./*)",
-                "Bash(cat ./*)",
-                "Bash(head ./*)",
-                "Bash(tail ./*)",
-                "Bash(less ./*)",
-                "Bash(more ./*)",
-                "Bash(bat ./*)",
-                "Read(./*)",
-                "Glob(./*)",
-                "Edit(./*)",
-                "Write(./*)",
-            ]
-        },
-        "enableAllProjectMcpServers": True,
-        "enabledMcpjsonServers": ["lean-lsp"],
-    }
-
-
-# Lakefile for the isolated working directory — A/ and B/ hold the two
-# formulations; Equivalence.lean lives at the root.
-_STAGING_LAKEFILE = """\
-name = "bench"
-version = "0.1.0"
-
-[[require]]
-name = "mathlib"
-git = "https://github.com/leanprover-community/mathlib4"
-rev = "v4.28.0"
-
-[[lean_lib]]
-name = "Common"
-
-[[lean_lib]]
-name = "A"
-srcDir = "."
-globs = ["A.+"]
-
-[[lean_lib]]
-name = "B"
-srcDir = "."
-globs = ["B.+"]
-"""
-
-_AGENT_PROMPT_TEMPLATE = """\
-You are a Lean 4 expert working on MILP formalization. Your task:
-
-1. Read the formulation descriptions and solver scripts for two formulations of the same problem.
-2. Generate a Lean 4 `Formulation.lean` file for each formulation following the lean-milp-formulation skill at `.claude/skills/lean-milp-formulation/`.
-3. Determine whether the two formulations are mathematically equivalent.
-4. If equivalent: generate a compiled `MILPEquiv` proof following the lean-milp-equivalence skill at `.claude/skills/lean-milp-equivalence/`. Write it to the output path.
-5. If not equivalent: write `NOT EQUIVALENT: <brief reason>` to the output path and stop.
-
-Formulation A description: A/formulation.md
-Formulation A solver: A/solve.py
-Formulation A output: A/Formulation.lean
-
-Formulation B description: B/formulation.md
-Formulation B solver: B/solve.py
-Formulation B output: B/Formulation.lean
-
-Equivalence proof output: Equivalence.lean
-
-Important:
-- Only read files that exist in this working directory. Do not navigate outside it.
-- The Lean project root is the current directory. Use `import A.Formulation` and `import B.Formulation`.
-- You MUST use the lean-lsp MCP tools (mcp__lean-lsp__*) to check compilation as you work. Before doing anything else, verify the lean-lsp MCP server is available by calling `mcp__lean-lsp__lean_diagnostic_messages` on `Common.lean`. If that call fails (e.g., "Failed to start Lean language server" or the tool is unavailable), STOP IMMEDIATELY: write `MCP_UNAVAILABLE: <error>` to Equivalence.lean and exit. Do not fall back to `lake env lean` or `lake build`.
-- Generate both Formulation.lean files before attempting the equivalence proof.
-- After writing `A/Formulation.lean` and `B/Formulation.lean`, validate each with `mcp__lean-lsp__lean_diagnostic_messages`, then run `Bash(lake build A.Formulation B.Formulation)` ONCE to materialize their oleans. Without this, `lean_diagnostic_messages` on `Equivalence.lean` will return `success:false` with empty items because its imports cannot be elaborated. After the build, use `lean_diagnostic_messages` on `Equivalence.lean` for all subsequent proof iteration.
-- Interpret `lean_diagnostic_messages` carefully: `success:true, items:[]` means the file compiles cleanly. `success:false, items:[]` typically means imports aren't built yet — build them, don't assume the file is broken. Real errors come back as `items` with severity/message fields.
-- Confirm the final equivalence proof with `mcp__lean-lsp__lean_verify` on the `MILPEquiv` definition. The returned axioms must NOT contain `sorryAx` — if it does, the proof has a stub and you must finish it.
-"""
+    fs = settings["sandbox"]["filesystem"]
+    fs["denyRead"] = [repo_abs]
+    fs["denyWrite"] = [repo_abs]
+    fs["allowRead"] = [wd_abs]
+    fs["allowWrite"] = [wd_abs]
+    return settings
 
 
 class EquivaProofVerifier(EquivalenceVerifier):
@@ -141,12 +57,13 @@ class EquivaProofVerifier(EquivalenceVerifier):
         wd = artifacts_dir / "wd"
         self._setup_wd(wd, a, b)
 
-        (artifacts_dir / "prompt.txt").write_text(_AGENT_PROMPT_TEMPLATE)
+        prompt = render_agent_prompt()
+        (artifacts_dir / "prompt.txt").write_text(prompt)
 
         jsonl_path = artifacts_dir / "claude_output.jsonl"
         print(f"  [equivaproof] {pair_id} → monitor: tail -f {jsonl_path}")
 
-        stream_metrics = self._run_claude(_AGENT_PROMPT_TEMPLATE, wd, jsonl_path)
+        stream_metrics = self._run_claude(prompt, wd, jsonl_path)
 
         meta = self._evaluate(wd)
         meta.update(stream_metrics)

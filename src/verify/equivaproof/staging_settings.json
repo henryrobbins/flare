@@ -1,0 +1,37 @@
+{
+    "env": {
+        "CLAUDE_CODE_THINKING_BUDGET": "10000"
+    },
+    "sandbox": {
+        "enabled": true,
+        "allowUnsandboxedCommands": false,
+        "filesystem": {
+            "denyRead": [""],
+            "denyWrite": [""],
+            "allowRead": [""],
+            "allowWrite": [""]
+        }
+    },
+    "permissions": {
+        "allow": [
+            "mcp__lean-lsp__*",
+            "ToolSearch",
+            "Bash(lake env lean:*)",
+            "Bash(lake build:*)",
+            "Bash(ls ./*)",
+            "Bash(find ./*)",
+            "Bash(cat ./*)",
+            "Bash(head ./*)",
+            "Bash(tail ./*)",
+            "Bash(less ./*)",
+            "Bash(more ./*)",
+            "Bash(bat ./*)",
+            "Read(./*)",
+            "Glob(./*)",
+            "Edit(./*)",
+            "Write(./*)"
+        ]
+    },
+    "enableAllProjectMcpServers": true,
+    "enabledMcpjsonServers": ["lean-lsp"]
+}
