@@ -4,7 +4,7 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
-from src.verify.base import CheckResult, EquivalenceVerifier
+from src.verify.base import EquivalenceResult, EquivalenceVerifier
 
 TOLERANCE = 1e-6
 
@@ -14,7 +14,7 @@ class ExecutionVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "execution"
 
-    def check(self, a: Formulation, b: Formulation, pair_id: str) -> CheckResult:
+    def verify(self, a: Formulation, b: Formulation, pair_id: str) -> EquivalenceResult:
         artifacts_dir = self.runs_dir / "pairs" / pair_id / "execution"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -25,7 +25,7 @@ class ExecutionVerifier(EquivalenceVerifier):
         meta = {"is_equivalent": is_equiv, "obj_a": obj_a, "obj_b": obj_b}
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
-        return CheckResult(
+        return EquivalenceResult(
             is_equivalent=is_equiv,
             method=self.name,
             artifacts_dir=artifacts_dir,

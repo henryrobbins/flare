@@ -73,7 +73,7 @@ def process_pair(
             "error": None,
         }
         try:
-            result = checker.check(pair.a, pair.b, pid)
+            result = checker.verify(pair.a, pair.b, pid)
             entry["is_equivalent"] = result.is_equivalent
             entry["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
         except Exception:
@@ -130,13 +130,16 @@ def main() -> None:
         ExecutionVerifier(run_dir),
         LLMVerifier(run_dir, client),
         EquivaMapVerifier(run_dir, client),
-        EquivaProofVerifier(run_dir, repo_root=Path(".").resolve(), model=args.claude_model),
+        EquivaProofVerifier(
+            run_dir, repo_root=Path(".").resolve(), model=args.claude_model
+        ),
     ]
 
     pairs = dataset.pairs
     if problem_filter is not None:
         pairs = [
-            p for p in pairs
+            p
+            for p in pairs
             if (
                 int(p.a.path.parent.parent.name.lstrip("p")) in problem_filter
                 or int(p.b.path.parent.parent.name.lstrip("p")) in problem_filter

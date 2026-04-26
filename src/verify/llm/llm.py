@@ -3,7 +3,7 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
-from src.verify.base import CheckResult, EquivalenceVerifier
+from src.verify.base import EquivalenceResult, EquivalenceVerifier
 from src.verify.prompts import problem_info
 from src.verify.llm.prompts import render_equivalence
 from src.llm_client import LLMClient
@@ -18,7 +18,7 @@ class LLMVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "llm"
 
-    def check(self, a: Formulation, b: Formulation, pair_id: str) -> CheckResult:
+    def verify(self, a: Formulation, b: Formulation, pair_id: str) -> EquivalenceResult:
         artifacts_dir = self.runs_dir / "pairs" / pair_id / "llm"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -45,7 +45,7 @@ class LLMVerifier(EquivalenceVerifier):
         meta = {"is_equivalent": is_equiv, "reasoning": reasoning}
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
-        return CheckResult(
+        return EquivalenceResult(
             is_equivalent=is_equiv,
             method=self.name,
             artifacts_dir=artifacts_dir,

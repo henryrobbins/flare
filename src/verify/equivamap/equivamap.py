@@ -5,9 +5,12 @@ from pathlib import Path
 from milp_eq_tools import Formulation
 from milp_eq_tools.models import Constraint
 
-from src.verify.base import CheckResult, EquivalenceVerifier
+from src.verify.base import EquivalenceResult, EquivalenceVerifier
 from src.verify.prompts import problem_info
-from src.verify.equivamap.prompts import VARIABLE_MAPPING_SCHEMA, render_variable_mapping
+from src.verify.equivamap.prompts import (
+    VARIABLE_MAPPING_SCHEMA,
+    render_variable_mapping,
+)
 from src.llm_client import LLMClient
 
 TOLERANCE = 1e-6
@@ -53,7 +56,10 @@ def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | N
         if all(isinstance(k, tuple) and len(k) == 2 for k in acc):
             max_i = max(k[0] for k in acc)
             max_j = max(k[1] for k in acc)
-            return [[acc.get((i, j), 0.0) for j in range(max_j + 1)] for i in range(max_i + 1)]
+            return [
+                [acc.get((i, j), 0.0) for j in range(max_j + 1)]
+                for i in range(max_i + 1)
+            ]
         if all(isinstance(k, int) for k in acc):
             return [acc[k] for k in sorted(acc)]
         return acc
@@ -69,7 +75,9 @@ def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:
         code = f"for _i, _row in enumerate({rhs!r}):\n    for _j, _v in enumerate(_row): model.addConstr({var_name}[_i, _j] == _v)"
         formulation = f"{var_name}[i,j] = rhs[i][j] for all i,j"
     elif isinstance(rhs, list):
-        code = f"for _i, _v in enumerate({rhs!r}): model.addConstr({var_name}[_i] == _v)"
+        code = (
+            f"for _i, _v in enumerate({rhs!r}): model.addConstr({var_name}[_i] == _v)"
+        )
         formulation = f"{var_name}[i] = rhs[i] for all i"
     else:
         code = f"for _k, _v in {rhs!r}.items(): model.addConstr({var_name}[_k] == _v)"
@@ -129,7 +137,7 @@ class EquivaMapVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "equivamap"
 
-    def check(self, a: Formulation, b: Formulation, pair_id: str) -> CheckResult:
+    def verify(self, a: Formulation, b: Formulation, pair_id: str) -> EquivalenceResult:
         artifacts_dir = self.runs_dir / "pairs" / pair_id / "equivamap"
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -175,7 +183,7 @@ class EquivaMapVerifier(EquivalenceVerifier):
                 "incomplete_mapping": True,
             }
             (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-            return CheckResult(
+            return EquivalenceResult(
                 is_equivalent=False,
                 method=self.name,
                 artifacts_dir=artifacts_dir,
@@ -209,7 +217,7 @@ class EquivaMapVerifier(EquivalenceVerifier):
                 "infeasible": True,
             }
             (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-            return CheckResult(
+            return EquivalenceResult(
                 is_equivalent=False,
                 method=self.name,
                 artifacts_dir=artifacts_dir,
@@ -229,7 +237,7 @@ class EquivaMapVerifier(EquivalenceVerifier):
         }
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
-        return CheckResult(
+        return EquivalenceResult(
             is_equivalent=is_equiv,
             method=self.name,
             artifacts_dir=artifacts_dir,

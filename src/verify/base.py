@@ -6,7 +6,7 @@ from milp_eq_tools import Formulation
 
 
 @dataclass
-class CheckResult:
+class EquivalenceResult:
     is_equivalent: bool
     method: str
     artifacts_dir: Path
@@ -22,4 +22,6 @@ class EquivalenceVerifier(ABC):
     def name(self) -> str: ...
 
     @abstractmethod
-    def check(self, a: Formulation, b: Formulation, pair_id: str) -> CheckResult: ...
+    def verify(
+        self, a: Formulation, b: Formulation, pair_id: str
+    ) -> EquivalenceResult: ...

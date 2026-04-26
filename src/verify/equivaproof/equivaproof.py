@@ -9,13 +9,18 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
-from src.verify.base import CheckResult, EquivalenceVerifier
-from src.verify.equivaproof.prompts import render_agent_prompt, render_formulation_description
+from src.verify.base import EquivalenceResult, EquivalenceVerifier
+from src.verify.equivaproof.prompts import (
+    render_agent_prompt,
+    render_formulation_description,
+)
 
 _HERE = Path(__file__).parent
 
 _STAGING_LAKEFILE: str = (_HERE / "staging_lakefile.toml").read_text()
-_STAGING_SETTINGS_TEMPLATE: dict = json.loads((_HERE / "staging_settings.json").read_text())
+_STAGING_SETTINGS_TEMPLATE: dict = json.loads(
+    (_HERE / "staging_settings.json").read_text()
+)
 
 
 def _staging_settings(wd: Path, repo_root: Path) -> dict:
@@ -49,7 +54,7 @@ class EquivaProofVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "equivaproof"
 
-    def check(self, a: Formulation, b: Formulation, pair_id: str) -> CheckResult:
+    def verify(self, a: Formulation, b: Formulation, pair_id: str) -> EquivalenceResult:
         artifacts_dir = self.runs_dir / "pairs" / pair_id / self.name
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -77,7 +82,7 @@ class EquivaProofVerifier(EquivalenceVerifier):
                 dst = artifacts_dir / Path(rel).name
                 shutil.copy2(src, dst)
 
-        return CheckResult(
+        return EquivalenceResult(
             is_equivalent=meta["is_equivalent"],
             method=self.name,
             artifacts_dir=artifacts_dir,
