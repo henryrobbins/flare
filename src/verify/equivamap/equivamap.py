@@ -16,54 +16,42 @@ from src.llm_client import LLMClient
 TOLERANCE = 1e-6
 
 
+def _scale_nested(data: list | float, c: float) -> list | float:
+    if isinstance(data, list):
+        return [_scale_nested(v, c) for v in data]
+    return c * float(data)
+
+
+def _add_nested(a: list | float, b: list | float) -> list | float:
+    if isinstance(a, list):
+        return [_add_nested(x, y) for x, y in zip(a, b)]
+    return float(a) + float(b)
+
+
 def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | None:
     """Compute RHS value(s) by evaluating the linear combination against B's solution."""
-    acc: dict = {}
+    result: float | list | dict | None = None
     for term in terms:
-        value = sol_b_vars.get(term["variable"])
-        if value is None:
+        entry = sol_b_vars.get(term["variable"])
+        if entry is None:
             return None
         c = term["constant"]
-        if isinstance(value, list):
-            for i, v in enumerate(value):
-                if isinstance(v, list):
-                    for j, vv in enumerate(v):
-                        if isinstance(vv, list):
-                            for k_idx, vvv in enumerate(vv):
-                                key = (i, j, k_idx)
-                                acc[key] = acc.get(key, 0.0) + c * float(vvv)
-                        else:
-                            key = (i, j)
-                            acc[key] = acc.get(key, 0.0) + c * float(vv)
-                else:
-                    acc[i] = acc.get(i, 0.0) + c * float(v)
-        elif isinstance(value, dict):
-            for k, v in value.items():
-                if isinstance(k, str):
-                    try:
-                        parsed = json.loads(k)
-                        if isinstance(parsed, list):
-                            k = tuple(parsed)
-                    except (json.JSONDecodeError, ValueError):
-                        pass
-                acc[k] = acc.get(k, 0.0) + c * v
-        else:
-            acc[None] = acc.get(None, 0.0) + c * float(value)
-
-    if None in acc and len(acc) == 1:
-        return acc[None]
-    if None not in acc:
-        if all(isinstance(k, tuple) and len(k) == 2 for k in acc):
-            max_i = max(k[0] for k in acc)
-            max_j = max(k[1] for k in acc)
-            return [
-                [acc.get((i, j), 0.0) for j in range(max_j + 1)]
-                for i in range(max_i + 1)
-            ]
-        if all(isinstance(k, int) for k in acc):
-            return [acc[k] for k in sorted(acc)]
-        return acc
-    return None
+        kind = entry["kind"]
+        data = entry["data"]
+        if kind == "scalar":
+            contrib: float = c * float(data)
+            result = (float(result) if result is not None else 0.0) + contrib  # type: ignore[arg-type]
+        elif kind == "array":
+            scaled = _scale_nested(data, c)
+            result = _add_nested(result, scaled) if result is not None else scaled  # type: ignore[arg-type]
+        elif kind == "indexed":
+            contrib_d = {tuple(json.loads(k)): c * float(v) for k, v in data.items()}
+            if result is None:
+                result = contrib_d
+            else:
+                assert isinstance(result, dict)
+                result = {k: result.get(k, 0.0) + v for k, v in contrib_d.items()}
+    return result
 
 
 def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:

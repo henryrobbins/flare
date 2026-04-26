@@ -90,32 +90,37 @@ def _var_decl(name: str, var: dict[str, object]) -> str:
 
 def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
     if var.get("indices") is not None:
-        return [f'variables["{name}"] = {{str(list(k)): {name}[k].x for k in {name}}}']
+        return [
+            f'variables["{name}"] = {{"kind": "indexed", "data": {{json.dumps(list(k)): {name}[k].x for k in {name}}}}}'
+        ]
     shape = list(var.get("shape", []))  # type: ignore[arg-type]
     if not shape:
-        return [f'variables["{name}"] = {name}.x']
+        return [f'variables["{name}"] = {{"kind": "scalar", "data": {name}.x}}']
     if _has_ragged(shape):
         loops = _build_loops(shape)
         idx_tuple = ", ".join(idx for idx, _ in loops)
         result: str = f"{name}[{idx_tuple}].x"
         for idx, rng in reversed(loops):
             result = f"[{result} for {idx} in {rng}]"
-        return [f'variables["{name}"] = {result}']
+        return [f'variables["{name}"] = {{"kind": "array", "data": {result}}}']
     if len(shape) == 1:
         d = shape[0]
-        return [f'variables["{name}"] = [{name}[i].x for i in range({d})]']
+        return [
+            f'variables["{name}"] = {{"kind": "array", "shape": [{d}], "data": [{name}[i].x for i in range({d})]}}'
+        ]
     if len(shape) == 2:
         d1, d2 = shape
         return [
-            f'variables["{name}"] = '
-            f'[[{name}[i, j].x for j in range({d2})] for i in range({d1})]'
+            f'variables["{name}"] = {{"kind": "array", "shape": [{d1}, {d2}], '
+            f'"data": [[{name}[i, j].x for j in range({d2})] for i in range({d1})]}}'
         ]
     iters = ["i", "j", "k", "l"][: len(shape)]
     idx = ", ".join(iters)
     result = f"{name}[{idx}].x"
     for iter_var, dim in reversed(list(zip(iters, shape))):
         result = f"[{result} for {iter_var} in range({dim})]"
-    return [f'variables["{name}"] = {result}']
+    shape_str = ", ".join(str(d) for d in shape)
+    return [f'variables["{name}"] = {{"kind": "array", "shape": [{shape_str}], "data": {result}}}']
 
 
 def generate(formulation_json: dict[str, object]) -> str:

@@ -130,9 +130,9 @@ def main() -> None:
         ExecutionVerifier(run_dir),
         LLMVerifier(run_dir, client),
         EquivaMapVerifier(run_dir, client),
-        EquivaProofVerifier(
-            run_dir, repo_root=Path(".").resolve(), model=args.claude_model
-        ),
+        # EquivaProofVerifier(
+        #     run_dir, repo_root=Path(".").resolve(), model=args.claude_model
+        # ),
     ]
 
     pairs = dataset.pairs
