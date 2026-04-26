@@ -9,7 +9,7 @@ from pathlib import Path
 from milp_eq_tools import Formulation
 
 from src.verify.base import CheckResult, EquivalenceVerifier
-from src.prompts import render_formulation_description
+from src.verify.equivaproof.prompts import render_formulation_description
 
 
 def _staging_settings(wd: Path, repo_root: Path) -> dict:
