@@ -94,6 +94,7 @@
   "definitions": {
     "M": {
       "description": "Big-M constant for arrival-time propagation: upper bound on any feasible arrival time",
+      "formulation": "M = 2 \\max_{i,j \\in \\{0,\\dots,N-1\\}} d_{ij}",
       "code": {
         "python": "M = 2 * max(d[i][j] for i in range(N) for j in range(N))"
       }

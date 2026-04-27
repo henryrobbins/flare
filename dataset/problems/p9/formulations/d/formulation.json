@@ -99,12 +99,14 @@
     "definitions": {
         "out": {
             "description": "Adjacency list of outgoing arcs for each node",
+            "formulation": "\\delta^+(i) = \\{a \\in A : \\text{tail}(a) = i\\} \\quad \\forall i \\in N",
             "code": {
                 "python": "out = [[] for _ in range(n)]\nfor a in range(m):\n    out[tail[a]].append(a)"
             }
         },
         "inc": {
             "description": "Adjacency list of incoming arcs for each node",
+            "formulation": "\\delta^-(i) = \\{a \\in A : \\text{head}(a) = i\\} \\quad \\forall i \\in N",
             "code": {
                 "python": "inc = [[] for _ in range(n)]\nfor a in range(m):\n    inc[head[a]].append(a)"
             }

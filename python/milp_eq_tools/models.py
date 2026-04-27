@@ -13,7 +13,9 @@ class Variable:
     description: str
     type: "VariableType"
     shape: list[int | str]
-    indices: str | None = None  # Python expression for index set (mutually exclusive with shape)
+    indices: str | None = (
+        None  # Python expression for index set (mutually exclusive with shape)
+    )
 
 
 class VariableType(str, Enum):
@@ -26,6 +28,7 @@ class VariableType(str, Enum):
 class Definition:
     description: str
     code: dict[str, str]
+    formulation: str
 
 
 @dataclass(frozen=True)
@@ -55,5 +58,3 @@ class Objective:
 class Solution:
     variables: dict[str, object]
     objective: float
-
-

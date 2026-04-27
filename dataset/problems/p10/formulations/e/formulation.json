@@ -94,24 +94,28 @@
   "definitions": {
     "EST": {
       "description": "Earliest start time for job i: the maximum of its time window lower bound and the earliest any truck can reach it",
+      "formulation": "\\mathrm{EST}_i = \\max\\!\\left(\\tau^-_i,\\, \\min_{k \\in \\{0,\\dots,K-1\\}} (v^k + d^k_{0i})\\right) \\quad \\forall i \\in \\{0,\\dots,N-1\\}",
       "code": {
         "python": "EST = [max(tau_min[i], min(v[k] + d0[k][i] for k in range(K))) for i in range(N)]"
       }
     },
     "A_minus": {
       "description": "Set of arc pairs (i,j) that are infeasible: serving j after i always violates j's time window upper bound",
+      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
       "code": {
         "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
       }
     },
     "Q": {
       "description": "Set of incompatible triples (i,k,j): routing i->k->j always violates j's time window upper bound",
+      "formulation": "Q = \\{(i,k,j) \\in \\{0,\\dots,N-1\\}^3 : i \\ne k,\\, k \\ne j,\\, (i,k) \\notin \\mathcal{A}^-,\\, (k,j) \\notin \\mathcal{A}^-,\\, \\max(\\mathrm{EST}_k,\\, \\mathrm{EST}_i + d_{ii} + d_{ik}) + d_{kk} + d_{kj} > \\tau^+_j\\}",
       "code": {
         "python": "Q = [(i, k, j) for i in range(N) for k in range(N) for j in range(N) if i != k and k != j and (i, k) not in A_minus and (k, j) not in A_minus and max(EST[k], EST[i] + d[i][i] + d[i][k]) + d[k][k] + d[k][j] > tau_max[j]]"
       }
     },
     "M": {
       "description": "Big-M constant for arrival-time propagation: upper bound on any feasible arrival time",
+      "formulation": "M = 2 \\max_{i,j \\in \\{0,\\dots,N-1\\}} d_{ij}",
       "code": {
         "python": "M = 2 * max(d[i][j] for i in range(N) for j in range(N))"
       }

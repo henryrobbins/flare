@@ -69,6 +69,43 @@
             }
         }
     ],
+    "definitions": {
+        "T": {
+            "description": "Set of large warehouses: those with capacity at least the maximum customer demand.",
+            "formulation": "T = \\{ j \\in J : u_j \\geq \\max_{i \\in I} d_i \\}",
+            "code": {
+                "python": "max_d = max(d)\nT = [j for j in range(m) if u[j] >= max_d]"
+            }
+        },
+        "u_max_small": {
+            "description": "Maximum capacity among non-large (small) warehouses; 0 if all warehouses are large.",
+            "formulation": "u^{\\text{small}}_{\\max} = \\max_{j \\in J \\setminus T} u_j \\;\\text{(} 0 \\text{ if } J \\setminus T = \\emptyset \\text{)}",
+            "code": {
+                "python": "u_max_small = max((u[j] for j in range(m) if j not in T), default=0)"
+            }
+        },
+        "H": {
+            "description": "Set of hard customers: those whose demand exceeds the largest small-warehouse capacity, so they can only be served by a large warehouse.",
+            "formulation": "H = \\{ i \\in I : d_i > u^{\\text{small}}_{\\max} \\}",
+            "code": {
+                "python": "H = [i for i in range(n) if d[i] > u_max_small]"
+            }
+        },
+        "D_H": {
+            "description": "Total demand of hard customers.",
+            "formulation": "D_H = \\sum_{i \\in H} d_i",
+            "code": {
+                "python": "D_H = sum(d[i] for i in H)"
+            }
+        },
+        "k_T": {
+            "description": "Minimum number of large warehouses whose capacities (taken in non-increasing order) sum to at least D_H. Equals 0 if H is empty.",
+            "formulation": "k_T = \\min \\Big\\{ k \\geq 0 : \\sum_{\\ell=1}^{k} u_{(\\ell)} \\geq D_H \\Big\\},\\quad u_{(1)} \\geq u_{(2)} \\geq \\cdots \\text{ enumerating } \\{u_j : j \\in T\\}",
+            "code": {
+                "python": "k_T = 0\nif H:\n    cs = 0\n    for ui in sorted((u[j] for j in T), reverse=True):\n        cs += ui; k_T += 1\n        if cs >= D_H: break"
+            }
+        }
+    },
     "variables": {
         "x": {
             "description": "1 if customer i is assigned to warehouse j, 0 otherwise",
@@ -104,10 +141,10 @@
             "explicit": true
         },
         {
-            "description": "T-Cover Bound (EC3): at least k_T warehouses must be opened, where k_T is the minimum number of large facilities needed to cover customers that cannot fit in small facilities.",
+            "description": "T-Cover Bound (EC3): at least k_T warehouses must be opened.",
             "formulation": "\\sum_{j \\in J} y_j \\geq k_T",
             "code": {
-                "gurobipy": "max_d = max(d)\nT = [j for j in range(m) if u[j] >= max_d]\nT_comp = [j for j in range(m) if u[j] < max_d]\nmax_u_small = max((u[j] for j in T_comp), default=0)\nI_T = [i for i in range(n) if d[i] > max_u_small]\nif I_T and T:\n    D_T = sum(d[i] for i in I_T)\n    uT = sorted([u[j] for j in T], reverse=True)\n    cs, k_T = 0, 0\n    for ui in uT:\n        cs += ui; k_T += 1\n        if cs >= D_T: break\n    model.addConstr(gp.quicksum(y[j] for j in range(m)) >= k_T)"
+                "gurobipy": "model.addConstr(gp.quicksum(y[j] for j in range(m)) >= k_T)"
             },
             "explicit": true
         }

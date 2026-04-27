@@ -94,24 +94,28 @@
   "definitions": {
     "EST": {
       "description": "Earliest start time for each job: max of time window lower bound and earliest reachable time from any truck",
+      "formulation": "\\mathrm{EST}_i = \\max\\!\\left(\\tau^-_i,\\, \\min_{k \\in \\{0,\\dots,K-1\\}} (v^k + d^k_{0i})\\right) \\quad \\forall i \\in \\{0,\\dots,N-1\\}",
       "code": {
         "python": "EST = [max(tau_min[i], min(v[k] + d0[k][i] for k in range(K))) for i in range(N)]"
       }
     },
     "A_minus": {
       "description": "Set of directed job pairs (i,j) where job j cannot follow job i due to time window infeasibility",
+      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
       "code": {
         "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
       }
     },
     "KC": {
       "description": "Set of trucks that can feasibly serve at least one job in clique C within its time window",
+      "formulation": "K_C = \\{k \\in \\{0,\\dots,K-1\\} : \\exists\\, i \\in C,\\ v^k + d^k_{0i} \\le \\tau^+_i\\}",
       "code": {
         "python": "def KC(C): return {k for k in range(K) if any(v[k] + d0[k][i] <= tau_max[i] for i in C)}"
       }
     },
     "M": {
       "description": "Big-M constant for arrival-time propagation: upper bound on any feasible arrival time",
+      "formulation": "M = 2 \\max_{i,j \\in \\{0,\\dots,N-1\\}} d_{ij}",
       "code": {
         "python": "M = 2 * max(d[i][j] for i in range(N) for j in range(N))"
       }

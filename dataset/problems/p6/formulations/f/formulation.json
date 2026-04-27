@@ -86,6 +86,15 @@
             ]
         }
     },
+    "definitions": {
+        "V": {
+            "description": "Set of distinct customer demand values, used as thresholds in the slot-count bounds.",
+            "formulation": "\\mathcal{V} = \\{ d_i : i \\in I \\}",
+            "code": {
+                "python": "V = list(set(d))"
+            }
+        }
+    },
     "constraints": [
         {
             "description": "Each customer is assigned to exactly one warehouse.",
@@ -104,10 +113,10 @@
             "explicit": true
         },
         {
-            "description": "Global Slot Count Bounds (EC2): for each demand threshold v in the distinct customer demands, the total floor(u_j/v) slots across open warehouses must cover customers with demand >= v.",
+            "description": "Global Slot Count Bounds (EC2): for each demand threshold v in V, the total floor(u_j/v) slots across open warehouses must cover customers with demand >= v.",
             "formulation": "\\sum_{j \\in J} \\left\\lfloor \\frac{u_j}{v} \\right\\rfloor y_j \\geq |\\{i \\in I : d_i \\geq v\\}| \\quad \\forall v \\in \\mathcal{V}",
             "code": {
-                "gurobipy": "V_set = list(set(d))\nfor v in V_set:\n    rhs = sum(1 for di in d if di >= v)\n    model.addConstr(gp.quicksum(math.floor(u[j] / v) * y[j] for j in range(m)) >= rhs)"
+                "gurobipy": "for v in V:\n    rhs = sum(1 for di in d if di >= v)\n    model.addConstr(gp.quicksum(math.floor(u[j] / v) * y[j] for j in range(m)) >= rhs)"
             },
             "explicit": true
         }

@@ -86,6 +86,22 @@
             ]
         }
     },
+    "definitions": {
+        "u_max": {
+            "description": "Maximum warehouse capacity.",
+            "formulation": "u_{\\max} = \\max_{j \\in J} u_j",
+            "code": {
+                "python": "u_max = max(u)"
+            }
+        },
+        "k_crit": {
+            "description": "Number of customers whose demand exceeds half the maximum warehouse capacity. Any two such customers cannot share a warehouse, so each requires a distinct opened warehouse.",
+            "formulation": "k_{\\mathrm{crit}} = \\big| \\{ i \\in I : d_i > u_{\\max} / 2 \\} \\big|",
+            "code": {
+                "python": "k_crit = sum(1 for di in d if di > u_max / 2)"
+            }
+        }
+    },
     "constraints": [
         {
             "description": "Each customer is assigned to exactly one warehouse.",
@@ -104,10 +120,10 @@
             "explicit": true
         },
         {
-            "description": "Critical-Customer Bound (EC1): at least k_crit warehouses must be opened, where k_crit is the number of customers with demand exceeding half the largest warehouse capacity.",
+            "description": "Critical-Customer Bound (EC1): at least k_crit warehouses must be opened.",
             "formulation": "\\sum_{j \\in J} y_j \\geq k_{\\mathrm{crit}}",
             "code": {
-                "gurobipy": "max_u = max(u)\nk_crit = sum(1 for di in d if di > max_u / 2)\nif k_crit > 0:\n    model.addConstr(gp.quicksum(y[j] for j in range(m)) >= k_crit)"
+                "gurobipy": "model.addConstr(gp.quicksum(y[j] for j in range(m)) >= k_crit)"
             },
             "explicit": true
         }

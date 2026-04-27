@@ -61,12 +61,14 @@
     "definitions": {
         "P": {
             "description": "Set of conflict pairs: all ((j1,k1),(j2,k2)) with j1!=j2 or k1!=k2 that share the same machine",
+            "formulation": "\\mathcal{P} = \\{((j_1,k_1),(j_2,k_2)) : Om_{j_1,k_1} = Om_{j_2,k_2},\\; (j_1,k_1) \\prec_{\\mathrm{lex}} (j_2,k_2)\\}",
             "code": {
                 "python": "P = []\nfor machine in range(m):\n    ops = [(j, k) for j in range(n) for k in range(m) if Om[j][k] == machine]\n    for i in range(len(ops)):\n        for j2, k2 in ops[i + 1:]:\n            P.append((ops[i], (j2, k2)))"
             }
         },
         "M": {
             "description": "Big-M constant: sum of all processing times",
+            "formulation": "M = \\sum_{j=0}^{n-1} \\sum_{k=0}^{m-1} p_{j,k}",
             "code": {
                 "python": "M = sum(p[j][k] for j in range(n) for k in range(m))"
             }

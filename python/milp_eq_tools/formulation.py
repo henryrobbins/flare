@@ -32,7 +32,11 @@ class Formulation:
             for k, v in raw["parameters"].items()
         }
         self.definitions: dict[str, Definition] = {
-            k: Definition(description=v["description"], code=v["code"])
+            k: Definition(
+                description=v["description"],
+                code=v["code"],
+                formulation=v["formulation"],
+            )
             for k, v in raw.get("definitions", {}).items()
         }
         self.assumptions: list[Assumption] = [

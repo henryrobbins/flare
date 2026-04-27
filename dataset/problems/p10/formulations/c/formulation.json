@@ -94,24 +94,28 @@
   "definitions": {
     "EST": {
       "description": "Earliest start time for job i: maximum of its time-window lower bound and the earliest any truck can arrive",
+      "formulation": "\\mathrm{EST}_i = \\max\\!\\left(\\tau^-_i,\\, \\min_{k \\in \\{0,\\dots,K-1\\}} (v^k + d^k_{0i})\\right) \\quad \\forall i \\in \\{0,\\dots,N-1\\}",
       "code": {
         "python": "EST = [max(tau_min[i], min(v[k] + d0[k][i] for k in range(K))) for i in range(N)]"
       }
     },
     "A_minus": {
       "description": "Set of infeasible sequencing pairs (i,j): job j cannot follow job i without violating j's time window",
+      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
       "code": {
         "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
       }
     },
     "F2": {
       "description": "Set of mutually feasible pairs: distinct jobs where neither sequencing direction is in A_minus",
+      "formulation": "F_2 = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : i \\ne j,\\, (i,j) \\notin \\mathcal{A}^-,\\, (j,i) \\notin \\mathcal{A}^-\\}",
       "code": {
         "python": "F2 = {(i, j) for i in range(N) for j in range(N) if i != j and (i, j) not in A_minus and (j, i) not in A_minus}"
       }
     },
     "M": {
       "description": "Big-M constant for arrival-time propagation: upper bound on any feasible arrival time",
+      "formulation": "M = 2 \\max_{i,j \\in \\{0,\\dots,N-1\\}} d_{ij}",
       "code": {
         "python": "M = 2 * max(d[i][j] for i in range(N) for j in range(N))"
       }

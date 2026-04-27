@@ -86,6 +86,15 @@
             ]
         }
     },
+    "definitions": {
+        "C": {
+            "description": "For each warehouse j, the lifted conflict set C[j]: start with customers whose demand exceeds u_j/2 (any two of them already conflict at j), then greedily add remaining customers — in non-increasing demand order — that conflict (sum exceeds u_j) with every already-included member.",
+            "formulation": "C_j = \\{ i \\in I : d_i > u_j / 2 \\} \\cup \\{ i \\text{ added greedily, non-increasing } d_i, \\text{ s.t. } d_i + d_{i'} > u_j \\;\\forall i' \\in C_j \\} \\quad \\forall j \\in J",
+            "code": {
+                "python": "C = []\nfor j in range(m):\n    C_j = [i for i in range(n) if d[i] > u[j] / 2]\n    remaining = sorted([i for i in range(n) if i not in C_j], key=lambda i: d[i], reverse=True)\n    for i in remaining:\n        if all(d[i] + d[i2] > u[j] for i2 in C_j):\n            C_j.append(i)\n    C.append(C_j)"
+            }
+        }
+    },
     "constraints": [
         {
             "description": "Each customer is assigned to exactly one warehouse.",
@@ -104,10 +113,10 @@
             "explicit": true
         },
         {
-            "description": "Warehouse Clique (EC5): for each warehouse j, the lifted conflict set C_j (starting from customers with d_i > u_j/2, then greedily adding smaller conflicting customers) satisfies sum_{i in C_j} x_{ij} <= y_j.",
+            "description": "Warehouse Clique (EC5): for each warehouse j, the lifted conflict set C[j] satisfies sum_{i in C[j]} x_{ij} <= y_j.",
             "formulation": "\\sum_{i \\in C_j} x_{ij} \\leq y_j \\quad \\forall j \\in J",
             "code": {
-                "gurobipy": "for j in range(m):\n    C_j = [i for i in range(n) if d[i] > u[j] / 2]\n    remaining = sorted([i for i in range(n) if i not in C_j], key=lambda i: d[i], reverse=True)\n    for i in remaining:\n        if all(d[i] + d[i2] > u[j] for i2 in C_j):\n            C_j.append(i)\n    if C_j:\n        model.addConstr(gp.quicksum(x[i, j] for i in C_j) <= y[j])"
+                "gurobipy": "model.addConstrs(gp.quicksum(x[i, j] for i in C[j]) <= y[j] for j in range(m) if C[j])"
             },
             "explicit": true
         }

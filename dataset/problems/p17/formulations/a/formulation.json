@@ -115,12 +115,14 @@
     "definitions": {
         "I0": {
             "description": "Set of block indices with grade strictly less than 1 (mixed/low-grade blocks that remain binary)",
+            "formulation": "I_0 = \\{ i \\in I : g_i < 1 \\}",
             "code": {
                 "python": "I0 = [i for i in range(n) if g[i] < 1]"
             }
         },
         "I1": {
             "description": "Set of block indices with grade equal to 1 (pure-ore blocks relaxed to continuous [0,1])",
+            "formulation": "I_1 = \\{ i \\in I : g_i = 1 \\}",
             "code": {
                 "python": "I1 = [i for i in range(n) if g[i] == 1]"
             }

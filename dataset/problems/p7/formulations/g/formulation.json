@@ -19,18 +19,21 @@
     "definitions": {
         "R": {
             "description": "Set of row indices {0, ..., N-1}",
+            "formulation": "R = \\{0, 1, \\dots, N-1\\}",
             "code": {
                 "python": "R = range(N)"
             }
         },
         "C": {
             "description": "Set of column indices {0, ..., N-1}",
+            "formulation": "C = \\{0, 1, \\dots, N-1\\}",
             "code": {
                 "python": "C = range(N)"
             }
         },
         "I": {
             "description": "Set of column interval pairs (a, b) with a ≤ b",
+            "formulation": "I = \\{(a, b) \\in C \\times C : a \\le b\\}",
             "code": {
                 "python": "I = [(a, b) for a in C for b in range(a, N)]"
             }
