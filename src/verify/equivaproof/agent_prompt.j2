@@ -34,13 +34,14 @@ The working directory will be initialized with the following structure:
 - IMPORTANT: Only read/write files that exist in *this* working directory. Do not navigate outside of it for any reason.
 - The Lean project root is the current directory. Use `import A.Formulation` and `import B.Formulation`.
 - You MUST use the lean-lsp MCP tools (mcp__lean-lsp__*) to check compilation as you work. Before doing anything else, verify the lean-lsp MCP server is available by calling `mcp__lean-lsp__lean_diagnostic_messages` on `Common.lean`. If that call fails (e.g., "Failed to start Lean language server" or the tool is unavailable), STOP IMMEDIATELY: write `MCP_UNAVAILABLE: <error>` to Equivalence.lean and exit. Do not fall back to `lake env lean` or `lake build`.
+- If you encounter any issues with `lake build` or the Lean environment, STOP IMMEDIATELY: write `LAKE_BUILD_FAILED: <error>` to Equivalence.lean and exit. Do not attempt to work around these issues.
 - Generate both Formulation.lean files before attempting the equivalence proof.
 - Confirm the final equivalence proof with `mcp__lean-lsp__lean_verify` on the `MILPEquiv` definition. The returned axioms must NOT contain `sorryAx` — if it does, the proof has a stub and you must finish it.
 
 ## Common Mistakes
 
 - Interpret `lean_diagnostic_messages` carefully: `success:true, items:[]` means the file compiles cleanly. `success:false, items:[]` typically means imports aren't built yet — build them, don't assume the file is broken. Real errors come back as `items` with severity/message fields.
-- If there issues with the Lean environment or MCP tools, do not attempt to work around them. Report them immediately as specified above.
+- If there issues with the Lean environment or MCP tools, DO NOT ATTEMPT TO WORK AROUND THEM. Report them immediately as specified above.
 - If you are stuck in proving equivalence due missing problem data assumptions in either `Formulation.lean`, verify that the assumptions specified in `formulation.md` are all present in the corresponding `Formulation.lean`. If they are not, DO NOT ADD ASSUMPTIONS YOURSELF. Instead, report the missing assumptions as an issue preventing equivalence proof in `Equivalence.lean` and exit.
 
 ## Available Tools

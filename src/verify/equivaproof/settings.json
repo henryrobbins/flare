@@ -8,7 +8,7 @@
         "filesystem": {
             "denyRead": ["~/"],
             "denyWrite": ["~/"],
-            "allowRead": [],
+            "allowRead": ["~/.elan/settings.toml"],
             "allowWrite": []
         }
     },
