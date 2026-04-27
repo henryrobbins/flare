@@ -14,34 +14,44 @@ from src.verify.base import EquivalenceResult, EquivalenceVerifier
 from src.verify.equivaproof.prompts import render_agent_prompt
 
 _HERE = Path(__file__).parent
+_LAKEFILE: str = (_HERE / "lakefile.toml").read_text()
+_CLAUDE_CODE_SETTINGS_TEMPLATE: dict = json.loads((_HERE / "settings.json").read_text())
 
-_STAGING_LAKEFILE: str = (_HERE / "staging_lakefile.toml").read_text()
-_STAGING_SETTINGS_TEMPLATE: dict = json.loads(
-    (_HERE / "staging_settings.json").read_text()
-)
+# We use a combination of sandboxing and permissions to restrict the agent
+# to only read/write files within its working directory (wd). See the current
+# documentation for details:
+#
+# https://code.claude.com/docs/en/sandboxing
+# https://code.claude.com/docs/en/permissions
+#
+# Sandboxing only applies to the Bash tool. We only apply restrictions to
+# the filesystem. We deny read/write to both ~/ (home directory) and the
+# repo root. We then allow read/write specifically to the wd. In the sandbox
+# configuration, the allow list overrides the deny list. Lastly, we must
+# explicitly disable `allowUnsandboxedCommands` to prevent bypassing.
+#
+# To prevent read/write for other tools (e.g., Read, Write), we must use
+# the permissions setting. We run claude with `--permission-mode dontAsk` so
+# that it doesn't prompt and auto-denies anything outside permissions.allow.
+# We manually specify all allowed commands in `settings.json`. This is a
+# comprehensive and sufficient list for the required task.
 
 
-def _staging_settings(wd: Path, repo_root: Path) -> dict:
-    # Sandbox paths use '/' prefix = absolute. './' = project root (NOT cwd), so
-    # we resolve wd and repo_root to absolute paths explicitly.
-    # denyRead/denyWrite covers the whole repo; allowRead/allowWrite carves out
-    # wd (which lives inside the repo under runs/). In the sandbox, allow entries
-    # override deny entries for more-specific matches, so wd is accessible while
-    # the rest of the repo is blocked. System paths (/usr, /bin, etc.) are not in
-    # the deny list, so lake/lean binaries can run normally.
-    settings = copy.deepcopy(_STAGING_SETTINGS_TEMPLATE)
+def _claude_code_settings(wd: Path, repo_root: Path) -> dict:
+    settings = copy.deepcopy(_CLAUDE_CODE_SETTINGS_TEMPLATE)
     wd_abs = str(wd.resolve())
     repo_abs = str(repo_root.resolve())
     fs = settings["sandbox"]["filesystem"]
-    fs["denyRead"] = [repo_abs]
-    fs["denyWrite"] = [repo_abs]
-    fs["allowRead"] = [wd_abs]
-    fs["allowWrite"] = [wd_abs]
+    # Dynamically update filesystem permissions with repo and wd paths
+    fs["denyRead"].append(repo_abs)
+    fs["denyWrite"].append(repo_abs)
+    fs["allowRead"].append(wd_abs)
+    fs["allowWrite"].append(wd_abs)
     return settings
 
 
 class EquivaProofVerifier(EquivalenceVerifier):
-    def __init__(self, repo_root: Path, model: str = "claude-sonnet-4-6") -> None:
+    def __init__(self, repo_root: Path, model: str) -> None:
         self.repo_root = repo_root
         self.model = model
 
@@ -61,7 +71,6 @@ class EquivaProofVerifier(EquivalenceVerifier):
             json.dumps(self.method_config(), indent=2)
         )
 
-        # wd lives inside the timestamped run dir so all artifacts are co-located.
         wd = artifacts_dir / "wd"
         self._setup_wd(wd, a, b)
 
@@ -99,19 +108,13 @@ class EquivaProofVerifier(EquivalenceVerifier):
         shutil.copy2(self.repo_root / "Common.lean", wd / "Common.lean")
         shutil.copy2(self.repo_root / ".mcp.json", wd / ".mcp.json")
         shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
-        (wd / "lakefile.toml").write_text(_STAGING_LAKEFILE)
+        (wd / "lakefile.toml").write_text(_LAKEFILE)
 
-        # Copy agents/skills but use restricted settings; omit milp-reviewer.
+        # Copy skills
         claude_dst = wd / ".claude"
-        shutil.copytree(self.repo_root / ".claude", claude_dst, dirs_exist_ok=True)
-        reviewer = claude_dst / "agents" / "milp-reviewer.md"
-        if reviewer.exists():
-            reviewer.unlink()
-        for stale in ["settings.json", "settings.local.json"]:
-            (claude_dst / stale).unlink(missing_ok=True)
-        (claude_dst / "settings.json").write_text(
-            json.dumps(_staging_settings(wd, self.repo_root), indent=4)
-        )
+        skills_src = self.repo_root / ".claude" / "skills"
+        if skills_src.exists():
+            shutil.copytree(skills_src, claude_dst / "skills", dirs_exist_ok=True)
 
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
@@ -155,7 +158,7 @@ class EquivaProofVerifier(EquivalenceVerifier):
             "stream-json",
             "--verbose",
             "--permission-mode",
-            "dontAsk",
+            "dontAsk",  # auto-deny anything not in permissions.allow
             "--settings",
             str(settings_path.resolve()),
         ]

@@ -1,26 +1,54 @@
-You are a Lean 4 expert working on MILP formalization. Your task:
+You are mixed-integer linear programming (MILP) and Lean 4 expert. You have been tasked with formalizing two MILP formulations in Lean 4 and then proving their equivalence.
 
-1. Read the formulation descriptions and solver scripts for two formulations of the same problem.
-2. Generate a Lean 4 `Formulation.lean` file for each formulation following the lean-milp-formulation skill at `.claude/skills/lean-milp-formulation/`.
-3. Determine whether the two formulations are mathematically equivalent.
-4. If equivalent: generate a compiled `MILPEquiv` proof following the lean-milp-equivalence skill at `.claude/skills/lean-milp-equivalence/`. Write it to the output path.
-5. If not equivalent: write `NOT EQUIVALENT: <brief reason>` to the output path and stop.
+## Working Directory Structure
 
-Formulation A description: A/formulation.md
-Formulation A solver: A/solve.py
-Formulation A output: A/Formulation.lean
+The working directory will be initialized with the following structure:
 
-Formulation B description: B/formulation.md
-Formulation B solver: B/solve.py
-Formulation B output: B/Formulation.lean
+```
+├── A
+│   ├── Formulation.lean    # Write the Lean 4 formalization of Formulation A here
+│   ├── formulation.md      # Natural language description of Formulation A
+│   └── solve.py            # Python script that solves Formulation A
+├── B
+│   ├── Formulation.lean    # Write the Lean 4 formalization of Formulation B here
+│   ├── formulation.md      # Natural language description of Formulation B
+│   └── solve.py            # Python script that solves Formulation B
+├── Common.lean             # Definition of `MILPFormulation` and `MILPEquiv`
+├── Equivalence.lean        # Write the equivalence proof here
+├── lake-manifest.json      # DO NOT EDIT!
+├── lakefile.toml           # DO NOT EDIT!
+└── lean-toolchain          # DO NOT EDIT!
+```
 
-Equivalence proof output: Equivalence.lean
+## Workflow
 
-Important:
-- Only read files that exist in this working directory. Do not navigate outside it.
+1. Utilize the `lean-milp-formulation` skill to generate both `Formulation.lean` files.
+2. Validate each `Formulation.lean` file with `mcp__lean-lsp__lean_diagnostic_messages`. Fix any issues that arise and repeat until both files compile cleanly.
+3. Run `Bash(lake build A.Formulation B.Formulation)` to materialize their oleans.
+4. Determine whether the two formulations are mathematically equivalent.
+5. If they are equivalent, use the `lean-milp-equivalence` skill to generate a compiled `MILPEquiv` proof in `Equivalence.lean`.
+6. Validate `Equivalence.lean` with `mcp__lean-lsp__lean_verify` to ensure there are no stubs. Fix any issues that arise and repeat until both files compile cleanly.
+
+## Rules
+
+- IMPORTANT: Only read/write files that exist in *this* working directory. Do not navigate outside of it for any reason.
 - The Lean project root is the current directory. Use `import A.Formulation` and `import B.Formulation`.
 - You MUST use the lean-lsp MCP tools (mcp__lean-lsp__*) to check compilation as you work. Before doing anything else, verify the lean-lsp MCP server is available by calling `mcp__lean-lsp__lean_diagnostic_messages` on `Common.lean`. If that call fails (e.g., "Failed to start Lean language server" or the tool is unavailable), STOP IMMEDIATELY: write `MCP_UNAVAILABLE: <error>` to Equivalence.lean and exit. Do not fall back to `lake env lean` or `lake build`.
 - Generate both Formulation.lean files before attempting the equivalence proof.
-- After writing `A/Formulation.lean` and `B/Formulation.lean`, validate each with `mcp__lean-lsp__lean_diagnostic_messages`, then run `Bash(lake build A.Formulation B.Formulation)` ONCE to materialize their oleans. Without this, `lean_diagnostic_messages` on `Equivalence.lean` will return `success:false` with empty items because its imports cannot be elaborated. After the build, use `lean_diagnostic_messages` on `Equivalence.lean` for all subsequent proof iteration.
-- Interpret `lean_diagnostic_messages` carefully: `success:true, items:[]` means the file compiles cleanly. `success:false, items:[]` typically means imports aren't built yet — build them, don't assume the file is broken. Real errors come back as `items` with severity/message fields.
 - Confirm the final equivalence proof with `mcp__lean-lsp__lean_verify` on the `MILPEquiv` definition. The returned axioms must NOT contain `sorryAx` — if it does, the proof has a stub and you must finish it.
+
+## Common Mistakes
+
+- Interpret `lean_diagnostic_messages` carefully: `success:true, items:[]` means the file compiles cleanly. `success:false, items:[]` typically means imports aren't built yet — build them, don't assume the file is broken. Real errors come back as `items` with severity/message fields.
+- If there issues with the Lean environment or MCP tools, do not attempt to work around them. Report them immediately as specified above.
+- If you are stuck in proving equivalence due missing problem data assumptions in either `Formulation.lean`, verify that the assumptions specified in `formulation.md` are all present in the corresponding `Formulation.lean`. If they are not, DO NOT ADD ASSUMPTIONS YOURSELF. Instead, report the missing assumptions as an issue preventing equivalence proof in `Equivalence.lean` and exit.
+
+## Available Tools
+
+**Filesystem:** `Bash(ls ./*)`, `Bash(find ./*)`,
+**Read:** `Read(./*)`, `Bash(cat ./*)`, `Bash(head ./*)`, `Bash(tail ./*)`, `Bash(less ./*)`, `Bash(more ./*)`, `Bash(bat ./*)`
+**Edit:** `Edit(./*)`
+**Write:** `Write(./*)`
+**Skills:** `lean4:lean4`, `lean-milp-formulation`, `lean-milp-equivalence`
+**MCP Tools:** `mcp__lean-lsp__*`
+**Lake:** `Bash(lake env lean:*)`, `Bash(lake build:*)`

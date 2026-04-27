@@ -6,14 +6,17 @@
         "enabled": true,
         "allowUnsandboxedCommands": false,
         "filesystem": {
-            "denyRead": [""],
-            "denyWrite": [""],
-            "allowRead": [""],
-            "allowWrite": [""]
+            "denyRead": ["~/"],
+            "denyWrite": ["~/"],
+            "allowRead": [],
+            "allowWrite": []
         }
     },
     "permissions": {
         "allow": [
+            "Skill(lean4:lean4)",
+            "Skill(lean-milp-formulation)",
+            "Skill(lean-milp-equivalence)",
             "mcp__lean-lsp__*",
             "ToolSearch",
             "Bash(lake env lean:*)",
