@@ -115,7 +115,7 @@
     ],
     "objective": {
         "description": "Increase the overall electrical output by conducting the experiments to their full potential.",
-        "formulation": "Max \\sum_{i=1}^{M} j1_{index} + j2_{index} \\times A_{i}",
+        "formulation": "Max \\sum_{i=1}^{M} (j1_{i} + j2_{i}) \\times A_{i}",
         "code": {
             "gurobipy": "model.setObjective(quicksum((j1[i] + j2[i]) * A[i] for i in range(M)), GRB.MAXIMIZE)"
         }

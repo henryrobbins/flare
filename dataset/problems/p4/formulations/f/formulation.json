@@ -109,7 +109,7 @@
         },
         {
             "description": "A minimum of J employees need to be transported.",
-            "formulation": "J \\leq m1_{index} + m2_{index}\\cdot K + h1_{index} + h2_{index}\\cdot D",
+            "formulation": "J \\leq (m1_{index} + m2_{index})\\cdot K + (h1_{index} + h2_{index})\\cdot D",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr((m1 + m2)* K + (h1 + h2)* D >= J)"
@@ -150,7 +150,7 @@
     ],
     "objective": {
         "description": "The combined pollution generated consists of emissions from both cars and buses. The goal is to reduce the overall pollution produced as much as possible.",
-        "formulation": "Min \\ h1_{index} + h2_{index}\\times O + m1_{index} + m2_{index}\\times M",
+        "formulation": "Min \\ ((h1_{index} + h2_{index})\\times O + (m1_{index} + m2_{index})\\times M)",
         "code": {
             "gurobipy": "model.setObjective((m1 + m2)* M + (h1 + h2)* O, GRB.MINIMIZE)"
         }

@@ -146,7 +146,7 @@
     ],
     "objective": {
         "description": "The total amount of water needed consists of the combined value of (Z multiplied by the quantity of subsoil bags) and (B multiplied by the quantity of topsoil bags). The aim is to reduce the overall water consumption as much as possible.",
-        "formulation": "Min \\left( B \\times d1 + d2+ Z \\times h1 + h2\\right )",
+        "formulation": "Min \\left( B \\times (d1 + d2)+ Z \\times (h1 + h2)\\right )",
         "code": {
             "gurobipy": "model.setObjective(Z * (h1 + h2)+ B * (d1 + d2), GRB.MINIMIZE)"
         }

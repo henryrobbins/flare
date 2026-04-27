@@ -117,7 +117,7 @@
         },
         {
             "description": "The combined amount of paper rolls used per hour by machines that accept cash and those that only accept cards should not surpass V.",
-            "formulation": "V \\geq r1 + r2\\times W + s1 + s2\\times Y",
+            "formulation": "V \\geq (r1 + r2)\\times W + (s1 + s2)\\times Y",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr((s1 + s2)* Y + (r1 + r2)* W <= V)"
