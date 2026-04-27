@@ -65,16 +65,16 @@
             "explicit": true
         },
         {
-            "description": "Lower bound on MTZ position: each non-depot city's position is greater than 2.",
-            "formulation": "u_i > 2 \\quad \\forall i \\in V \\setminus \\{0\\}",
+            "description": "Lower bound on MTZ position: each non-depot city's position is at least 2.",
+            "formulation": "u_i \\geq 2 \\quad \\forall i \\in V \\setminus \\{0\\}",
             "code": {
                 "gurobipy": "model.addConstrs(u[i] >= 2 for i in range(1, n))"
             },
             "explicit": true
         },
         {
-            "description": "Upper bound on MTZ position: each non-depot city's position is less than n.",
-            "formulation": "u_i < n \\quad \\forall i \\in V \\setminus \\{0\\}",
+            "description": "Upper bound on MTZ position: each non-depot city's position is at most n.",
+            "formulation": "u_i \\leq n \\quad \\forall i \\in V \\setminus \\{0\\}",
             "code": {
                 "gurobipy": "model.addConstrs(u[i] <= n for i in range(1, n))"
             },
