@@ -28,9 +28,7 @@ class LLMClient(ABC):
 
 
 class AnthropicClient(LLMClient):
-    _DEFAULT_CONFIG = LLMConfig(model="claude-sonnet-4-6")
-
-    def __init__(self, config: LLMConfig = _DEFAULT_CONFIG) -> None:
+    def __init__(self, config: LLMConfig) -> None:
         import anthropic
 
         self._client = anthropic.Anthropic()
@@ -71,9 +69,7 @@ class AnthropicClient(LLMClient):
 
 
 class OpenAIClient(LLMClient):
-    _DEFAULT_CONFIG = LLMConfig(model="gpt-4o", temperature=0.0)
-
-    def __init__(self, config: LLMConfig = _DEFAULT_CONFIG) -> None:
+    def __init__(self, config: LLMConfig) -> None:
         import openai
 
         self._client = openai.OpenAI()

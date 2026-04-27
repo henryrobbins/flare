@@ -22,7 +22,7 @@ load_dotenv()
 
 from milp_eq_tools import Dataset, Formulation, Pair
 
-from src.llm_client import AnthropicClient
+from src.llm_client import AnthropicClient, LLMConfig
 from src.verify.base import EquivalenceVerifier
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.equivaproof.equivaproof import EquivaProofVerifier
@@ -124,7 +124,7 @@ def main() -> None:
     run_dir.mkdir(parents=True, exist_ok=True)
 
     dataset = Dataset(Path("dataset"))
-    client = AnthropicClient()
+    client = AnthropicClient(LLMConfig(model="claude-sonnet-4-6"))
 
     checkers: list[EquivalenceVerifier] = [
         ExecutionVerifier(),
