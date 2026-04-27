@@ -98,6 +98,8 @@ class EquivaProofVerifier(EquivalenceVerifier):
             is_equivalent=meta["is_equivalent"],
             method=self.name,
             artifacts_dir=artifacts_dir,
+            duration_s=meta.get("duration_s"),
+            cost_usd=meta.get("cost_usd"),
             metadata=meta,
         )
 

@@ -10,6 +10,8 @@ class EquivalenceResult:
     is_equivalent: bool
     method: str
     artifacts_dir: Path
+    duration_s: float | None = None
+    cost_usd: float | None = None
     metadata: dict = field(default_factory=dict)
 
 

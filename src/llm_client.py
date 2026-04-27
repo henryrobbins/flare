@@ -2,6 +2,27 @@ import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
+# Cost per million tokens (input, output). Used to compute cost_usd for direct
+# API calls. Update when model pricing changes.
+# https://platform.claude.com/docs/en/about-claude/pricing
+# https://developers.openai.com/api/docs/pricing
+_COST_PER_MTOK: dict[str, tuple[float, float]] = {
+    "claude-opus-4-7": (5.0, 25.0),
+    "claude-sonnet-4-6": (3.0, 15.0),
+    "claude-haiku-4-5": (1, 5.0),
+    "gpt-4o": (2.5, 10.0),
+    "gpt-4o-mini": (0.15, 0.60),
+}
+
+
+def compute_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float | None:
+    """Return estimated cost in USD, or None if the model isn't in the pricing table."""
+    entry = _COST_PER_MTOK.get(model)
+    if entry is None:
+        return None
+    input_price, output_price = entry
+    return (input_tokens * input_price + output_tokens * output_price) / 1_000_000
+
 
 @dataclass
 class LLMConfig:
@@ -23,8 +44,15 @@ class LLMClient(ABC):
         pass
 
     @abstractmethod
-    def complete_json(self, system: str, user: str, schema: dict) -> dict:
+    def complete_json_with_usage(
+        self, system: str, user: str, schema: dict
+    ) -> tuple[dict, dict]:
+        """Returns (parsed_json, usage) where usage has input_tokens and output_tokens."""
         pass
+
+    def complete_json(self, system: str, user: str, schema: dict) -> dict:
+        result, _ = self.complete_json_with_usage(system, user, schema)
+        return result
 
 
 class AnthropicClient(LLMClient):
@@ -58,14 +86,21 @@ class AnthropicClient(LLMClient):
         )
         return next(b.text for b in message.content if b.type == "text")
 
-    def complete_json(self, system: str, user: str, schema: dict) -> dict:
+    def complete_json_with_usage(
+        self, system: str, user: str, schema: dict
+    ) -> tuple[dict, dict]:
         message = self._client.messages.create(
             **self._build_kwargs(),
             system=system,
             messages=[{"role": "user", "content": user}],
             output_config={"format": {"type": "json_schema", "schema": schema}},
         )
-        return json.loads(next(b.text for b in message.content if b.type == "text"))
+        parsed = json.loads(next(b.text for b in message.content if b.type == "text"))
+        usage = {
+            "input_tokens": message.usage.input_tokens,
+            "output_tokens": message.usage.output_tokens,
+        }
+        return parsed, usage
 
 
 class OpenAIClient(LLMClient):
@@ -95,7 +130,9 @@ class OpenAIClient(LLMClient):
         )
         return response.choices[0].message.content or ""
 
-    def complete_json(self, system: str, user: str, schema: dict) -> dict:
+    def complete_json_with_usage(
+        self, system: str, user: str, schema: dict
+    ) -> tuple[dict, dict]:
         response = self._client.chat.completions.create(
             **self._build_kwargs(),
             messages=[
@@ -107,4 +144,10 @@ class OpenAIClient(LLMClient):
                 "json_schema": {"name": "response", "schema": schema},
             },
         )
-        return json.loads(response.choices[0].message.content or "{}")
+        parsed = json.loads(response.choices[0].message.content or "{}")
+        usage_obj = response.usage
+        usage = {
+            "input_tokens": usage_obj.prompt_tokens if usage_obj else 0,
+            "output_tokens": usage_obj.completion_tokens if usage_obj else 0,
+        }
+        return parsed, usage

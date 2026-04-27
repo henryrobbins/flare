@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import subprocess
+import time
 from pathlib import Path
 
 from milp_eq_tools import Formulation
@@ -12,7 +13,7 @@ from src.verify.equivamap.prompts import (
     VARIABLE_MAPPING_SCHEMA,
     render_variable_mapping,
 )
-from src.llm_client import LLMClient
+from src.llm_client import LLMClient, compute_cost_usd
 
 TOLERANCE = 1e-6
 
@@ -142,6 +143,8 @@ class EquivaMapVerifier(EquivalenceVerifier):
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
 
+        start = time.time()
+
         # Step 1: Solve A and B independently
         sol_a = _solve(a, artifacts_dir / "a")
         obj_a = float(sol_a["objective"])
@@ -159,13 +162,17 @@ class EquivaMapVerifier(EquivalenceVerifier):
         prompts_dir = artifacts_dir / "mapping_prompts"
         prompts_dir.mkdir(exist_ok=True)
         variable_mappings: dict[str, list[dict] | None] = {}
+        total_input_tokens = 0
+        total_output_tokens = 0
 
         for var_name in a.variables:
             rendered = render_variable_mapping(var_name, a, b)
             (prompts_dir / f"{var_name}_prompt.txt").write_text(rendered.user)
-            parsed = self.client.complete_json(
+            parsed, usage = self.client.complete_json_with_usage(
                 rendered.system, rendered.user, VARIABLE_MAPPING_SCHEMA
             )
+            total_input_tokens += usage["input_tokens"]
+            total_output_tokens += usage["output_tokens"]
             (prompts_dir / f"{var_name}_response.json").write_text(
                 json.dumps(parsed, indent=2)
             )
@@ -182,12 +189,18 @@ class EquivaMapVerifier(EquivalenceVerifier):
                 "obj_a": obj_a,
                 "obj_b": obj_b,
                 "incomplete_mapping": True,
+                "input_tokens": total_input_tokens,
+                "output_tokens": total_output_tokens,
             }
             (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
             return EquivalenceResult(
                 is_equivalent=False,
                 method=self.name,
                 artifacts_dir=artifacts_dir,
+                duration_s=round(time.time() - start, 1),
+                cost_usd=compute_cost_usd(
+                    self.client.config.model, total_input_tokens, total_output_tokens
+                ),
                 metadata=meta,
             )
 
@@ -216,12 +229,18 @@ class EquivaMapVerifier(EquivalenceVerifier):
                 "obj_a": obj_a,
                 "obj_b": obj_b,
                 "infeasible": True,
+                "input_tokens": total_input_tokens,
+                "output_tokens": total_output_tokens,
             }
             (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
             return EquivalenceResult(
                 is_equivalent=False,
                 method=self.name,
                 artifacts_dir=artifacts_dir,
+                duration_s=round(time.time() - start, 1),
+                cost_usd=compute_cost_usd(
+                    self.client.config.model, total_input_tokens, total_output_tokens
+                ),
                 metadata=meta,
             )
         obj_a_constrained = float(sol_a_constrained["objective"])
@@ -235,6 +254,8 @@ class EquivaMapVerifier(EquivalenceVerifier):
             "obj_a": obj_a,
             "obj_b": obj_b,
             "obj_a_constrained": obj_a_constrained,
+            "input_tokens": total_input_tokens,
+            "output_tokens": total_output_tokens,
         }
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
@@ -242,5 +263,9 @@ class EquivaMapVerifier(EquivalenceVerifier):
             is_equivalent=is_equiv,
             method=self.name,
             artifacts_dir=artifacts_dir,
+            duration_s=round(time.time() - start, 1),
+            cost_usd=compute_cost_usd(
+                self.client.config.model, total_input_tokens, total_output_tokens
+            ),
             metadata=meta,
         )

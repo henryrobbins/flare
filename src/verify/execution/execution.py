@@ -1,5 +1,6 @@
 import json
 import subprocess
+import time
 from pathlib import Path
 
 from milp_eq_tools import Formulation
@@ -22,8 +23,10 @@ class ExecutionVerifier(EquivalenceVerifier):
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
 
+        start = time.time()
         obj_a = self._solve(a, artifacts_dir / "a")
         obj_b = self._solve(b, artifacts_dir / "b")
+        duration_s = round(time.time() - start, 1)
 
         is_equiv = abs(obj_a - obj_b) < TOLERANCE
         meta = {"is_equivalent": is_equiv, "obj_a": obj_a, "obj_b": obj_b}
@@ -33,6 +36,8 @@ class ExecutionVerifier(EquivalenceVerifier):
             is_equivalent=is_equiv,
             method=self.name,
             artifacts_dir=artifacts_dir,
+            duration_s=duration_s,
+            cost_usd=None,
             metadata=meta,
         )
 
