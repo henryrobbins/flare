@@ -1,3 +1,4 @@
+import dataclasses
 import json
 from pathlib import Path
 
@@ -17,9 +18,13 @@ class LLMVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "llm"
 
+    def method_config(self) -> dict:
+        return {"llm": dataclasses.asdict(self.client.config)}
+
     def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
+        (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
 
         info_a = problem_info(a)
         info_b = problem_info(b)

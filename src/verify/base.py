@@ -19,6 +19,9 @@ class EquivalenceVerifier(ABC):
     def name(self) -> str: ...
 
     @abstractmethod
+    def method_config(self) -> dict: ...
+
+    @abstractmethod
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path
     ) -> EquivalenceResult: ...

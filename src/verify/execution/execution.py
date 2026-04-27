@@ -14,9 +14,13 @@ class ExecutionVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "execution"
 
+    def method_config(self) -> dict:
+        return {"tolerance": TOLERANCE}
+
     def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
+        (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
 
         obj_a = self._solve(a, artifacts_dir / "a")
         obj_b = self._solve(b, artifacts_dir / "b")

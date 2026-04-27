@@ -53,9 +53,13 @@ class EquivaProofVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "equivaproof"
 
+    def method_config(self) -> dict:
+        return {"model": self.model}
+
     def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
+        (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
 
         # wd lives inside the timestamped run dir so all artifacts are co-located.
         wd = artifacts_dir / "wd"

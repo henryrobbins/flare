@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import subprocess
 from pathlib import Path
@@ -124,9 +125,13 @@ class EquivaMapVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "equivamap"
 
+    def method_config(self) -> dict:
+        return {"tolerance": TOLERANCE, "llm": dataclasses.asdict(self.client.config)}
+
     def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
+        (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
 
         # Step 1: Solve A and B independently
         sol_a = _solve(a, artifacts_dir / "a")
