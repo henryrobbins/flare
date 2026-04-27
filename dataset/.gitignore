@@ -2,6 +2,7 @@
 data
 
 # Generated solver artifacts
+**/formulations/*/solve.py
 **/formulations/*/parameters.json
 **/formulations/*/solution.json
 
