@@ -7,7 +7,7 @@
       "items": {
         "type": "object",
         "properties": {
-          "constant": { "type": "string" },
+          "constant": { "anyOf": [{ "type": "number" }, { "type": "string", "const": "none" }] },
           "variable": { "type": "string" }
         },
         "required": ["constant", "variable"],
