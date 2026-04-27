@@ -144,3 +144,12 @@ def test_imports_content(formulation_with_imports: Formulation) -> None:
     assert "import math" in formulation_with_imports.imports
 
 
+def test_problem_back_reference(problem1: Problem, formulation_a: Formulation) -> None:
+    assert formulation_a.problem is problem1
+
+
+def test_problem_is_none_when_constructed_directly() -> None:
+    f = Formulation(DATASET_ROOT / "p1" / "formulations" / "a")
+    assert f.problem is None
+
+

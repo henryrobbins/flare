@@ -1,4 +1,5 @@
 {
+    "name": "Employee Transportation",
     "parameters": {
         "CarCapacity": {
             "description": "The number of employees that a car can take",

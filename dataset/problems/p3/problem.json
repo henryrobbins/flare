@@ -1,4 +1,5 @@
 {
+    "name": "Summer Camp Science Experiment",
     "parameters": {
         "NumBeakers": {
             "description": "Number of beakers",

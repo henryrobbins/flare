@@ -1,18 +1,29 @@
+from __future__ import annotations
+
 import copy
 import json
 import subprocess
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from .codegen import generate
 from .models import Assumption, Constraint, Definition, Objective, Parameter, Variable, VariableType
+
+if TYPE_CHECKING:
+    from .problem import Problem
 
 
 class Formulation:
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path).resolve()
+        self._problem: Problem | None = None
         raw = json.loads((self.path / "formulation.json").read_text())
         self._raw = raw
         self._load_from_raw(raw)
+
+    @property
+    def problem(self) -> Problem | None:
+        return self._problem
 
     def _load_from_raw(self, raw: dict) -> None:
         self.valid: bool = raw["valid"]
@@ -60,10 +71,11 @@ class Formulation:
         self.metadata: dict[str, object] = raw.get("metadata", {})
 
     @classmethod
-    def from_raw(cls, raw: dict, path: Path) -> "Formulation":
+    def from_raw(cls, raw: dict, path: Path) -> Formulation:
         """Construct a Formulation directly from a raw dict without reading from disk."""
         obj = cls.__new__(cls)
         obj.path = Path(path)
+        obj._problem = None
         obj._raw = raw
         obj._load_from_raw(raw)
         return obj

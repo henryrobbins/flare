@@ -11,6 +11,7 @@ class Problem:
         self.path = Path(path).resolve()
         raw = json.loads((self.path / "problem.json").read_text())
 
+        self.name: str = raw["name"]
         self.parameters: dict[str, Parameter] = {
             k: Parameter(description=v["description"], shape=v["shape"])
             for k, v in raw["parameters"].items()
@@ -31,11 +32,13 @@ class Problem:
         formulations_dir = self.path / "formulations"
         if not formulations_dir.exists():
             return {}
-        return {
-            d.name: Formulation(d)
-            for d in sorted(formulations_dir.iterdir())
-            if d.is_dir()
-        }
+        result = {}
+        for d in sorted(formulations_dir.iterdir()):
+            if d.is_dir():
+                f = Formulation(d)
+                f._problem = self
+                result[d.name] = f
+        return result
 
     @cached_property
     def solution(self) -> Solution | None:

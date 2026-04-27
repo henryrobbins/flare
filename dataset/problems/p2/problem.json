@@ -1,4 +1,5 @@
 {
+    "name": "Electricity Generation Experiment",
     "parameters": {
         "NumExperiments": {
             "description": "Number of experiments",

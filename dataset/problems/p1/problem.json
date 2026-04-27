@@ -1,4 +1,5 @@
 {
+    "name": "Amusement Park Ticket Machines",
     "parameters": {
         "CashMachineProcessingRate": {
             "description": "Processing rate of a cash-based machine in people per hour",

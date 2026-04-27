@@ -1,5 +1,24 @@
-from milp_eq_tools import Parameter, Problem, Solution
+from pathlib import Path
+
+import pytest
+
+from milp_eq_tools import Dataset, Parameter, Problem, Solution
 from milp_eq_tools.formulation import Formulation
+
+DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset"
+
+
+@pytest.fixture
+def problem11(dataset: Dataset) -> Problem:
+    return dataset.problems[11]
+
+
+def test_name_loaded(problem1: Problem) -> None:
+    assert problem1.name == "Amusement Park Ticket Machines"
+
+
+def test_name_loaded_when_present(problem11: Problem) -> None:
+    assert problem11.name == "Sub-Hour Unit Commitment (SHUC)"
 
 
 def test_metadata_loaded_eagerly(problem1: Problem) -> None:
@@ -91,7 +110,7 @@ def test_solution_none_when_missing(tmp_path: "Path") -> None:
     problem_dir = tmp_path / "prob"
     problem_dir.mkdir()
     (problem_dir / "problem.json").write_text(
-        '{"description": "test", "parameters": {}, "metadata": {}}'
+        '{"name": "Test Problem", "description": "test", "parameters": {}, "metadata": {}}'
     )
     (problem_dir / "description.md").write_text("test")
     p = Problem(problem_dir)
