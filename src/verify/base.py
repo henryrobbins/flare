@@ -14,14 +14,11 @@ class EquivalenceResult:
 
 
 class EquivalenceVerifier(ABC):
-    def __init__(self, runs_dir: Path) -> None:
-        self.runs_dir = runs_dir
-
     @property
     @abstractmethod
     def name(self) -> str: ...
 
     @abstractmethod
     def verify(
-        self, a: Formulation, b: Formulation, pair_id: str
+        self, a: Formulation, b: Formulation, output_path: Path
     ) -> EquivalenceResult: ...

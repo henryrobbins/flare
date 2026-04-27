@@ -14,8 +14,8 @@ class ExecutionVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "execution"
 
-    def verify(self, a: Formulation, b: Formulation, pair_id: str) -> EquivalenceResult:
-        artifacts_dir = self.runs_dir / "pairs" / pair_id / "execution"
+    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
+        artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         obj_a = self._solve(a, artifacts_dir / "a")

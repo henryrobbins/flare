@@ -31,7 +31,7 @@ def main() -> None:
         sys.exit(f"pairs/ not found in {run_dir}")
 
     repo_root = Path(__file__).parent.parent
-    checker = EquivaProofVerifier(runs_dir=run_dir, repo_root=repo_root)
+    checker = EquivaProofVerifier(repo_root=repo_root)
 
     updated: dict[str, bool] = {}
 

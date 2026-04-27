@@ -73,7 +73,7 @@ def process_pair(
             "error": None,
         }
         try:
-            result = checker.verify(pair.a, pair.b, pid)
+            result = checker.verify(pair.a, pair.b, results_path.parent / "pairs" / pid / checker.name)
             entry["is_equivalent"] = result.is_equivalent
             entry["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
         except Exception:
@@ -127,11 +127,11 @@ def main() -> None:
     client = AnthropicClient()
 
     checkers: list[EquivalenceVerifier] = [
-        ExecutionVerifier(run_dir),
-        LLMVerifier(run_dir, client),
-        EquivaMapVerifier(run_dir, client),
+        ExecutionVerifier(),
+        LLMVerifier(client),
+        EquivaMapVerifier(client),
         # EquivaProofVerifier(
-        #     run_dir, repo_root=Path(".").resolve(), model=args.claude_model
+        #     repo_root=Path(".").resolve(), model=args.claude_model
         # ),
     ]
 

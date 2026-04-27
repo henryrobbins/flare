@@ -10,16 +10,15 @@ from src.llm_client import LLMClient
 
 
 class LLMVerifier(EquivalenceVerifier):
-    def __init__(self, runs_dir: Path, client: LLMClient) -> None:
-        super().__init__(runs_dir)
+    def __init__(self, client: LLMClient) -> None:
         self.client = client
 
     @property
     def name(self) -> str:
         return "llm"
 
-    def verify(self, a: Formulation, b: Formulation, pair_id: str) -> EquivalenceResult:
-        artifacts_dir = self.runs_dir / "pairs" / pair_id / "llm"
+    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
+        artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         info_a = problem_info(a)

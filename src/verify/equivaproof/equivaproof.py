@@ -44,9 +44,8 @@ def _staging_settings(wd: Path, repo_root: Path) -> dict:
 
 class EquivaProofVerifier(EquivalenceVerifier):
     def __init__(
-        self, runs_dir: Path, repo_root: Path, model: str = "claude-sonnet-4-6"
+        self, repo_root: Path, model: str = "claude-sonnet-4-6"
     ) -> None:
-        super().__init__(runs_dir)
         self.repo_root = repo_root
         self.model = model
 
@@ -54,8 +53,8 @@ class EquivaProofVerifier(EquivalenceVerifier):
     def name(self) -> str:
         return "equivaproof"
 
-    def verify(self, a: Formulation, b: Formulation, pair_id: str) -> EquivalenceResult:
-        artifacts_dir = self.runs_dir / "pairs" / pair_id / self.name
+    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
+        artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         # wd lives inside the timestamped run dir so all artifacts are co-located.
@@ -66,7 +65,7 @@ class EquivaProofVerifier(EquivalenceVerifier):
         (artifacts_dir / "prompt.txt").write_text(prompt)
 
         jsonl_path = artifacts_dir / "claude_output.jsonl"
-        print(f"  [equivaproof] {pair_id} → monitor: tail -f {jsonl_path}")
+        print(f"  [equivaproof] monitor: tail -f {jsonl_path}")
 
         stream_metrics = self._run_claude(prompt, wd, jsonl_path)
 
