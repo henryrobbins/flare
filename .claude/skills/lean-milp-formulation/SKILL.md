@@ -87,19 +87,32 @@ Use `Finset.univ.filter` to express flow conservation at specific nodes:
 (univ.filter (fun e => p.tail e = i)).sum (fun e => v.x e k) = …
 ```
 
-### Big-M constraints
+### Big-M is forbidden
 
-**Never introduce a big-M constant in a Lean formulation.** Big-M is a
-solver linearization technique, not a mathematical concept. Use a
-disjunction instead. For example:
+**Never introduce a big-M constant in a Lean formulation, even if the
+source description does.** Big-M is a solver linearization technique; it is not
+required in Lean. Instead, rewrite big-M constraints as disjunctions or
+conditional equalities on the underlying variables.
 
-- **MILP:** `S_a + p_a ≤ S_b + M·(1 − y)` and `S_b + p_b ≤ S_a + M·y`
-- **Lean:** `S_a + p_a ≤ S_b ∨ S_b + p_b ≤ S_a`
+**How to rewrite.** The following patterns are examples of big-M patterns in
+source MILP formulations and how they should be rewritten in Lean. Another
+indicator of big-M is the presence of a parameter named `M` or `bigM` in the
+source, or a description of a "sufficiently large constant" in the assumptions.
 
-Concretely, replace every pair of big-M constraints that encode a
-disjunction `P ∨ Q` with a single `Prop` field in `Feasible`. Binary indicator
-variables that exist solely to linearize a disjunction for a MIP solver do not
-belong in `Vars`. Omit them entirely.
+| Source MILP                                        | Lean `Feasible` field       |
+| -------------------------------------------------- | --------------------------- |
+| `x ≤ M · y` (binary `y`, `x ≥ 0`)                  | `hlink : v.x = 0 ∨ v.y = 1` |
+| `A ≤ B + M·(1 − y)` and `C ≤ D + M·y` (binary `y`) | `hdisj : A ≤ B ∨ C ≤ D`     |
+
+**After rewriting:**
+
+- The big-M parameter (`M`) and its `_pos`/`_nn` assumption MUST NOT appear
+  in `Params`.
+- Binary indicator variables that exist _solely_ to linearize the
+  disjunction (the `y` in `x ≤ M·y` when `y` has no other role) MUST NOT
+  appear in `Vars`. Indicators with independent semantics (e.g. `y_j`
+  meaning "warehouse `j` is open" with its own opening cost in `obj`)
+  stay, but the `M·y` constraint is still rewritten as a disjunction.
 
 ## Naming Conventions
 
