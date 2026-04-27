@@ -12,7 +12,7 @@
 - **{{ name }}** (shape: `{{ p.shape }}`): {{ p.description }}
 {% endfor %}
 
-{% if definitions %}
+{% if assumptions %}
 
 ### Assumptions
 
@@ -20,6 +20,7 @@
 - {{ a.description }}
 $${{ a.formulation }}$$
 {% endfor %}
+{% endif %}
 
 {% if definitions %}
 
