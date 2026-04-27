@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Analyse where time is spent by the claude_code method.
+Analyse where time is spent by the equivaproof method.
 
 Per-tool wall time is estimated from task_progress delta approach:
   - Each task_progress event has a cumulative duration_ms within its task_id.
@@ -20,12 +20,13 @@ from pathlib import Path
 # ── config ────────────────────────────────────────────────────────────────────
 
 TOOL_GROUPS = {
-    "lean_lsp":  lambda n: n.startswith("mcp__lean-lsp__"),
-    "file_io":   lambda n: n in ("Read", "Write", "Edit", "Glob", "Grep"),
-    "bash":      lambda n: n == "Bash",
-    "agent":     lambda n: n in ("Agent", "Task", "ToolSearch", "Skill"),
-    "other":     lambda n: True,  # catch-all
+    "lean_lsp": lambda n: n.startswith("mcp__lean-lsp__"),
+    "file_io": lambda n: n in ("Read", "Write", "Edit", "Glob", "Grep"),
+    "bash": lambda n: n == "Bash",
+    "agent": lambda n: n in ("Agent", "Task", "ToolSearch", "Skill"),
+    "other": lambda n: True,  # catch-all
 }
+
 
 def group_of(tool_name: str) -> str:
     for g, pred in TOOL_GROUPS.items():
@@ -35,6 +36,7 @@ def group_of(tool_name: str) -> str:
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
 
 def per_tool_time_ms(events: list[dict]) -> dict[str, int]:
     """Return {tool_name: total_ms} using task_progress deltas."""
@@ -75,16 +77,16 @@ def load_pair(path: Path) -> dict | None:
                     tool_calls[c["name"]] += 1
 
     return {
-        "pair_id":        path.parts[-3],
-        "finished":       result is not None,
-        "duration_ms":    result.get("duration_ms", 0) if result else 0,
-        "duration_api_ms":result.get("duration_api_ms", 0) if result else 0,
-        "cost_usd":       result.get("total_cost_usd", 0.0) if result else 0.0,
-        "num_turns":      result.get("num_turns", 0) if result else 0,
-        "is_error":       result.get("is_error", False) if result else False,
-        "usage":          result.get("usage", {}) if result else {},
-        "tool_calls":     dict(tool_calls),
-        "tool_time_ms":   per_tool_time_ms(events),
+        "pair_id": path.parts[-3],
+        "finished": result is not None,
+        "duration_ms": result.get("duration_ms", 0) if result else 0,
+        "duration_api_ms": result.get("duration_api_ms", 0) if result else 0,
+        "cost_usd": result.get("total_cost_usd", 0.0) if result else 0.0,
+        "num_turns": result.get("num_turns", 0) if result else 0,
+        "is_error": result.get("is_error", False) if result else False,
+        "usage": result.get("usage", {}) if result else {},
+        "tool_calls": dict(tool_calls),
+        "tool_time_ms": per_tool_time_ms(events),
     }
 
 
@@ -102,13 +104,18 @@ def fmt_pct(num, denom) -> str:
 
 # ── main ──────────────────────────────────────────────────────────────────────
 
+
 def main():
-    parser = argparse.ArgumentParser(description="Analyse time/cost for claude_code runs.")
-    parser.add_argument("-r", "--run-id", required=True, help="Run ID (e.g. 20260425T200341Z)")
+    parser = argparse.ArgumentParser(
+        description="Analyse time/cost for equivaproof runs."
+    )
+    parser.add_argument(
+        "-r", "--run-id", required=True, help="Run ID (e.g. 20260425T200341Z)"
+    )
     args = parser.parse_args()
 
     run_root = Path("runs") / args.run_id
-    files = sorted(run_root.glob("pairs/*/claude_code/claude_output.jsonl"))
+    files = sorted(run_root.glob("pairs/*/equivaproof/claude_output.jsonl"))
 
     if not files:
         print(f"No claude_output.jsonl files found under {run_root}")
@@ -116,7 +123,9 @@ def main():
 
     pairs = [p for p in (load_pair(f) for f in files) if p is not None]
     finished = sum(1 for p in pairs if p["finished"])
-    print(f"Loaded {len(pairs)} pair(s) ({finished} finished, {len(pairs) - finished} in-progress)\n")
+    print(
+        f"Loaded {len(pairs)} pair(s) ({finished} finished, {len(pairs) - finished} in-progress)\n"
+    )
 
     # ── 1. Per-pair summary ────────────────────────────────────────────────
     print("=" * 80)
@@ -127,12 +136,14 @@ def main():
     print("-" * len(hdr))
     for p in pairs:
         wall = p["duration_ms"]
-        api  = p["duration_api_ms"]
+        api = p["duration_api_ms"]
         wait = wall - api
         total_tools = sum(p["tool_calls"].values())
         status = "done" if p["finished"] else "running"
-        print(f"{p['pair_id']:<22} {status:>8} {fmt_ms(wall):>6} {fmt_ms(api):>6} "
-              f"{fmt_ms(wait):>6} ${p['cost_usd']:>6.2f} {p['num_turns']:>5} {total_tools:>5}")
+        print(
+            f"{p['pair_id']:<22} {status:>8} {fmt_ms(wall):>6} {fmt_ms(api):>6} "
+            f"{fmt_ms(wait):>6} ${p['cost_usd']:>6.2f} {p['num_turns']:>5} {total_tools:>5}"
+        )
 
     # ── 2. Aggregate tool-call counts ─────────────────────────────────────
     print()
@@ -153,7 +164,9 @@ def main():
         if g not in by_group:
             continue
         g_total = sum(by_group[g].values())
-        print(f"\n  [{g.upper()}]  {g_total} calls  ({fmt_pct(g_total, grand_calls)} of total)")
+        print(
+            f"\n  [{g.upper()}]  {g_total} calls  ({fmt_pct(g_total, grand_calls)} of total)"
+        )
         for t, n in sorted(by_group[g].items(), key=lambda x: -x[1]):
             print(f"    {t:<45} {n:>5}  ({fmt_pct(n, grand_calls)})")
     print(f"\n  GRAND TOTAL: {grand_calls} tool calls")
@@ -177,14 +190,16 @@ def main():
         if g not in by_group_time:
             continue
         g_total = sum(by_group_time[g].values())
-        print(f"\n  [{g.upper()}]  {fmt_ms(g_total)}  ({fmt_pct(g_total, grand_time)} of tracked time)")
+        print(
+            f"\n  [{g.upper()}]  {fmt_ms(g_total)}  ({fmt_pct(g_total, grand_time)} of tracked time)"
+        )
         for t, ms in sorted(by_group_time[g].items(), key=lambda x: -x[1]):
             print(f"    {t:<45} {fmt_ms(ms):>7}  ({fmt_pct(ms, grand_time)})")
     print(f"\n  TOTAL TRACKED TOOL TIME: {fmt_ms(grand_time)}")
 
     # compare with sum of wall times
     total_wall = sum(p["duration_ms"] for p in pairs)
-    total_api  = sum(p["duration_api_ms"] for p in pairs)
+    total_api = sum(p["duration_api_ms"] for p in pairs)
     print(f"  Sum of wall times:       {fmt_ms(total_wall)}")
     print(f"  Sum of API times:        {fmt_ms(total_api)}")
     print(f"  Unaccounted (wall-tracked): {fmt_ms(total_wall - grand_time)}")
@@ -222,10 +237,10 @@ def main():
     agg_tokens: dict[str, int] = defaultdict(int)
     for p in pairs:
         u = p["usage"]
-        agg_tokens["input"]        += u.get("input_tokens", 0)
-        agg_tokens["output"]       += u.get("output_tokens", 0)
+        agg_tokens["input"] += u.get("input_tokens", 0)
+        agg_tokens["output"] += u.get("output_tokens", 0)
         agg_tokens["cache_create"] += u.get("cache_creation_input_tokens", 0)
-        agg_tokens["cache_read"]   += u.get("cache_read_input_tokens", 0)
+        agg_tokens["cache_read"] += u.get("cache_read_input_tokens", 0)
     for k, v in agg_tokens.items():
         print(f"  {k:<20} {v:>12,} tokens")
 
