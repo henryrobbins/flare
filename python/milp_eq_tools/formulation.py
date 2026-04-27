@@ -14,15 +14,15 @@ if TYPE_CHECKING:
 
 
 class Formulation:
-    def __init__(self, path: str | Path) -> None:
+    def __init__(self, path: str | Path, problem: Problem) -> None:
         self.path = Path(path).resolve()
-        self._problem: Problem | None = None
+        self._problem: Problem = problem
         raw = json.loads((self.path / "formulation.json").read_text())
         self._raw = raw
         self._load_from_raw(raw)
 
     @property
-    def problem(self) -> Problem | None:
+    def problem(self) -> Problem:
         return self._problem
 
     def _load_from_raw(self, raw: dict) -> None:
@@ -71,16 +71,16 @@ class Formulation:
         self.metadata: dict[str, object] = raw.get("metadata", {})
 
     @classmethod
-    def from_raw(cls, raw: dict, path: Path) -> Formulation:
+    def from_raw(cls, raw: dict, path: Path, problem: Problem) -> Formulation:
         """Construct a Formulation directly from a raw dict without reading from disk."""
         obj = cls.__new__(cls)
         obj.path = Path(path)
-        obj._problem = None
+        obj._problem = problem
         obj._raw = raw
         obj._load_from_raw(raw)
         return obj
 
-    def with_constraint(self, constraint: Constraint) -> "Formulation":
+    def with_constraint(self, constraint: Constraint) -> Formulation:
         """Return a new Formulation with one additional constraint appended."""
         new_raw = copy.deepcopy(self._raw)
         new_raw["constraints"].append({
@@ -89,7 +89,7 @@ class Formulation:
             "explicit": constraint.explicit,
             "code": constraint.code,
         })
-        return Formulation.from_raw(new_raw, self.path)
+        return Formulation.from_raw(new_raw, self.path, self._problem)
 
     @property
     def gurobipy_code(self) -> str:

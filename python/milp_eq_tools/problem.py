@@ -35,8 +35,7 @@ class Problem:
         result = {}
         for d in sorted(formulations_dir.iterdir()):
             if d.is_dir():
-                f = Formulation(d)
-                f._problem = self
+                f = Formulation(d, self)
                 result[d.name] = f
         return result
 

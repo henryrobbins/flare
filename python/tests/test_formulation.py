@@ -1,11 +1,10 @@
-from pathlib import Path
-
 import pytest
 
-from milp_eq_tools import Assumption, Constraint, Definition, Objective, Parameter, Problem, Variable, VariableType
+from milp_eq_tools import Assumption, Constraint, Dataset, Definition, Objective, Parameter, Problem, Variable, VariableType
 from milp_eq_tools.formulation import Formulation
 
-DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset" / "problems"
+from pathlib import Path
+DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset"
 
 
 @pytest.fixture
@@ -14,15 +13,15 @@ def formulation_a(problem1: Problem) -> Formulation:
 
 
 @pytest.fixture
-def formulation_with_definitions() -> Formulation:
+def formulation_with_definitions(dataset: Dataset) -> Formulation:
     """p8.a has a non-empty definitions field."""
-    return Formulation(DATASET_ROOT / "p8" / "formulations" / "a")
+    return dataset.problems[8].formulations["a"]
 
 
 @pytest.fixture
-def formulation_with_imports() -> Formulation:
+def formulation_with_imports(dataset: Dataset) -> Formulation:
     """p6.f has a non-empty imports field."""
-    return Formulation(DATASET_ROOT / "p6" / "formulations" / "f")
+    return dataset.problems[6].formulations["f"]
 
 
 def test_valid(formulation_a: Formulation) -> None:
@@ -50,14 +49,9 @@ def test_variables(formulation_a: Formulation) -> None:
     assert v.shape == []
 
 
-def test_variable_type_integer() -> None:
-    # Find a formulation with an integer variable
-    for problem_dir in sorted(DATASET_ROOT.iterdir()):
-        formulations_dir = problem_dir / "formulations"
-        if not formulations_dir.exists():
-            continue
-        for f_dir in formulations_dir.iterdir():
-            f = Formulation(f_dir)
+def test_variable_type_integer(dataset: Dataset) -> None:
+    for problem in dataset.problems.values():
+        for f in problem.formulations.values():
             for v in f.variables.values():
                 if v.type == VariableType.integer:
                     assert v.type == VariableType.integer
@@ -146,10 +140,5 @@ def test_imports_content(formulation_with_imports: Formulation) -> None:
 
 def test_problem_back_reference(problem1: Problem, formulation_a: Formulation) -> None:
     assert formulation_a.problem is problem1
-
-
-def test_problem_is_none_when_constructed_directly() -> None:
-    f = Formulation(DATASET_ROOT / "p1" / "formulations" / "a")
-    assert f.problem is None
 
 
