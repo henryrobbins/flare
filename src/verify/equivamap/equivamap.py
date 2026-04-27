@@ -55,19 +55,28 @@ def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | N
     return result
 
 
+def _list_depth(data: list) -> int:
+    if data and isinstance(data[0], list):
+        return 1 + _list_depth(data[0])
+    return 1
+
+
 def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:
     """Build a single Constraint that pins var_name to the given RHS value(s)."""
     if isinstance(rhs, (int, float)):
         code = f"model.addConstr({var_name} == {rhs!r})"
         formulation = f"{var_name} = {rhs}"
-    elif isinstance(rhs, list) and rhs and isinstance(rhs[0], list):
-        code = f"for _i, _row in enumerate({rhs!r}):\n    for _j, _v in enumerate(_row): model.addConstr({var_name}[_i, _j] == _v)"
-        formulation = f"{var_name}[i,j] = rhs[i][j] for all i,j"
     elif isinstance(rhs, list):
-        code = (
-            f"for _i, _v in enumerate({rhs!r}): model.addConstr({var_name}[_i] == _v)"
-        )
-        formulation = f"{var_name}[i] = rhs[i] for all i"
+        depth = _list_depth(rhs)
+        idx = [f"_i{d}" for d in range(depth)]
+        it = [f"_it{d}" for d in range(depth)]
+        lines = [f"for {idx[0]}, {it[1] if depth > 1 else '_v'} in enumerate({rhs!r}):"]
+        for d in range(1, depth):
+            inner = it[d + 1] if d < depth - 1 else "_v"
+            lines.append(f"{'    ' * d}for {idx[d]}, {inner} in enumerate({it[d]}):")
+        lines.append(f"{'    ' * depth}model.addConstr({var_name}[{', '.join(idx)}] == _v)")
+        code = "\n".join(lines)
+        formulation = f"{var_name}[{', '.join(idx)}] = rhs[...] for all indices"
     else:
         code = f"for _k, _v in {rhs!r}.items(): model.addConstr({var_name}[_k] == _v)"
         formulation = f"{var_name}[k] = rhs[k] for all k"
