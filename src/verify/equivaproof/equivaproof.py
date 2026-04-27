@@ -112,11 +112,14 @@ class EquivaProofVerifier(EquivalenceVerifier):
         shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
         (wd / "lakefile.toml").write_text(_LAKEFILE)
 
-        # Copy skills
+        # Copy skills and write settings
         claude_dst = wd / ".claude"
+        claude_dst.mkdir(exist_ok=True)
         skills_src = self.repo_root / ".claude" / "skills"
         if skills_src.exists():
             shutil.copytree(skills_src, claude_dst / "skills", dirs_exist_ok=True)
+        settings = _claude_code_settings(wd, self.repo_root)
+        (claude_dst / "settings.json").write_text(json.dumps(settings, indent=2))
 
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
