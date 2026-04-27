@@ -5,7 +5,7 @@ from pathlib import Path
 from milp_eq_tools import Formulation
 
 from src.verify.base import EquivalenceResult, EquivalenceVerifier
-from src.verify.prompts import problem_info
+from src.prompts import problem_info
 from src.verify.llm.prompts import render_equivalence
 from src.llm_client import LLMClient
 

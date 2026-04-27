@@ -5,7 +5,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from milp_eq_tools import Formulation
 
-from src.verify.prompts import RenderedPrompt, problem_info
+from src.prompts import RenderedPrompt, problem_info
 
 
 def constraints_involving(var_name: str, constraints: list[dict]) -> list[dict]:

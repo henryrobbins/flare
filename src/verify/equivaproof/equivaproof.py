@@ -9,11 +9,9 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
+from src.prompts import render_formulation
 from src.verify.base import EquivalenceResult, EquivalenceVerifier
-from src.verify.equivaproof.prompts import (
-    render_agent_prompt,
-    render_formulation_description,
-)
+from src.verify.equivaproof.prompts import render_agent_prompt
 
 _HERE = Path(__file__).parent
 
@@ -121,7 +119,7 @@ class EquivaProofVerifier(EquivalenceVerifier):
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
             (form_dir / "formulation.md").write_text(
-                render_formulation_description(form, problem_desc)
+                render_formulation(form, problem_desc)
             )
             solve_src = form.path / "solve.py"
             if solve_src.exists():

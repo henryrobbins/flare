@@ -7,7 +7,7 @@ from milp_eq_tools import Formulation
 from milp_eq_tools.models import Constraint
 
 from src.verify.base import EquivalenceResult, EquivalenceVerifier
-from src.verify.prompts import problem_info
+from src.prompts import problem_info
 from src.verify.equivamap.prompts import (
     VARIABLE_MAPPING_SCHEMA,
     render_variable_mapping,
