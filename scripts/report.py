@@ -25,8 +25,22 @@ with open(path) as f:
             continue
         rows.append(r)
 
+def fmt_duration(s) -> str:
+    if s is None:
+        return "-"
+    return f"{s:.1f}s"
+
+
+def fmt_cost(c) -> str:
+    if c is None:
+        return "-"
+    if c < 0.001:
+        return f"${c:.4f}"
+    return f"${c:.3f}"
+
+
 if args.instance:
-    header = f"  {'Method':<18} {'Pair':<20} {'GT':>4} {'Pred':>6} {'Err':>4}"
+    header = f"  {'Method':<18} {'Pair':<30} {'GT':>4} {'Pred':>6} {'Err':>4} {'Time':>8} {'Cost':>8}"
     print(header)
     print("  " + "-" * (len(header) - 2))
     for r in rows:
@@ -42,9 +56,15 @@ if args.instance:
         gt_str = "T" if gt else "F"
         pred_str = ("T" if pred else "F") if not is_error else "-"
         err_str = "Y" if err else "N"
-        print(f"  {method:<18} {pair:<20} {gt_str:>4} {pred_str:>6} {err_str:>4}")
+        time_str = fmt_duration(r.get("duration_s"))
+        cost_str = fmt_cost(r.get("cost_usd"))
+        print(f"  {method:<18} {pair:<30} {gt_str:>4} {pred_str:>6} {err_str:>4} {time_str:>8} {cost_str:>8}")
 else:
-    stats = defaultdict(lambda: {"tp": 0, "fp": 0, "tn": 0, "fn": 0})
+    stats = defaultdict(lambda: {
+        "tp": 0, "fp": 0, "tn": 0, "fn": 0,
+        "duration_sum": 0.0, "duration_n": 0,
+        "cost_sum": 0.0, "cost_n": 0,
+    })
     for r in rows:
         method = r["method"]
         gt = r["ground_truth"]
@@ -63,8 +83,15 @@ else:
         else:
             stats[method]["fn"] += 1
 
+        if r.get("duration_s") is not None:
+            stats[method]["duration_sum"] += r["duration_s"]
+            stats[method]["duration_n"] += 1
+        if r.get("cost_usd") is not None:
+            stats[method]["cost_sum"] += r["cost_usd"]
+            stats[method]["cost_n"] += 1
+
     methods = sorted(stats)
-    header = f"  {'Method':<18} {'TP':>4} {'FP':>4} {'TN':>4} {'FN':>4} {'Prec':>7} {'Rec':>7} {'F1':>7} {'Acc':>7}"
+    header = f"  {'Method':<18} {'TP':>4} {'FP':>4} {'TN':>4} {'FN':>4} {'Prec':>7} {'Rec':>7} {'F1':>7} {'Acc':>7} {'AvgTime':>8} {'AvgCost':>9}"
     print(header)
     print("  " + "-" * (len(header) - 2))
     for m in methods:
@@ -74,4 +101,6 @@ else:
         rec  = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         f1   = 2 * prec * rec / (prec + rec) if (prec + rec) > 0 else 0.0
         acc  = (tp + tn) / (tp + fp + tn + fn) if (tp + fp + tn + fn) > 0 else 0.0
-        print(f"  {m:<18} {tp:>4} {fp:>4} {tn:>4} {fn:>4} {prec:>7.3f} {rec:>7.3f} {f1:>7.3f} {acc:>7.3f}")
+        avg_time = fmt_duration(s["duration_sum"] / s["duration_n"] if s["duration_n"] else None)
+        avg_cost = fmt_cost(s["cost_sum"] / s["cost_n"] if s["cost_n"] else None)
+        print(f"  {m:<18} {tp:>4} {fp:>4} {tn:>4} {fn:>4} {prec:>7.3f} {rec:>7.3f} {f1:>7.3f} {acc:>7.3f} {avg_time:>8} {avg_cost:>9}")
