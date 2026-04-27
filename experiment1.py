@@ -132,7 +132,10 @@ def main() -> None:
         LLMVerifier(
             AnthropicClient(
                 LLMConfig(
-                    model="claude-sonnet-4-6", reasoning=True, reasoning_tokens=2048
+                    model="claude-sonnet-4-6",
+                    max_tokens=8192,
+                    reasoning=True,
+                    reasoning_tokens=4096,
                 )
             )
         ),
