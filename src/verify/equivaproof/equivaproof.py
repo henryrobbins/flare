@@ -41,9 +41,7 @@ def _staging_settings(wd: Path, repo_root: Path) -> dict:
 
 
 class EquivaProofVerifier(EquivalenceVerifier):
-    def __init__(
-        self, repo_root: Path, model: str = "claude-sonnet-4-6"
-    ) -> None:
+    def __init__(self, repo_root: Path, model: str = "claude-sonnet-4-6") -> None:
         self.repo_root = repo_root
         self.model = model
 
@@ -54,10 +52,14 @@ class EquivaProofVerifier(EquivalenceVerifier):
     def method_config(self) -> dict:
         return {"model": self.model}
 
-    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
+    def verify(
+        self, a: Formulation, b: Formulation, output_path: Path
+    ) -> EquivalenceResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
-        (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
+        (artifacts_dir / "config.json").write_text(
+            json.dumps(self.method_config(), indent=2)
+        )
 
         # wd lives inside the timestamped run dir so all artifacts are co-located.
         wd = artifacts_dir / "wd"
@@ -111,16 +113,10 @@ class EquivaProofVerifier(EquivalenceVerifier):
             json.dumps(_staging_settings(wd, self.repo_root), indent=4)
         )
 
-        problem_id = a.path.parent.parent.name
-        prob_src = self.repo_root / "dataset" / "problems" / problem_id
-        problem_desc = (prob_src / "description.md").read_text()
-
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
-            (form_dir / "formulation.md").write_text(
-                render_formulation(form, problem_desc)
-            )
+            (form_dir / "formulation.md").write_text(render_formulation(form))
             solve_src = form.path / "solve.py"
             if solve_src.exists():
                 shutil.copy2(solve_src, form_dir / "solve.py")

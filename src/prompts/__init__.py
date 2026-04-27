@@ -37,15 +37,15 @@ def problem_info(f: Formulation) -> dict:
     }
 
 
-def render_formulation(form: Formulation, problem_description: str) -> str:
+def render_formulation(formulation: Formulation) -> str:
     tmpl = _env.get_template("formulation.j2")
     return tmpl.render(
-        formulation_id=form.path.name,
-        problem_description=problem_description,
-        parameters=form.parameters,
-        variables=form.variables,
-        definitions=form.definitions,
-        assumptions=form.assumptions,
-        constraints=form.constraints,
-        objective=form.objective,
+        problem_name=formulation.problem.name,
+        problem_description=formulation.problem.description,
+        parameters=formulation.parameters,
+        variables=formulation.variables,
+        definitions=formulation.definitions,
+        assumptions=formulation.assumptions,
+        constraints=formulation.constraints,
+        objective=formulation.objective,
     )

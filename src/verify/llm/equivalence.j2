@@ -1,14 +1,14 @@
-You are given two optimization problem formulations.
-Decide if they are equivalent formulations.
+You are given the following two Mixed-Integer Linear Programming (MILP) formulations. You are tasked with deciding if the two formulations are equivalent.
 
-First problem formulation (Problem A):
-{{ info_a_json }}
+{{ problem_a }}
 
-Second problem formulation (Problem B):
-{{ info_b_json }}
+{{ problem_b }}
 
-Based on the data, please respond with exactly one of the following:
-- "Equivalent" if these two are the same formulation. Be rigorous in your reasoning.
-- "Not Equivalent" if they are different. When you are not sure, say "Not Equivalent".
+We define two formulation as **equivalent** if the following conditions hold:
+1. There is a mapping $f$ from feasible solutions of formulation A to feasible solutions of formulation B.
+2. There is a mapping $g$ from feasible solutions of formulation B to feasible solutions of formulation A.
+3. There is a strictly increasing or decreasing monotone function $h$. Let $obj_A$ and $obj_B$ be the objective functions for formulation A and B respectively. For any feasible solution $x$ of formulation A, we have $obj_B(f(x)) = h(obj_A(x))$. For any feasible solution $y$ of formulation B, we have $obj_B(y) = h(obj_A(g(y)))$.
 
-Briefly explain the reasoning in 1-2 sentences, then end with the word "Equivalent" or "Not Equivalent" on its own line.
+Consider valid constructions of the mappings $f$, $g$, and $h$ as you reason about the two formulation's equivalence.
+
+When you are finished reasoning, provide a short summary of your conclusion and a final determination of equivalence (true or false). When uncertain, treat the formulations as not equivalent.

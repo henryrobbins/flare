@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "reasoning": { "type": "string" },
+    "is_equivalent": { "type": "boolean" }
+  },
+  "required": ["reasoning", "is_equivalent"],
+  "additionalProperties": false
+}

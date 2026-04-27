@@ -73,7 +73,9 @@ def process_pair(
             "error": None,
         }
         try:
-            result = checker.verify(pair.a, pair.b, results_path.parent / "pairs" / pid / checker.name)
+            result = checker.verify(
+                pair.a, pair.b, results_path.parent / "pairs" / pid / checker.name
+            )
             entry["is_equivalent"] = result.is_equivalent
             entry["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
         except Exception:
@@ -124,15 +126,18 @@ def main() -> None:
     run_dir.mkdir(parents=True, exist_ok=True)
 
     dataset = Dataset(Path("dataset"))
-    client = AnthropicClient(LLMConfig(model="claude-sonnet-4-6"))
 
     checkers: list[EquivalenceVerifier] = [
         ExecutionVerifier(),
-        LLMVerifier(client),
-        EquivaMapVerifier(client),
-        # EquivaProofVerifier(
-        #     repo_root=Path(".").resolve(), model=args.claude_model
-        # ),
+        LLMVerifier(
+            AnthropicClient(
+                LLMConfig(
+                    model="claude-sonnet-4-6", reasoning=True, reasoning_tokens=2048
+                )
+            )
+        ),
+        EquivaMapVerifier(AnthropicClient(LLMConfig(model="claude-sonnet-4-6"))),
+        EquivaProofVerifier(repo_root=Path(".").resolve(), model=args.claude_model),
     ]
 
     pairs = dataset.pairs
