@@ -22,19 +22,17 @@ structure Params where
   hI_nn : ∀ j i, 0 ≤ I j i
 
 structure Vars where
-  j : ℕ → ℤ  -- 10× number of times experiment i is conducted
+  j : ℕ → ℤ  -- number of times experiment i is conducted
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Resource usage (using scaled variable) does not exceed available
-  hres : ∀ k : Fin p.N, ∑ i : Fin p.M, p.I k i * ((v.j i : ℝ) / 10) ≤ p.Y k
-  -- Each j value is a multiple of 10 (j = 10 × experiment count)
-  hdiv : ∀ i : Fin p.M, 10 ∣ v.j i
+  hres : ∀ k : Fin p.N, ∑ i : Fin p.M, p.I k i * (v.j i : ℝ) ≤ p.Y k
   -- [Implicit Constraints]
   hj_nn : ∀ i : Fin p.M, 0 ≤ v.j i
 
 -- Maximize total electricity produced (using scaled variable)
 noncomputable def obj (p : Params) (v : Vars) : ℝ :=
-  -(∑ i : Fin p.M, p.A i * ((v.j i : ℝ) / 10))
+  -2 * (∑ i : Fin p.M, p.A i * (v.j i : ℝ))
 
 noncomputable def formulation : MILPFormulation where
   Params := Params

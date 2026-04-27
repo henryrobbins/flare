@@ -25,23 +25,21 @@ structure Params where
   hV_nn : ∀ i, 0 ≤ V i
 
 structure Vars where
-  n : ℕ → ℤ  -- 10× number of beakers of type i used
+  n : ℕ → ℤ  -- the number of beakers of type i used
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Total liquid used does not exceed available amount
-  hliquid : ∑ i : Fin p.N, p.V i * ((v.n i : ℝ) / 10) ≤ p.Z
+  hliquid : ∑ i : Fin p.N, p.V i * (v.n i : ℝ) ≤ p.Z
   -- Total flour used does not exceed available amount
-  hflour  : ∑ i : Fin p.N, p.T i * ((v.n i : ℝ) / 10) ≤ p.D
+  hflour  : ∑ i : Fin p.N, p.T i * (v.n i : ℝ) ≤ p.D
   -- Total waste generated does not exceed maximum allowed
-  hwaste  : ∑ i : Fin p.N, p.C i * ((v.n i : ℝ) / 10) ≤ p.E
+  hwaste  : ∑ i : Fin p.N, p.C i * (v.n i : ℝ) ≤ p.E
   -- [Implicit Constraints]
   hn_nn   : ∀ i : Fin p.N, 0 ≤ v.n i
-  -- Each n_i is a multiple of 10
-  hdiv    : ∀ i : Fin p.N, 10 ∣ v.n i
 
 -- Maximize total slime produced
 noncomputable def obj (p : Params) (v : Vars) : ℝ :=
-  -(∑ i : Fin p.N, p.X i * ((v.n i : ℝ) / 10))
+  -2 * (∑ i : Fin p.N, p.X i * (v.n i : ℝ))
 
 noncomputable def formulation : MILPFormulation where
   Params   := Params

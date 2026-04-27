@@ -161,6 +161,22 @@
             "explicit": true
         },
         {
+            "description": "Flow variables are non-negative.",
+            "formulation": "x_{ak} \\geq 0 \\quad \\forall a \\in A,\\; \\forall k \\in K",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    x[a, k] >= 0\n    for a in range(m) for k in range(K)\n)"
+            },
+            "explicit": true
+        },
+        {
+            "description": "Arc activation variables are binary.",
+            "formulation": "y_a \\in \\{0, 1\\} \\quad \\forall a \\in A",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    y[a] <= 1\n    for a in range(m)\n)\nmodel.addConstrs(\n    y[a] >= 0\n    for a in range(m)\n)"
+            },
+            "explicit": true
+        },
+        {
             "description": "No outflow from any commodity's destination: commodity k has zero outflow from node D_k.",
             "formulation": "\\sum_{a \\in \\delta^+(D_k)} x_{ak} = 0 \\quad \\forall k \\in K",
             "code": {

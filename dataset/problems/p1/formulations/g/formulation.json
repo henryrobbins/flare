@@ -91,7 +91,7 @@
     "constraints": [
         {
             "description": "The minimum number of individuals handled within an hour by machines accepting both cash and cards must be U.",
-            "formulation": "U \\leq A \\cdot K + s \\cdot r",
+            "formulation": "U \\leq A \\cdot s + K \\cdot r",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(A * s + K * r >= U)"

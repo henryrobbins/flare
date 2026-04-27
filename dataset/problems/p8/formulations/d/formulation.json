@@ -135,6 +135,22 @@
                 "gurobipy": "model.addConstrs(C_max >= sum(p[j][k] for k in range(m)) for j in range(n))"
             },
             "explicit": true
+        },
+        {
+            "description": "Start times are non-negative.",
+            "formulation": "S_{j,k} \\ge 0 \\quad \\forall j, k",
+            "code": {
+                "gurobipy": "model.addConstrs(S[j, k] >= 0 for j in range(n) for k in range(m))"
+            },
+            "explicit": true
+        },
+        {
+            "description": "Makespan is non-negative.",
+            "formulation": "C_{\\max} \\ge 0",
+            "code": {
+                "gurobipy": "model.addConstr(C_max >= 0)"
+            },
+            "explicit": true
         }
     ],
     "objective": {
