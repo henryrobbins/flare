@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
@@ -8,8 +9,16 @@ from milp_eq_tools import Formulation
 from src.prompts import RenderedPrompt, problem_info
 
 
+def _mentions(var_name: str, code: str) -> bool:
+    return re.search(rf"\b{re.escape(var_name)}\b", code) is not None
+
+
 def constraints_involving(var_name: str, constraints: list[dict]) -> list[dict]:
-    return [c for c in constraints if var_name in c["formulation"]]
+    return [c for c in constraints if _mentions(var_name, c["code"])]
+
+
+def objective_contains(var_name: str, objective: dict) -> bool:
+    return _mentions(var_name, objective["code"])
 
 VARIABLE_MAPPING_SCHEMA: dict = json.loads(
     (Path(__file__).parent / "variable_mapping_schema.json").read_text()
@@ -24,6 +33,7 @@ _env = Environment(
     keep_trailing_newline=True,
 )
 _env.globals["constraints_involving"] = constraints_involving
+_env.globals["objective_contains"] = objective_contains
 
 
 def render_variable_mapping(var_name: str, a: Formulation, b: Formulation) -> RenderedPrompt:

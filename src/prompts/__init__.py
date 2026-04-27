@@ -26,13 +26,18 @@ def problem_info(f: Formulation) -> dict:
             for name, var in f.variables.items()
         },
         "constraints": [
-            {"description": c.description, "formulation": c.formulation}
+            {
+                "description": c.description,
+                "formulation": c.formulation,
+                "code": c.code.get("gurobipy", ""),
+            }
             for c in f.constraints
             if c.explicit
         ],
         "objective": {
             "description": f.objective.description,
             "formulation": f.objective.formulation,
+            "code": f.objective.code.get("gurobipy", ""),
         },
     }
 

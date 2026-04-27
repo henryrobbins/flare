@@ -8,7 +8,7 @@ You are an AI language model assisting in mapping variables between two optimiza
   - Description: {{ c.description }}
     Formulation: {{ c.formulation }}
 {% endfor %}
-- **In Objective Function:** {{ "Yes" if var_name in info_a.objective.formulation else "No" }}
+- **In Objective Function:** {{ "Yes" if objective_contains(var_name, info_a.objective) else "No" }}
 
 **Variables from Problem 2:**
 {% for b_name, b_var in info_b.variables.items() %}
@@ -19,7 +19,7 @@ You are an AI language model assisting in mapping variables between two optimiza
     - Description: {{ c.description }}
       Formulation: {{ c.formulation }}
 {% endfor %}
-  **In Objective Function:** {{ "Yes" if b_name in info_b.objective.formulation else "No" }}
+  **In Objective Function:** {{ "Yes" if objective_contains(b_name, info_b.objective) else "No" }}
 
 {% endfor %}
 Based on the above information, find the best mapping from variables in Problem 2 for the variable '{{ var_name }}' from Problem 1. The mapping can be a linear combination of variables from Problem 2, possibly with constant multipliers. Your goal is to express '{{ var_name }}' in terms of variables from Problem 2, as accurately as possible, based on their roles in the constraints and objective functions.
