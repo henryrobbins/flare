@@ -69,6 +69,8 @@ def process_pair(
             "ground_truth": pair.equivalent,
             "method": checker.name,
             "is_equivalent": None,
+            "duration_s": None,
+            "cost_usd": None,
             "artifacts_dir": None,
             "error": None,
         }
@@ -77,6 +79,8 @@ def process_pair(
                 pair.a, pair.b, results_path.parent / "pairs" / pid / checker.name
             )
             entry["is_equivalent"] = result.is_equivalent
+            entry["duration_s"] = result.duration_s
+            entry["cost_usd"] = result.cost_usd
             entry["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
         except Exception:
             entry["error"] = traceback.format_exc()
@@ -111,12 +115,6 @@ def main() -> None:
         default=DEFAULT_WORKERS,
         help=f"parallel workers (default: {DEFAULT_WORKERS})",
     )
-    parser.add_argument(
-        "--claude-model",
-        "-m",
-        default="claude-sonnet-4-6",
-        help="model to pass to claude CLI for EquivaProofVerifier (default: claude-sonnet-4-6)",
-    )
     args = parser.parse_args()
 
     problem_filter = parse_problem_ids(args.problems)
@@ -133,14 +131,14 @@ def main() -> None:
             AnthropicClient(
                 LLMConfig(
                     model="claude-sonnet-4-6",
-                    max_tokens=8192,
+                    max_tokens=4096,
                     reasoning=True,
-                    reasoning_tokens=4096,
+                    reasoning_tokens=2048,
                 )
             )
         ),
         EquivaMapVerifier(AnthropicClient(LLMConfig(model="claude-sonnet-4-6"))),
-        EquivaProofVerifier(repo_root=Path(".").resolve(), model=args.claude_model),
+        EquivaProofVerifier(repo_root=Path(".").resolve(), model="claude-opus-4-7"),
     ]
 
     pairs = dataset.pairs
