@@ -3,24 +3,29 @@
     "parameters": {
         "nI": {
             "description": "Number of household clusters",
+            "type": "integer",
             "shape": []
         },
         "m": {
             "description": "Number of existing hospitals",
+            "type": "integer",
             "shape": []
         },
         "M": {
             "description": "Total number of candidate hospital sites (including existing hospitals)",
+            "type": "integer",
             "shape": []
         },
         "v": {
             "description": "Population of each household cluster",
+            "type": "continuous",
             "shape": [
                 "nI"
             ]
         },
         "a": {
             "description": "Coverage indicator: 1 if household i is within distance S of hospital j, 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nI",
                 "M"
@@ -28,6 +33,7 @@
         },
         "p": {
             "description": "Maximum number of new hospitals that can be opened",
+            "type": "integer",
             "shape": []
         }
     },
@@ -54,14 +60,6 @@
             "explicit": false,
             "code": {
                 "python": "assert all(v[i] >= 0 for i in range(nI))"
-            }
-        },
-        {
-            "description": "Coverage indicator is binary.",
-            "formulation": "a_{ij} \\in \\{0, 1\\} \\quad \\forall i \\in I,\\; \\forall j \\in J",
-            "explicit": true,
-            "code": {
-                "python": "assert all(a[i][j] in (0, 1) for i in range(nI) for j in range(M))"
             }
         },
         {

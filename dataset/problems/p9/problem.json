@@ -3,60 +3,71 @@
     "parameters": {
         "n": {
             "description": "Number of network nodes",
+            "type": "integer",
             "shape": []
         },
         "m": {
             "description": "Number of candidate directed arcs",
+            "type": "integer",
             "shape": []
         },
         "K": {
             "description": "Number of commodities",
+            "type": "integer",
             "shape": []
         },
         "tail": {
             "description": "Source node index of each arc",
+            "type": "continuous",
             "shape": [
                 "m"
             ]
         },
         "head": {
             "description": "Destination node index of each arc",
+            "type": "continuous",
             "shape": [
                 "m"
             ]
         },
         "c": {
             "description": "Unit transportation cost on each arc",
+            "type": "continuous",
             "shape": [
                 "m"
             ]
         },
         "f": {
             "description": "Fixed cost to activate each arc",
+            "type": "continuous",
             "shape": [
                 "m"
             ]
         },
         "u": {
             "description": "Capacity of each arc",
+            "type": "continuous",
             "shape": [
                 "m"
             ]
         },
         "O": {
             "description": "Origin node of each commodity",
+            "type": "continuous",
             "shape": [
                 "K"
             ]
         },
         "D": {
             "description": "Destination node of each commodity",
+            "type": "continuous",
             "shape": [
                 "K"
             ]
         },
         "d": {
             "description": "Demand of each commodity",
+            "type": "continuous",
             "shape": [
                 "K"
             ]

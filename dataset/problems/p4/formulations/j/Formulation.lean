@@ -4,9 +4,9 @@ namespace P4.j
 
 -- Missing all constraints (invalid/incomplete formulation)
 structure Params where
-  K : ℝ  -- car capacity (employees per car)
+  K : ℤ  -- car capacity (employees per car)
   M : ℝ  -- car pollution
-  D : ℝ  -- bus capacity (employees per bus)
+  D : ℤ  -- bus capacity (employees per bus)
   O : ℝ  -- bus pollution
   J : ℝ  -- min employees to transport
   S : ℝ  -- max buses allowed

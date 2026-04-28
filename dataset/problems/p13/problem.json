@@ -3,18 +3,22 @@
     "parameters": {
         "nP": {
             "description": "Number of flights",
+            "type": "integer",
             "shape": []
         },
         "nA": {
             "description": "Number of airspace sectors",
+            "type": "integer",
             "shape": []
         },
         "nT": {
             "description": "Number of time periods",
+            "type": "integer",
             "shape": []
         },
         "tau": {
             "description": "Transition time between each pair of sectors",
+            "type": "integer",
             "shape": [
                 "nA",
                 "nA"
@@ -22,6 +26,7 @@
         },
         "r": {
             "description": "Revenue earned by scheduling flight p in time period t",
+            "type": "continuous",
             "shape": [
                 "nP",
                 "nT"
@@ -29,6 +34,7 @@
         },
         "cap": {
             "description": "Capacity of sector a in time period t",
+            "type": "integer",
             "shape": [
                 "nA",
                 "nT"

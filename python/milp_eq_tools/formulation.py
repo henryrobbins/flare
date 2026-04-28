@@ -7,7 +7,16 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from .codegen import generate
-from .models import Assumption, Constraint, Definition, Objective, Parameter, Variable, VariableType
+from .models import (
+    Assumption,
+    Constraint,
+    Definition,
+    Objective,
+    Parameter,
+    ParameterType,
+    Variable,
+    VariableType,
+)
 
 if TYPE_CHECKING:
     from .problem import Problem
@@ -28,7 +37,11 @@ class Formulation:
     def _load_from_raw(self, raw: dict) -> None:
         self.valid: bool = raw["valid"]
         self.parameters: dict[str, Parameter] = {
-            k: Parameter(description=v["description"], shape=v["shape"])
+            k: Parameter(
+                description=v["description"],
+                type=ParameterType(v.get("type", "continuous")),
+                shape=v["shape"],
+            )
             for k, v in raw["parameters"].items()
         }
         self.definitions: dict[str, Definition] = {

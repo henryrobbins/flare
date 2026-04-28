@@ -3,52 +3,63 @@
     "parameters": {
         "nN": {
             "description": "Total number of nodes in the supply network (suppliers, transshipment points, and beneficiary camps)",
+            "type": "integer",
             "shape": []
         },
         "nS": {
             "description": "Number of supplier nodes",
+            "type": "integer",
             "shape": []
         },
         "nT": {
             "description": "Number of transshipment nodes",
+            "type": "integer",
             "shape": []
         },
         "nB": {
             "description": "Number of beneficiary camps",
+            "type": "integer",
             "shape": []
         },
         "nP": {
             "description": "Number of simple paths from a supplier to a beneficiary camp",
+            "type": "integer",
             "shape": []
         },
         "nK": {
             "description": "Number of food commodities",
+            "type": "integer",
             "shape": []
         },
         "nL": {
             "description": "Number of nutritional requirements",
+            "type": "integer",
             "shape": []
         },
         "S": {
             "description": "Supplier node indices: S[s] is the index in N of supplier s",
+            "type": "integer",
             "shape": [
                 "nS"
             ]
         },
         "T": {
             "description": "Transshipment node indices: T[t] is the index in N of transshipment node t",
+            "type": "integer",
             "shape": [
                 "nT"
             ]
         },
         "B": {
             "description": "Beneficiary camp node indices: B[j] is the index in N of beneficiary camp j",
+            "type": "integer",
             "shape": [
                 "nB"
             ]
         },
         "E": {
             "description": "Adjacency matrix: 1 if a directed edge exists from node i to node j, 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nN",
                 "nN"
@@ -56,6 +67,7 @@
         },
         "pE": {
             "description": "Path-edge indicator: 1 if edge (i, j) is part of path p, 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nP",
                 "nN",
@@ -64,6 +76,7 @@
         },
         "pRank": {
             "description": "Rank/position of node v within path p; strictly increases along path edges",
+            "type": "integer",
             "shape": [
                 "nP",
                 "nN"
@@ -71,6 +84,7 @@
         },
         "c": {
             "description": "Shipping cost per kg of commodity k along path p",
+            "type": "continuous",
             "shape": [
                 "nP",
                 "nK"
@@ -78,12 +92,14 @@
         },
         "q": {
             "description": "Procurement cost per kg of commodity k",
+            "type": "continuous",
             "shape": [
                 "nK"
             ]
         },
         "nutval": {
             "description": "Nutritional value per kg of commodity k for nutrient l",
+            "type": "continuous",
             "shape": [
                 "nK",
                 "nL"
@@ -91,18 +107,21 @@
         },
         "nutreq": {
             "description": "Per-person nutritional requirement for nutrient l",
+            "type": "continuous",
             "shape": [
                 "nL"
             ]
         },
         "dem": {
             "description": "Number of beneficiaries at beneficiary camp j",
+            "type": "integer",
             "shape": [
                 "nB"
             ]
         },
         "e": {
             "description": "Indicator: 1 if path p ends at beneficiary camp j, 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nB",
                 "nP"
@@ -196,30 +215,6 @@
             "explicit": true,
             "code": {
                 "python": "assert len(set(S)) == nS and len(set(T)) == nT and len(set(B)) == nB"
-            }
-        },
-        {
-            "description": "Adjacency matrix entries are binary (0 or 1).",
-            "formulation": "E_{ij} \\in \\{0, 1\\} \\quad \\forall i, j \\in N",
-            "explicit": false,
-            "code": {
-                "python": "assert all(E[i][j] in (0, 1) for i in range(nN) for j in range(nN))"
-            }
-        },
-        {
-            "description": "Path-end indicator entries are binary (0 or 1).",
-            "formulation": "e_{jp} \\in \\{0, 1\\} \\quad \\forall j \\in N_B, p \\in P",
-            "explicit": false,
-            "code": {
-                "python": "assert all(e[j][p] in (0, 1) for j in range(nB) for p in range(nP))"
-            }
-        },
-        {
-            "description": "Path-edge indicator entries are binary (0 or 1).",
-            "formulation": "pE_{p,i,j} \\in \\{0, 1\\} \\quad \\forall p \\in P, i, j \\in N",
-            "explicit": false,
-            "code": {
-                "python": "assert all(pE[p][i][j] in (0, 1) for p in range(nP) for i in range(nN) for j in range(nN))"
             }
         },
         {

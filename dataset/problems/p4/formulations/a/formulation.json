@@ -3,26 +3,32 @@
     "parameters": {
         "CarCapacity": {
             "description": "The number of employees that a car can take",
+            "type": "integer",
             "shape": []
         },
         "CarPollution": {
             "description": "The pollution produced by a car",
+            "type": "continuous",
             "shape": []
         },
         "BusCapacity": {
             "description": "The number of employees that a bus can take",
+            "type": "integer",
             "shape": []
         },
         "BusPollution": {
             "description": "The pollution produced by a bus",
+            "type": "continuous",
             "shape": []
         },
         "MinEmployeesToTransport": {
             "description": "The minimum number of employees that need to be transported",
+            "type": "continuous",
             "shape": []
         },
         "MaxBuses": {
             "description": "The maximum number of buses that can be used",
+            "type": "continuous",
             "shape": []
         }
     },

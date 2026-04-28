@@ -3,6 +3,7 @@
     "parameters": {
         "N": {
             "description": "Size of the grid (number of rows and columns)",
+            "type": "integer",
             "shape": []
         }
     },
@@ -32,7 +33,7 @@
             }
         },
         "I": {
-            "description": "Set of column interval pairs (a, b) with a ≤ b",
+            "description": "Set of column interval pairs (a, b) with a <= b",
             "formulation": "I = \\{(a, b) \\in C \\times C : a \\le b\\}",
             "code": {
                 "python": "I = [(a, b) for a in C for b in range(a, N)]"
@@ -126,7 +127,7 @@
             "explicit": true
         },
         {
-            "description": "Top-Row Vertical Break (V1 EC3): a hole in row 0 forces a strip starting in row 1 to cover the same column (only when N≥2).",
+            "description": "Top-Row Vertical Break (V1 EC3): a hole in row 0 forces a strip starting in row 1 to cover the same column (only when N >= 2).",
             "formulation": "h_{0,j} \\le \\sum_{(a,b) \\in I:\\, a \\le j \\le b} s_1^{ab} \\quad \\forall j \\in \\{0,\\dots,N-1\\},\\; N \\ge 2",
             "code": {
                 "gurobipy": "if N >= 2: model.addConstrs(h[0, j] <= gp.quicksum(s[1, a, b] for (a, b) in I if a <= j <= b) for j in C)"

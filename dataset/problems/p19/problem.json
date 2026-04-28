@@ -3,26 +3,31 @@
     "parameters": {
         "nH": {
             "description": "Total number of candidate hub locations",
+            "type": "integer",
             "shape": []
         },
         "Hf": {
             "description": "Indicator for each hub: 1 if the hub is fixed and must remain open, 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nH"
             ]
         },
         "nC": {
             "description": "Number of disaster-prone regions",
+            "type": "integer",
             "shape": []
         },
         "a": {
             "description": "Number of people affected in each disaster region",
+            "type": "integer",
             "shape": [
                 "nC"
             ]
         },
         "C": {
             "description": "Cost of transporting relief items for one affected person from each hub to each region",
+            "type": "continuous",
             "shape": [
                 "nH",
                 "nC"
@@ -30,6 +35,7 @@
         },
         "t": {
             "description": "Transportation time from each hub to each region",
+            "type": "continuous",
             "shape": [
                 "nH",
                 "nC"
@@ -37,10 +43,12 @@
         },
         "T": {
             "description": "Maximum allowed transportation time from any hub to any region it serves",
+            "type": "continuous",
             "shape": []
         },
         "n": {
             "description": "Maximum number of hubs that can be opened",
+            "type": "integer",
             "shape": []
         }
     },

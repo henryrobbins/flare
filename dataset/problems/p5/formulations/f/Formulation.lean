@@ -5,8 +5,8 @@ namespace P5.f
 structure Params where
   Z : ℝ  -- water per bag of subsoil per day
   B : ℝ  -- water per bag of topsoil per day
-  D : ℝ  -- max total bags (subsoil + topsoil)
-  P : ℝ  -- min topsoil bags
+  D : ℤ  -- max total bags (subsoil + topsoil)
+  P : ℤ  -- min topsoil bags
   K : ℝ  -- max topsoil proportion of all bags
   -- Implicit Assumptions
   hZ_nn : 0 ≤ Z
@@ -25,9 +25,9 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   -- Topsoil proportion ≤ K
   hprop    : (v.d1 : ℝ) + v.d2 ≤ p.K * (((v.d1 : ℝ) + v.d2) + ((v.h1 : ℝ) + v.h2))
   -- Total bags ≤ max
-  htotal   : (v.h1 : ℝ) + v.h2 + ((v.d1 : ℝ) + v.d2) ≤ p.D
+  htotal   : (v.h1 : ℝ) + v.h2 + ((v.d1 : ℝ) + v.d2) ≤ (p.D : ℝ)
   -- At least P topsoil bags
-  hmin_top : p.P ≤ (v.d1 : ℝ) + v.d2
+  hmin_top : (p.P : ℝ) ≤ (v.d1 : ℝ) + v.d2
   hd1_nn : 0 ≤ v.d1
   hd2_nn : 0 ≤ v.d2
   hh1_nn : 0 ≤ v.h1

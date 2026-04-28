@@ -3,48 +3,58 @@
     "parameters": {
         "nN": {
             "description": "Total number of nodes in the supply network (suppliers, transshipment points, and beneficiary camps)",
+            "type": "integer",
             "shape": []
         },
         "nS": {
             "description": "Number of supplier nodes",
+            "type": "integer",
             "shape": []
         },
         "nT": {
             "description": "Number of transshipment nodes",
+            "type": "integer",
             "shape": []
         },
         "nB": {
             "description": "Number of beneficiary camps",
+            "type": "integer",
             "shape": []
         },
         "nK": {
             "description": "Number of food commodities",
+            "type": "integer",
             "shape": []
         },
         "nL": {
             "description": "Number of nutritional requirements",
+            "type": "integer",
             "shape": []
         },
         "S": {
             "description": "Supplier node indices: S[s] is the index in N of supplier s",
+            "type": "integer",
             "shape": [
                 "nS"
             ]
         },
         "T": {
             "description": "Transshipment node indices: T[t] is the index in N of transshipment node t",
+            "type": "integer",
             "shape": [
                 "nT"
             ]
         },
         "B": {
             "description": "Beneficiary camp node indices: B[j] is the index in N of beneficiary camp j",
+            "type": "integer",
             "shape": [
                 "nB"
             ]
         },
         "E": {
             "description": "Adjacency matrix: 1 if a directed edge exists from node i to node j, 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nN",
                 "nN"
@@ -52,18 +62,21 @@
         },
         "dem": {
             "description": "Number of beneficiaries at each beneficiary camp",
+            "type": "integer",
             "shape": [
                 "nB"
             ]
         },
         "pc": {
             "description": "Procurement cost per kg of each commodity",
+            "type": "continuous",
             "shape": [
                 "nK"
             ]
         },
         "tc": {
             "description": "Transportation cost per kg of commodity k along the edge from node i to node j",
+            "type": "continuous",
             "shape": [
                 "nN",
                 "nN",
@@ -72,12 +85,14 @@
         },
         "nutreq": {
             "description": "Per-person nutritional requirement for each nutrient",
+            "type": "continuous",
             "shape": [
                 "nL"
             ]
         },
         "nutval": {
             "description": "Nutritional value per kg of each commodity for each nutrient",
+            "type": "continuous",
             "shape": [
                 "nK",
                 "nL"

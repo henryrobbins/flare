@@ -3,40 +3,48 @@
   "parameters": {
     "NumBeakers": {
       "description": "Number of beakers",
+      "type": "integer",
       "shape": []
     },
     "FlourAvailable": {
       "description": "Amount of flour available",
+      "type": "continuous",
       "shape": []
     },
     "SpecialLiquidAvailable": {
       "description": "Amount of special liquid available",
+      "type": "continuous",
       "shape": []
     },
     "MaxWasteAllowed": {
       "description": "Maximum amount of waste allowed",
+      "type": "continuous",
       "shape": []
     },
     "FlourUsagePerBeaker": {
       "description": "Amount of flour used by each beaker",
+      "type": "continuous",
       "shape": [
         "NumBeakers"
       ]
     },
     "SpecialLiquidUsagePerBeaker": {
       "description": "Amount of special liquid used by each beaker",
+      "type": "continuous",
       "shape": [
         "NumBeakers"
       ]
     },
     "SlimeProducedPerBeaker": {
       "description": "Amount of slime produced by each beaker",
+      "type": "continuous",
       "shape": [
         "NumBeakers"
       ]
     },
     "WasteProducedPerBeaker": {
       "description": "Amount of waste produced by each beaker",
+      "type": "continuous",
       "shape": [
         "NumBeakers"
       ]

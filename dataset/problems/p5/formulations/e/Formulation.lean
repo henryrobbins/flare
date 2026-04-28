@@ -5,8 +5,8 @@ namespace P5.e
 structure Params where
   Z : ℝ  -- water per bag of subsoil per day
   B : ℝ  -- water per bag of topsoil per day
-  D : ℝ  -- max total bags (subsoil + topsoil)
-  P : ℝ  -- min topsoil bags
+  D : ℤ  -- max total bags (subsoil + topsoil)
+  P : ℤ  -- min topsoil bags
   K : ℝ  -- max topsoil proportion of all bags
   -- Implicit Assumptions
   hZ_nn : 0 ≤ Z
@@ -26,9 +26,9 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   -- Topsoil proportion equality with slack
   hprop    : (v.d : ℝ) + v.slack_0 = p.K * ((v.d : ℝ) + v.h)
   -- Total bags equality with slack
-  htotal   : (v.h : ℝ) + v.d + v.slack_1 = p.D
+  htotal   : (v.h : ℝ) + v.d + v.slack_1 = (p.D : ℝ)
   -- Min topsoil equality with slack
-  hmin_top : (v.d : ℝ) - v.slack_2 = p.P
+  hmin_top : (v.d : ℝ) - v.slack_2 = (p.P : ℝ)
   hh_nn : 0 ≤ v.h
   hd_nn : 0 ≤ v.d
   -- Slack non-negativity

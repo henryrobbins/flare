@@ -9,7 +9,7 @@
 ### Parameters
 
 {% for name, p in parameters.items() %}
-- **{{ name }}** (shape: `{{ p.shape }}`): {{ p.description }}
+- **{{ name }}** (type: {{ p.type.value }}, shape: `{{ p.shape }}`): {{ p.description }}
 {% endfor %}
 
 {% if assumptions %}

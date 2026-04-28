@@ -3,32 +3,38 @@
     "parameters": {
         "n": {
             "description": "Number of customers",
+            "type": "integer",
             "shape": []
         },
         "m": {
             "description": "Number of candidate warehouses",
+            "type": "integer",
             "shape": []
         },
         "d": {
             "description": "Demand of customer i",
+            "type": "continuous",
             "shape": [
                 "n"
             ]
         },
         "u": {
             "description": "Capacity of warehouse j",
+            "type": "continuous",
             "shape": [
                 "m"
             ]
         },
         "f": {
             "description": "Fixed cost to open warehouse j",
+            "type": "continuous",
             "shape": [
                 "m"
             ]
         },
         "c": {
             "description": "Transportation cost if all of customer i's demand is served by warehouse j (already accounts for d_i)",
+            "type": "continuous",
             "shape": [
                 "n",
                 "m"

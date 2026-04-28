@@ -3,22 +3,27 @@
     "parameters": {
         "WaterSubsoil": {
             "description": "Amount of water required to hydrate one bag of subsoil per day",
+            "type": "continuous",
             "shape": []
         },
         "WaterTopsoil": {
             "description": "Amount of water required to hydrate one bag of topsoil per day",
+            "type": "continuous",
             "shape": []
         },
         "MaxTotalBags": {
             "description": "Maximum number of bags of topsoil and subsoil combined",
+            "type": "integer",
             "shape": []
         },
         "MinTopsoilBags": {
             "description": "Minimum number of topsoil bags to be used",
+            "type": "integer",
             "shape": []
         },
         "MaxTopsoilProportion": {
             "description": "Maximum proportion of bags that can be topsoil",
+            "type": "continuous",
             "shape": []
         }
     },

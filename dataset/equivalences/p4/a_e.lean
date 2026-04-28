@@ -30,7 +30,7 @@ private def paramMap (p : P4.a.Params) : P4.e.Params :=
 private def fwd (p : P4.a.Params) (v : P4.a.Vars) : P4.e.Vars :=
   { m       := v.xCars
     h       := v.xBuses
-    slack_0 := (v.xCars : ℝ) * p.CarCapacity + (v.xBuses : ℝ) * p.BusCapacity - p.MinEmployeesToTransport
+    slack_0 := (v.xCars : ℝ) * (p.CarCapacity : ℝ) + (v.xBuses : ℝ) * (p.BusCapacity : ℝ) - p.MinEmployeesToTransport
     slack_1 := p.MaxBuses - (v.xBuses : ℝ) }
 
 private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)

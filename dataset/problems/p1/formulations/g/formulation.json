@@ -3,26 +3,32 @@
     "parameters": {
         "Y": {
             "description": "The quantity of paper rolls consumed every hour by a machine that operates on cash.",
+            "type": "continuous",
             "shape": []
         },
         "U": {
             "description": "The lowest amount of individuals that need to be handled per hour.",
+            "type": "continuous",
             "shape": []
         },
         "A": {
             "description": "The number of individuals processed by a cash-operated machine within an hour.",
+            "type": "continuous",
             "shape": []
         },
         "V": {
             "description": "The highest quantity of paper rolls that can be utilized within a single hour",
+            "type": "continuous",
             "shape": []
         },
         "K": {
             "description": "The number of individuals a card-only machine can handle in one hour.",
+            "type": "continuous",
             "shape": []
         },
         "W": {
             "description": "Quantity of paper rolls utilized hourly by a machine that only accepts cards",
+            "type": "continuous",
             "shape": []
         }
     },

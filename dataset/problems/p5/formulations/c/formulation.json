@@ -3,22 +3,27 @@
     "parameters": {
         "P": {
             "description": "The smallest quantity of topsoil bags that should be employed",
+            "type": "integer",
             "shape": []
         },
         "B": {
             "description": "The quantity of water needed to moisturize one bag of topsoil daily.",
+            "type": "continuous",
             "shape": []
         },
         "D": {
             "description": "The highest quantity of bags containing a mixture of topsoil and subsoil",
+            "type": "integer",
             "shape": []
         },
         "Z": {
             "description": "Quantity of water needed to keep one bag of subsoil hydrated on a daily basis",
+            "type": "continuous",
             "shape": []
         },
         "K": {
             "description": "The highest percentage of bags that can contain topsoil.",
+            "type": "continuous",
             "shape": []
         }
     },

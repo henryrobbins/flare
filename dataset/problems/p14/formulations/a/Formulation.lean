@@ -15,12 +15,13 @@ structure Params where
   T : Fin nS → Fin nH → ℝ  -- travel time from candidate DC i to hospital j
   T_limit : ℝ  -- travel time limit
   delta : Fin nS → Fin nH → ℤ  -- feasibility indicator, 1 if T i j ≤ T_limit else 0
+  -- Assumptions
+  hdelta_bin : ∀ i j, delta i j = 0 ∨ delta i j = 1
   -- Implicit Assumptions
   hnS : NeZero nS
   hnH : NeZero nH
   hT_nn : ∀ i j, 0 ≤ T i j
   hT_limit_nn : 0 ≤ T_limit
-  hdelta_bin : ∀ i j, delta i j = 0 ∨ delta i j = 1
   hdelta_def : ∀ i j, (delta i j = 1 ↔ T i j ≤ T_limit) ∧ (delta i j = 0 ↔ T_limit < T i j)
 
 structure Vars where

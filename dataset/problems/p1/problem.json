@@ -3,26 +3,32 @@
     "parameters": {
         "CashMachineProcessingRate": {
             "description": "Processing rate of a cash-based machine in people per hour",
+            "type": "continuous",
             "shape": []
         },
         "CardMachineProcessingRate": {
             "description": "Processing rate of a card-only machine in people per hour",
+            "type": "continuous",
             "shape": []
         },
         "CashMachinePaperRolls": {
             "description": "Number of paper rolls used per hour by a cash-based machine",
+            "type": "continuous",
             "shape": []
         },
         "CardMachinePaperRolls": {
             "description": "Number of paper rolls used per hour by a card-only machine",
+            "type": "continuous",
             "shape": []
         },
         "MinPeopleProcessed": {
             "description": "Minimum number of people that must be processed per hour",
+            "type": "continuous",
             "shape": []
         },
         "MaxPaperRolls": {
             "description": "Maximum number of paper rolls that can be used per hour",
+            "type": "continuous",
             "shape": []
         }
     },

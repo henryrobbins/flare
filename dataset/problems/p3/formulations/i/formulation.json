@@ -3,34 +3,42 @@
     "parameters": {
         "L": {
             "description": "The amount of time needed to cool in order to create a single tempered glass panel.",
+            "type": "continuous",
             "shape": []
         },
         "S": {
             "description": "The amount of time needed for a regular glass pane to cool down.",
+            "type": "continuous",
             "shape": []
         },
         "P": {
             "description": "Time needed to heat up to create a single tempered glass panel.",
+            "type": "continuous",
             "shape": []
         },
         "H": {
             "description": "Earnings per each treated glass panel",
+            "type": "continuous",
             "shape": []
         },
         "T": {
             "description": "Earnings from each standard-sized glass sheet",
+            "type": "continuous",
             "shape": []
         },
         "C": {
             "description": "The duration of heating needed to make a single standard glass panel",
+            "type": "continuous",
             "shape": []
         },
         "D": {
             "description": "The highest amount of time the heating machine can be used in a day.",
+            "type": "continuous",
             "shape": []
         },
         "V": {
             "description": "The maximum time allotted for the cooling machine to operate each day.",
+            "type": "continuous",
             "shape": []
         }
     },

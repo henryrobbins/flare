@@ -3,14 +3,17 @@
     "parameters": {
         "n": {
             "description": "Number of jobs",
+            "type": "integer",
             "shape": []
         },
         "m": {
             "description": "Number of machines",
+            "type": "integer",
             "shape": []
         },
         "p": {
             "description": "Processing time of each operation",
+            "type": "continuous",
             "shape": [
                 "n",
                 "m"
@@ -18,6 +21,7 @@
         },
         "Om": {
             "description": "Machine index assigned to each operation",
+            "type": "integer",
             "shape": [
                 "n",
                 "m"

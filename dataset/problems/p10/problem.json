@@ -3,14 +3,17 @@
     "parameters": {
         "K": {
             "description": "Number of trucks/vehicles in the fleet",
+            "type": "integer",
             "shape": []
         },
         "N": {
             "description": "Number of pickup and delivery jobs",
+            "type": "integer",
             "shape": []
         },
         "d": {
             "description": "Travel time from job i's return terminal to job j's pickup terminal; d[i][i] is the loaded time (rejection penalty) of job i",
+            "type": "continuous",
             "shape": [
                 "N",
                 "N"
@@ -18,6 +21,7 @@
         },
         "d0": {
             "description": "Travel time from the home terminal of truck k to job i's pickup terminal",
+            "type": "continuous",
             "shape": [
                 "K",
                 "N"
@@ -25,6 +29,7 @@
         },
         "dH": {
             "description": "Travel time from job i's return terminal to the home terminal of truck k",
+            "type": "continuous",
             "shape": [
                 "K",
                 "N"
@@ -32,18 +37,21 @@
         },
         "v": {
             "description": "Time at which each truck becomes available",
+            "type": "continuous",
             "shape": [
                 "K"
             ]
         },
         "tau_min": {
             "description": "Earliest permissible arrival time at each job's pickup terminal",
+            "type": "continuous",
             "shape": [
                 "N"
             ]
         },
         "tau_max": {
             "description": "Latest permissible arrival time at each job's pickup terminal",
+            "type": "continuous",
             "shape": [
                 "N"
             ]

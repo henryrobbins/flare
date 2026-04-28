@@ -3,22 +3,27 @@
     "parameters": {
         "N": {
             "description": "Number of existing hubs that must remain open (hubs 0..N-1)",
+            "type": "integer",
             "shape": []
         },
         "M": {
             "description": "Total number of hub locations (existing and potential new)",
+            "type": "integer",
             "shape": []
         },
         "nP": {
             "description": "Number of Points of Interest (destinations)",
+            "type": "integer",
             "shape": []
         },
         "nS": {
             "description": "Number of junction roads (commuter origins)",
+            "type": "integer",
             "shape": []
         },
         "v": {
             "description": "Commuter demand from junction s to POI p",
+            "type": "continuous",
             "shape": [
                 "nS",
                 "nP"
@@ -26,6 +31,7 @@
         },
         "F": {
             "description": "Feasibility indicator: 1 iff junction-hub-POI triple is viable for Park and Bike use",
+            "type": "binary",
             "shape": [
                 "nS",
                 "M",
@@ -34,6 +40,7 @@
         },
         "U": {
             "description": "Maximum number of new hubs that can be opened",
+            "type": "integer",
             "shape": []
         }
     },
@@ -44,14 +51,6 @@
             "explicit": false,
             "code": {
                 "python": "assert all(v[s][p] >= 0 for s in range(nS) for p in range(nP))"
-            }
-        },
-        {
-            "description": "Feasibility indicators are binary.",
-            "formulation": "F_{shp} \\in \\{0, 1\\} \\quad \\forall s \\in S, h \\in H, p \\in P",
-            "explicit": true,
-            "code": {
-                "python": "assert all(F[s][h][p] in (0, 1) for s in range(nS) for h in range(M) for p in range(nP))"
             }
         },
         {

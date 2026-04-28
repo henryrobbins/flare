@@ -3,9 +3,9 @@ import Common
 namespace P4.c
 
 structure Params where
-  K : ℝ  -- car capacity (employees per car)
+  K : ℤ  -- car capacity (employees per car)
   M : ℝ  -- car pollution
-  D : ℝ  -- bus capacity (employees per bus)
+  D : ℤ  -- bus capacity (employees per bus)
   O : ℝ  -- bus pollution
   J : ℝ  -- min employees to transport
   S : ℝ  -- max buses allowed
@@ -27,7 +27,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   -- Use at most S buses
   hmaxbus : ((v.h_0 + 10 * v.h_1 : ℤ) : ℝ) ≤ p.S
   -- Transport at least J employees
-  htransport : p.J ≤ ((v.m_0 + 10 * v.m_1 : ℤ) : ℝ) * p.K + ((v.h_0 + 10 * v.h_1 : ℤ) : ℝ) * p.D
+  htransport : p.J ≤ ((v.m_0 + 10 * v.m_1 : ℤ) : ℝ) * (p.K : ℝ) + ((v.h_0 + 10 * v.h_1 : ℤ) : ℝ) * (p.D : ℝ)
   -- Digit bounds
   hm0_nn : 0 ≤ v.m_0
   hm1_nn : 0 ≤ v.m_1

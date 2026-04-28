@@ -3,66 +3,83 @@
     "parameters": {
         "n": {
             "description": "Number of blocks",
+            "type": "integer",
             "shape": []
         },
         "t": {
             "description": "Number of scheduling periods",
+            "type": "integer",
             "shape": []
         },
         "c": {
             "description": "Net Present Value (NPV) of mining block i in period tau",
-            "shape": ["n", "t"]
+            "type": "continuous",
+            "shape": [
+                "n",
+                "t"
+            ]
         },
         "g": {
             "description": "Ore grade of each block",
-            "shape": ["n"]
+            "type": "continuous",
+            "shape": [
+                "n"
+            ]
         },
         "O": {
             "description": "Ore tonnage of each block",
-            "shape": ["n"]
+            "type": "continuous",
+            "shape": [
+                "n"
+            ]
         },
         "W": {
             "description": "Waste tonnage of each block",
-            "shape": ["n"]
+            "type": "continuous",
+            "shape": [
+                "n"
+            ]
         },
         "G_min": {
             "description": "Minimum allowed average ore grade in any period",
+            "type": "continuous",
             "shape": []
         },
         "G_max": {
             "description": "Maximum allowed average ore grade in any period",
+            "type": "continuous",
             "shape": []
         },
         "PC_min": {
             "description": "Minimum per-period ore processing capacity",
+            "type": "continuous",
             "shape": []
         },
         "PC_max": {
             "description": "Maximum per-period ore processing capacity",
+            "type": "continuous",
             "shape": []
         },
         "MC_min": {
             "description": "Minimum per-period total mining capacity (ore + waste)",
+            "type": "continuous",
             "shape": []
         },
         "MC_max": {
             "description": "Maximum per-period total mining capacity (ore + waste)",
+            "type": "continuous",
             "shape": []
         },
         "P": {
             "description": "Precedence matrix: P[i][j] = 1 if block i must be mined before block j",
-            "shape": ["n", "n"]
+            "type": "binary",
+            "shape": [
+                "n",
+                "n"
+            ]
         }
     },
     "assumptions": [
-        {
-            "description": "Precedence matrix entries are binary.",
-            "formulation": "P_{ij} \\in \\{0,1\\} \\quad \\forall i,j \\in I",
-            "explicit": true,
-            "code": {
-                "python": "assert all(P[i][j] in (0, 1) for i in range(n) for j in range(n))"
-            }
-        },
         {
             "description": "Number of blocks is positive.",
             "formulation": "n \\geq 1",

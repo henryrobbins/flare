@@ -5,8 +5,8 @@ namespace P5.j
 structure Params where
   Z : ℝ  -- water per bag of subsoil per day
   B : ℝ  -- water per bag of topsoil per day
-  D : ℝ  -- max total bags (subsoil + topsoil)
-  P : ℝ  -- min topsoil bags
+  D : ℤ  -- max total bags (subsoil + topsoil)
+  P : ℤ  -- min topsoil bags
   K : ℝ  -- max topsoil proportion of all bags
   -- Implicit Assumptions
   hZ_nn : 0 ≤ Z

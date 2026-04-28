@@ -12,13 +12,14 @@ structure Params where
   nP : ℕ  -- number of flights
   nA : ℕ  -- number of locations
   nT : ℕ  -- number of event times
-  tau : Fin nA → Fin nA → ℕ  -- transition time from location a to a'
+  tau : Fin nA → Fin nA → ℤ  -- transition time from location a to a'
   r : Fin nA → Fin nT → ℝ  -- reward for being at location a at event time t
-  cap : Fin nA → Fin nT → ℝ  -- capacity of location a at event time t
+  cap : Fin nA → Fin nT → ℤ  -- capacity of location a at event time t
   -- Implicit Assumptions
   hnP : NeZero nP
   hnA : NeZero nA
   hnT : NeZero nT
+  htau_nn : ∀ a a', 0 ≤ tau a a'
   hcap_nn : ∀ a t, 0 ≤ cap a t
 
 structure Vars where
@@ -30,7 +31,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
     1 ≤ ∑ a : Fin p.nA, ∑ a' : Fin p.nA, ∑ t : Fin p.nT, v.x pl a a' t
   -- Respect location capacity at each event time
   hcap : ∀ (a : Fin p.nA) (t : Fin p.nT),
-    (∑ pl : Fin p.nP, ∑ a' : Fin p.nA, (v.x pl a a' t : ℝ)) ≤ p.cap a t
+    (∑ pl : Fin p.nP, ∑ a' : Fin p.nA, (v.x pl a a' t : ℝ)) ≤ (p.cap a t : ℝ)
   -- x_{p,a,a',t} ∈ {0,1}
   hx_bin : ∀ (pl : Fin p.nP) (a a' : Fin p.nA) (t : Fin p.nT),
     v.x pl a a' t = 0 ∨ v.x pl a a' t = 1

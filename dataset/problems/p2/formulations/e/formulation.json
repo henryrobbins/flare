@@ -3,22 +3,26 @@
     "parameters": {
         "N": {
             "description": "Number of resource types",
+            "type": "integer",
             "shape": []
         },
         "Y": {
             "description": "The quantity of resource j that is accessible.",
+            "type": "continuous",
             "shape": [
                 "N"
             ]
         },
         "A": {
             "description": "The quantity of electrical energy generated from trial i",
+            "type": "continuous",
             "shape": [
                 "M"
             ]
         },
         "I": {
             "description": "Resource j quantity needed for experiment i.",
+            "type": "continuous",
             "shape": [
                 "N",
                 "M"
@@ -26,6 +30,7 @@
         },
         "M": {
             "description": "Number of experiment types",
+            "type": "integer",
             "shape": []
         }
     },

@@ -3,22 +3,27 @@
     "parameters": {
         "Q": {
             "description": "The smallest quantity of antique bottles that must be manufactured",
+            "type": "continuous",
             "shape": []
         },
         "D": {
             "description": "Volume of an antique bottle measured in milliliters",
+            "type": "continuous",
             "shape": []
         },
         "O": {
             "description": "The smallest proportion of standard bottles compared to antique bottles.",
+            "type": "continuous",
             "shape": []
         },
         "J": {
             "description": "Volume of a typical bottle measured in milliliters",
+            "type": "continuous",
             "shape": []
         },
         "A": {
             "description": "The overall quantity of wine that is in milliliters and ready for use.",
+            "type": "continuous",
             "shape": []
         }
     },
