@@ -3,22 +3,27 @@
     "parameters": {
         "L": {
             "description": "The fewest amount of containers required",
+            "type": "continuous",
             "shape": []
         },
         "V": {
             "description": "The smallest quantity of oil units required to be transported to the port.",
+            "type": "continuous",
             "shape": []
         },
         "G": {
             "description": "The quantity of oil that each container is capable of holding.",
+            "type": "continuous",
             "shape": []
         },
         "Y": {
             "description": "Quantity of oil that each truck is capable of carrying",
+            "type": "continuous",
             "shape": []
         },
         "K": {
             "description": "The highest permitted proportion of trucks to containers",
+            "type": "continuous",
             "shape": []
         }
     },
