@@ -3,22 +3,27 @@
     "parameters": {
         "N": {
             "description": "Number of existing hubs that must remain open",
+            "type": "integer",
             "shape": []
         },
         "M": {
             "description": "Total number of hub locations (existing and potential)",
+            "type": "integer",
             "shape": []
         },
         "nP": {
             "description": "Number of Points of Interest (destinations)",
+            "type": "integer",
             "shape": []
         },
         "nS": {
             "description": "Number of junction roads (commuter origins)",
+            "type": "integer",
             "shape": []
         },
         "v": {
             "description": "Commuter demand from each junction to each POI",
+            "type": "continuous",
             "shape": [
                 "nS",
                 "nP"
@@ -26,6 +31,7 @@
         },
         "c_sp": {
             "description": "Car travel time from each junction to each POI (minutes)",
+            "type": "continuous",
             "shape": [
                 "nS",
                 "nP"
@@ -33,6 +39,7 @@
         },
         "c_sh": {
             "description": "Car travel time from each junction to each hub (minutes)",
+            "type": "continuous",
             "shape": [
                 "nS",
                 "M"
@@ -40,6 +47,7 @@
         },
         "b_hp": {
             "description": "Bike travel time from each hub to each POI (minutes)",
+            "type": "continuous",
             "shape": [
                 "M",
                 "nP"
@@ -47,6 +55,7 @@
         },
         "d_sp": {
             "description": "Driving distance from each junction to each POI (kilometers)",
+            "type": "continuous",
             "shape": [
                 "nS",
                 "nP"
@@ -54,6 +63,7 @@
         },
         "d_hp": {
             "description": "Distance from each hub to each POI (kilometers)",
+            "type": "continuous",
             "shape": [
                 "M",
                 "nP"
@@ -61,6 +71,7 @@
         },
         "d_sh": {
             "description": "Driving distance from each junction to each hub (kilometers)",
+            "type": "continuous",
             "shape": [
                 "nS",
                 "M"
@@ -68,14 +79,17 @@
         },
         "T": {
             "description": "Maximum allowed bike travel time from a hub to a POI (minutes)",
+            "type": "continuous",
             "shape": []
         },
         "U": {
             "description": "Maximum number of new hubs that can be opened",
+            "type": "integer",
             "shape": []
         },
         "D": {
             "description": "Minimum required distance between a hub and a POI (kilometers)",
+            "type": "continuous",
             "shape": [
                 "M",
                 "nP"
@@ -83,10 +97,12 @@
         },
         "Delta": {
             "description": "Maximum additional travel time allowed when using a bike via a hub compared to driving directly by car (minutes)",
+            "type": "continuous",
             "shape": []
         },
         "tau": {
             "description": "Minimum required distance saving when routing via a hub (kilometers)",
+            "type": "continuous",
             "shape": []
         }
     },
