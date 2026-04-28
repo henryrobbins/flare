@@ -3,20 +3,24 @@
     "parameters": {
         "NumExperiments": {
             "description": "Number of experiment types",
+            "type": "integer",
             "shape": []
         },
         "NumResources": {
             "description": "Number of resource types",
+            "type": "integer",
             "shape": []
         },
         "ResourceAvailable": {
             "description": "Amount of resource j available",
+            "type": "continuous",
             "shape": [
                 "NumResources"
             ]
         },
         "ResourceRequired": {
             "description": "Amount of resource j required for experiment i",
+            "type": "continuous",
             "shape": [
                 "NumResources",
                 "NumExperiments"
@@ -24,6 +28,7 @@
         },
         "ElectricityProduced": {
             "description": "Amount of electricity produced by experiment i",
+            "type": "continuous",
             "shape": [
                 "NumExperiments"
             ]

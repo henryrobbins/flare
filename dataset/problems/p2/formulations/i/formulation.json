@@ -3,26 +3,32 @@
     "parameters": {
         "F": {
             "description": "Proportion of cat paw treats in the initial blend",
+            "type": "continuous",
             "shape": []
         },
         "S": {
             "description": "Profit earned per each kilogram of the initial blend",
+            "type": "continuous",
             "shape": []
         },
         "R": {
             "description": "Quantity of cat paw treats in stock",
+            "type": "continuous",
             "shape": []
         },
         "Z": {
             "description": "Revenue generated for each kilogram of the alternate blend",
+            "type": "continuous",
             "shape": []
         },
         "W": {
             "description": "Gold shark treats in stock by weight.",
+            "type": "continuous",
             "shape": []
         },
         "M": {
             "description": "The proportion of feline paw treats in the second blend",
+            "type": "continuous",
             "shape": []
         }
     },
