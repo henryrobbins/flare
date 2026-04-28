@@ -3,20 +3,24 @@
     "parameters": {
         "nH": {
             "description": "Total number of candidate hub locations",
+            "type": "integer",
             "shape": []
         },
         "nC": {
             "description": "Number of disaster-prone regions",
+            "type": "integer",
             "shape": []
         },
         "a": {
             "description": "Number of people affected in each disaster region",
+            "type": "integer",
             "shape": [
                 "nC"
             ]
         },
         "C": {
             "description": "Cost of transporting relief items for one affected person from each hub to each region",
+            "type": "continuous",
             "shape": [
                 "nH",
                 "nC"
@@ -24,6 +28,7 @@
         },
         "t": {
             "description": "Transportation time from each hub to each region",
+            "type": "continuous",
             "shape": [
                 "nH",
                 "nC"
@@ -31,14 +36,17 @@
         },
         "T": {
             "description": "Maximum allowed transportation time from any hub to any region it serves",
+            "type": "continuous",
             "shape": []
         },
         "n": {
             "description": "Maximum number of hubs that can be opened",
+            "type": "integer",
             "shape": []
         },
         "Hf": {
             "description": "Indicator for each hub: 1 if the hub is fixed and must remain open, 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nH"
             ]
@@ -83,14 +91,6 @@
             "explicit": false,
             "code": {
                 "python": "assert all(t[h][c] >= 0 for h in range(nH) for c in range(nC))"
-            }
-        },
-        {
-            "description": "The hub fixed indicator is binary for each hub.",
-            "formulation": "Hf_h \\in \\{0, 1\\} \\quad \\forall h \\in H",
-            "explicit": true,
-            "code": {
-                "python": "assert all(Hf[h] in (0, 1) for h in range(nH))"
             }
         }
     ],
