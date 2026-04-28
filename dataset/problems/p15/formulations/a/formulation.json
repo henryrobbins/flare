@@ -3,26 +3,32 @@
     "parameters": {
         "nI": {
             "description": "Number of sectors",
+            "type": "integer",
             "shape": []
         },
         "nJ": {
             "description": "Number of distinct apartment floor areas",
+            "type": "integer",
             "shape": []
         },
         "nH": {
             "description": "Number of owner classes",
+            "type": "integer",
             "shape": []
         },
         "nV": {
             "description": "Number of floor configurations",
+            "type": "integer",
             "shape": []
         },
         "K": {
             "description": "Total number of floors in the tower",
+            "type": "integer",
             "shape": []
         },
         "R": {
             "description": "Number of apartments with floor area j in configuration v",
+            "type": "integer",
             "shape": [
                 "nJ",
                 "nV"
@@ -30,6 +36,7 @@
         },
         "O": {
             "description": "Profit per apartment for sector i, floor area j, and owner h",
+            "type": "continuous",
             "shape": [
                 "nI",
                 "nJ",
@@ -38,12 +45,14 @@
         },
         "area": {
             "description": "Actual floor area value for area index j",
+            "type": "continuous",
             "shape": [
                 "nJ"
             ]
         },
         "m": {
             "description": "Minimum floor area required for each sector i and owner h",
+            "type": "continuous",
             "shape": [
                 "nI",
                 "nH"
@@ -51,28 +60,33 @@
         },
         "a": {
             "description": "Minimum fraction of total apartments that must belong to each sector i",
+            "type": "continuous",
             "shape": [
                 "nI"
             ]
         },
         "s": {
             "description": "Minimum average floor area required for apartments in each sector i",
+            "type": "continuous",
             "shape": [
                 "nI"
             ]
         },
         "o": {
             "description": "Minimum fraction of total apartments that must belong to each owner class h",
+            "type": "continuous",
             "shape": [
                 "nH"
             ]
         },
         "iFree": {
             "description": "Index of the free sector",
+            "type": "integer",
             "shape": []
         },
         "hCorp": {
             "description": "Index of the corporation owner class",
+            "type": "integer",
             "shape": []
         }
     },
