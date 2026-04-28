@@ -3,10 +3,12 @@
     "parameters": {
         "n": {
             "description": "Number of cities",
+            "type": "integer",
             "shape": []
         },
         "c": {
             "description": "Travel cost from city i to city j",
+            "type": "continuous",
             "shape": [
                 "n",
                 "n"
