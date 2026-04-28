@@ -55,10 +55,10 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   -- Each floor has exactly one configuration and owner
   hfloor : ∀ k : Fin p.nK,
     ∑ cfg : Fin p.nV, ∑ h : Fin p.nH, v.x k cfg h = 1
-  -- Link apartments to their floor's configuration and owner
+  -- Each apartment on a chosen floor must be assigned to exactly one sector
   hlink : ∀ (k : Fin p.nK) (cfg : Fin p.nV) (h : Fin p.nH) (a : Fin p.nA),
     a ∈ apts p.cap cfg p.nA →
-    ∑ i : Fin p.nI, v.y k cfg h i a ≤ v.x k cfg h
+    ∑ i : Fin p.nI, v.y k cfg h i a = v.x k cfg h
   -- Apartments outside A_v carry no assignments
   hy_outside : ∀ (k : Fin p.nK) (cfg : Fin p.nV) (h : Fin p.nH) (i : Fin p.nI) (a : Fin p.nA),
     a ∉ apts p.cap cfg p.nA → v.y k cfg h i a = 0

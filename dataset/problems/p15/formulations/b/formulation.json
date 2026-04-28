@@ -1,5 +1,5 @@
 {
-    "valid": false,
+    "valid": true,
     "parameters": {
         "nK": {
             "description": "Number of floors in the tower",
@@ -251,11 +251,11 @@
             }
         },
         {
-            "description": "Each apartment on a floor can be assigned to a sector only if the floor uses the matching configuration and owner.",
-            "formulation": "\\sum_{i \\in I} y_{kvhia} \\leq x_{kvh} \\quad \\forall k \\in K,\\; v \\in V,\\; h \\in H,\\; a \\in A_v",
+            "description": "Each apartment on a chosen floor must be assigned to exactly one sector.",
+            "formulation": "\\sum_{i \\in I} y_{kvhia} = x_{kvh} \\quad \\forall k \\in K,\\; v \\in V,\\; h \\in H,\\; a \\in A_v",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(gp.quicksum(y[k, v, h, i, a] for i in range(nI)) <= x[k, v, h] for k in range(nK) for v in range(nV) for h in range(nH) for a in range(cap[v]))"
+                "gurobipy": "model.addConstrs(gp.quicksum(y[k, v, h, i, a] for i in range(nI)) == x[k, v, h] for k in range(nK) for v in range(nV) for h in range(nH) for a in range(cap[v]))"
             }
         },
         {
