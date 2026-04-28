@@ -12,13 +12,14 @@ structure Params where
   nP : ℕ  -- number of flights
   nA : ℕ  -- number of locations
   nT : ℕ  -- number of time periods
-  tau : Fin nA → Fin nA → ℕ  -- transition time from a to a'
+  tau : Fin nA → Fin nA → ℤ  -- transition time from a to a'
   r : Fin nA → Fin nT → ℝ  -- reward for being at location a at time t
-  cap : Fin nA → Fin nT → ℝ  -- capacity of location a at time t
+  cap : Fin nA → Fin nT → ℤ  -- capacity of location a at time t
   -- Implicit Assumptions
   hnP : NeZero nP
   hnA : NeZero nA
   hnT : NeZero nT
+  htau_nn : ∀ a a', 0 ≤ tau a a'
   hcap_nn : ∀ a t, 0 ≤ cap a t
 
 structure Vars where
@@ -29,7 +30,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   -- Each flight is at exactly one location at each time
   hassign : ∀ (pl : Fin p.nP) (t : Fin p.nT), ∑ a : Fin p.nA, v.y pl a t = 1
   -- Respect location capacity at each time
-  hcap : ∀ (a : Fin p.nA) (t : Fin p.nT), (∑ pl : Fin p.nP, (v.y pl a t : ℝ)) ≤ p.cap a t
+  hcap : ∀ (a : Fin p.nA) (t : Fin p.nT), (∑ pl : Fin p.nP, (v.y pl a t : ℝ)) ≤ (p.cap a t : ℝ)
   -- Flow conservation with travel time (for t > 0)
   hflow : ∀ (pl : Fin p.nP) (a : Fin p.nA) (t : Fin p.nT), 0 < t.val →
     v.y pl a t =

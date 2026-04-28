@@ -3,18 +3,22 @@
     "parameters": {
         "nP": {
             "description": "Number of flights",
+            "type": "integer",
             "shape": []
         },
         "nA": {
             "description": "Number of airspace sectors/locations",
+            "type": "integer",
             "shape": []
         },
         "nT": {
             "description": "Number of time periods",
+            "type": "integer",
             "shape": []
         },
         "tau": {
             "description": "Transition time from location a to location a'",
+            "type": "integer",
             "shape": [
                 "nA",
                 "nA"
@@ -22,6 +26,7 @@
         },
         "r": {
             "description": "Reward for being at location a at time t",
+            "type": "continuous",
             "shape": [
                 "nA",
                 "nT"
@@ -29,6 +34,7 @@
         },
         "cap": {
             "description": "Capacity of location a at time t",
+            "type": "integer",
             "shape": [
                 "nA",
                 "nT"
