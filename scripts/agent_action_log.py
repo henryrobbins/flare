@@ -18,6 +18,7 @@ import csv
 import json
 import sys
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ── pricing (claude-sonnet-4-6, $/token) ─────────────────────────────────────
@@ -136,7 +137,9 @@ CSV_FIELDS = [
     "task_context",  # description of the containing subagent (empty at depth 0)
     "subtask_description",  # for Task/Agent calls: description of the launched task
     "subtask_tool_uses",  # for Task/Agent calls: tool use count from task_notification
-    "duration_ms",  # estimated wall time for this call
+    "start_ms",   # ms since first tool result (wall-clock relative to session start)
+    "end_ms",     # ms since first tool result (wall-clock relative to session start)
+    "duration_ms",  # end_ms - start_ms
     "input_tokens",
     "cache_create_tokens",
     "cache_read_tokens",
@@ -145,11 +148,29 @@ CSV_FIELDS = [
     "is_error",
 ]
 
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
+def _parse_ts(s: str) -> datetime:
+    return datetime.fromisoformat(s.replace("Z", "+00:00"))
+
+
+def _build_tool_timestamps(events: list[dict]) -> dict[str, datetime]:
+    """Map each tool_use_id to the timestamp of its user-event result."""
+    ts_map: dict[str, datetime] = {}
+    for e in events:
+        if e.get("type") == "user" and e.get("timestamp"):
+            ts = _parse_ts(e["timestamp"])
+            for c in e.get("message", {}).get("content", []):
+                if c.get("type") == "tool_result":
+                    ts_map[c["tool_use_id"]] = ts
+    return ts_map
+
 
 def _build_task_durations(events: list[dict]) -> dict[str, list[int]]:
     """
     Return {task_id: [delta_ms_for_tool_1, delta_ms_for_tool_2, ...]}.
-    Each list entry is the wall time for the Nth tool call within that task.
+    Fallback for runs that have task_progress events (older format).
     """
     by_task: dict[str, list] = defaultdict(list)
     for e in events:
@@ -203,28 +224,25 @@ def parse_action_log(path: Path) -> list[dict]:
         m["tool_use_id"]: tid for tid, m in task_meta.items() if m["tool_use_id"]
     }
 
-    # ── per-task durations ─────────────────────────────────────────────────
+    # ── timestamp map: tool_use_id -> completion datetime ─────────────────
+    # User events carry ISO timestamps when the tool result was returned.
+    # Duration for call i = completion_ts[i] - completion_ts[i-1].
+    # This captures both tool execution time and API round-trip wait time.
+    tool_completion_ts = _build_tool_timestamps(events)
+
+    # Fallback: task_progress-based durations for older run formats.
     task_durations = _build_task_durations(events)
-    # counter tracks how many tool calls we've attributed within each task
     task_call_count: dict[str, int] = defaultdict(int)
 
-    # ── parent task lookup ─────────────────────────────────────────────────
-    # tool_use_id (of a Task call) -> task_id it created
-    # already covered by tool_use_to_task above.
-
     # ── resolve parent chain -> task_id for subagent events ───────────────
-    # assistant event parent_tool_use_id == None  → depth 0 (root)
-    # assistant event parent_tool_use_id == X     → depth 1+ (subagent)
-    # We need the task containing this parent to get description / duration.
-    # tool_use_to_task maps the Task call's tool_use_id → task_id.
     def depth_and_task(parent_tuid: str | None) -> tuple[int, str | None]:
         if parent_tuid is None:
             return 0, None
         if parent_tuid in tool_use_to_task:
             return 1, tool_use_to_task[parent_tuid]
-        return 1, None  # nested beyond 1 level; best effort
+        return 1, None
 
-    # ── tool results ──────────────────────────────────────────────────────
+    # ── tool results (error flag) ──────────────────────────────────────────
     tool_result_error: dict[str, bool] = {}
     for e in events:
         if e.get("type") == "user":
@@ -232,7 +250,8 @@ def parse_action_log(path: Path) -> list[dict]:
                 if c.get("type") == "tool_result":
                     tool_result_error[c["tool_use_id"]] = bool(c.get("is_error", False))
 
-    # ── build rows ────────────────────────────────────────────────────────
+    # ── collect ordered tool-use records ──────────────────────────────────
+    # We need two passes: first collect all rows, then fill in start/end_ms.
     rows: list[dict] = []
     action_idx = 0
 
@@ -264,20 +283,6 @@ def parse_action_log(path: Path) -> list[dict]:
                 tool_name, tu.get("input", {}), cwd, repo_root
             )
 
-            # duration
-            duration_ms: int | None = None
-            if task_id and task_id in task_durations:
-                idx = task_call_count[task_id]
-                deltas = task_durations[task_id]
-                if idx < len(deltas):
-                    duration_ms = deltas[idx]
-                task_call_count[task_id] += 1
-            elif tuid in tool_use_to_task:
-                # This IS a Task call — use the task_notification duration
-                child_task_id = tool_use_to_task[tuid]
-                fu = task_meta.get(child_task_id, {}).get("final_usage", {})
-                duration_ms = fu.get("duration_ms")
-
             # subtask info (if this call launches a subagent)
             subtask_desc = ""
             subtask_tool_uses = ""
@@ -297,7 +302,11 @@ def parse_action_log(path: Path) -> list[dict]:
                     "task_context": task_desc,
                     "subtask_description": subtask_desc,
                     "subtask_tool_uses": subtask_tool_uses,
-                    "duration_ms": "" if duration_ms is None else duration_ms,
+                    "_tuid": tuid,        # temporary; stripped before CSV write
+                    "_task_id": task_id,  # temporary
+                    "start_ms": "",
+                    "end_ms": "",
+                    "duration_ms": "",
                     "input_tokens": inp_tok,
                     "cache_create_tokens": cc_tok,
                     "cache_read_tokens": cr_tok,
@@ -309,6 +318,53 @@ def parse_action_log(path: Path) -> list[dict]:
                 }
             )
             action_idx += 1
+
+    # ── fill in timing ─────────────────────────────────────────────────────
+    # Primary: use completion timestamps from user events.
+    # t0 = first completion timestamp; all times are relative to it.
+    # Duration[i] = ts[i] - ts[i-1]; start[i] = end[i-1]; start[0] = 0.
+    tuids = [r["_tuid"] for r in rows]
+    ts_list = [tool_completion_ts.get(uid) for uid in tuids]
+
+    if any(t is not None for t in ts_list):
+        t0 = next(t for t in ts_list if t is not None)
+        prev_end_ms = 0
+        for i, row in enumerate(rows):
+            ts = ts_list[i]
+            if ts is not None:
+                end_ms = round((ts - t0).total_seconds() * 1000)
+                row["start_ms"] = prev_end_ms
+                row["end_ms"] = end_ms
+                row["duration_ms"] = max(end_ms - prev_end_ms, 0)
+                prev_end_ms = end_ms
+            else:
+                # No timestamp: fall back to task_progress delta if available.
+                task_id = row["_task_id"]
+                if task_id and task_id in task_durations:
+                    idx = task_call_count[task_id]
+                    deltas = task_durations[task_id]
+                    if idx < len(deltas):
+                        dur = deltas[idx]
+                        row["start_ms"] = prev_end_ms
+                        row["end_ms"] = prev_end_ms + dur
+                        row["duration_ms"] = dur
+                        prev_end_ms += dur
+                    task_call_count[task_id] += 1
+    else:
+        # No timestamps at all: fall back entirely to task_progress deltas.
+        for row in rows:
+            task_id = row["_task_id"]
+            if task_id and task_id in task_durations:
+                idx = task_call_count[task_id]
+                deltas = task_durations[task_id]
+                if idx < len(deltas):
+                    row["duration_ms"] = deltas[idx]
+                task_call_count[task_id] += 1
+
+    # strip temporaries
+    for row in rows:
+        row.pop("_tuid", None)
+        row.pop("_task_id", None)
 
     return rows
 
