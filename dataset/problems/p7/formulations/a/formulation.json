@@ -3,6 +3,7 @@
     "parameters": {
         "N": {
             "description": "Size of the grid (number of rows and columns)",
+            "type": "integer",
             "shape": []
         }
     },
@@ -32,7 +33,7 @@
             }
         },
         "I": {
-            "description": "Set of column interval pairs (a, b) with a ≤ b",
+            "description": "Set of column interval pairs (a, b) with a <= b",
             "formulation": "I = \\{(a, b) \\in C \\times C : a \\le b\\}",
             "code": {
                 "python": "I = [(a, b) for a in C for b in range(a, N)]"
