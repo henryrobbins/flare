@@ -3,22 +3,27 @@
     "parameters": {
         "nS": {
             "description": "Number of candidate DC (distribution center) locations",
+            "type": "integer",
             "shape": []
         },
         "nH": {
             "description": "Number of hospital locations",
+            "type": "integer",
             "shape": []
         },
         "n": {
             "description": "Number of DCs that must be opened",
+            "type": "integer",
             "shape": []
         },
         "T_limit": {
             "description": "Maximum allowed travel time from a DC to any hospital it serves",
+            "type": "continuous",
             "shape": []
         },
         "T": {
             "description": "Travel time from each candidate DC location to each hospital",
+            "type": "continuous",
             "shape": [
                 "nS",
                 "nH"

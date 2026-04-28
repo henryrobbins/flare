@@ -3,22 +3,27 @@
     "parameters": {
         "nS": {
             "description": "Number of candidate DC locations",
+            "type": "integer",
             "shape": []
         },
         "nH": {
             "description": "Number of hospital locations",
+            "type": "integer",
             "shape": []
         },
         "n": {
             "description": "Number of DCs that must be opened",
+            "type": "integer",
             "shape": []
         },
         "T_limit": {
             "description": "Maximum allowed travel time from a DC to any hospital it serves",
+            "type": "continuous",
             "shape": []
         },
         "T": {
             "description": "Travel time from candidate DC location i to hospital j",
+            "type": "continuous",
             "shape": [
                 "nS",
                 "nH"
@@ -26,6 +31,7 @@
         },
         "delta": {
             "description": "Feasibility indicator: 1 if travel time from DC i to hospital j is within the limit, 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nS",
                 "nH"
@@ -71,14 +77,6 @@
             "explicit": false,
             "code": {
                 "python": "assert n <= nS"
-            }
-        },
-        {
-            "description": "delta is binary.",
-            "formulation": "\\delta_{ij} \\in \\{0, 1\\} \\quad \\forall i \\in \\mathcal{S},\\, j \\in \\mathcal{H}",
-            "explicit": true,
-            "code": {
-                "python": "assert all(delta[i][j] in (0, 1) for i in range(nS) for j in range(nH))"
             }
         },
         {
