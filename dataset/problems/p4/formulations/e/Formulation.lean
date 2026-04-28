@@ -3,9 +3,9 @@ import Common
 namespace P4.e
 
 structure Params where
-  K : ℝ  -- car capacity (employees per car)
+  K : ℤ  -- car capacity (employees per car)
   M : ℝ  -- car pollution
-  D : ℝ  -- bus capacity (employees per bus)
+  D : ℤ  -- bus capacity (employees per bus)
   O : ℝ  -- bus pollution
   J : ℝ  -- min employees to transport
   S : ℝ  -- max buses allowed
@@ -25,7 +25,7 @@ structure Vars where
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Transport equality with slack (slack_0 ≥ 0 makes original ≥ constraint)
-  htransport : (v.m : ℝ) * p.K + (v.h : ℝ) * p.D - v.slack_0 = p.J
+  htransport : (v.m : ℝ) * (p.K : ℝ) + (v.h : ℝ) * (p.D : ℝ) - v.slack_0 = p.J
   -- Max buses equality with slack
   hbuses : (v.h : ℝ) + v.slack_1 = p.S
   -- [Implicit Constraints]

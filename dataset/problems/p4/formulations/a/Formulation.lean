@@ -3,9 +3,9 @@ import Common
 namespace P4.a
 
 structure Params where
-  CarCapacity : ℝ  -- car capacity (employees per car)
+  CarCapacity : ℤ  -- car capacity (employees per car)
   CarPollution : ℝ  -- car pollution
-  BusCapacity : ℝ  -- bus capacity (employees per bus)
+  BusCapacity : ℤ  -- bus capacity (employees per bus)
   BusPollution : ℝ  -- bus pollution
   MinEmployeesToTransport : ℝ  -- min employees to transport
   MaxBuses : ℝ  -- max buses allowed
@@ -23,7 +23,7 @@ structure Vars where
 
 structure Feasible (p : Params) (v : Vars) : Prop where
   -- Transport at least MinEmployeesToTransport employees
-  htransport : p.MinEmployeesToTransport ≤ (v.xCars : ℝ) * p.CarCapacity + (v.xBuses : ℝ) * p.BusCapacity
+  htransport : p.MinEmployeesToTransport ≤ (v.xCars : ℝ) * (p.CarCapacity : ℝ) + (v.xBuses : ℝ) * (p.BusCapacity : ℝ)
   -- Use at most MaxBuses buses
   hmaxbus : (v.xBuses : ℝ) ≤ p.MaxBuses
   -- [Implicit Constraints]

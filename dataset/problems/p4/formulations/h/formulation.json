@@ -3,30 +3,37 @@
     "parameters": {
         "U": {
             "description": "Duration of each trip taken by a runner (in hours)",
+            "type": "continuous",
             "shape": []
         },
         "C": {
             "description": "The highest number of hours available in the village for deliveries.",
+            "type": "continuous",
             "shape": []
         },
         "V": {
             "description": "The quantity of bags that a runner is permitted to transport during each journey.",
+            "type": "continuous",
             "shape": []
         },
         "N": {
             "description": "The duration of time a canoeist spends on each trip (in hours)",
+            "type": "continuous",
             "shape": []
         },
         "Z": {
             "description": "The quantity of bags that a person in a canoe can transport on every journey",
+            "type": "continuous",
             "shape": []
         },
         "E": {
             "description": "The minimum amount of athletes required for participation.",
+            "type": "continuous",
             "shape": []
         },
         "P": {
             "description": "The highest proportion of all deliveries that can be transported via canoe.",
+            "type": "continuous",
             "shape": []
         }
     },
