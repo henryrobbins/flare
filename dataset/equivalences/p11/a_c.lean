@@ -62,7 +62,7 @@ private def paramMap (p : P11.a.Params) : P11.c.Params :=
     hSD_nn     := p.hSD_nn
     hU_pos     := p.hU_pos
     hD_pos     := p.hD_pos
-    hMR_nn     := p.hMR_nn }
+    hMR_bin    := p.hMR_bin }
 
 -- ============================================================================
 -- § Forward Mapping and Feasibility

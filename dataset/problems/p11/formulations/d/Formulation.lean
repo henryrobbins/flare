@@ -39,7 +39,9 @@ structure Params where
   -- Minimum up/down times and must-run
   U : Fin nG → ℕ -- minimum up time
   D : Fin nG → ℕ -- minimum down time
-  MR : Fin nG → ℝ -- must-run level
+  MR : Fin nG → ℤ -- must-run flag (binary)
+  -- Assumption
+  hMR_bin : ∀ g : Fin nG, MR g = 0 ∨ MR g = 1
   -- Implicit Assumptions
   hT_pos : NeZero nT
   hG_pos : NeZero nG
@@ -64,7 +66,6 @@ structure Params where
   hSD_nn : ∀ g : Fin nG, 0 ≤ SD g
   hU_pos : ∀ g : Fin nG, 1 ≤ U g
   hD_pos : ∀ g : Fin nG, 1 ≤ D g
-  hMR_nn : ∀ g : Fin nG, 0 ≤ MR g
 
 structure Vars where
   u : ℕ → ℕ → ℤ -- on status of generator g at time t
@@ -110,7 +111,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
         v.w g.val (t.val - (p.ell g s + i))
   -- Must-run: generators with MR > 0 must remain on
   hmust_run : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
-    p.MR g ≤ (v.u g.val t.val : ℝ)
+    (p.MR g : ℝ) ≤ (v.u g.val t.val : ℝ)
   -- Startup derating: output + reserve limited by startup ramp during startup
   hcap_su : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
     v.p g.val t.val + v.r g.val t.val ≤

@@ -3,24 +3,29 @@
     "parameters": {
         "T": {
             "description": "Number of time periods",
+            "type": "integer",
             "shape": []
         },
         "n_G": {
             "description": "Number of thermal generators",
+            "type": "integer",
             "shape": []
         },
         "n_W": {
             "description": "Number of renewable (wind) generators",
+            "type": "integer",
             "shape": []
         },
         "n_S": {
             "description": "Number of startup categories per thermal generator",
+            "type": "integer",
             "shape": [
                 "n_G"
             ]
         },
         "ell": {
             "description": "Startup lag for each startup category of each generator",
+            "type": "integer",
             "shape": [
                 "n_G",
                 "n_S[n_G]"
@@ -28,6 +33,7 @@
         },
         "C_su": {
             "description": "Startup cost for each startup category of each generator",
+            "type": "continuous",
             "shape": [
                 "n_G",
                 "n_S[n_G]"
@@ -35,12 +41,14 @@
         },
         "n_L": {
             "description": "Number of piecewise production breakpoints per generator",
+            "type": "integer",
             "shape": [
                 "n_G"
             ]
         },
         "P": {
             "description": "Piecewise production breakpoints for each generator",
+            "type": "continuous",
             "shape": [
                 "n_G",
                 "n_L[n_G]"
@@ -48,6 +56,7 @@
         },
         "C": {
             "description": "Piecewise variable production cost at each breakpoint for each generator",
+            "type": "continuous",
             "shape": [
                 "n_G",
                 "n_L[n_G]"
@@ -55,36 +64,42 @@
         },
         "C_fixed": {
             "description": "Fixed cost incurred when a thermal generator is on during a time period",
+            "type": "continuous",
             "shape": [
                 "n_G"
             ]
         },
         "L": {
             "description": "Demand requirement at each time period",
+            "type": "continuous",
             "shape": [
                 "T"
             ]
         },
         "R": {
             "description": "Spinning reserve requirement at each time period",
+            "type": "continuous",
             "shape": [
                 "T"
             ]
         },
         "P_min": {
             "description": "Minimum thermal output of each generator",
+            "type": "continuous",
             "shape": [
                 "n_G"
             ]
         },
         "P_max": {
             "description": "Maximum thermal output of each generator",
+            "type": "continuous",
             "shape": [
                 "n_G"
             ]
         },
         "P_wind_min": {
             "description": "Minimum renewable output for each wind generator at each time period",
+            "type": "continuous",
             "shape": [
                 "n_W",
                 "T"
@@ -92,6 +107,7 @@
         },
         "P_wind_max": {
             "description": "Maximum renewable output for each wind generator at each time period",
+            "type": "continuous",
             "shape": [
                 "n_W",
                 "T"
@@ -99,42 +115,49 @@
         },
         "RU": {
             "description": "Ramp-up limit for each generator",
+            "type": "continuous",
             "shape": [
                 "n_G"
             ]
         },
         "RD": {
             "description": "Ramp-down limit for each generator",
+            "type": "continuous",
             "shape": [
                 "n_G"
             ]
         },
         "SU": {
             "description": "Startup ramp limit for each generator",
+            "type": "continuous",
             "shape": [
                 "n_G"
             ]
         },
         "SD": {
             "description": "Shutdown ramp limit for each generator",
+            "type": "continuous",
             "shape": [
                 "n_G"
             ]
         },
         "U": {
             "description": "Minimum up time for each generator",
+            "type": "integer",
             "shape": [
                 "n_G"
             ]
         },
         "D": {
             "description": "Minimum down time for each generator",
+            "type": "integer",
             "shape": [
                 "n_G"
             ]
         },
         "MR": {
             "description": "Must-run flag for each generator",
+            "type": "binary",
             "shape": [
                 "n_G"
             ]
@@ -318,11 +341,11 @@
             }
         },
         {
-            "description": "Must-run flag is non-negative.",
-            "formulation": "MR_g \\ge 0 \\quad \\forall g",
+            "description": "Must-run flag is binary.",
+            "formulation": "MR_g \\in \\{0,1\\} \\quad \\forall g",
             "explicit": false,
             "code": {
-                "python": "assert all(MR[g] >= 0 for g in range(n_G))"
+                "python": "assert all(MR[g] in (0, 1) for g in range(n_G))"
             }
         },
         {
