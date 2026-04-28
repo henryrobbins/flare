@@ -222,5 +222,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Experiment runs
+# Experiment runs and results
 runs/
+results/

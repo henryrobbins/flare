@@ -269,7 +269,7 @@ class EquivaProofVerifier(EquivalenceVerifier):
             # Lean emits "warning: 'X' uses sorry" when sorry is present.
             # Only meaningful when the file compiled and the def was found.
             sorry_free = (
-                "uses sorry" not in proof_output
+                "uses `sorry`" not in proof_output
                 if (proof_compiled and milp_equiv_found)
                 else False
             )
