@@ -47,14 +47,14 @@ NOTE: Params structure — problem dimensions, data, and assumptions.
 - `Params` is a plain (parameter-less) structure. Do NOT write
   `structure Params (n : ℕ)` or attach any `[NeZero …]` to it.
 - Dimensions come first as `ℕ` fields. Later data fields reference them.
-- Data fields follow: vectors `Fin <dim> → ℝ`, matrices
-  `Fin <dim1> → Fin <dim2> → ℝ`, scalars `ℝ`.
+- Data fields follow: vectors `Fin <dim> → <ℝ|ℤ>`, matrices
+  `Fin <dim1> → Fin <dim2> → <ℝ|ℤ>`, scalars `<ℝ|ℤ>`.
 - In `Params`, indexed data MUST use `Fin <dim>` for every index, never `ℕ`.
 - If an index range itself depends on a prior parameter (e.g. each item
   `a` in set `A` has different set size `n_B a`) — use a *dependent*
   function type, not flat `ℕ → ℕ`:
     n_B  : Fin n_A → ℕ
-    x  : (a : Fin n_A) → Fin (n_B a) → ℕ
+    x  : (a : Fin n_A) → Fin (n_B a) → ℤ
   Do NOT collapse these to `ℕ → ℕ` or `ℕ → ℕ → ℝ`.
 - Each parameter has an inline comment with a short description.
 - Single space before `:`; do NOT pad field names for column alignment.

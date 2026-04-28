@@ -5,6 +5,7 @@ from enum import Enum
 @dataclass(frozen=True)
 class Parameter:
     description: str
+    type: "ParameterType"
     shape: list[int | str]
 
 
@@ -19,6 +20,12 @@ class Variable:
 
 
 class VariableType(str, Enum):
+    continuous = "continuous"
+    integer = "integer"
+    binary = "binary"
+
+
+class ParameterType(str, Enum):
     continuous = "continuous"
     integer = "integer"
     binary = "binary"

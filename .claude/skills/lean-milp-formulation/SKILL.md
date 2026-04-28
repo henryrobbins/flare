@@ -32,18 +32,22 @@ See `template.lean` for the canonical layout.
 
 ## Type encoding
 
-| Concept                         | Lean encoding                                       |
-| ------------------------------- | --------------------------------------------------- |
-| Problem dimension               | `ℕ` field of `Params`                               |
-| Scalar data                     | `ℝ`                                                 |
-| Index set tied to a dimension   | `Fin <dim>` where `<dim>` is a prior `Params` field |
-| Continuous variable / parameter | `ℝ`                                                 |
-| General integer variable        | `ℤ`                                                 |
-| Binary variable                 | `ℤ` with `hvar_bin : ∀ i, var i = 0 ∨ var i = 1`    |
-| Vector parameter `b[i]`         | `b : Fin <dim> → ℝ`                                 |
-| Matrix parameter `A[i][j]`      | `A : Fin <dim1> → Fin <dim2> → ℝ`                   |
-| Vector variable                 | `v : ℕ → ℤ` (or `ℕ → ℝ`); note domain is `ℕ`        |
-| Summation `∑`                   | `∑ i : Fin p.<dim>, …` with `open BigOperators`     |
+Use `ℝ` universally for continuous quantities and `ℤ` universally for integer
+quantities. This applies uniformly to parameters and variables. The only `ℕ`
+in a formulation is for problem _dimensions_ (sizes used to build `Fin`).
+
+| Concept                       | Lean encoding                                             |
+| ----------------------------- | --------------------------------------------------------- |
+| Problem dimension             | `ℕ` field of `Params`                                     |
+| Index set tied to a dimension | `Fin <dim>` where `<dim>` is a prior `Params` field       |
+| Continuous (scalar)           | `ℝ`                                                       |
+| Continuous vector `b[i]`      | `b : Fin <dim> → ℝ`                                       |
+| Continuous matrix `A[i][j]`   | `A : Fin <dim1> → Fin <dim2> → ℝ`                         |
+| Integer (scalar)              | `ℤ`                                                       |
+| Integer vector                | `Fin <dim> → ℤ`                                           |
+| Binary                        | `ℤ` with `h<name>_bin : ∀ …, <name> … = 0 ∨ <name> … = 1` |
+| Non-negative                  | `h<name>_nn : ∀ …, 0 ≤ <name> …`                          |
+| Summation `∑`                 | `∑ i : Fin p.<dim>, …` with `open BigOperators`           |
 
 ## Formulation Modeling Rules
 
@@ -175,7 +179,8 @@ always write them explicitly.
   an _assumption field_ inside `Params`: `hNumFoo : NeZero NumFoo`. Do
   NOT write `[NeZero n]` anywhere.
 - **Binary via `Bool` or `Fin 2`.** Use `ℤ` with an explicit
-  `hvar_bin : … = 0 ∨ … = 1` constraint in `Feasible`.
+  `h<name>_bin : … = 0 ∨ … = 1` constraint (in `Feasible` for variables, in
+  the `Params` assumptions for parameters).
 - **Objective not in ℝ.** Even when all data and vars are integer, cast to
   ℝ in `obj`. `MILPFormulation.obj` is ℝ-valued. For maximization,
   negate: `- (∑ …)`.
