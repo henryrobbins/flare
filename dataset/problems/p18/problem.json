@@ -3,24 +3,29 @@
     "parameters": {
         "nI": {
             "description": "Number of household clusters",
+            "type": "integer",
             "shape": []
         },
         "m": {
             "description": "Number of existing hospitals",
+            "type": "integer",
             "shape": []
         },
         "M": {
             "description": "Total number of candidate hospital sites (including existing hospitals)",
+            "type": "integer",
             "shape": []
         },
         "v": {
             "description": "Population of each household cluster",
+            "type": "continuous",
             "shape": [
                 "nI"
             ]
         },
         "d": {
             "description": "Travel distance from each household to each hospital site",
+            "type": "continuous",
             "shape": [
                 "nI",
                 "M"
@@ -28,10 +33,12 @@
         },
         "S": {
             "description": "Maximum allowed travel distance from household to hospital",
+            "type": "continuous",
             "shape": []
         },
         "p": {
             "description": "Maximum number of new hospitals that can be opened",
+            "type": "integer",
             "shape": []
         }
     },
