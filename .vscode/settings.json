@@ -1,3 +1,4 @@
 {
-    "python.analysis.extraPaths": ["python"]
+    "python.analysis.extraPaths": ["python"],
+    "search.followSymlinks": false
 }
