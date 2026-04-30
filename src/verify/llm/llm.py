@@ -11,15 +11,28 @@ from src.llm_client import LLMClient, compute_cost_usd
 
 
 class LLMVerifier(EquivalenceVerifier):
-    def __init__(self, client: LLMClient) -> None:
+    def __init__(
+        self,
+        client: LLMClient,
+        name: str = "llm",
+        template: str = "equivalence.j2",
+        include_implicit: bool = True,
+    ) -> None:
         self.client = client
+        self._name = name
+        self.template = template
+        self.include_implicit = include_implicit
 
     @property
     def name(self) -> str:
-        return "llm"
+        return self._name
 
     def method_config(self) -> dict:
-        return {"llm": dataclasses.asdict(self.client.config)}
+        return {
+            "llm": dataclasses.asdict(self.client.config),
+            "template": self.template,
+            "include_implicit": self.include_implicit,
+        }
 
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path
@@ -31,7 +44,9 @@ class LLMVerifier(EquivalenceVerifier):
             json.dumps(self.method_config(), indent=2)
         )
 
-        rendered = render_equivalence(a, b)
+        rendered = render_equivalence(
+            a, b, template=self.template, include_implicit=self.include_implicit
+        )
         (artifacts_dir / "prompt.txt").write_text(rendered.user)
 
         start = time.time()

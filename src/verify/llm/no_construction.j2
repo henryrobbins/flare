@@ -1,0 +1,12 @@
+You are given the following two Mixed-Integer Linear Programming (MILP) formulations. You are tasked with deciding if the two formulations are equivalent.
+
+{{ problem_a }}
+
+{{ problem_b }}
+
+We define two formulation as **equivalent** if the following conditions hold:
+1. There is a mapping $f$ from feasible solutions of formulation A to feasible solutions of formulation B.
+2. There is a mapping $g$ from feasible solutions of formulation B to feasible solutions of formulation A.
+3. There is a strictly increasing or decreasing monotone function $h$. Let $obj_A$ and $obj_B$ be the objective functions for formulation A and B respectively. For any feasible solution $x$ of formulation A, we have $obj_B(f(x)) = h(obj_A(x))$. For any feasible solution $y$ of formulation B, we have $obj_B(y) = h(obj_A(g(y)))$.
+
+When you are finished reasoning, provide a short summary of your conclusion and a final determination of equivalence (true or false). When uncertain, treat the formulations as not equivalent.

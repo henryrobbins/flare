@@ -42,7 +42,15 @@ def problem_info(f: Formulation) -> dict:
     }
 
 
-def render_formulation(formulation: Formulation) -> str:
+def render_formulation(
+    formulation: Formulation, include_implicit: bool = True
+) -> str:
+    assumptions = formulation.assumptions
+    constraints = formulation.constraints
+    if not include_implicit:
+        assumptions = [a for a in assumptions if a.explicit]
+        constraints = [c for c in constraints if c.explicit]
+
     tmpl = _env.get_template("formulation.j2")
     return tmpl.render(
         problem_name=formulation.problem.name,
@@ -50,7 +58,7 @@ def render_formulation(formulation: Formulation) -> str:
         parameters=formulation.parameters,
         variables=formulation.variables,
         definitions=formulation.definitions,
-        assumptions=formulation.assumptions,
-        constraints=formulation.constraints,
+        assumptions=assumptions,
+        constraints=constraints,
         objective=formulation.objective,
     )

@@ -25,10 +25,15 @@ _env = Environment(
 )
 
 
-def render_equivalence(a: Formulation, b: Formulation) -> RenderedPrompt:
-    tmpl = _env.get_template("equivalence.j2")
+def render_equivalence(
+    a: Formulation,
+    b: Formulation,
+    template: str = "equivalence.j2",
+    include_implicit: bool = True,
+) -> RenderedPrompt:
+    tmpl = _env.get_template(template)
     user = tmpl.render(
-        problem_a=json.dumps(render_formulation(a), indent=2),
-        problem_b=json.dumps(render_formulation(b), indent=2),
+        problem_a=json.dumps(render_formulation(a, include_implicit), indent=2),
+        problem_b=json.dumps(render_formulation(b, include_implicit), indent=2),
     )
     return RenderedPrompt(system=SYSTEM, user=user)
