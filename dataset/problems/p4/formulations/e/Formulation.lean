@@ -17,13 +17,13 @@ structure Params where
   hJ_nn : 0 ≤ J
   hS_nn : 0 ≤ S
 
-structure Vars where
+structure Vars (p : Params) where
   m : ℤ  -- number of cars used
   h : ℤ  -- number of buses used
   slack_0 : ℝ  -- slack for employee transport constraint
   slack_1 : ℝ  -- slack for max buses constraint
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Transport equality with slack (slack_0 ≥ 0 makes original ≥ constraint)
   htransport : (v.m : ℝ) * (p.K : ℝ) + (v.h : ℝ) * (p.D : ℝ) - v.slack_0 = p.J
   -- Max buses equality with slack
@@ -35,7 +35,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hslack1_nn : 0 ≤ v.slack_1
 
 -- Minimize total pollution
-def obj (p : Params) (v : Vars) : ℝ := (v.m : ℝ) * p.M + (v.h : ℝ) * p.O
+def obj (p : Params) (v : Vars p) : ℝ := (v.m : ℝ) * p.M + (v.h : ℝ) * p.O
 
 def formulation : MILPFormulation where
   Params   := Params

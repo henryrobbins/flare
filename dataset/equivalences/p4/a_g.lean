@@ -26,11 +26,11 @@ private def paramMap (p : P4.a.Params) : P4.g.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P4.a.Params) (v : P4.a.Vars) : P4.g.Vars :=
+private def fwd (p : P4.a.Params) (v : P4.a.Vars p) : P4.g.Vars (paramMap p) :=
   { m := v.xCars
     h := v.xBuses }
 
-private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
+private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars p)
     (h : P4.a.Feasible p v) :
     P4.g.Feasible (paramMap p) (fwd p v) :=
   { hmaxbus    := h.hmaxbus
@@ -42,11 +42,11 @@ private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P4.a.Params) (v : P4.g.Vars) : P4.a.Vars :=
+private def bwd (p : P4.a.Params) (v : P4.g.Vars (paramMap p)) : P4.a.Vars p :=
   { xCars  := v.m
     xBuses := v.h }
 
-private lemma bwd_feas (p : P4.a.Params) (v : P4.g.Vars)
+private lemma bwd_feas (p : P4.a.Params) (v : P4.g.Vars (paramMap p))
     (h : P4.g.Feasible (paramMap p) v) :
     P4.a.Feasible p (bwd p v) :=
   { htransport := h.htransport
@@ -58,11 +58,11 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.g.Vars)
 -- § Objective Mapping
 -- ============================================================================
 
-private lemma fwd_obj (p : P4.a.Params) (v : P4.a.Vars) (_ : P4.a.Feasible p v) :
+private lemma fwd_obj (p : P4.a.Params) (v : P4.a.Vars p) (_ : P4.a.Feasible p v) :
     P4.g.obj (paramMap p) (fwd p v) = 2 * P4.a.obj p v := by
   simp only [P4.g.obj, P4.a.obj, fwd, paramMap]
 
-private lemma bwd_obj (p : P4.a.Params) (v : P4.g.Vars) (_ : P4.g.Feasible (paramMap p) v) :
+private lemma bwd_obj (p : P4.a.Params) (v : P4.g.Vars (paramMap p)) (_ : P4.g.Feasible (paramMap p) v) :
     P4.g.obj (paramMap p) v = 2 * P4.a.obj p (bwd p v) := by
   simp only [P4.g.obj, P4.a.obj, bwd, paramMap]
 

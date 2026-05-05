@@ -27,13 +27,13 @@ private def paramMap (p : P4.a.Params) : P4.e.Params :=
 -- ============================================================================
 
 -- Slacks absorb the surplus of each inequality constraint in Fa
-private def fwd (p : P4.a.Params) (v : P4.a.Vars) : P4.e.Vars :=
+private def fwd (p : P4.a.Params) (v : P4.a.Vars p) : P4.e.Vars (paramMap p) :=
   { m       := v.xCars
     h       := v.xBuses
     slack_0 := (v.xCars : ℝ) * (p.CarCapacity : ℝ) + (v.xBuses : ℝ) * (p.BusCapacity : ℝ) - p.MinEmployeesToTransport
     slack_1 := p.MaxBuses - (v.xBuses : ℝ) }
 
-private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
+private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars p)
     (h : P4.a.Feasible p v) :
     P4.e.Feasible (paramMap p) (fwd p v) := by
   simp only [paramMap, fwd]
@@ -45,11 +45,11 @@ private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
 -- ============================================================================
 
 -- Slack variables are dropped; xCars and xBuses project directly
-private def bwd (_ : P4.a.Params) (v : P4.e.Vars) : P4.a.Vars :=
+private def bwd (p : P4.a.Params) (v : P4.e.Vars (paramMap p)) : P4.a.Vars p :=
   { xCars  := v.m
     xBuses := v.h }
 
-private lemma bwd_feas (p : P4.a.Params) (v : P4.e.Vars)
+private lemma bwd_feas (p : P4.a.Params) (v : P4.e.Vars (paramMap p))
     (h : P4.e.Feasible (paramMap p) v) :
     P4.a.Feasible p (bwd p v) := by
   have htr := h.htransport; simp only [paramMap] at htr

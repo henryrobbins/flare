@@ -19,12 +19,12 @@ structure Params where
   hE_nn : 0 ≤ E
   hP_nn : 0 ≤ P
 
-structure Vars where
+structure Vars (p : Params) where
   e : ℝ  -- number of runners used
   p : ℝ  -- number of canoe trips
   a : ℝ  -- number of runner trips
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Canoe deliveries ≤ fraction P of total deliveries
   hcanoe_frac : v.p * p.Z ≤ p.P * (v.p * p.Z + v.a * p.V)
   -- Total delivery time ≤ available
@@ -37,7 +37,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   ha_nn : 0 ≤ v.a
 
 -- Maximize total mail delivered
-def obj (p : Params) (v : Vars) : ℝ := -(v.a * p.V + v.p * p.Z)
+def obj (p : Params) (v : Vars p) : ℝ := -(v.a * p.V + v.p * p.Z)
 
 def formulation : MILPFormulation where
   Params   := Params

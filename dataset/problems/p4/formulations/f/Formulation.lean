@@ -17,13 +17,13 @@ structure Params where
   hJ_nn : 0 ≤ J
   hS_nn : 0 ≤ S
 
-structure Vars where
+structure Vars (p : Params) where
   m1 : ℤ  -- part 1 of car count
   m2 : ℤ  -- part 2 of car count
   h1 : ℤ  -- part 1 of bus count
   h2 : ℤ  -- part 2 of bus count
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Use at most S buses
   hmaxbus : ((v.h1 : ℝ) + (v.h2 : ℝ)) ≤ p.S
   -- Transport at least J employees
@@ -35,7 +35,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hh2_nn : 0 ≤ v.h2
 
 -- Minimize total pollution
-def obj (p : Params) (v : Vars) : ℝ := ((v.m1 : ℝ) + (v.m2 : ℝ)) * p.M + ((v.h1 : ℝ) + (v.h2 : ℝ)) * p.O
+def obj (p : Params) (v : Vars p) : ℝ := ((v.m1 : ℝ) + (v.m2 : ℝ)) * p.M + ((v.h1 : ℝ) + (v.h2 : ℝ)) * p.O
 
 def formulation : MILPFormulation where
   Params   := Params

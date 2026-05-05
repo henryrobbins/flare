@@ -17,12 +17,12 @@ structure Params where
   hJ_nn : 0 ≤ J
   hS_nn : 0 ≤ S
 
-structure Vars where
+structure Vars (p : Params) where
   m : ℤ  -- number of cars used
   h : ℤ  -- number of buses used
   zed : ℝ  -- auxiliary objective variable (= total pollution)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Auxiliary variable equals total pollution
   hzed : v.zed = (v.m : ℝ) * p.M + (v.h : ℝ) * p.O
   -- Use at most S buses
@@ -34,7 +34,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hh_nn : 0 ≤ v.h
 
 -- Minimize auxiliary objective variable
-def obj (_ : Params) (v : Vars) : ℝ := v.zed
+def obj (p : Params) (v : Vars p) : ℝ := v.zed
 
 def formulation : MILPFormulation where
   Params   := Params
