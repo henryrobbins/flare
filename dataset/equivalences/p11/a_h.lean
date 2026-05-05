@@ -11,10 +11,6 @@ open BigOperators Finset
 
 namespace P11
 
--- ============================================================================
--- § Parameter Mapping
--- ============================================================================
-
 private def paramMap (p : P11.a.Params) : P11.h.Params :=
   { nT         := p.nT
     nG         := p.nG
@@ -64,35 +60,29 @@ private def paramMap (p : P11.a.Params) : P11.h.Params :=
     hD_pos     := p.hD_pos
     hMR_bin    := p.hMR_bin }
 
--- ============================================================================
--- § Forward Mapping and Feasibility
--- ============================================================================
-
-/--
-**P11.a → P11.h**: identity on all variables; the new `P_bar g t` variable is
-set exactly to the right-hand side of the `hec3c` constraint, making the
-constraint a reflexive inequality.
--/
-private def fwd (p : P11.a.Params) (v : P11.a.Vars) : P11.h.Vars :=
-  { u      := v.u
-    v      := v.v
-    w      := v.w
-    d_su   := v.d_su
-    lam    := v.lam
-    p      := v.p
-    r      := v.r
-    c_var  := v.c_var
-    p_wind := v.p_wind
+private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.h.Vars (paramMap p) :=
+  { u      := V.u
+    v      := V.v
+    w      := V.w
+    d_su   := V.d_su
+    lam    := V.lam
+    p      := V.p
+    r      := V.r
+    c_var  := V.c_var
+    p_wind := V.p_wind
     P_bar  := fun g t =>
-      let gf : Fin p.nG := ⟨g % p.nG, Nat.mod_lt _ p.hG_pos.pos⟩
-      p.P_min gf * (v.u g t : ℝ) +
-        (p.P_max gf - p.P_min gf) * (v.u g (t - 1) : ℝ) -
-          max (p.P_max gf - p.SD gf) 0 * (v.w g t : ℝ) +
-            p.RU gf }
+      if h : 0 < t.val then
+        have ht_lt : t.val < p.nT := show t.val < (paramMap p).nT from t.isLt
+        have hlt : t.val - 1 < p.nT := by omega
+        p.P_min g * (V.u g t : ℝ) +
+          (p.P_max g - p.P_min g) * (V.u g ⟨t.val - 1, hlt⟩ : ℝ) -
+            max (p.P_max g - p.SD g) 0 * (V.w g t : ℝ) +
+              p.RU g
+      else 0 }
 
-private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
-    (h : P11.a.Feasible p v) :
-    P11.h.Feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
+    (h : P11.a.Feasible p V) :
+    P11.h.Feasible (paramMap p) (fwd p V) := by
   refine
     { hdemand     := h.hdemand
       hreserve    := h.hreserve
@@ -122,25 +112,13 @@ private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
       hpwind_hi   := h.hpwind_hi
       hec3c       := ?hec3c }
   case hec3c =>
-    intro g t _
-    -- P_bar is defined to exactly equal the RHS of hec3c for indices in range;
-    -- after simplifying `⟨g.val % p.nG, _⟩ = g`, the constraint is le_refl.
-    have hfin : (⟨g.val % p.nG, Nat.mod_lt _ p.hG_pos.pos⟩ : Fin p.nG) = g := by
-      apply Fin.ext; exact Nat.mod_eq_of_lt g.isLt
-    show (fwd p v).P_bar g.val t.val ≤ _
+    intro g t ht
+    show (fwd p V).P_bar g t ≤ _
     simp only [fwd]
-    rw [hfin]
+    rw [dif_pos ht]
     rfl
 
--- ============================================================================
--- § Backward Mapping and Feasibility
--- ============================================================================
-
-/--
-**P11.h → P11.a**: drop the `P_bar` auxiliary variable; all other variables
-are carried over unchanged.
--/
-private def bwd (_ : P11.a.Params) (v : P11.h.Vars) : P11.a.Vars :=
+private def bwd (p : P11.a.Params) (v : P11.h.Vars (paramMap p)) : P11.a.Vars p :=
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -151,7 +129,7 @@ private def bwd (_ : P11.a.Params) (v : P11.h.Vars) : P11.a.Vars :=
     c_var  := v.c_var
     p_wind := v.p_wind }
 
-private lemma bwd_feas (p : P11.a.Params) (v : P11.h.Vars)
+private lemma bwd_feas (p : P11.a.Params) (v : P11.h.Vars (paramMap p))
     (h : P11.h.Feasible (paramMap p) v) :
     P11.a.Feasible p (bwd p v) := by
   exact
@@ -181,10 +159,6 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.h.Vars)
       hcvar_nn    := h.hcvar_nn
       hpwind_lo   := h.hpwind_lo
       hpwind_hi   := h.hpwind_hi }
-
--- ============================================================================
--- § Equivalence Structure
--- ============================================================================
 
 def aHEquiv : MILPReformulation P11.a.formulation P11.h.formulation where
   paramMap    := paramMap
