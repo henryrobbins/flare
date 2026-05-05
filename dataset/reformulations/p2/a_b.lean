@@ -52,7 +52,7 @@ private lemma bwd_feas (p : P2.a.Params) (v : P2.b.Vars (paramMap p))
 -- § Reformulation Structure
 -- ============================================================================
 
-def abReformulation : MILPReformulation P2.a.formulation P2.b.formulation where
+def aBReformulation : MILPReformulation P2.a.formulation P2.b.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

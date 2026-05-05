@@ -309,7 +309,7 @@ private lemma bwd_feas (p : P10.a.Params) (v : P10.b.Vars (paramMap p))
 -- § Reformulation Structure
 -- ============================================================================
 
-noncomputable def aBEquiv : MILPReformulation P10.a.formulation P10.b.formulation where
+noncomputable def aBReformulation : MILPReformulation P10.a.formulation P10.b.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

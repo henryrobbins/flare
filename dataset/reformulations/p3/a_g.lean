@@ -64,7 +64,7 @@ private lemma bwd_feas (p : P3.a.Params) (v : P3.g.Vars (paramMap p))
 -- § Reformulation Structure
 -- ============================================================================
 
-noncomputable def aGEquiv : MILPReformulation P3.a.formulation P3.g.formulation where
+noncomputable def aGReformulation : MILPReformulation P3.a.formulation P3.g.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

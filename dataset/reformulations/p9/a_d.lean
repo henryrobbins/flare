@@ -324,7 +324,7 @@ private lemma bwd_feas (p : P9.a.Params) (v : P9.d.Vars (paramMap p))
 -- § Reformulation Structure
 -- ============================================================================
 
-def aDEquiv : MILPReformulation P9.a.formulation P9.d.formulation where
+def aDReformulation : MILPReformulation P9.a.formulation P9.d.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

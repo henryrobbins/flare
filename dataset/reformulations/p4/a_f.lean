@@ -75,7 +75,7 @@ private lemma bwd_obj (p : P4.a.Params) (v : P4.f.Vars (paramMap p)) (_ : P4.f.F
 -- § Reformulation Structure
 -- ============================================================================
 
-def aFEquiv : MILPReformulation P4.a.formulation P4.f.formulation where
+def aFReformulation : MILPReformulation P4.a.formulation P4.f.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

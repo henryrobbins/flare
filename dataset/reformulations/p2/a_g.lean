@@ -64,7 +64,7 @@ private lemma bwd_feas (p : P2.a.Params) (v : P2.g.Vars (paramMap p))
 -- ============================================================================
 
 -- g.obj = -2*(∑ A·j) = 2*(-(∑ A·j)) = 2 * a.obj, so objMap x = 2 * x
-noncomputable def aGEquiv : MILPReformulation P2.a.formulation P2.g.formulation where
+noncomputable def aGReformulation : MILPReformulation P2.a.formulation P2.g.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

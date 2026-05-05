@@ -70,7 +70,7 @@ private lemma bwd_obj (p : P4.a.Params) (v : P4.g.Vars (paramMap p)) (_ : P4.g.F
 -- § Reformulation Structure
 -- ============================================================================
 
-def aGEquiv : MILPReformulation P4.a.formulation P4.g.formulation where
+def aGReformulation : MILPReformulation P4.a.formulation P4.g.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

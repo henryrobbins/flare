@@ -199,7 +199,7 @@ private lemma bwd_feas (p : P10.a.Params) (v : P10.c.Vars (paramMap p))
 -- § Reformulation Structure
 -- ============================================================================
 
-def aCEquiv : MILPReformulation P10.a.formulation P10.c.formulation where
+def aCReformulation : MILPReformulation P10.a.formulation P10.c.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

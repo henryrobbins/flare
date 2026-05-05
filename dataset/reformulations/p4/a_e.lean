@@ -61,7 +61,7 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.e.Vars (paramMap p))
 -- § Reformulation Structure
 -- ============================================================================
 
-def aEEquiv : MILPReformulation P4.a.formulation P4.e.formulation where
+def aEReformulation : MILPReformulation P4.a.formulation P4.e.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

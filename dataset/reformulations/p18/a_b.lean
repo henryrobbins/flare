@@ -340,7 +340,7 @@ private lemma bwd_obj (p : P18.a.Params) (v : P18.b.Vars (paramMap p))
 -- § Reformulation Structure
 -- ============================================================================
 
-noncomputable def aBEquiv : MILPReformulation P18.a.formulation P18.b.formulation where
+noncomputable def aBReformulation : MILPReformulation P18.a.formulation P18.b.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
