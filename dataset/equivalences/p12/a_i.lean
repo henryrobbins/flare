@@ -15,74 +15,74 @@ namespace P12
 -- § Helper Lemmas
 -- ============================================================================
 
-private lemma xnn {p : P12.a.Params} {v : P12.a.Vars} (h : P12.a.Feasible p v)
+private lemma xnn {p : P12.a.Params} {v : P12.a.Vars p} (h : P12.a.Feasible p v)
     (a b : Fin p.n) : 0 ≤ v.x a b := by
   rcases h.hx_bin a b with h0 | h1 <;> omega
 
 /-- Each node has a unique outgoing arc in Fin p.n. -/
-private lemma exists_unique_out {p : P12.a.Params} {v : P12.a.Vars}
+private lemma exists_unique_out {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (i : Fin p.n) :
-    ∃! k : Fin p.n, v.x i.val k.val = 1 := by
+    ∃! k : Fin p.n, v.x i k = 1 := by
   haveI : NeZero p.n := p.hn
   have hsum := h.hout i
-  have hex : ∃ k : Fin p.n, v.x i.val k.val = 1 := by
+  have hex : ∃ k : Fin p.n, v.x i k = 1 := by
     by_contra hc
     push_neg at hc
-    have h0 : ∀ k : Fin p.n, v.x i.val k.val = 0 := fun k =>
+    have h0 : ∀ k : Fin p.n, v.x i k = 0 := fun k =>
       (h.hx_bin i k).resolve_right (hc k)
     simp [h0] at hsum
   obtain ⟨k, hk⟩ := hex
   refine ⟨k, hk, fun k' hk' => ?_⟩
   by_contra hne
-  have hge : ∑ j : Fin p.n, v.x i.val j.val ≥ v.x i.val k.val + v.x i.val k'.val :=
-    calc ∑ j : Fin p.n, v.x i.val j.val
-        ≥ ∑ j ∈ ({k, k'} : Finset (Fin p.n)), v.x i.val j.val :=
+  have hge : ∑ j : Fin p.n, v.x i j ≥ v.x i k + v.x i k' :=
+    calc ∑ j : Fin p.n, v.x i j
+        ≥ ∑ j ∈ ({k, k'} : Finset (Fin p.n)), v.x i j :=
           sum_le_sum_of_subset_of_nonneg (subset_univ _)
             (fun j _ _ => xnn h i j)
-      _ = v.x i.val k.val + v.x i.val k'.val := sum_pair (Ne.symm hne)
+      _ = v.x i k + v.x i k' := sum_pair (Ne.symm hne)
   linarith
 
 /-- Each node has a unique incoming arc in Fin p.n. -/
-private lemma exists_unique_in {p : P12.a.Params} {v : P12.a.Vars}
+private lemma exists_unique_in {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (j : Fin p.n) :
-    ∃! k : Fin p.n, v.x k.val j.val = 1 := by
+    ∃! k : Fin p.n, v.x k j = 1 := by
   haveI : NeZero p.n := p.hn
   have hsum := h.hin j
-  have hex : ∃ k : Fin p.n, v.x k.val j.val = 1 := by
+  have hex : ∃ k : Fin p.n, v.x k j = 1 := by
     by_contra hc
     push_neg at hc
-    have h0 : ∀ k : Fin p.n, v.x k.val j.val = 0 := fun k =>
+    have h0 : ∀ k : Fin p.n, v.x k j = 0 := fun k =>
       (h.hx_bin k j).resolve_right (hc k)
     simp [h0] at hsum
   obtain ⟨k, hk⟩ := hex
   refine ⟨k, hk, fun k' hk' => ?_⟩
   by_contra hne
-  have hge : ∑ i : Fin p.n, v.x i.val j.val ≥ v.x k.val j.val + v.x k'.val j.val :=
-    calc ∑ i : Fin p.n, v.x i.val j.val
-        ≥ ∑ i ∈ ({k, k'} : Finset (Fin p.n)), v.x i.val j.val :=
+  have hge : ∑ i : Fin p.n, v.x i j ≥ v.x k j + v.x k' j :=
+    calc ∑ i : Fin p.n, v.x i j
+        ≥ ∑ i ∈ ({k, k'} : Finset (Fin p.n)), v.x i j :=
           sum_le_sum_of_subset_of_nonneg (subset_univ _)
             (fun i _ _ => xnn h i j)
-      _ = v.x k.val j.val + v.x k'.val j.val := sum_pair (Ne.symm hne)
+      _ = v.x k j + v.x k' j := sum_pair (Ne.symm hne)
   linarith
 
 /-- The successor of i (unique k with x i k = 1), as Fin p.n. -/
-private noncomputable def succF {p : P12.a.Params} {v : P12.a.Vars}
+private noncomputable def succF {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (i : Fin p.n) : Fin p.n :=
   (exists_unique_out h i).choose
 
-private lemma succF_spec {p : P12.a.Params} {v : P12.a.Vars}
-    (h : P12.a.Feasible p v) (i : Fin p.n) : v.x i.val (succF h i).val = 1 :=
+private lemma succF_spec {p : P12.a.Params} {v : P12.a.Vars p}
+    (h : P12.a.Feasible p v) (i : Fin p.n) : v.x i (succF h i) = 1 :=
   (exists_unique_out h i).choose_spec.1
 
-private lemma succF_unique {p : P12.a.Params} {v : P12.a.Vars}
-    (h : P12.a.Feasible p v) (i k : Fin p.n) (hk : v.x i.val k.val = 1) :
+private lemma succF_unique {p : P12.a.Params} {v : P12.a.Vars p}
+    (h : P12.a.Feasible p v) (i k : Fin p.n) (hk : v.x i k = 1) :
     k = succF h i := by
   obtain ⟨w, hw, hun⟩ := exists_unique_out h i
   have h1 : k = w := hun k hk
   have h2 : succF h i = w := hun (succF h i) (succF_spec h i)
   rw [h1, h2]
 
-private lemma succF_injective {p : P12.a.Params} {v : P12.a.Vars}
+private lemma succF_injective {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) : Function.Injective (succF h) := by
   intro a b hab
   have ha := succF_spec h a
@@ -90,38 +90,38 @@ private lemma succF_injective {p : P12.a.Params} {v : P12.a.Vars}
   rw [hab] at ha
   by_contra hne
   have hin := h.hin (succF h b)
-  have hge : ∑ j : Fin p.n, v.x j.val (succF h b).val ≥
-      v.x a.val (succF h b).val + v.x b.val (succF h b).val :=
-    calc ∑ j : Fin p.n, v.x j.val (succF h b).val
-        ≥ ∑ j ∈ ({a, b} : Finset (Fin p.n)), v.x j.val (succF h b).val :=
+  have hge : ∑ j : Fin p.n, v.x j (succF h b) ≥
+      v.x a (succF h b) + v.x b (succF h b) :=
+    calc ∑ j : Fin p.n, v.x j (succF h b)
+        ≥ ∑ j ∈ ({a, b} : Finset (Fin p.n)), v.x j (succF h b) :=
           sum_le_sum_of_subset_of_nonneg (subset_univ _)
             (fun j _ _ => xnn h j (succF h b))
-      _ = v.x a.val (succF h b).val + v.x b.val (succF h b).val := sum_pair hne
+      _ = v.x a (succF h b) + v.x b (succF h b) := sum_pair hne
   linarith
 
-private lemma succF_ne_self {p : P12.a.Params} {v : P12.a.Vars}
+private lemma succF_ne_self {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (i : Fin p.n) : succF h i ≠ i := by
   intro heq
   have hs := succF_spec h i
   rw [heq] at hs
-  have : v.x i.val i.val = 0 := h.hx_no_self i
+  have : v.x i i = 0 := h.hx_no_self i
   omega
 
 /-- MTZ gives strict position increase along non-depot arcs. -/
-private lemma pos_increase {p : P12.a.Params} {v : P12.a.Vars}
+private lemma pos_increase {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {a : Fin p.n} (ha : a.val ≠ 0)
     (hsa : (succF h a).val ≠ 0) :
-    v.u a.val + 1 ≤ v.u (succF h a).val := by
+    v.u a + 1 ≤ v.u (succF h a) := by
   have hx := succF_spec h a
   have hne := succF_ne_self h a
   have hmtz := h.hmtz a (succF h a) ha hsa (Ne.symm hne)
-  have hcast : (v.x a.val (succF h a).val : ℝ) = 1 := by exact_mod_cast hx
+  have hcast : (v.x a (succF h a) : ℝ) = 1 := by exact_mod_cast hx
   nlinarith [hmtz, hcast]
 
-private lemma pos_iterate_increase {p : P12.a.Params} {v : P12.a.Vars}
+private lemma pos_iterate_increase {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {m : Fin p.n} (_hm : m.val ≠ 0) {k : ℕ}
     (hall : ∀ i : ℕ, i ≤ k → ((succF h)^[i] m).val ≠ 0) :
-    v.u m.val + k ≤ v.u ((succF h)^[k] m).val := by
+    v.u m + k ≤ v.u ((succF h)^[k] m) := by
   induction k with
   | zero => simp
   | succ k ih =>
@@ -135,7 +135,7 @@ private lemma pos_iterate_increase {p : P12.a.Params} {v : P12.a.Vars}
     have step := pos_increase h hk_ne hsk_ne
     push_cast; linarith
 
-private lemma reaches_depot {p : P12.a.Params} {v : P12.a.Vars}
+private lemma reaches_depot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (m : Fin p.n) :
     ∃ k : ℕ, ((succF h)^[k] m).val = 0 := by
   haveI : NeZero p.n := p.hn
@@ -143,14 +143,14 @@ private lemma reaches_depot {p : P12.a.Params} {v : P12.a.Vars}
   push_neg at hc
   have hall : ∀ i : ℕ, ((succF h)^[i] m).val ≠ 0 := hc
   have hm : m.val ≠ 0 := hall 0
-  have hgrow : ∀ k : ℕ, v.u m.val + k ≤ v.u ((succF h)^[k] m).val :=
+  have hgrow : ∀ k : ℕ, v.u m + k ≤ v.u ((succF h)^[k] m) :=
     fun k => pos_iterate_increase h hm (fun i _ => hall i)
   have hbound := h.hu_hi ((succF h)^[p.n] m)
   have hpn := hgrow p.n
   have hlo := h.hu_lo m hm
   linarith
 
-private lemma no_nondepot_period {p : P12.a.Params} {v : P12.a.Vars}
+private lemma no_nondepot_period {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {m : Fin p.n} (hm : m.val ≠ 0) {q : ℕ} (hq : 0 < q)
     (hperiod : (succF h)^[q] m = m)
     (hall : ∀ i, i ≤ q → ((succF h)^[i] m).val ≠ 0) : False := by
@@ -159,11 +159,11 @@ private lemma no_nondepot_period {p : P12.a.Params} {v : P12.a.Vars}
   have : (q : ℝ) > 0 := Nat.cast_pos.mpr hq
   linarith
 
-private lemma succF_bijective {p : P12.a.Params} {v : P12.a.Vars}
+private lemma succF_bijective {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) : Function.Bijective (succF h) :=
   Finite.injective_iff_bijective.mp (succF_injective h)
 
-private lemma min_reaches_depot {p : P12.a.Params} {v : P12.a.Vars}
+private lemma min_reaches_depot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (m : Fin p.n) :
     ∃ k : ℕ, ((succF h)^[k] m).val = 0 ∧
       ∀ i, i < k → ((succF h)^[i] m).val ≠ 0 := by
@@ -171,9 +171,9 @@ private lemma min_reaches_depot {p : P12.a.Params} {v : P12.a.Vars}
   refine ⟨Nat.find hex, Nat.find_spec hex, fun i hi heq => ?_⟩
   exact Nat.find_min hex hi heq
 
-private lemma chain_length_aux {p : P12.a.Params} {v : P12.a.Vars}
+private lemma chain_length_aux {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (j : Fin p.n) (_hj : j.val ≠ 0)
-    (hxj : v.x 0 j.val = 1) :
+    (hxj : haveI := p.hn; v.x 0 j = 1) :
     ∃ k : ℕ, k = p.n - 1 ∧ ((succF h)^[k] j).val = 0 ∧
       ∀ i, i < k → ((succF h)^[i] j).val ≠ 0 := by
   haveI : NeZero p.n := p.hn
@@ -251,17 +251,17 @@ private lemma chain_length_aux {p : P12.a.Params} {v : P12.a.Vars}
   omega
 
 /-- When j → i (x_{ji} = 1) with i, j ∈ Fin p.n non-depot, u i = u j + 1. -/
-private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars}
+private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {i j : Fin p.n} (hi : i.val ≠ 0) (hj : j.val ≠ 0)
-    (hxji : v.x j.val i.val = 1) : v.u i.val = v.u j.val + 1 := by
+    (hxji : v.x j i = 1) : v.u i = v.u j + 1 := by
   haveI : NeZero p.n := p.hn
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   have hn2 : 2 ≤ p.n := by
     by_contra hlt; push_neg at hlt
-    interval_cases p.n
-    exact hj (Nat.lt_one_iff.mp j.isLt)
+    have hjlt := j.isLt
+    exact hj (by omega)
   have hsucc_j : succF h j = i := (succF_unique h j i hxji).symm
-  have hlb : v.u j.val + 1 ≤ v.u i.val := by
+  have hlb : v.u j + 1 ≤ v.u i := by
     have := pos_increase h hj (hsucc_j ▸ hi)
     rw [hsucc_j] at this; exact this
   set j0 : Fin p.n := succF h ⟨0, hn_pos⟩ with hj0_def
@@ -269,7 +269,7 @@ private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars}
     intro h0
     have : succF h ⟨0, hn_pos⟩ = ⟨0, hn_pos⟩ := Fin.ext h0
     exact succF_ne_self h ⟨0, hn_pos⟩ this
-  have hx0j0 : v.x 0 j0.val = 1 := by
+  have hx0j0 : v.x 0 j0 = 1 := by
     have := succF_spec h (⟨0, hn_pos⟩ : Fin p.n)
     simpa using this
   obtain ⟨k, hk_eq, hk_zero, hk_nd⟩ := chain_length_aux h j0 hj0_ne hx0j0
@@ -333,17 +333,17 @@ private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars}
     have hinc_j0_last := pos_iterate_increase h hj0_ne hall_j0 (k := p.n - 2)
     have hcast_nm2 : ((p.n - 2 : ℕ) : ℝ) = (p.n : ℝ) - 2 := by
       rw [Nat.cast_sub hn2]; norm_num
-    have hj0_pos_ub : v.u j0.val ≤ 2 := by
+    have hj0_pos_ub : v.u j0 ≤ 2 := by
       have hu_last_ub := h.hu_hi ((succF h)^[p.n - 2] j0)
       rw [hcast_nm2] at hinc_j0_last
       linarith
-    have hj0_pos_lb : (2 : ℝ) ≤ v.u j0.val := h.hu_lo j0 hj0_ne
-    have hj0_pos : v.u j0.val = 2 := le_antisymm hj0_pos_ub hj0_pos_lb
-    have hu_last : v.u ((succF h)^[p.n - 2] j0).val = (p.n : ℝ) := by
+    have hj0_pos_lb : (2 : ℝ) ≤ v.u j0 := h.hu_lo j0 hj0_ne
+    have hj0_pos : v.u j0 = 2 := le_antisymm hj0_pos_ub hj0_pos_lb
+    have hu_last : v.u ((succF h)^[p.n - 2] j0) = (p.n : ℝ) := by
       have hu_last_ub := h.hu_hi ((succF h)^[p.n - 2] j0)
       rw [hcast_nm2, hj0_pos] at hinc_j0_last
       linarith
-    have hu_a1_eq : v.u ((succF h)^[a + 1] j0).val = 2 + ((a + 1 : ℕ) : ℝ) := by
+    have hu_a1_eq : v.u ((succF h)^[a + 1] j0) = 2 + ((a + 1 : ℕ) : ℝ) := by
       have hall_a1 : ∀ s, s ≤ a + 1 → ((succF h)^[s] j0).val ≠ 0 :=
         fun s hs => hj0_all_nd s (by omega)
       have hinc_a1 := pos_iterate_increase h hj0_ne hall_a1
@@ -360,7 +360,7 @@ private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars}
         rw [Nat.cast_sub hcase, hcast_nm2]
       rw [hcast_tail] at hinc_tail
       linarith
-    have hu_a_eq : v.u ((succF h)^[a] j0).val = 2 + (a : ℝ) := by
+    have hu_a_eq : v.u ((succF h)^[a] j0) = 2 + (a : ℝ) := by
       by_cases ha0 : a = 0
       · subst ha0; simp; rw [hj0_pos]
       · have ha_pos : 1 ≤ a := Nat.one_le_iff_ne_zero.mpr ha0
@@ -394,15 +394,15 @@ private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars}
     exact absurd hi_is_zero hi
 
 /-- If `x_{i0} = 1` and `i ≠ 0`, then `u_i = n`. -/
-private lemma u_eq_n_of_arc_to_depot {p : P12.a.Params} {v : P12.a.Vars}
+private lemma u_eq_n_of_arc_to_depot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {i : Fin p.n} (hi : i.val ≠ 0)
-    (hxi0 : v.x i.val 0 = 1) : v.u i.val = (p.n : ℝ) := by
+    (hxi0 : haveI := p.hn; v.x i 0 = 1) : v.u i = (p.n : ℝ) := by
   haveI : NeZero p.n := p.hn
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   have hn2 : 2 ≤ p.n := by
     by_contra hlt; push_neg at hlt
-    interval_cases p.n
-    exact hi (Nat.lt_one_iff.mp i.isLt)
+    have hilt := i.isLt
+    exact hi (by omega)
   have hsucc_i : succF h i = ⟨0, hn_pos⟩ :=
     (succF_unique h i ⟨0, hn_pos⟩ (by simpa using hxi0)).symm
   set j0 : Fin p.n := succF h ⟨0, hn_pos⟩ with hj0_def
@@ -410,7 +410,7 @@ private lemma u_eq_n_of_arc_to_depot {p : P12.a.Params} {v : P12.a.Vars}
     intro h0
     have : succF h ⟨0, hn_pos⟩ = ⟨0, hn_pos⟩ := Fin.ext h0
     exact succF_ne_self h ⟨0, hn_pos⟩ this
-  have hx0j0 : v.x 0 j0.val = 1 := by
+  have hx0j0 : v.x 0 j0 = 1 := by
     have := succF_spec h (⟨0, hn_pos⟩ : Fin p.n)
     simpa using this
   obtain ⟨k, hk_eq, hk_zero, hk_nd⟩ := chain_length_aux h j0 hj0_ne hx0j0
@@ -419,13 +419,13 @@ private lemma u_eq_n_of_arc_to_depot {p : P12.a.Params} {v : P12.a.Vars}
   have hinc_j0_last := pos_iterate_increase h hj0_ne hj0_all_nd (k := p.n - 2)
   have hcast_nm2 : ((p.n - 2 : ℕ) : ℝ) = (p.n : ℝ) - 2 := by
     rw [Nat.cast_sub hn2]; norm_num
-  have hj0_pos_ub : v.u j0.val ≤ 2 := by
+  have hj0_pos_ub : v.u j0 ≤ 2 := by
     have hu_last_ub := h.hu_hi ((succF h)^[p.n - 2] j0)
     rw [hcast_nm2] at hinc_j0_last
     linarith
-  have hj0_pos_lb : (2 : ℝ) ≤ v.u j0.val := h.hu_lo j0 hj0_ne
-  have hj0_pos : v.u j0.val = 2 := le_antisymm hj0_pos_ub hj0_pos_lb
-  have hu_last : v.u ((succF h)^[p.n - 2] j0).val = (p.n : ℝ) := by
+  have hj0_pos_lb : (2 : ℝ) ≤ v.u j0 := h.hu_lo j0 hj0_ne
+  have hj0_pos : v.u j0 = 2 := le_antisymm hj0_pos_ub hj0_pos_lb
+  have hu_last : v.u ((succF h)^[p.n - 2] j0) = (p.n : ℝ) := by
     have hu_last_ub := h.hu_hi ((succF h)^[p.n - 2] j0)
     rw [hcast_nm2, hj0_pos] at hinc_j0_last
     linarith
@@ -441,31 +441,31 @@ private lemma u_eq_n_of_arc_to_depot {p : P12.a.Params} {v : P12.a.Vars}
   rw [← hinj]; exact hu_last
 
 /-- If `x_{0i} = 1` and `i ≠ 0`, then `u_i = 2`. -/
-private lemma u_eq_2_of_arc_from_depot {p : P12.a.Params} {v : P12.a.Vars}
+private lemma u_eq_2_of_arc_from_depot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {i : Fin p.n} (hi : i.val ≠ 0)
-    (hx0i : v.x 0 i.val = 1) : v.u i.val = 2 := by
+    (hx0i : haveI := p.hn; v.x 0 i = 1) : v.u i = 2 := by
   haveI : NeZero p.n := p.hn
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   have hn2 : 2 ≤ p.n := by
     by_contra hlt; push_neg at hlt
-    interval_cases p.n
-    exact hi (Nat.lt_one_iff.mp i.isLt)
+    have hilt := i.isLt
+    exact hi (by omega)
   set j0 : Fin p.n := succF h ⟨0, hn_pos⟩ with hj0_def
   have hi_eq : i = j0 := succF_unique h ⟨0, hn_pos⟩ i (by simpa using hx0i)
   have hj0_ne : j0.val ≠ 0 := by rw [← hi_eq]; exact hi
-  have hx0j0 : v.x 0 j0.val = 1 := by rw [← hi_eq]; exact hx0i
+  have hx0j0 : v.x 0 j0 = 1 := by rw [← hi_eq]; exact hx0i
   obtain ⟨k, hk_eq, hk_zero, hk_nd⟩ := chain_length_aux h j0 hj0_ne hx0j0
   have hj0_all_nd : ∀ s, s ≤ p.n - 2 → ((succF h)^[s] j0).val ≠ 0 :=
     fun s hs => hk_nd s (by omega)
   have hinc_j0_last := pos_iterate_increase h hj0_ne hj0_all_nd (k := p.n - 2)
   have hcast_nm2 : ((p.n - 2 : ℕ) : ℝ) = (p.n : ℝ) - 2 := by
     rw [Nat.cast_sub hn2]; norm_num
-  have hj0_pos_ub : v.u j0.val ≤ 2 := by
+  have hj0_pos_ub : v.u j0 ≤ 2 := by
     have hu_last_ub := h.hu_hi ((succF h)^[p.n - 2] j0)
     rw [hcast_nm2] at hinc_j0_last
     linarith
-  have hj0_pos_lb : (2 : ℝ) ≤ v.u j0.val := h.hu_lo j0 hj0_ne
-  have hj0_pos : v.u j0.val = 2 := le_antisymm hj0_pos_ub hj0_pos_lb
+  have hj0_pos_lb : (2 : ℝ) ≤ v.u j0 := h.hu_lo j0 hj0_ne
+  have hj0_pos : v.u j0 = 2 := le_antisymm hj0_pos_ub hj0_pos_lb
   rw [hi_eq]; exact hj0_pos
 
 -- ============================================================================
@@ -481,13 +481,14 @@ private def paramMap (p : P12.a.Params) : P12.i.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P12.a.Params) (v : P12.a.Vars) : P12.i.Vars :=
+private def fwd (p : P12.a.Params) (v : P12.a.Vars p) : P12.i.Vars (paramMap p) :=
   { x := v.x
     u := v.u }
 
-private lemma fwd_hec5 (p : P12.a.Params) (v : P12.a.Vars)
+private lemma fwd_hec5 (p : P12.a.Params) (v : P12.a.Vars p)
     (h : P12.a.Feasible p v) :
     ∀ i : Fin (paramMap p).n, i.val ≠ 0 →
+      haveI := (paramMap p).hn
       (fwd p v).u i ≤ (((paramMap p).n : ℝ) - 1) + ((fwd p v).x i 0 : ℝ) -
         (((paramMap p).n : ℝ) - 3) * ((fwd p v).x 0 i : ℝ) := by
   intro i hi
@@ -497,10 +498,9 @@ private lemma fwd_hec5 (p : P12.a.Params) (v : P12.a.Vars)
   have hi_lt : i.val < p.n := i.isLt
   have hn2 : 2 ≤ p.n := by
     by_contra hlt; push_neg at hlt
-    interval_cases p.n
-    exact hi (Nat.lt_one_iff.mp hi_lt)
-  rcases h.hx_bin (⟨0, hn_pos⟩ : Fin p.n) i with hx0i | hx0i
-  · rcases h.hx_bin i (⟨0, hn_pos⟩ : Fin p.n) with hxi0 | hxi0
+    exact hi (by omega)
+  rcases h.hx_bin (0 : Fin p.n) i with hx0i | hx0i
+  · rcases h.hx_bin i (0 : Fin p.n) with hxi0 | hxi0
     · -- (0, 0): need u_i ≤ n - 1. i has a non-depot successor j (so i is not last).
       rw [hx0i, hxi0]; push_cast
       -- Get outgoing arc from i.
@@ -509,13 +509,13 @@ private lemma fwd_hec5 (p : P12.a.Params) (v : P12.a.Vars)
       -- j ≠ depot because v.x i 0 = 0.
       have hj_ne : j.val ≠ 0 := by
         intro h0
-        have hjeq : j = ⟨0, hn_pos⟩ := Fin.ext h0
-        have : v.x i.val 0 = 1 := by
+        have hjeq : j = (0 : Fin p.n) := Fin.ext (by simpa using h0)
+        have hxi0_eq : v.x i 0 = 1 := by
           have := hsucc
           rw [hjeq] at this
-          simpa using this
-        rw [hxi0] at this
-        exact absurd this (by norm_num)
+          exact this
+        rw [hxi0] at hxi0_eq
+        exact absurd hxi0_eq (by norm_num)
       -- u j = u i + 1 via arc_consec_nondepot; and u j ≤ n.
       have harc := arc_consec_nondepot h hj_ne hi hsucc
       have huhi_j := h.hu_hi j
@@ -524,7 +524,7 @@ private lemma fwd_hec5 (p : P12.a.Params) (v : P12.a.Vars)
       rw [hx0i, hxi0]; push_cast
       have hu_eq := u_eq_n_of_arc_to_depot h hi hxi0
       linarith
-  · rcases h.hx_bin i (⟨0, hn_pos⟩ : Fin p.n) with hxi0 | hxi0
+  · rcases h.hx_bin i (0 : Fin p.n) with hxi0 | hxi0
     · -- (1, 0): i is first non-depot, u_i = 2. Need 2 ≤ (n-1) + 0 - (n-3)*1 = 2.
       rw [hx0i, hxi0]; push_cast
       have hu_eq := u_eq_2_of_arc_from_depot h hi hx0i
@@ -536,7 +536,7 @@ private lemma fwd_hec5 (p : P12.a.Params) (v : P12.a.Vars)
       have hn_eq : (p.n : ℝ) = 2 := by linarith
       linarith
 
-private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
+private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars p)
     (h : P12.a.Feasible p v) :
     P12.i.Feasible (paramMap p) (fwd p v) :=
   { hout       := h.hout
@@ -553,11 +553,11 @@ private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P12.a.Params) (v : P12.i.Vars) : P12.a.Vars :=
+private def bwd (p : P12.a.Params) (v : P12.i.Vars (paramMap p)) : P12.a.Vars p :=
   { x := v.x
     u := v.u }
 
-private lemma bwd_feas (p : P12.a.Params) (v : P12.i.Vars)
+private lemma bwd_feas (p : P12.a.Params) (v : P12.i.Vars (paramMap p))
     (h : P12.i.Feasible (paramMap p) v) :
     P12.a.Feasible p (bwd p v) := by
   simp only [bwd, paramMap] at *
