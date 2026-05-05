@@ -10,6 +10,9 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
+-- ============================================================================
+-- § Parameter Mapping
+-- ============================================================================
 
 private def paramMap (p : P11.a.Params) : P11.f.Params :=
   { nT         := p.nT
@@ -70,6 +73,9 @@ private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.f.Vars (paramMap p) 
     r     := V.r
     c_var  := V.c_var
     p_wind := V.p_wind
+-- ============================================================================
+-- § Forward Mapping and Feasibility
+-- ============================================================================
     P_bar  := fun _ _ => 0 }
 
 private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
@@ -106,6 +112,8 @@ private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
   case hec3a =>
     intro g t ht
     have ht_lt : t.val < p.nT := t.isLt
+    -- RHS: P_min g * u_t + p_{t-1} + RU g + (P_max - P_min) * (1 - u_{t-1})
+    -- All terms are nonnegative; LHS (P_bar) is 0.
     show (0 : ℝ) ≤
       p.P_min g * (V.u g t : ℝ) + V.p g ⟨t.val - 1, by omega⟩ + p.RU g +
         (p.P_max g - p.P_min g) * (1 - (V.u g ⟨t.val - 1, by omega⟩ : ℝ))
@@ -132,6 +140,9 @@ private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
     linarith
 
 private def bwd (p : P11.a.Params) (v : P11.f.Vars (paramMap p)) : P11.a.Vars p :=
+-- ============================================================================
+-- § Backward Mapping and Feasibility
+-- ============================================================================
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -173,6 +184,9 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.f.Vars (paramMap p))
       hpwind_lo   := h.hpwind_lo
       hpwind_hi   := h.hpwind_hi }
 
+-- ============================================================================
+-- § Equivalence Structure
+-- ============================================================================
 def aFEquiv : MILPReformulation P11.a.formulation P11.f.formulation where
   paramMap    := paramMap
   fwd         := fwd
