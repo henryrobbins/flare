@@ -31,10 +31,10 @@ private def paramMap (p : P3.a.Params) : P3.b.Params :=
 -- ============================================================================
 
 /-- **P3.a → P3.b**: Rename parameters and variable; feasibility is immediate. -/
-private def fwd (_ : P3.a.Params) (v : P3.a.Vars) : P3.b.Vars :=
+private def fwd (p : P3.a.Params) (v : P3.a.Vars p) : P3.b.Vars (paramMap p) :=
   { n := v.NumBeakersUsed }
 
-private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
+private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars p)
     (h : P3.a.Feasible p v) :
     P3.b.Feasible (paramMap p) (fwd p v) :=
   { hliquid := h.hliquid
@@ -47,10 +47,10 @@ private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
 -- ============================================================================
 
 /-- **P3.b → P3.a**: Rename variable back; feasibility is immediate. -/
-private def bwd (_ : P3.a.Params) (v : P3.b.Vars) : P3.a.Vars :=
+private def bwd (p : P3.a.Params) (v : P3.b.Vars (paramMap p)) : P3.a.Vars p :=
   { NumBeakersUsed := v.n }
 
-private lemma bwd_feas (p : P3.a.Params) (v : P3.b.Vars)
+private lemma bwd_feas (p : P3.a.Params) (v : P3.b.Vars (paramMap p))
     (h : P3.b.Feasible (paramMap p) v) :
     P3.a.Feasible p (bwd p v) :=
   { hflour  := h.hflour

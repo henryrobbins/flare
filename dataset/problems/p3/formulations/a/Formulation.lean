@@ -24,10 +24,10 @@ structure Params where
   hSlime_nn : ∀ i, 0 ≤ SlimeProducedPerBeaker i
   hWaste_nn : ∀ i, 0 ≤ WasteProducedPerBeaker i
 
-structure Vars where
-  NumBeakersUsed : ℕ → ℤ  -- number of beakers of type i used
+structure Vars (p : Params) where
+  NumBeakersUsed : Fin p.NumBeakers → ℤ  -- number of beakers of type i used
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Total flour used does not exceed available amount
   hflour  : ∑ i : Fin p.NumBeakers, p.FlourUsagePerBeaker i * (v.NumBeakersUsed i : ℝ) ≤ p.FlourAvailable
   -- Total special liquid used does not exceed available amount
@@ -38,7 +38,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hNumBeakersUsed_nn : ∀ i : Fin p.NumBeakers, 0 ≤ v.NumBeakersUsed i
 
 -- Maximize total slime produced
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.NumBeakers, p.SlimeProducedPerBeaker i * (v.NumBeakersUsed i : ℝ))
 
 def formulation : MILPFormulation where
