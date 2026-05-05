@@ -24,11 +24,11 @@ private def paramMap (p : P5.a.Params) : P5.g.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P5.a.Params) (v : P5.a.Vars) : P5.g.Vars :=
+private def fwd (p : P5.a.Params) (v : P5.a.Vars p) : P5.g.Vars (paramMap p) :=
   { h := v.SubsoilBags
     d := v.TopsoilBags }
 
-private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
+private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars p)
     (h : P5.a.Feasible p v) :
     P5.g.Feasible (paramMap p) (fwd p v) := by
   refine ⟨h.hprop, ?_, h.hmin_top, h.hss_nn, h.hts_nn⟩
@@ -38,11 +38,11 @@ private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P5.a.Params) (v : P5.g.Vars) : P5.a.Vars :=
+private def bwd (p : P5.a.Params) (v : P5.g.Vars (paramMap p)) : P5.a.Vars p :=
   { SubsoilBags := v.h
     TopsoilBags := v.d }
 
-private lemma bwd_feas (p : P5.a.Params) (v : P5.g.Vars)
+private lemma bwd_feas (p : P5.a.Params) (v : P5.g.Vars (paramMap p))
     (h : P5.g.Feasible (paramMap p) v) :
     P5.a.Feasible p (bwd p v) := by
   have ht := h.htotal; simp only [paramMap] at ht

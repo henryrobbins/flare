@@ -15,11 +15,11 @@ structure Params where
   hJ_nn : 0 ≤ J
   hA_nn : 0 ≤ A
 
-structure Vars where
+structure Vars (p : Params) where
   z : ℤ  -- number of regular bottles produced
   g : ℤ  -- number of vintage bottles produced
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Regular bottles ≥ O times vintage bottles
   hratio : p.O * (v.g : ℝ) ≤ (v.z : ℝ)
   -- At least Q vintage bottles
@@ -30,7 +30,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hg_nn : 0 ≤ v.g
 
 -- Objective replaced by optimal solution value
-def obj (_ : Params) (_ : Vars) : ℝ := -300
+def obj (p : Params) (_ : Vars p) : ℝ := -300
 
 def formulation : MILPFormulation where
   Params   := Params
