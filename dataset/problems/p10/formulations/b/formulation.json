@@ -59,11 +59,27 @@
   },
   "assumptions": [
     {
+      "description": "Number of trucks is at least one.",
+      "formulation": "K \\geq 1",
+      "explicit": false,
+      "code": {
+        "python": "assert K >= 1"
+      }
+    },
+    {
+      "description": "Number of jobs is at least one.",
+      "formulation": "N \\geq 1",
+      "explicit": false,
+      "code": {
+        "python": "assert N >= 1"
+      }
+    },
+    {
       "description": "All travel times between jobs are strictly positive.",
       "formulation": "d_{ij} > 0 \\quad \\forall i, j \\in \\{0,\\dots,N-1\\}",
       "explicit": false,
       "code": {
-        "python": "assert all(d[i][j] > 0 for i in range(N) for j in range(N) if i != j)"
+        "python": "assert all(d[i][j] > 0 for i in range(N) for j in range(N))"
       }
     },
     {
@@ -80,6 +96,14 @@
       "explicit": false,
       "code": {
         "python": "assert all(d[i][j] <= d[i][m] + d[m][j] for i in range(N) for j in range(N) for m in range(N))"
+      }
+    },
+    {
+      "description": "Truck available times are nonnegative.",
+      "formulation": "v^k \\geq 0 \\quad \\forall k \\in \\{0,\\dots,K-1\\}",
+      "explicit": false,
+      "code": {
+        "python": "assert all(v[k] >= 0 for k in range(K))"
       }
     },
     {
@@ -109,9 +133,9 @@
     },
     "A_minus": {
       "description": "Set of arc pairs (i, j) that are infeasible due to time windows: job j cannot be served after job i.",
-      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
+      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : i \\neq j \\wedge \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
       "code": {
-        "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
+        "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if i != j and EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
       }
     },
     "M": {

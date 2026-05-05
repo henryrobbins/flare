@@ -11,12 +11,12 @@ namespace P10.d
 structure Params where
   K : ℕ  -- number of trucks
   N : ℕ  -- number of jobs
-  d : ℕ → ℕ → ℝ -- job-to-job travel time
-  d0 : ℕ → ℕ → ℝ -- depot-to-job travel time
-  dH : ℕ → ℕ → ℝ -- job-to-depot travel time
-  v : ℕ → ℝ -- truck available time
-  τ_min : ℕ → ℝ -- earliest arrival time
-  τ_max : ℕ → ℝ -- latest arrival time
+  d : Fin N → Fin N → ℝ -- job-to-job travel time
+  d0 : Fin K → Fin N → ℝ -- depot-to-job travel time
+  dH : Fin K → Fin N → ℝ -- job-to-depot travel time
+  v : Fin K → ℝ -- truck available time
+  τ_min : Fin N → ℝ -- earliest arrival time
+  τ_max : Fin N → ℝ -- latest arrival time
   -- Implicit Assumptions
   hK : NeZero K
   hN : NeZero N
