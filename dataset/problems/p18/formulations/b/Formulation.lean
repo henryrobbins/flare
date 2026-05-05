@@ -24,11 +24,11 @@ structure Params where
   ha_bin : ∀ i j, a i j = 0 ∨ a i j = 1
   hp_nn : 0 ≤ p
 
-structure Vars where
-  x : ℕ → ℤ  -- hospital open indicator: 1 if hospital j is opened, 0 otherwise
-  y : ℕ → ℕ → ℤ  -- assignment indicator: 1 if household i is served by hospital j, 0 otherwise
+structure Vars (P : Params) where
+  x : Fin P.M → ℤ  -- hospital open indicator: 1 if hospital j is opened, 0 otherwise
+  y : Fin P.nI → Fin P.M → ℤ  -- assignment indicator: 1 if household i is served by hospital j, 0 otherwise
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Existing hospitals (j ∈ J_0, i.e. j.val < p.m) must remain open
   hexisting : ∀ j : Fin p.M, j.val < p.m → v.x j = 1
   -- At most p new hospitals are opened (j ∈ J_1, i.e. j.val ≥ p.m)
@@ -44,7 +44,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hy_bin : ∀ i : Fin p.nI, ∀ j : Fin p.M, v.y i j = 0 ∨ v.y i j = 1
 
 -- Maximize total population served
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.nI, ∑ j : Fin p.M, p.v i * (v.y i j : ℝ))
 
 def formulation : MILPFormulation where
