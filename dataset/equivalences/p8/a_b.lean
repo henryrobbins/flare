@@ -236,14 +236,14 @@ private lemma bwd_feas (p : P8.a.Params) (v : P8.b.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-noncomputable def aBEquiv : MILPEquiv P8.a.formulation P8.b.formulation where
+noncomputable def aBEquiv : MILPReformulation P8.a.formulation P8.b.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := Or.inl strictMono_id
+  objMap_mono := strictMono_id
   fwd_obj _ _ _ := rfl
   bwd_obj _ _ _ := rfl
 

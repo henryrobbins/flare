@@ -42,7 +42,7 @@ For each input path:
 - Read the file.
 - Determine whether it is a **formulation file** (defines `Params`, `Vars`,
   `Feasible`, `obj`, `formulation`) or an **equivalence file** (defines a
-  `MILPEquiv` via `paramMap`, `fwd`, `bwd`, …).
+  `MILPReformulation` via `paramMap`, `fwd`, `bwd`, …).
 - If a file is neither, report that and skip it.
 
 ### Step 2 — Load the relevant standard

@@ -80,14 +80,14 @@ private lemma bwd_feas (p : P3.a.Params) (v : P3.e.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def aEEquiv : MILPEquiv P3.a.formulation P3.e.formulation where
+def aEEquiv : MILPReformulation P3.a.formulation P3.e.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := Or.inl strictMono_id
+  objMap_mono := strictMono_id
   fwd_obj     := fun _ _ _ => rfl
   bwd_obj     := fun _ _ _ => rfl
 

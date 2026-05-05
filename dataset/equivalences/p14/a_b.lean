@@ -262,14 +262,14 @@ private lemma bwd_obj (p : P14.a.Params) (v : P14.b.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def aBEquiv : MILPEquiv P14.a.formulation P14.b.formulation where
+def aBEquiv : MILPReformulation P14.a.formulation P14.b.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := Or.inl strictMono_id
+  objMap_mono := strictMono_id
   fwd_obj p v h := fwd_obj p v h
   bwd_obj p v h := bwd_obj p v h
 

@@ -193,14 +193,14 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.i.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-def aIEquiv : MILPEquiv P11.a.formulation P11.i.formulation where
+def aIEquiv : MILPReformulation P11.a.formulation P11.i.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := Or.inl strictMono_id
+  objMap_mono := strictMono_id
   fwd_obj _ _ _ := rfl
   bwd_obj _ _ _ := rfl
 

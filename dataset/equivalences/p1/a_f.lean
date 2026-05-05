@@ -80,14 +80,14 @@ private lemma bwd_obj (p : P1.a.Params) (v : P1.f.Vars) (_ : P1.f.Feasible (para
 -- § Equivalence Structure
 -- ============================================================================
 
-def afEquiv : MILPEquiv P1.a.formulation P1.f.formulation where
+def afEquiv : MILPReformulation P1.a.formulation P1.f.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := Or.inl strictMono_id
+  objMap_mono := strictMono_id
   fwd_obj     := fwd_obj
   bwd_obj     := bwd_obj
 

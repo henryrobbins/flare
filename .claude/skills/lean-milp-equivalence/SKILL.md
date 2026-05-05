@@ -9,24 +9,24 @@ description: >
 # Lean MILP Equivalence Standard
 
 An equivalence proof file shows that two MILP formulations `A` and `B` are
-equivalent under the project's `MILPEquiv` structure: it produces a
+equivalent under the project's `MILPReformulation` structure: it produces a
 parameter map `A.Params → B.Params`, mutually inverse feasibility-preserving
 variable maps, and a strictly monotone (increasing or decreasing) objective
 map that makes forward and backward objective diagrams commute.
 
-## `MILPEquiv` at a glance
+## `MILPReformulation` at a glance
 
-The project's common MILP module defines `MILPEquiv F G` with fields:
+The project's common MILP module defines `MILPReformulation F G` with fields:
 
 - `paramMap    : F.Params → G.Params`
 - `fwd         : F.Params → F.Vars → G.Vars`
 - `bwd         : F.Params → G.Vars → F.Vars`
-- `fwd_feas    : ∀ p v, F.feasible p v → G.feasible (paramMap p) (fwd p v)`
-- `bwd_feas    : ∀ p v, G.feasible (paramMap p) v → F.feasible p (bwd p v)`
+- `fwd_feas    : ∀ p x, F.feasible p x → G.feasible (paramMap p) (fwd p x)`
+- `bwd_feas    : ∀ p x', G.feasible (paramMap p) x' → F.feasible p (bwd p x')`
 - `objMap      : ℝ → ℝ`
-- `objMap_mono : StrictMono objMap ∨ StrictAnti objMap`
-- `fwd_obj     : ∀ p v, F.feasible p v → G.obj (paramMap p) (fwd p v) = objMap (F.obj p v)`
-- `bwd_obj     : ∀ p v, G.feasible (paramMap p) v → G.obj (paramMap p) v = objMap (F.obj p (bwd p v))`
+- `objMap_mono : StrictMono objMap`
+- `fwd_obj     : ∀ p x, F.feasible p x → G.obj (paramMap p) (fwd p x) = objMap (F.obj p x)`
+- `bwd_obj     : ∀ p x', G.feasible (paramMap p) x' → G.obj (paramMap p) x' = objMap (F.obj p (bwd p x'))`
 
 The semantic requirement is **pointwise**: feasibility and objective
 preservation for _all_ feasible solutions — not merely equal optima.
@@ -35,7 +35,7 @@ preservation for _all_ feasible solutions — not merely equal optima.
 
 Every equivalence file contains, in order:
 
-1. Imports: the common MILP module (providing `MILPEquiv`), both
+1. Imports: the common MILP module (providing `MILPReformulation`), both
    formulations `A` and `B`, and targeted Mathlib imports.
 2. `open BigOperators Finset` if the proofs use `∑` or `Finset`.
 3. A `namespace` matching the shared problem scope (e.g. `P1`, `General.TSP`).
@@ -45,7 +45,7 @@ Every equivalence file contains, in order:
 7. Optional backward-helpers section + `bwd` and `bwd_feas`.
 8. Optional objective-mapping section + `objMap`, `objMap_mono`, and
    `fwd_obj` / `bwd_obj`.
-9. The final `MILPEquiv` `def`.
+9. The final `MILPReformulation` `def`.
 10. `end <namespace>`.
 
 See `template.lean` for the canonical layout.
@@ -64,11 +64,11 @@ See `template.lean` for the canonical layout.
 Each of `paramMap`, `fwd`/`fwd_feas`, `bwd`/`bwd_feas`, and the objective
 mapping has a dedicated optional section. Use these rules:
 
-- **Inline in the `MILPEquiv` structure** when the body is a single line or
+- **Inline in the `MILPReformulation` structure** when the body is a single line or
   a trivial expression. Examples: `paramMap := id` (but see the pitfall
   below), `paramMap p := { c := p.c }`, `fwd _ v := { a := v.x }`,
   `fwd_obj _ _ _ := rfl`, `objMap := id`,
-  `objMap_mono := Or.inl strictMono_id`.
+  `objMap_mono := strictMono_id`.
 - **Extract to a `private def`/`lemma` above the structure** when the body
   is multi-line or the proof is non-trivial.
 - Do NOT leave empty section headers. If a section is not needed, remove
@@ -119,8 +119,8 @@ paramMap p := { c := p.c, d := p.d }
 
 ### Claim strength mismatch
 
-`MILPEquiv` is pointwise. If the source claims only "same optimal value",
-the hard direction may be intractable under `MILPEquiv`. Identify this up
+`MILPReformulation` is pointwise. If the source claims only "same optimal value",
+the hard direction may be intractable under `MILPReformulation`. Identify this up
 front and decide whether to leave `sorry`, restrict the claim, or change
 formulations.
 

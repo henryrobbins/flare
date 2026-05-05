@@ -70,14 +70,14 @@ private lemma bwd_obj (p : P4.a.Params) (v : P4.g.Vars) (_ : P4.g.Feasible (para
 -- § Equivalence Structure
 -- ============================================================================
 
-def aGEquiv : MILPEquiv P4.a.formulation P4.g.formulation where
+def aGEquiv : MILPReformulation P4.a.formulation P4.g.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := fun x => 2 * x
-  objMap_mono := Or.inl (fun _ _ h => by linarith)
+  objMap_mono := (fun _ _ h => by linarith)
   fwd_obj     := fwd_obj
   bwd_obj     := bwd_obj
 

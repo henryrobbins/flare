@@ -108,7 +108,7 @@ The `indices` field is an alternative to `shape` for variables indexed by an exp
 }
 ```
 
-For each equivalent pair there is a corresponding Lean file `equivalences/pN/a_b.lean` constructing a `MILPEquiv` instance (defined in `Common.lean`).Non-equivalent pairs have no Lean file by design: the dataset records them as labelled negative examples.
+For each equivalent pair there is a corresponding Lean file `equivalences/pN/a_b.lean` constructing a `MILPReformulation` instance (defined in `Common.lean`).Non-equivalent pairs have no Lean file by design: the dataset records them as labelled negative examples.
 
 ## Problems Table
 

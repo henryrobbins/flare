@@ -166,14 +166,14 @@ put it inline in the equivalence structure instead.
 
 When the section is needed, define:
   - `private def objMap : ℝ → ℝ := ...`
-  - `private lemma objMap_mono : StrictMono objMap ∨ StrictAnti objMap := ...`
+  - `private lemma objMap_mono : StrictMono objMap := ...`
   - `private lemma fwd_obj ...` and `private lemma bwd_obj ...` if the objective
     commutativity proofs are non-trivial (not just `rfl`).
 -/
 
 private def objMap : ℝ → ℝ := fun v => ...
 
-private lemma objMap_mono : StrictMono objMap ∨ StrictAnti objMap := by
+private lemma objMap_mono : StrictMono objMap := by
   sorry
 
 private lemma fwd_obj (p : <A>.Params) (v : <A>.Vars)
@@ -191,9 +191,9 @@ private lemma bwd_obj (p : <A>.Params) (v : <B>.Vars)
 -- ============================================================================
 
 /-
-NOTE: The final def should be a `MILPEquiv` structure:
+NOTE: The final def should be a `MILPReformulation` structure:
 
-- See the project's common MILP module for the definition of `MILPEquiv`
+- See the project's common MILP module for the definition of `MILPReformulation`
   and its fields.
 - Named camelCase: <formA><FormB>Equiv (e.g., `faFbEquiv`, `scfMcfEquiv`)
 - Marked `noncomputable` if any helper def is noncomputable
@@ -204,20 +204,20 @@ NOTE: The final def should be a `MILPEquiv` structure:
 - `fwd_feas` / `bwd_feas`: reference the private lemmas above
 - `objMap`: use `id` when both objectives are identical; reference the private
     def above when the Objective Mapping section is present
-- `objMap_mono`: use `Or.inl strictMono_id` when `objMap = id`; reference the
+- `objMap_mono`: use `strictMono_id` when `objMap = id`; reference the
     private lemma above when the Objective Mapping section is present
 - `fwd_obj` / `bwd_obj`: use `_ _ _ := rfl` when `objMap = id` and objectives
     are definitionally equal; reference private lemmas when the section is present
 -/
 
-def <formA><FormB>Equiv : MILPEquiv <A>.formulation <B>.formulation where
+def <formA><FormB>Equiv : MILPReformulation <A>.formulation <B>.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := id
-  objMap_mono := Or.inl strictMono_id
+  objMap_mono := strictMono_id
   fwd_obj _ _ _ := rfl
   bwd_obj _ _ _ := rfl
 

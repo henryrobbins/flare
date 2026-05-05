@@ -14,12 +14,12 @@ namespace P20
 /-!
 # P20: Flow Decomposition Scaffold (a → b direction)
 
-This file lays the groundwork for an eventual `MILPEquiv` between the
+This file lays the groundwork for an eventual `MILPReformulation` between the
 arc-based formulation `P20.a.formulation` and the path-based
 formulation `P20.b.formulation` of the World Food Program problem.
 
 Only the base-case ingredients of flow decomposition are proved here.
-The full inductive proof — and consequently the `MILPEquiv` itself —
+The full inductive proof — and consequently the `MILPReformulation` itself —
 is left as future work and is deliberately **not** committed under a
 `sorry` (per project policy). The path-extraction sub-lemma at the
 heart of the induction is *stated* as a `def`-shaped `Prop` so a
@@ -326,7 +326,7 @@ flows `x : Fin pb.nP → ℝ` reproducing `v.F · k` on every arc:
 
   `∀ i j, ∑ p, pE p i j · x p = F i j k`.
 
-This is the core ingredient for the eventual `MILPEquiv.fwd` map.
+This is the core ingredient for the eventual `MILPReformulation.fwd` map.
 -/
 def IsFlowDecomposition
     (pa : P20.a.Params) (pb : P20.b.Params)

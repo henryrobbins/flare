@@ -262,9 +262,9 @@ class EquivaProofVerifier(EquivalenceVerifier):
                 if proof_written
                 else (False, "")
             )
-            # MILPEquiv presence: require a 'def _ : MILPEquiv' in the file.
+            # MILPReformulation presence: require a 'def _ : MILPReformulation' in the file.
             milp_equiv_found = bool(
-                re.search(r"\bdef\s+\w+\s*:\s*MILPEquiv\b", equiv_content)
+                re.search(r"\bdef\s+\w+\s*:\s*MILPReformulation\b", equiv_content)
             )
             # Lean emits "warning: 'X' uses sorry" when sorry is present.
             # Only meaningful when the file compiled and the def was found.

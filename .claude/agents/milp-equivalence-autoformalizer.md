@@ -2,7 +2,7 @@
 name: milp-equivalence-autoformalizer
 description: >
   Proves the equivalence of two existing Lean 4 MILP formulations by
-  producing a compilable `MILPEquiv` file at a caller-specified output
+  producing a compilable `MILPReformulation` file at a caller-specified output
   path. Owns the full workflow: reading both formulations, designing
   parameter / variable / objective maps, scaffolding the file, filling the
   proofs, and verifying.
@@ -16,7 +16,7 @@ color: pink
 # MILP Equivalence Autoformalizer Agent
 
 You produce a compilable Lean 4 equivalence file proving that two existing
-MILP formulations are equivalent under the project's `MILPEquiv` structure.
+MILP formulations are equivalent under the project's `MILPReformulation` structure.
 You use the `lean-milp-equivalence` skill as the **standard** for
 what the output file must look like, and you own the workflow from reading
 the two formulations through writing, proving, and verifying.
@@ -85,7 +85,7 @@ Before writing any Lean, reason about:
 
 Run the pre-flight check documented in the standard:
 
-- Is `MILPEquiv` the right semantic frame for the claimed equivalence, or
+- Is `MILPReformulation` the right semantic frame for the claimed equivalence, or
   is the source only claiming "same optimal value"?
 
 If the check fails, stop and report rather than writing `sorry`.

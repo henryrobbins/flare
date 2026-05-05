@@ -6,7 +6,7 @@ This monorepo contains a dataset of MILP problems/formulations. Proofs of equiva
 
 ```
 .
-├── Common.lean       # MILPFormulation / MILPEquiv definitions
+├── Common.lean       # MILPFormulation / MILPReformulation definitions
 ├── dataset/          # the dataset (MILP problems, formulations, equivalences)
 ├── python/           # Python package `milp_eq_tools`
 ├── scripts/          # standalone scripts
@@ -20,7 +20,7 @@ This monorepo contains a dataset of MILP problems/formulations. Proofs of equiva
 Defines the two structures that the Lean files in `dataset/` build on:
 
 - `MILPFormulation` — `Params`, `Vars`, `feasible`, `obj`.
-- `MILPEquiv F G` — `paramMap`, `fwd`, `bwd`, `fwd_feas`, `bwd_feas`,
+- `MILPReformulation F G` — `paramMap`, `fwd`, `bwd`, `fwd_feas`, `bwd_feas`,
   `objMap`, `objMap_mono`, `fwd_obj`, `bwd_obj`.
 
 Every formulation and equivalence file in `dataset/` imports this module

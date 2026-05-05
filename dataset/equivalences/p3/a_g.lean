@@ -64,14 +64,14 @@ private lemma bwd_feas (p : P3.a.Params) (v : P3.g.Vars)
 -- § Equivalence Structure
 -- ============================================================================
 
-noncomputable def aGEquiv : MILPEquiv P3.a.formulation P3.g.formulation where
+noncomputable def aGEquiv : MILPReformulation P3.a.formulation P3.g.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := fun x => 2 * x
-  objMap_mono := Or.inl (fun a b h => by simp only; linarith)
+  objMap_mono := (fun a b h => by simp only; linarith)
   fwd_obj     := fun _ _ _ => by
     simp only [P3.g.formulation, P3.a.formulation, P3.g.obj, P3.a.obj, fwd, paramMap]
     ring

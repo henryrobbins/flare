@@ -64,14 +64,14 @@ private lemma bwd_feas (p : P2.a.Params) (v : P2.g.Vars)
 -- ============================================================================
 
 -- g.obj = -2*(∑ A·j) = 2*(-(∑ A·j)) = 2 * a.obj, so objMap x = 2 * x
-noncomputable def aGEquiv : MILPEquiv P2.a.formulation P2.g.formulation where
+noncomputable def aGEquiv : MILPReformulation P2.a.formulation P2.g.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
   objMap      := fun x => 2 * x
-  objMap_mono := Or.inl (strictMono_mul_left_of_pos (by norm_num))
+  objMap_mono := (strictMono_mul_left_of_pos (by norm_num))
   fwd_obj     := fun _ v _ => by
     simp only [P2.g.formulation, P2.a.formulation, P2.g.obj, P2.a.obj, fwd, paramMap]
     ring
