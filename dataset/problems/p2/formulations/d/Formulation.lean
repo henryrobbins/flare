@@ -21,11 +21,11 @@ structure Params where
   hY_nn : ∀ j, 0 ≤ Y j
   hI_nn : ∀ j i, 0 ≤ I j i
 
-structure Vars where
-  j : ℕ → ℤ  -- number of times experiment i is conducted
+structure Vars (p : Params) where
+  j : Fin p.M → ℤ  -- number of times experiment i is conducted
   zed : ℝ  -- auxiliary variable representing total electricity produced
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Auxiliary variable equals total electricity produced
   hzed : v.zed = ∑ i : Fin p.M, p.A i * (v.j i : ℝ)
   -- Resource usage does not exceed available
@@ -34,7 +34,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hj_nn : ∀ i : Fin p.M, 0 ≤ v.j i
 
 -- Maximize total electricity (via auxiliary variable)
-def obj (_ : Params) (v : Vars) : ℝ := -v.zed
+def obj (p : Params) (v : Vars p) : ℝ := -v.zed
 
 def formulation : MILPFormulation where
   Params := Params

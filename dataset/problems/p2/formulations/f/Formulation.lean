@@ -21,11 +21,11 @@ structure Params where
   hY_nn : ∀ j, 0 ≤ Y j
   hI_nn : ∀ j i, 0 ≤ I j i
 
-structure Vars where
-  j1 : ℕ → ℤ  -- part 1 of experiment count
-  j2 : ℕ → ℤ  -- part 2 of experiment count
+structure Vars (p : Params) where
+  j1 : Fin p.M → ℤ  -- part 1 of experiment count
+  j2 : Fin p.M → ℤ  -- part 2 of experiment count
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Resource usage does not exceed available
   hres : ∀ k : Fin p.N, ∑ i : Fin p.M, p.I k i * ((v.j1 i : ℝ) + (v.j2 i : ℝ)) ≤ p.Y k
   -- [Implicit Constraints]
@@ -33,7 +33,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hj2_nn : ∀ i : Fin p.M, 0 ≤ v.j2 i
 
 -- Maximize total electricity produced
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.M, p.A i * ((v.j1 i : ℝ) + (v.j2 i : ℝ)))
 
 def formulation : MILPFormulation where

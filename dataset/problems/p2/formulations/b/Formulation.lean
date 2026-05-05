@@ -21,17 +21,17 @@ structure Params where
   hI_nn : ∀ j i, 0 ≤ I j i
   hY_nn : ∀ j, 0 ≤ Y j
 
-structure Vars where
-  j : ℕ → ℤ  -- frequency at which each experiment is performed
+structure Vars (p : Params) where
+  j : Fin p.M → ℤ  -- frequency at which each experiment is performed
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- For each resource, total required across all experiments does not exceed available amount
   hres : ∀ k : Fin p.N, ∑ i : Fin p.M, p.I k i * (v.j i : ℝ) ≤ p.Y k
   -- [Implicit Constraints]
   hj_nn : ∀ i : Fin p.M, 0 ≤ v.j i
 
 -- Maximize total electrical output
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.M, p.A i * (v.j i : ℝ))
 
 def formulation : MILPFormulation where

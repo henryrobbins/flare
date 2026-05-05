@@ -21,17 +21,17 @@ structure Params where
   hResourceRequired_nn : ∀ j i, 0 ≤ ResourceRequired j i
   hResourceAvailable_nn : ∀ j, 0 ≤ ResourceAvailable j
 
-structure Vars where
-  ConductExperiment : ℕ → ℤ  -- number of times each experiment is conducted
+structure Vars (p : Params) where
+  ConductExperiment : Fin p.NumExperiments → ℤ  -- number of times each experiment is conducted
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- For each resource, total required across all experiments does not exceed available amount
   hres : ∀ j : Fin p.NumResources, ∑ i : Fin p.NumExperiments, p.ResourceRequired j i * (v.ConductExperiment i : ℝ) ≤ p.ResourceAvailable j
   -- [Implicit Constraints]
   hConductExperiment_nn : ∀ i : Fin p.NumExperiments, 0 ≤ v.ConductExperiment i
 
 -- Maximize total electricity produced
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.NumExperiments, p.ElectricityProduced i * (v.ConductExperiment i : ℝ))
 
 def formulation : MILPFormulation where

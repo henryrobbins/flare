@@ -21,11 +21,11 @@ structure Params where
   hY_nn : ∀ j, 0 ≤ Y j
   hI_nn : ∀ j i, 0 ≤ I j i
 
-structure Vars where
-  j_0 : ℕ → ℤ  -- digit 0 of the frequency at which each experiment is performed
-  j_1 : ℕ → ℤ  -- digit 1 of the frequency at which each experiment is performed
+structure Vars (p : Params) where
+  j_0 : Fin p.M → ℤ  -- digit 0 of the frequency at which each experiment is performed
+  j_1 : Fin p.M → ℤ  -- digit 1 of the frequency at which each experiment is performed
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- For each resource, total required does not exceed available
   hres : ∀ k : Fin p.N, ∑ i : Fin p.M, p.I k i * ((v.j_0 i : ℝ) + 10 * (v.j_1 i : ℝ)) ≤ p.Y k
   -- Digit bounds
@@ -36,7 +36,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hj1_nn : ∀ i : Fin p.M, 0 ≤ v.j_1 i
 
 -- Maximize total electricity produced
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.M, p.A i * ((v.j_0 i : ℝ) + 10 * (v.j_1 i : ℝ)))
 
 def formulation : MILPFormulation where

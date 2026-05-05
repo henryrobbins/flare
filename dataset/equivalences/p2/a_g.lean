@@ -28,10 +28,10 @@ private def paramMap (p : P2.a.Params) : P2.g.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P2.a.Params) (v : P2.a.Vars) : P2.g.Vars :=
+private def fwd (p : P2.a.Params) (v : P2.a.Vars p) : P2.g.Vars (paramMap p) :=
   { j := fun i => v.ConductExperiment i }
 
-private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars)
+private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars p)
     (h : P2.a.Feasible p v) :
     P2.g.Feasible (paramMap p) (fwd p v) := {
   hres := fun k => by
@@ -45,10 +45,10 @@ private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P2.a.Params) (v : P2.g.Vars) : P2.a.Vars :=
+private def bwd (p : P2.a.Params) (v : P2.g.Vars (paramMap p)) : P2.a.Vars p :=
   { ConductExperiment := fun i => v.j i }
 
-private lemma bwd_feas (p : P2.a.Params) (v : P2.g.Vars)
+private lemma bwd_feas (p : P2.a.Params) (v : P2.g.Vars (paramMap p))
     (h : P2.g.Feasible (paramMap p) v) :
     P2.a.Feasible p (bwd p v) := {
   hres := fun k => by

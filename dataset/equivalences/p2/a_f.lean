@@ -28,11 +28,11 @@ private def paramMap (p : P2.a.Params) : P2.f.Params :=
 -- ============================================================================
 
 -- Count placed entirely in j1; j2 is zero
-private def fwd (_ : P2.a.Params) (v : P2.a.Vars) : P2.f.Vars :=
+private def fwd (p : P2.a.Params) (v : P2.a.Vars p) : P2.f.Vars (paramMap p) :=
   { j1 := v.ConductExperiment
     j2 := fun _ => 0 }
 
-private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars)
+private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars p)
     (h : P2.a.Feasible p v) :
     P2.f.Feasible (paramMap p) (fwd p v) := by
   refine ⟨fun k => ?_, h.hConductExperiment_nn, fun _ => le_refl 0⟩
@@ -44,10 +44,10 @@ private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars)
 -- ============================================================================
 
 -- Both parts are summed to recover the experiment count
-private def bwd (_ : P2.a.Params) (v : P2.f.Vars) : P2.a.Vars :=
+private def bwd (p : P2.a.Params) (v : P2.f.Vars (paramMap p)) : P2.a.Vars p :=
   { ConductExperiment := fun i => v.j1 i + v.j2 i }
 
-private lemma bwd_feas (p : P2.a.Params) (v : P2.f.Vars)
+private lemma bwd_feas (p : P2.a.Params) (v : P2.f.Vars (paramMap p))
     (h : P2.f.Feasible (paramMap p) v) :
     P2.a.Feasible p (bwd p v) :=
   { hres := fun j => by

@@ -28,27 +28,21 @@ private def paramMap (p : P2.a.Params) : P2.e.Params :=
 -- ============================================================================
 
 -- Slack absorbs the gap between resource usage and availability
-private def fwd (p : P2.a.Params) (v : P2.a.Vars) : P2.e.Vars :=
+private def fwd (p : P2.a.Params) (v : P2.a.Vars p) : P2.e.Vars (paramMap p) :=
   { j := v.ConductExperiment
     s := fun k =>
-      if h : k < p.NumResources
-      then p.ResourceAvailable ⟨k, h⟩ -
-           ∑ i : Fin p.NumExperiments, p.ResourceRequired ⟨k, h⟩ i * (v.ConductExperiment i : ℝ)
-      else 0 }
+      p.ResourceAvailable k -
+        ∑ i : Fin p.NumExperiments, p.ResourceRequired k i * (v.ConductExperiment i : ℝ) }
 
-private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars)
+private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars p)
     (h : P2.a.Feasible p v) :
     P2.e.Feasible (paramMap p) (fwd p v) :=
   { hres := fun k => by
       simp only [paramMap, fwd]
-      have hlt : (k : ℕ) < p.NumResources := k.isLt
-      rw [dif_pos hlt, Fin.eta k hlt]
       ring
     hj_nn := h.hConductExperiment_nn
     hs_nn := fun k => by
       simp only [fwd]
-      have hlt : (k : ℕ) < p.NumResources := k.isLt
-      rw [dif_pos hlt, Fin.eta k hlt]
       linarith [h.hres k] }
 
 -- ============================================================================
@@ -56,10 +50,10 @@ private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars)
 -- ============================================================================
 
 -- Slack is dropped; experiment counts project directly
-private def bwd (_ : P2.a.Params) (v : P2.e.Vars) : P2.a.Vars :=
+private def bwd (p : P2.a.Params) (v : P2.e.Vars (paramMap p)) : P2.a.Vars p :=
   { ConductExperiment := v.j }
 
-private lemma bwd_feas (p : P2.a.Params) (v : P2.e.Vars)
+private lemma bwd_feas (p : P2.a.Params) (v : P2.e.Vars (paramMap p))
     (h : P2.e.Feasible (paramMap p) v) :
     P2.a.Feasible p (bwd p v) :=
   { hres := fun k => by
