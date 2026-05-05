@@ -1,13 +1,13 @@
 # EquivaProof Agent Guide
 
-This monorepo contains a dataset of MILP problems/formulations. Proofs of equivalence for equivalent formulations of the same problem are given in Lean 4. Additionally, there is a Python package and Python scripts for working with the dataset.
+This monorepo contains a dataset of MILP problems/formulations. Proofs that one formulation is a reformulation of another (for formulations of the same problem) are given in Lean 4. Additionally, there is a Python package and Python scripts for working with the dataset.
 
 ## Top-level layout
 
 ```
 .
 ├── Common.lean       # MILPFormulation / MILPReformulation definitions
-├── dataset/          # the dataset (MILP problems, formulations, equivalences)
+├── dataset/          # the dataset (MILP problems, formulations, reformulations)
 ├── python/           # Python package `milp_eq_tools`
 ├── scripts/          # standalone scripts
 ├── lakefile.toml
@@ -23,12 +23,12 @@ Defines the two structures that the Lean files in `dataset/` build on:
 - `MILPReformulation F G` — `paramMap`, `fwd`, `bwd`, `fwd_feas`, `bwd_feas`,
   `objMap`, `objMap_mono`, `fwd_obj`, `bwd_obj`.
 
-Every formulation and equivalence file in `dataset/` imports this module
+Every formulation and reformulation file in `dataset/` imports this module
 via `import Common`.
 
 ## `dataset/`
 
-The dataset itself — MILP problems, their formulations, and equivalence
+The dataset itself — MILP problems, their formulations, and reformulation
 proofs. See `dataset/README.md` for more information.
 
 ## `python/`
@@ -55,13 +55,13 @@ The repo provides a set of skills and agents for working with this dataset. This
 2. The output file(s) will be `Formulation.lean` in each formulation's subdirectory. E.g., the formulation for p1.e goes in `dataset/problems/p1/formulations/e/Formulation.lean`.
 3. Invoke the `milp-formulator` agent with the identified source/output. If generating multiple formulations, invoke multiple agents in parallel.
 
-**Generate Lean MILP equivalence proof**
+**Generate Lean MILP reformulation proof**
 
-1. Identify the relevant source file(s) to read. At a minimum, you must read each MILP's `Formulation.lean` file. It may also be useful to read the problem and formulation files. E.g., the relevant source files for proving equivalence between p1.a and p1.b are the problem files in `dataset/problems/p1` and the formulation files `dataset/problems/p1/formulations/a|b`. The formulation subdirectory should contain `Formulation.lean` for both formulations. If it doesn't follow the steps above for generating it.
-2. The output file for proving equivalence between problem X and formulations a and b is `dataset/equivalences/pX/a_b.lean`.
-3. Invoke the `milp-equivalence-autoformalizer` agent with the identified source/output. If generating multiple formulations, invoke multiple agents in parallel.
+1. Identify the relevant source file(s) to read. At a minimum, you must read each MILP's `Formulation.lean` file. It may also be useful to read the problem and formulation files. E.g., the relevant source files for proving that p1.b is a reformulation of p1.a are the problem files in `dataset/problems/p1` and the formulation files `dataset/problems/p1/formulations/a|b`. The formulation subdirectory should contain `Formulation.lean` for both formulations. If it doesn't follow the steps above for generating it.
+2. The output file for proving that formulation b is a reformulation of formulation a (for problem X) is `dataset/reformulations/pX/a_b.lean`.
+3. Invoke the `milp-reformulation-autoformalizer` agent with the identified source/output. If generating multiple formulations, invoke multiple agents in parallel.
 
-**Review existing Lean MILP formulations or equivalence proofs**
+**Review existing Lean MILP formulations or reformulation proofs**
 
-1. Identify the relevant file(s) to read. This includes relevant problem files, formulation files, MILP formulation `Formulation.lean` and equivalence proofs `dataset/equivalences/pX/a_b.lean`.
+1. Identify the relevant file(s) to read. This includes relevant problem files, formulation files, MILP formulation `Formulation.lean` and reformulation proofs `dataset/reformulations/pX/a_b.lean`.
 2. Invoke the `milp-reviewer` agent pointing to the relevant file locations. If generating multiple formulations, invoke multiple agents in parallel.
