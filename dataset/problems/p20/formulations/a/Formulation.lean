@@ -48,11 +48,11 @@ structure Params where
   hnutreq_nn : ∀ l : Fin nL, 0 ≤ nutreq l
   hnutval_nn : ∀ k : Fin nK, ∀ l : Fin nL, 0 ≤ nutval k l
 
-structure Vars where
-  F : ℕ → ℕ → ℕ → ℝ  -- amount of commodity k sent from node i to node j (kg)
-  R : ℕ → ℝ  -- ration size per person of each commodity (kg)
+structure Vars (p : Params) where
+  F : Fin p.nN → Fin p.nN → Fin p.nK → ℝ  -- amount of commodity k sent from node i to node j (kg)
+  R : Fin p.nK → ℝ  -- ration size per person of each commodity (kg)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Suppliers are pure sources: no inflow on incoming edges
   hS_noinflow : ∀ s : Fin p.nS, ∀ k : Fin p.nK,
     ∑ i : Fin p.nN, (p.E i (p.S s) : ℝ) * v.F i (p.S s) k = 0
@@ -82,7 +82,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
 
 -- Minimize total procurement and transportation cost.
 -- Procurement cost is charged on the outflow of each commodity leaving supplier nodes.
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   (∑ k : Fin p.nK, p.pc k *
     (∑ s : Fin p.nS, ∑ j : Fin p.nN, (p.E (p.S s) j : ℝ) * v.F (p.S s) j k))
     + ∑ i : Fin p.nN, ∑ j : Fin p.nN, ∑ k : Fin p.nK, p.tc i j k * v.F i j k
