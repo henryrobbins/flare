@@ -8,7 +8,7 @@
             "problem": 1,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -19,7 +19,7 @@
             "problem": 1,
             "formulation": "c"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -30,7 +30,7 @@
             "problem": 1,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -41,7 +41,7 @@
             "problem": 1,
             "formulation": "e"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -52,7 +52,7 @@
             "problem": 1,
             "formulation": "f"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -63,7 +63,7 @@
             "problem": 1,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -74,7 +74,7 @@
             "problem": 1,
             "formulation": "h"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -85,7 +85,7 @@
             "problem": 1,
             "formulation": "i"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -96,7 +96,7 @@
             "problem": 1,
             "formulation": "j"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -107,7 +107,7 @@
             "problem": 2,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -118,7 +118,7 @@
             "problem": 2,
             "formulation": "c"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -129,7 +129,7 @@
             "problem": 2,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -140,7 +140,7 @@
             "problem": 2,
             "formulation": "e"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -151,7 +151,7 @@
             "problem": 2,
             "formulation": "f"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -162,7 +162,7 @@
             "problem": 2,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -173,7 +173,7 @@
             "problem": 2,
             "formulation": "h"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -184,7 +184,7 @@
             "problem": 2,
             "formulation": "i"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -195,7 +195,7 @@
             "problem": 2,
             "formulation": "j"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -206,7 +206,7 @@
             "problem": 3,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -217,7 +217,7 @@
             "problem": 3,
             "formulation": "c"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -228,7 +228,7 @@
             "problem": 3,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -239,7 +239,7 @@
             "problem": 3,
             "formulation": "e"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -250,7 +250,7 @@
             "problem": 3,
             "formulation": "f"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -261,7 +261,7 @@
             "problem": 3,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -272,7 +272,7 @@
             "problem": 3,
             "formulation": "h"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -283,7 +283,7 @@
             "problem": 3,
             "formulation": "i"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -294,7 +294,7 @@
             "problem": 3,
             "formulation": "j"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -305,7 +305,7 @@
             "problem": 4,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -316,7 +316,7 @@
             "problem": 4,
             "formulation": "c"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -327,7 +327,7 @@
             "problem": 4,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -338,7 +338,7 @@
             "problem": 4,
             "formulation": "e"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -349,7 +349,7 @@
             "problem": 4,
             "formulation": "f"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -360,7 +360,7 @@
             "problem": 4,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -371,7 +371,7 @@
             "problem": 4,
             "formulation": "h"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -382,7 +382,7 @@
             "problem": 4,
             "formulation": "i"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -393,7 +393,7 @@
             "problem": 4,
             "formulation": "j"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -404,7 +404,7 @@
             "problem": 5,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -415,7 +415,7 @@
             "problem": 5,
             "formulation": "c"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -426,7 +426,7 @@
             "problem": 5,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -437,7 +437,7 @@
             "problem": 5,
             "formulation": "e"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -448,7 +448,7 @@
             "problem": 5,
             "formulation": "f"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -459,7 +459,7 @@
             "problem": 5,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -470,7 +470,7 @@
             "problem": 5,
             "formulation": "h"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -481,7 +481,7 @@
             "problem": 5,
             "formulation": "i"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -492,7 +492,7 @@
             "problem": 5,
             "formulation": "j"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -503,7 +503,7 @@
             "problem": 6,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -514,7 +514,7 @@
             "problem": 6,
             "formulation": "c"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -525,7 +525,7 @@
             "problem": 6,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -536,7 +536,7 @@
             "problem": 6,
             "formulation": "e"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -547,7 +547,7 @@
             "problem": 6,
             "formulation": "f"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -558,7 +558,7 @@
             "problem": 6,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -569,7 +569,7 @@
             "problem": 6,
             "formulation": "h"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -580,7 +580,7 @@
             "problem": 6,
             "formulation": "i"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -591,7 +591,7 @@
             "problem": 6,
             "formulation": "j"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -602,7 +602,7 @@
             "problem": 7,
             "formulation": "b"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -613,7 +613,7 @@
             "problem": 7,
             "formulation": "c"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -624,7 +624,7 @@
             "problem": 7,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -635,7 +635,7 @@
             "problem": 7,
             "formulation": "e"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -646,7 +646,7 @@
             "problem": 7,
             "formulation": "f"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -657,7 +657,7 @@
             "problem": 7,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -668,7 +668,7 @@
             "problem": 7,
             "formulation": "h"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -679,7 +679,7 @@
             "problem": 7,
             "formulation": "i"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -690,7 +690,7 @@
             "problem": 8,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -701,7 +701,7 @@
             "problem": 8,
             "formulation": "c"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -712,7 +712,7 @@
             "problem": 8,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -723,7 +723,7 @@
             "problem": 9,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -734,7 +734,7 @@
             "problem": 9,
             "formulation": "c"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -745,7 +745,7 @@
             "problem": 9,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -756,7 +756,7 @@
             "problem": 11,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -767,7 +767,7 @@
             "problem": 11,
             "formulation": "c"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -778,7 +778,7 @@
             "problem": 11,
             "formulation": "d"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -789,7 +789,7 @@
             "problem": 11,
             "formulation": "e"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -800,7 +800,7 @@
             "problem": 11,
             "formulation": "f"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -811,7 +811,7 @@
             "problem": 11,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -822,7 +822,7 @@
             "problem": 11,
             "formulation": "h"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -833,7 +833,7 @@
             "problem": 11,
             "formulation": "i"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -844,7 +844,7 @@
             "problem": 12,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -855,7 +855,7 @@
             "problem": 12,
             "formulation": "c"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -866,7 +866,7 @@
             "problem": 12,
             "formulation": "d"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -877,7 +877,7 @@
             "problem": 12,
             "formulation": "e"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -888,7 +888,7 @@
             "problem": 12,
             "formulation": "f"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -899,7 +899,7 @@
             "problem": 12,
             "formulation": "g"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -910,7 +910,7 @@
             "problem": 12,
             "formulation": "h"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -921,7 +921,7 @@
             "problem": 12,
             "formulation": "i"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -932,7 +932,7 @@
             "problem": 14,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -943,7 +943,7 @@
             "problem": 16,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -954,7 +954,7 @@
             "problem": 17,
             "formulation": "b"
         },
-        "equivalent": false
+        "reformulation": false
     },
     {
         "a": {
@@ -965,7 +965,7 @@
             "problem": 18,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -976,7 +976,7 @@
             "problem": 19,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     },
     {
         "a": {
@@ -987,6 +987,6 @@
             "problem": 20,
             "formulation": "b"
         },
-        "equivalent": true
+        "reformulation": true
     }
 ]

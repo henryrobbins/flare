@@ -14,7 +14,7 @@ tags:
   - theorem-proving
 language:
   - en
-pretty_name: MILP Formulation Equivalence (Lean 4)
+pretty_name: MILP Reformulation (Lean 4)
 size_categories:
   - n<1K
 configs:
@@ -24,18 +24,18 @@ configs:
     data_files: data/pairs.jsonl
 ---
 
-# MILP Formulation Equivalence Dataset
+# MILP Reformulation Dataset
 
-A dataset of mixed-integer linear programming (MILP) problems, multiple natural-language and code formulations of each problem, and machine-checked Lean 4 proofs of formulation equivalence.
+A dataset of mixed-integer linear programming (MILP) problems, multiple natural-language and code formulations of each problem, and machine-checked Lean 4 proofs of MILP reformulations.
 
-Each problem is presented in several alternative formulations that may differ in variable naming, parameter naming, the algebraic form of the constraints, the choice of decision variables, or the objective expression. Some pairs of formulations describe the same optimization problem ("equivalent"); others differ in a way that changes the feasible set or the optimal value ("not equivalent"). The Lean 4 files in `equivalences/` formalize each equivalent pair as a constructive bijection between feasible sets that preserves the objective.
+Each problem is presented in several alternative formulations that may differ in variable naming, parameter naming, the algebraic form of the constraints, the choice of decision variables, or the objective expression. Some pairs of formulations describe the same optimization problem (a "reformulation"); others differ in a way that changes the feasible set or the optimal value (not a reformulation). The Lean 4 files in `reformulations/` formalize each reformulation pair.
 
 ## Directory Structure
 
 ```
 dataset/
 ├── dataset.json              # List of problem IDs
-├── pairs.json                # All formulation pairs with equivalence labels
+├── pairs.json                # All formulation pairs with reformulation labels
 ├── problems/                 # List of problems
 │   ├── p1/
 │   │   ├── description.md    # Natural-language problem statement
@@ -50,9 +50,9 @@ dataset/
 │   │       │   └── Formulation.lean   # Lean 4 MILP formulation
 │   │       └── ...
 │   └── ...
-└── equivalences/             # Lean 4 equivalence proofs
+└── reformulations/           # Lean 4 reformulation proofs
     ├── p1/
-    │   ├── a_b.lean          # Proof that formulation a ≡ formulation b
+    │   ├── a_b.lean          # Proof formulation b is a reformulation of a
     │   └── ...
     └── ...
 ```
@@ -71,7 +71,7 @@ For each problem `pN`:
 For each formulation `pN/formulations/x/`:
 
 - **`formulation.json`** — Structured description of the MILP:
-  - `valid` — boolean indicating whether the formulation is a valid formulation for the parent problem; all formulations of a problem marked as valid should be equivalent to one another.
+  - `valid` — boolean indicating whether the formulation is a valid formulation for the parent problem.
   - `parameters` — parameters for the MILP formulation; should be a function of problem parameters provided in `data.json`. Each parameter has `{description, shape}`. Shapes use the same notation as variable shapes (see below).
   - `assumptions` — list of parameter assumptions, each with `{description, formulation (LaTeX), explicit (bool), code.python}`. The `explicit` flag is `true` when the assumption is stated explicitly in the original problem text; `false` when it is implicit (e.g., non-negativity of a rate that is obviously physical). Assumptions on parameters are distinct from constraints on decision variables.
   - `definitions` — *(optional)* ordered dict of named derived quantities computed from parameters before variables are declared, each with `{description, code.python}`. Typical uses: big-M constants, pre-computed index sets, and other values referenced in variable or constraint code. Definitions are emitted into `solve.py` in declaration order.
@@ -93,10 +93,10 @@ The `shape` field of a variable (and of parameters) encodes the index dimensions
 The `indices` field is an alternative to `shape` for variables indexed by an explicit, possibly irregular set. It contains a Python expression (a generator or comprehension) that produces the keys used to call `model.addVars(...)`. When `indices` is present, `shape` still appears (typically with `|X|` notation) to document the conceptual size in the mathematical formulation, but `indices` is what drives code generation.
 
 - **`gen_params.py`** — Generates `parameters.json` (a map of `parameters`) from the shared `data.json` (with stores problem-level `parameters`).
-- **`solve.py`** — A Gurobi script that loads `parameters.json` and writes `solution.json`. Equivalent formulations on the same instance produce the same objective. Note this scripts is deterministically generated from the code defined in the `formulation.json`.
+- **`solve.py`** — A Gurobi script that loads `parameters.json` and writes `solution.json`. A formulation and its reformulations produce the same objective on the same instance. Note this scripts is deterministically generated from the code defined in the `formulation.json`.
 - **`Formulation.lean`** — A Lean 4 encoding of the MILP as a `MILPFormulation` (defined in `Common.lean`).
 
-## Equivalence Pairs and Proofs
+## Reformulation Pairs and Proofs
 
 `pairs.json` is a flat list of formulation pairs:
 
@@ -104,11 +104,11 @@ The `indices` field is an alternative to `shape` for variables indexed by an exp
 {
   "a": {"problem": 1, "formulation": "a"},
   "b": {"problem": 1, "formulation": "b"},
-  "equivalent": true
+  "reformulation": true
 }
 ```
 
-For each equivalent pair there is a corresponding Lean file `equivalences/pN/a_b.lean` constructing a `MILPReformulation` instance (defined in `Common.lean`).Non-equivalent pairs have no Lean file by design: the dataset records them as labelled negative examples.
+For each reformulation pair there is a corresponding Lean file `reformulations/pN/a_b.lean` constructing a `MILPReformulation` instance (defined in `Common.lean`). Pairs that are not reformulations of one another have no Lean file by design: the dataset records them as labelled negative examples.
 
 ## Problems Table
 
