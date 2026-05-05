@@ -39,9 +39,9 @@ NOTE: This section is *optional*. Include only general lemmas that have no
 dependency on any specific feasible solution.
 
 - Use the `lemma` keyword.
-- Mark as `private`. Every helper lemma lives in this equivalence file;
-  equivalence files do not import each other and there is no shared-lemmas
-  module. If another equivalence file needs the same lemma, duplicate it.
+- Mark as `private`. Every helper lemma lives in this reformulation file;
+  reformulation files do not import each other and there is no shared-lemmas
+  module. If another reformulation file needs the same lemma, duplicate it.
 - Lemmas specific to a particular formulation that are needed by fwd_feas or
   bwd_feas belong in ForwardHelpers / BackwardHelpers sections below.
 - Remove this section entirely if no such lemmas are needed.
@@ -54,7 +54,7 @@ dependency on any specific feasible solution.
 /-
 NOTE: This section is *optional*. Include only if the paramMap body is longer
 than a single line. If the mapping is trivial (e.g., `id`, `{ c := p.c }`),
-put it inline in the equivalence structure instead.
+put it inline in the reformulation structure instead.
 
 - Use `private def paramMap`.
 -/
@@ -68,7 +68,7 @@ private def paramMap (p : <A>.Params) : <B>.Params :=
 
 /-
 NOTE: This section is *optional*. Include only if `fwd` or `fwd_feas` are longer
-than a single line. Otherwise, put them inline in the equivalence structure.
+than a single line. Otherwise, put them inline in the reformulation structure.
 
 - Use `private def fwd` and `private lemma fwd_feas`.
 - Mark `noncomputable` when the construction uses Classical.choice. If the
@@ -115,7 +115,7 @@ private lemma fwd_feas (p : <A>.Params) (v : <A>.Vars p)
 
 /-
 NOTE: This section is *optional*. Include only if `bwd` or `bwd_feas` are longer
-than a single line. Otherwise, put them inline in the equivalence structure.
+than a single line. Otherwise, put them inline in the reformulation structure.
 
 - Use `private def bwd` and `private lemma bwd_feas`.
 - Mark `noncomputable` when the construction uses Classical.choice or extracts
@@ -163,7 +163,7 @@ private lemma bwd_feas (p : <A>.Params) (v : <B>.Vars (paramMap p))
 /-
 NOTE: This section is *optional*. Include only if the objective map is not a
 single inline expression. If `objMap = id` or a simple lambda (e.g., `fun v => 2 * v`),
-put it inline in the equivalence structure instead.
+put it inline in the reformulation structure instead.
 
 When the section is needed, define:
   - `private def objMap : ℝ → ℝ := ...`
@@ -188,7 +188,7 @@ private lemma bwd_obj (p : <A>.Params) (v : <B>.Vars (paramMap p))
   sorry
 
 -- ============================================================================
--- § Equivalence Structure
+-- § Reformulation Structure
 -- ============================================================================
 
 /-
@@ -196,7 +196,7 @@ NOTE: The final def should be a `MILPReformulation` structure:
 
 - See the project's common MILP module for the definition of `MILPReformulation`
   and its fields.
-- Named camelCase: <formA><FormB>Equiv (e.g., `faFbEquiv`, `scfMcfEquiv`)
+- Named camelCase: <formA><FormB>Reformulation (e.g., `aBReformulation`, `scfMcfReformulation`)
 - Marked `noncomputable` if any helper def is noncomputable
 - `paramMap`: reference the private def above, or inline for trivial cases
     e.g., `paramMap p := { c := p.c }` or `paramMap := id`
@@ -211,7 +211,7 @@ NOTE: The final def should be a `MILPReformulation` structure:
     are definitionally equal; reference private lemmas when the section is present
 -/
 
-def <formA><FormB>Equiv : MILPReformulation <A>.formulation <B>.formulation where
+def <formA><FormB>Reformulation : MILPReformulation <A>.formulation <B>.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd

@@ -1,18 +1,18 @@
 ---
-name: lean-milp-equivalence
+name: lean-milp-reformulation
 description: >
-  Standard for the structure and conventions of Lean 4 MILP equivalence files.
-  Use when authoring a new equivalence file, reviewing an existing one, or
+  Standard for the structure and conventions of Lean 4 MILP reformulation files.
+  Use when authoring a new reformulation file, reviewing an existing one, or
   modifying one.
 ---
 
-# Lean MILP Equivalence Standard
+# Lean MILP Reformulation Standard
 
-An equivalence proof file shows that two MILP formulations `A` and `B` are
-equivalent under the project's `MILPReformulation` structure: it produces a
+A reformulation proof file shows that two MILP formulations `A` and `B` are
+related under the project's `MILPReformulation` structure: it produces a
 parameter map `A.Params → B.Params`, mutually inverse feasibility-preserving
-variable maps, and a strictly monotone (increasing or decreasing) objective
-map that makes forward and backward objective diagrams commute.
+variable maps, and a strictly monotone objective map that makes forward and
+backward objective diagrams commute.
 
 ## `MILPReformulation` at a glance
 
@@ -33,13 +33,13 @@ preservation for _all_ feasible solutions — not merely equal optima.
 
 ## File structure
 
-Every equivalence file contains, in order:
+Every reformulation file contains, in order:
 
 1. Imports: the common MILP module (providing `MILPReformulation`), both
    formulations `A` and `B`, and targeted Mathlib imports.
 2. `open BigOperators Finset` if the proofs use `∑` or `Finset`.
 3. A `namespace` matching the shared problem scope (e.g. `P1`, `General.TSP`).
-4. Optional helper-lemma section (lemmas local to this equivalence).
+4. Optional helper-lemma section (lemmas local to this reformulation).
 5. Optional `paramMap` definition (inline in the structure if trivial).
 6. Optional forward-helpers section + `fwd` and `fwd_feas`.
 7. Optional backward-helpers section + `bwd` and `bwd_feas`.
@@ -52,9 +52,10 @@ See `template.lean` for the canonical layout.
 
 ## Naming conventions
 
-- Equivalence `def` name: camelCase, `<formA><FormB>Equiv`
-  (e.g. `originalCEquiv`, `scfMcfEquiv`). Match the file name.
-- Helper defs/lemmas: `private`. All helpers live in the equivalence file
+- Reformulation `def` name: camelCase, `<formA><FormB>Reformulation`
+  (e.g. `aBReformulation`, `scfMcfReformulation`). The first letter is
+  lowercase and the second formulation letter is uppercase. Match the file name.
+- Helper defs/lemmas: `private`. All helpers live in the reformulation file
   itself — there is no shared-lemmas module.
 - Canonical names: `paramMap`, `fwd`, `bwd`, `fwd_feas`, `bwd_feas`,
   `objMap`, `objMap_mono`, `fwd_obj`, `bwd_obj`.
@@ -87,11 +88,11 @@ feasible solution. Inside:
 - Introduce the feasibility hypothesis as an **explicit** parameter `h`,
   then `include h` so Lean uses it.
 
-## Equivalence files are self-contained
+## Reformulation files are self-contained
 
-Every equivalence file contains all of its own helper lemmas and
-definitions. Equivalence files do not import each other, and there is no
-shared-lemmas module. If two equivalence files need the same lemma,
+Every reformulation file contains all of its own helper lemmas and
+definitions. Reformulation files do not import each other, and there is no
+shared-lemmas module. If two reformulation files need the same lemma,
 duplicate it (each as `private`) rather than introducing a shared module.
 
 ## Stray-content rules
