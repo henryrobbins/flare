@@ -5,12 +5,12 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
-from src.verify.base import EquivalenceResult, EquivalenceVerifier
+from src.verify.base import ReformulationResult, ReformulationVerifier
 
 TOLERANCE = 1e-6
 
 
-class ExecutionVerifier(EquivalenceVerifier):
+class ExecutionVerifier(ReformulationVerifier):
     @property
     def name(self) -> str:
         return "execution"
@@ -18,7 +18,7 @@ class ExecutionVerifier(EquivalenceVerifier):
     def method_config(self) -> dict:
         return {"tolerance": TOLERANCE}
 
-    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
+    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> ReformulationResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
@@ -28,12 +28,12 @@ class ExecutionVerifier(EquivalenceVerifier):
         obj_b = self._solve(b, artifacts_dir / "b")
         duration_s = round(time.time() - start, 1)
 
-        is_equiv = abs(obj_a - obj_b) < TOLERANCE
-        meta = {"is_equivalent": is_equiv, "obj_a": obj_a, "obj_b": obj_b}
+        is_reform = abs(obj_a - obj_b) < TOLERANCE
+        meta = {"is_reformulation": is_reform, "obj_a": obj_a, "obj_b": obj_b}
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
-        return EquivalenceResult(
-            is_equivalent=is_equiv,
+        return ReformulationResult(
+            is_reformulation=is_reform,
             method=self.name,
             artifacts_dir=artifacts_dir,
             duration_s=duration_s,

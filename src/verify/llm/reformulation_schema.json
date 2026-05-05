@@ -2,8 +2,8 @@
   "type": "object",
   "properties": {
     "reasoning": { "type": "string" },
-    "is_equivalent": { "type": "boolean" }
+    "is_reformulation": { "type": "boolean" }
   },
-  "required": ["reasoning", "is_equivalent"],
+  "required": ["reasoning", "is_reformulation"],
   "additionalProperties": false
 }

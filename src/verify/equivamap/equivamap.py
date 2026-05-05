@@ -7,7 +7,7 @@ from pathlib import Path
 from milp_eq_tools import Formulation
 from milp_eq_tools.models import Constraint
 
-from src.verify.base import EquivalenceResult, EquivalenceVerifier
+from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.prompts import problem_info
 from src.verify.equivamap.prompts import (
     VARIABLE_MAPPING_SCHEMA,
@@ -127,7 +127,7 @@ def _solve(formulation: Formulation, fdir: Path) -> dict:
     return json.loads(solution_path.read_text())
 
 
-class EquivaMapVerifier(EquivalenceVerifier):
+class EquivaMapVerifier(ReformulationVerifier):
     def __init__(self, client: LLMClient) -> None:
         self.client = client
 
@@ -138,7 +138,7 @@ class EquivaMapVerifier(EquivalenceVerifier):
     def method_config(self) -> dict:
         return {"tolerance": TOLERANCE, "llm": dataclasses.asdict(self.client.config)}
 
-    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> EquivalenceResult:
+    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> ReformulationResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
@@ -185,7 +185,7 @@ class EquivaMapVerifier(EquivalenceVerifier):
         # If any variable could not be mapped, the check is invalid — return False.
         if any(not terms for terms in variable_mappings.values()):
             meta = {
-                "is_equivalent": False,
+                "is_reformulation": False,
                 "obj_a": obj_a,
                 "obj_b": obj_b,
                 "incomplete_mapping": True,
@@ -193,8 +193,8 @@ class EquivaMapVerifier(EquivalenceVerifier):
                 "output_tokens": total_output_tokens,
             }
             (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-            return EquivalenceResult(
-                is_equivalent=False,
+            return ReformulationResult(
+                is_reformulation=False,
                 method=self.name,
                 artifacts_dir=artifacts_dir,
                 duration_s=round(time.time() - start, 1),
@@ -225,7 +225,7 @@ class EquivaMapVerifier(EquivalenceVerifier):
             sol_a_constrained = _solve(pinned_a, artifacts_dir / "a_constrained")
         except subprocess.CalledProcessError:
             meta = {
-                "is_equivalent": False,
+                "is_reformulation": False,
                 "obj_a": obj_a,
                 "obj_b": obj_b,
                 "infeasible": True,
@@ -233,8 +233,8 @@ class EquivaMapVerifier(EquivalenceVerifier):
                 "output_tokens": total_output_tokens,
             }
             (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-            return EquivalenceResult(
-                is_equivalent=False,
+            return ReformulationResult(
+                is_reformulation=False,
                 method=self.name,
                 artifacts_dir=artifacts_dir,
                 duration_s=round(time.time() - start, 1),
@@ -248,9 +248,9 @@ class EquivaMapVerifier(EquivalenceVerifier):
         # Step 6: Check that B's optimum, mapped into A's variables, is optimal in A.
         # Comparing against A's own optimum (rather than B's) keeps the test invariant
         # to differences in how A and B express their objectives.
-        is_equiv = abs(obj_a - obj_a_constrained) < TOLERANCE
+        is_reform = abs(obj_a - obj_a_constrained) < TOLERANCE
         meta = {
-            "is_equivalent": is_equiv,
+            "is_reformulation": is_reform,
             "obj_a": obj_a,
             "obj_b": obj_b,
             "obj_a_constrained": obj_a_constrained,
@@ -259,8 +259,8 @@ class EquivaMapVerifier(EquivalenceVerifier):
         }
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
-        return EquivalenceResult(
-            is_equivalent=is_equiv,
+        return ReformulationResult(
+            is_reformulation=is_reform,
             method=self.name,
             artifacts_dir=artifacts_dir,
             duration_s=round(time.time() - start, 1),

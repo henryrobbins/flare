@@ -5,17 +5,17 @@ from pathlib import Path
 
 from milp_eq_tools import Formulation
 
-from src.verify.base import EquivalenceResult, EquivalenceVerifier
-from src.verify.llm.prompts import EQUIVALENCE_SCHEMA, render_equivalence
+from src.verify.base import ReformulationResult, ReformulationVerifier
+from src.verify.llm.prompts import REFORMULATION_SCHEMA, render_reformulation
 from src.llm_client import LLMClient, compute_cost_usd
 
 
-class LLMVerifier(EquivalenceVerifier):
+class LLMVerifier(ReformulationVerifier):
     def __init__(
         self,
         client: LLMClient,
         name: str = "llm",
-        template: str = "equivalence.j2",
+        template: str = "reformulation.j2",
         include_implicit: bool = True,
     ) -> None:
         self.client = client
@@ -36,7 +36,7 @@ class LLMVerifier(EquivalenceVerifier):
 
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path
-    ) -> EquivalenceResult:
+    ) -> ReformulationResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -44,26 +44,26 @@ class LLMVerifier(EquivalenceVerifier):
             json.dumps(self.method_config(), indent=2)
         )
 
-        rendered = render_equivalence(
+        rendered = render_reformulation(
             a, b, template=self.template, include_implicit=self.include_implicit
         )
         (artifacts_dir / "prompt.txt").write_text(rendered.user)
 
         start = time.time()
         parsed, usage = self.client.complete_json_with_usage(
-            rendered.system, rendered.user, EQUIVALENCE_SCHEMA
+            rendered.system, rendered.user, REFORMULATION_SCHEMA
         )
         duration_s = round(time.time() - start, 1)
         (artifacts_dir / "response.json").write_text(json.dumps(parsed, indent=2))
 
-        is_equiv = bool(parsed["is_equivalent"])
+        is_reform = bool(parsed["is_reformulation"])
         reasoning = parsed.get("reasoning", "")
         cost_usd = compute_cost_usd(
             self.client.config.model, usage["input_tokens"], usage["output_tokens"]
         )
 
-        return EquivalenceResult(
-            is_equivalent=is_equiv,
+        return ReformulationResult(
+            is_reformulation=is_reform,
             method=self.name,
             artifacts_dir=artifacts_dir,
             duration_s=duration_s,

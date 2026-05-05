@@ -6,8 +6,8 @@ from milp_eq_tools import Formulation
 
 
 @dataclass
-class EquivalenceResult:
-    is_equivalent: bool
+class ReformulationResult:
+    is_reformulation: bool
     method: str
     artifacts_dir: Path
     duration_s: float | None = None
@@ -15,7 +15,7 @@ class EquivalenceResult:
     metadata: dict = field(default_factory=dict)
 
 
-class EquivalenceVerifier(ABC):
+class ReformulationVerifier(ABC):
     @property
     @abstractmethod
     def name(self) -> str: ...
@@ -26,4 +26,4 @@ class EquivalenceVerifier(ABC):
     @abstractmethod
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path
-    ) -> EquivalenceResult: ...
+    ) -> ReformulationResult: ...
