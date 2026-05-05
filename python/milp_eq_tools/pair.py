@@ -7,4 +7,4 @@ from .formulation import Formulation
 class Pair:
     a: Formulation
     b: Formulation
-    equivalent: bool
+    reformulation: bool
