@@ -41,12 +41,12 @@ Then the capacity sum `∑_c z[h,c] = nC * y[h]` is tight, and the disjunction
 holds because either `y[h] = 1` (right) or `y[h] = 0`, in which case
 `∑_c x[h,c] ≤ 0` together with `x ≥ 0` force `x[h,c] = 0` (left).
 -/
-private def fwd (_ : P19.a.Params) (v : P19.a.Vars) : P19.b.Vars :=
+private def fwd (p : P19.a.Params) (v : P19.a.Vars p) : P19.b.Vars (paramMap p) :=
   { q := v.x
     z := fun h _ => v.y h
     y := v.y }
 
-private lemma fwd_feas (p : P19.a.Params) (v : P19.a.Vars)
+private lemma fwd_feas (p : P19.a.Params) (v : P19.a.Vars p)
     (h : P19.a.Feasible p v) :
     P19.b.Feasible (paramMap p) (fwd p v) := by
   haveI := p.hnH
@@ -55,22 +55,22 @@ private lemma fwd_feas (p : P19.a.Params) (v : P19.a.Vars)
   constructor
   · -- hlink: q[h,c] = 0 ∨ z[h,c] = 1
     intro hh c
-    show v.x hh.val c.val = 0 ∨ v.y hh.val = 1
+    show v.x hh c = 0 ∨ v.y hh = 1
     rcases h.hy_bin hh with hy0 | hy1
     · left
       -- y[h] = 0 ⇒ sum_c x[h,c] ≤ 0, with x ≥ 0 ⇒ x[h,c] = 0
       have hcap := h.hcap hh
       rw [hy0] at hcap
       simp at hcap
-      have hsum_nn : 0 ≤ ∑ c' : Fin p.nC, v.x hh.val c'.val := by
+      have hsum_nn : 0 ≤ ∑ c' : Fin p.nC, v.x hh c' := by
         apply Finset.sum_nonneg
         intro c' _; exact h.hx_nn hh c'
-      have hsum_zero : ∑ c' : Fin p.nC, v.x hh.val c'.val = 0 :=
+      have hsum_zero : ∑ c' : Fin p.nC, v.x hh c' = 0 :=
         le_antisymm hcap hsum_nn
-      have hxc_nn : 0 ≤ v.x hh.val c.val := h.hx_nn hh c
-      have hxc_le : v.x hh.val c.val ≤ 0 := by
+      have hxc_nn : 0 ≤ v.x hh c := h.hx_nn hh c
+      have hxc_le : v.x hh c ≤ 0 := by
         have := Finset.single_le_sum
-          (f := fun c' : Fin p.nC => v.x hh.val c'.val)
+          (f := fun c' : Fin p.nC => v.x hh c')
           (s := univ) (fun c' _ => h.hx_nn hh c') (mem_univ c)
         linarith
       linarith
@@ -79,7 +79,7 @@ private lemma fwd_feas (p : P19.a.Params) (v : P19.a.Vars)
     exact h.hdemand
   · -- hcap: sum_c z[h,c] ≤ nC * y[h]; here z[h,c] = y[h], so equality
     intro hh
-    show ∑ _c : Fin (paramMap p).nC, v.y hh.val ≤ ((paramMap p).nC : ℤ) * v.y hh.val
+    show ∑ _c : Fin (paramMap p).nC, v.y hh ≤ ((paramMap p).nC : ℤ) * v.y hh
     simp [paramMap]
   · -- hopen
     exact h.hopen
@@ -91,7 +91,7 @@ private lemma fwd_feas (p : P19.a.Params) (v : P19.a.Vars)
     intro hh c; exact h.hx_nn hh c
   · -- hz_bin
     intro hh _c
-    show v.y hh.val = 0 ∨ v.y hh.val = 1
+    show v.y hh = 0 ∨ v.y hh = 1
     exact h.hy_bin hh
   · -- hy_bin
     exact h.hy_bin
@@ -103,32 +103,32 @@ private lemma fwd_feas (p : P19.a.Params) (v : P19.a.Vars)
 /--
 **B → A**: copy `x := q` and `y := y`; drop `z`.
 -/
-private def bwd (_ : P19.a.Params) (v : P19.b.Vars) : P19.a.Vars :=
+private def bwd (p : P19.a.Params) (v : P19.b.Vars (paramMap p)) : P19.a.Vars p :=
   { x := v.q
     y := v.y }
 
-private lemma bwd_feas (p : P19.a.Params) (v : P19.b.Vars)
+private lemma bwd_feas (p : P19.a.Params) (v : P19.b.Vars (paramMap p))
     (h : P19.b.Feasible (paramMap p) v) :
     P19.a.Feasible p (bwd p v) := by
   haveI := p.hnH
   haveI := p.hnC
   -- bound q[h,c] ≤ 1 from demand and non-negativity
-  have hq_le_one : ∀ (hh : Fin p.nH) (c : Fin p.nC), v.q hh.val c.val ≤ 1 := by
+  have hq_le_one : ∀ (hh : Fin p.nH) (c : Fin p.nC), v.q hh c ≤ 1 := by
     intro hh c
     have hd := h.hdemand c
     simp only [paramMap] at hd
-    have hsum_nn : ∀ hh' : Fin p.nH, 0 ≤ v.q hh'.val c.val := by
+    have hsum_nn : ∀ hh' : Fin p.nH, 0 ≤ v.q hh' c := by
       intro hh'; exact h.hq_nn hh' c
-    have hsingle : v.q hh.val c.val ≤ ∑ hh' : Fin p.nH, v.q hh'.val c.val :=
+    have hsingle : v.q hh c ≤ ∑ hh' : Fin p.nH, v.q hh' c :=
       Finset.single_le_sum
-        (f := fun hh' : Fin p.nH => v.q hh'.val c.val)
+        (f := fun hh' : Fin p.nH => v.q hh' c)
         (s := univ) (fun hh' _ => hsum_nn hh') (mem_univ hh)
     linarith
   refine ?_
   constructor
   · -- hcap: sum_c x[h,c] ≤ nC * y[h]
     intro hh
-    show ∑ c : Fin p.nC, v.q hh.val c.val ≤ (p.nC : ℝ) * (v.y hh.val : ℝ)
+    show ∑ c : Fin p.nC, v.q hh c ≤ (p.nC : ℝ) * (v.y hh : ℝ)
     rcases h.hy_bin hh with hy0 | hy1
     · -- y[h] = 0: from hcap, sum_c z[h,c] ≤ 0; with z ∈ {0,1} ⇒ all z = 0
       -- then from hlink, q[h,c] = 0
@@ -138,23 +138,23 @@ private lemma bwd_feas (p : P19.a.Params) (v : P19.b.Vars)
       simp only [paramMap] at hcap
       rw [hy0, mul_zero] at hcap
       -- All z[h,c] = 0
-      have hz_zero : ∀ c : Fin p.nC, v.z hh.val c.val = 0 := by
+      have hz_zero : ∀ c : Fin p.nC, v.z hh c = 0 := by
         intro c
-        have hz_nn : ∀ c' : Fin p.nC, 0 ≤ v.z hh.val c'.val := by
+        have hz_nn : ∀ c' : Fin p.nC, 0 ≤ v.z hh c' := by
           intro c'; rcases h.hz_bin hh c' with h0 | h1 <;> omega
         have hsingle := Finset.single_le_sum
-          (f := fun c' : Fin p.nC => v.z hh.val c'.val)
+          (f := fun c' : Fin p.nC => v.z hh c')
           (s := univ) (fun c' _ => hz_nn c') (mem_univ c)
-        have : v.z hh.val c.val ≤ 0 := hsingle.trans hcap
+        have : v.z hh c ≤ 0 := hsingle.trans hcap
         rcases h.hz_bin hh c with h0 | h1
         · exact h0
         · omega
-      have hq_zero : ∀ c : Fin p.nC, v.q hh.val c.val = 0 := by
+      have hq_zero : ∀ c : Fin p.nC, v.q hh c = 0 := by
         intro c
         rcases h.hlink hh c with hq | hz
         · exact hq
         · exfalso; rw [hz_zero c] at hz; exact absurd hz (by norm_num)
-      have hsum_zero : ∑ c : Fin p.nC, v.q hh.val c.val = 0 := by
+      have hsum_zero : ∑ c : Fin p.nC, v.q hh c = 0 := by
         apply Finset.sum_eq_zero
         intro c _; exact hq_zero c
       linarith
@@ -162,7 +162,7 @@ private lemma bwd_feas (p : P19.a.Params) (v : P19.b.Vars)
       rw [hy1]
       push_cast
       rw [mul_one]
-      calc ∑ c : Fin p.nC, v.q hh.val c.val
+      calc ∑ c : Fin p.nC, v.q hh c
           ≤ ∑ _c : Fin p.nC, (1 : ℝ) := by
             apply Finset.sum_le_sum
             intro c _; exact hq_le_one hh c
