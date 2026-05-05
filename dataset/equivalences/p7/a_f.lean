@@ -24,8 +24,7 @@ private def paramMap (p : P7.a.Params) : P7.f.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
--- fwd is the identity on variables; f adds the EC5 cut, which we must prove.
-private def fwd (_ : P7.a.Params) (v : P7.a.Vars) : P7.f.Vars :=
+private def fwd (p : P7.a.Params) (v : P7.a.Vars p) : P7.f.Vars (paramMap p) :=
   { h := v.h
     x := v.x
     s := v.s
@@ -33,47 +32,47 @@ private def fwd (_ : P7.a.Params) (v : P7.a.Vars) : P7.f.Vars :=
 
 section ForwardHelpers
 
-variable {p : P7.a.Params} {v : P7.a.Vars} (h : P7.a.Feasible p v)
+variable {p : P7.a.Params} {v : P7.a.Vars p} (h : P7.a.Feasible p v)
 include h
 
-private lemma fwd_h_nn (i j : Fin p.N) : 0 ≤ v.h i.val j.val := by
+private lemma fwd_h_nn (i j : Fin p.N) : 0 ≤ v.h i j := by
   rcases h.hh_bin i j with h0 | h1 <;> omega
 
 private lemma fwd_x_nn (i : Fin p.N) (ab : Fin p.N × Fin p.N) :
-    0 ≤ v.x i.val ab.1.val ab.2.val := by
+    0 ≤ v.x i ab.1 ab.2 := by
   rcases h.hx_bin i ab with h0 | h1 <;> omega
 
 private lemma fwd_t_nn (i : Fin p.N) (ab : Fin p.N × Fin p.N) :
-    0 ≤ v.t i.val ab.1.val ab.2.val := by
+    0 ≤ v.t i ab.1 ab.2 := by
   rcases h.ht_bin i ab with h0 | h1 <;> omega
 
 private lemma fwd_s_nn (i : Fin p.N) (ab : Fin p.N × Fin p.N) :
-    0 ≤ v.s i.val ab.1.val ab.2.val := by
+    0 ≤ v.s i ab.1 ab.2 := by
   rcases h.hs_bin i ab with h0 | h1 <;> omega
 
 -- If there is a hole at (i, j), then for any row i' ≠ i (in Fin p.N),
 -- v.h i' j = 0. Follows from hcol and binarity.
 private lemma fwd_hole_unique_in_col (j : Fin p.N) (i i' : Fin p.N)
-    (hne : i' ≠ i) (hij : v.h i.val j.val = 1) :
-    v.h i'.val j.val = 0 := by
+    (hne : i' ≠ i) (hij : v.h i j = 1) :
+    v.h i' j = 0 := by
   have hsum := h.hcol j
   have hin : i ∈ (univ : Finset (Fin p.N)).erase i' :=
     Finset.mem_erase.mpr ⟨(hne.symm), mem_univ _⟩
   have hsplit :
-      v.h i'.val j.val + ∑ k ∈ (univ : Finset (Fin p.N)).erase i',
-        v.h k.val j.val = 1 := by
-    rw [Finset.add_sum_erase _ (fun k : Fin p.N => v.h k.val j.val)
+      v.h i' j + ∑ k ∈ (univ : Finset (Fin p.N)).erase i',
+        v.h k j = 1 := by
+    rw [Finset.add_sum_erase _ (fun k : Fin p.N => v.h k j)
           (mem_univ i')]
     exact hsum
   have hsplit2 :
-      v.h i.val j.val +
+      v.h i j +
         ∑ k ∈ ((univ : Finset (Fin p.N)).erase i').erase i,
-          v.h k.val j.val =
-        ∑ k ∈ (univ : Finset (Fin p.N)).erase i', v.h k.val j.val :=
-    Finset.add_sum_erase _ (fun k : Fin p.N => v.h k.val j.val) hin
+          v.h k j =
+        ∑ k ∈ (univ : Finset (Fin p.N)).erase i', v.h k j :=
+    Finset.add_sum_erase _ (fun k : Fin p.N => v.h k j) hin
   have hrest_nn :
       0 ≤ ∑ k ∈ ((univ : Finset (Fin p.N)).erase i').erase i,
-              v.h k.val j.val :=
+              v.h k j :=
     Finset.sum_nonneg (fun k _ => fwd_h_nn h k j)
   rcases h.hh_bin i' j with h0 | h1
   · exact h0
@@ -81,7 +80,7 @@ private lemma fwd_hole_unique_in_col (j : Fin p.N) (i i' : Fin p.N)
 
 end ForwardHelpers
 
-private lemma fwd_feas (p : P7.a.Params) (v : P7.a.Vars)
+private lemma fwd_feas (p : P7.a.Params) (v : P7.a.Vars p)
     (h : P7.a.Feasible p v) :
     P7.f.Feasible (paramMap p) (fwd p v) := by
   haveI := p.hN
@@ -98,101 +97,89 @@ private lemma fwd_feas (p : P7.a.Params) (v : P7.a.Vars)
   · intro i ab; exact h.ht_bin i ab
   · -- hintBreakAbove
     intro i j hi_pos hi_lt
-    -- Reinterpret i, j as Fin p.N (paramMap does not change N).
-    have hN_eq : (paramMap p).N = p.N := rfl
-    let iN : Fin p.N := ⟨i.val, i.isLt⟩
-    let jN : Fin p.N := ⟨j.val, j.isLt⟩
-    have hiN_val : iN.val = i.val := rfl
-    have hjN_val : jN.val = j.val := rfl
-    -- Case split on the hole indicator at (i, j).
-    rcases h.hh_bin iN jN with hij0 | hij1
-    · -- v.h i j = 0: RHS is nonneg (binary sum).
-      show v.h i.val j.val ≤
-          ∑ ab ∈ P7.f.strips_covering (paramMap p).N j, v.t (i.val - 1) ab.1.val ab.2.val
+    have hi_lt_p : i.val < p.N := show i.val < (paramMap p).N from i.isLt
+    have hi_pred_lt : i.val - 1 < p.N := by omega
+    let iPred : Fin p.N := ⟨i.val - 1, hi_pred_lt⟩
+    -- The goal mentions ⟨i.val - 1, _⟩; this is defeq to iPred.
+    rcases h.hh_bin i j with hij0 | hij1
+    · -- v.h i j = 0
+      show v.h i j ≤
+          ∑ ab ∈ P7.f.strips_covering (paramMap p).N j, v.t ⟨i.val - 1, _⟩ ab.1 ab.2
       rw [hij0]
       apply Finset.sum_nonneg
       intro ab _
-      refine fwd_t_nn h ⟨i.val - 1, ?_⟩ ab
-      have := i.isLt
-      omega
-    · -- v.h i j = 1: use flow + coverage.
-      show v.h i.val j.val ≤
-          ∑ ab ∈ P7.f.strips_covering (paramMap p).N j, v.t (i.val - 1) ab.1.val ab.2.val
+      change 0 ≤ v.t iPred ab.1 ab.2
+      exact fwd_t_nn h iPred ab
+    · -- v.h i j = 1
+      show v.h i j ≤
+          ∑ ab ∈ P7.f.strips_covering (paramMap p).N j, v.t ⟨i.val - 1, _⟩ ab.1 ab.2
       rw [hij1]
-      -- Coverage at (i, j): ∑ x i ab + v.h i j = 1, so ∑ x i ab = 0.
-      have hcovi := h.hcov iN jN
+      have hcovi := h.hcov i j
       have hsumx_i :
-          ∑ ab ∈ P7.a.strips_covering p.N jN, v.x i.val ab.1.val ab.2.val = 0 := by
+          ∑ ab ∈ P7.a.strips_covering p.N j, v.x i ab.1 ab.2 = 0 := by
         linarith
-      -- iPred : Fin p.N
-      have hi_pred_lt : i.val - 1 < p.N := by
-        have := i.isLt
-        omega
-      let iPred : Fin p.N := ⟨i.val - 1, hi_pred_lt⟩
-      have hne : iPred ≠ iN := by
+      have hne : iPred ≠ i := by
         intro heq
         have : i.val - 1 = i.val := by
           have := congrArg Fin.val heq
-          simpa [iPred, iN] using this
+          simpa [iPred] using this
         omega
-      -- Hole at (i-1, j) is 0 since column j has a unique hole at i.
-      have hh_pred : v.h iPred.val jN.val = 0 :=
-        fwd_hole_unique_in_col (p := p) (v := v) h jN iN iPred hne hij1
-      have hcov_pred := h.hcov iPred jN
+      have hh_pred : v.h iPred j = 0 :=
+        fwd_hole_unique_in_col (p := p) (v := v) h j i iPred hne hij1
+      have hcov_pred := h.hcov iPred j
       have hsumx_pred :
-          ∑ ab ∈ P7.a.strips_covering p.N jN,
-            v.x iPred.val ab.1.val ab.2.val = 1 := by
+          ∑ ab ∈ P7.a.strips_covering p.N j,
+            v.x iPred ab.1 ab.2 = 1 := by
         linarith [hcov_pred, hh_pred]
-      -- strips_covering p.N j under fwd-namespace alias
       have hstrips_eq :
-          P7.f.strips_covering (paramMap p).N j = P7.a.strips_covering p.N jN := rfl
-      have hiPred_val : iPred.val = i.val - 1 := rfl
+          P7.f.strips_covering (paramMap p).N j = P7.a.strips_covering p.N j := rfl
       -- Sum of flow equations over ab ∈ strips_covering p.N j.
       have hsum_t :
-          ∑ ab ∈ P7.a.strips_covering p.N jN,
-              v.t (i.val - 1) ab.1.val ab.2.val =
-          (∑ ab ∈ P7.a.strips_covering p.N jN,
-              v.x iPred.val ab.1.val ab.2.val)
-          - (∑ ab ∈ P7.a.strips_covering p.N jN,
-              v.x i.val ab.1.val ab.2.val)
-          + (∑ ab ∈ P7.a.strips_covering p.N jN,
-              v.s i.val ab.1.val ab.2.val) := by
+          ∑ ab ∈ P7.a.strips_covering p.N j,
+              v.t iPred ab.1 ab.2 =
+          (∑ ab ∈ P7.a.strips_covering p.N j,
+              v.x iPred ab.1 ab.2)
+          - (∑ ab ∈ P7.a.strips_covering p.N j,
+              v.x i ab.1 ab.2)
+          + (∑ ab ∈ P7.a.strips_covering p.N j,
+              v.s i ab.1 ab.2) := by
         rw [← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
         apply Finset.sum_congr rfl
         intro ab _
-        have hi_pos' : 0 < iN.val := hi_pos
-        have hflow := h.hflow iN ab hi_pos'
-        show v.t (i.val - 1) ab.1.val ab.2.val =
-            v.x iPred.val ab.1.val ab.2.val - v.x i.val ab.1.val ab.2.val
-              + v.s i.val ab.1.val ab.2.val
-        rw [hiPred_val]
-        -- hflow: v.x iN - v.x (iN-1) - v.s iN + v.t (iN-1) = 0
+        have hflow := h.hflow i ab hi_pos
+        -- hflow uses ⟨i.val - 1, _⟩; that's defeq to iPred.
+        change v.x i ab.1 ab.2 - v.x iPred ab.1 ab.2 -
+            v.s i ab.1 ab.2 + v.t iPred ab.1 ab.2 = 0 at hflow
         linarith
-      -- Nonneg of s sum
       have hs_nn :
-          0 ≤ ∑ ab ∈ P7.a.strips_covering p.N jN, v.s i.val ab.1.val ab.2.val :=
-        Finset.sum_nonneg (fun ab _ => fwd_s_nn h iN ab)
-      -- Conclude
-      have hgoal_eq :
-          ∑ ab ∈ P7.f.strips_covering (paramMap p).N j,
-            v.t (i.val - 1) ab.1.val ab.2.val =
-          ∑ ab ∈ P7.a.strips_covering p.N jN,
-            v.t (i.val - 1) ab.1.val ab.2.val := hstrips_eq ▸ rfl
-      rw [hgoal_eq, hsum_t]
-      linarith [hsumx_i, hsumx_pred, hs_nn]
+          0 ≤ ∑ ab ∈ P7.a.strips_covering p.N j, v.s i ab.1 ab.2 :=
+        Finset.sum_nonneg (fun ab _ => fwd_s_nn h i ab)
+      change (1 : ℤ) ≤
+          ∑ ab ∈ P7.f.strips_covering (paramMap p).N j, v.t iPred ab.1 ab.2
+      rw [hstrips_eq]
+      have hxprev : ∑ ab ∈ P7.a.strips_covering p.N j, v.x iPred ab.1 ab.2 = 1 := hsumx_pred
+      have hxi : ∑ ab ∈ P7.a.strips_covering p.N j, v.x i ab.1 ab.2 = 0 := hsumx_i
+      have hkey : (1 : ℤ) ≤ ∑ ab ∈ P7.a.strips_covering p.N j, v.t iPred ab.1 ab.2 := by
+        calc (1 : ℤ) = 1 + 0 := by ring
+          _ ≤ 1 + ∑ ab ∈ P7.a.strips_covering p.N j, v.s i ab.1 ab.2 := by linarith
+          _ = ∑ ab ∈ P7.a.strips_covering p.N j, v.x iPred ab.1 ab.2
+              - ∑ ab ∈ P7.a.strips_covering p.N j, v.x i ab.1 ab.2
+              + ∑ ab ∈ P7.a.strips_covering p.N j, v.s i ab.1 ab.2 := by
+            rw [hxprev, hxi]; ring
+          _ = ∑ ab ∈ P7.a.strips_covering p.N j, v.t iPred ab.1 ab.2 := hsum_t.symm
+      exact hkey
 
 -- ============================================================================
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
--- bwd simply drops the EC5 cut.
-private def bwd (_ : P7.a.Params) (v : P7.f.Vars) : P7.a.Vars :=
+private def bwd (p : P7.a.Params) (v : P7.f.Vars (paramMap p)) : P7.a.Vars p :=
   { h := v.h
     x := v.x
     s := v.s
     t := v.t }
 
-private lemma bwd_feas (p : P7.a.Params) (v : P7.f.Vars)
+private lemma bwd_feas (p : P7.a.Params) (v : P7.f.Vars (paramMap p))
     (h : P7.f.Feasible (paramMap p) v) :
     P7.a.Feasible p (bwd p v) := by
   exact

@@ -18,46 +18,48 @@ structure Params where
   -- Implicit Assumptions
   hN : NeZero N
 
-structure Vars where
-  h : ℕ → ℕ → ℤ  -- hole indicator: 1 if (i,j) is the hole in row i
-  x : ℕ → ℕ → ℕ → ℤ  -- strip activation: 1 if row i, columns a..b are covered by same tile
-  s : ℕ → ℕ → ℕ → ℤ  -- strip start: 1 if a tile starts at row i for column interval (a,b)
-  t : ℕ → ℕ → ℕ → ℤ  -- strip end: 1 if a tile ends at row i for column interval (a,b)
+structure Vars (p : Params) where
+  h : Fin p.N → Fin p.N → ℤ  -- hole indicator: 1 if (i,j) is the hole in row i
+  x : Fin p.N → Fin p.N → Fin p.N → ℤ  -- strip activation: 1 if row i, columns a..b are covered by same tile
+  s : Fin p.N → Fin p.N → Fin p.N → ℤ  -- strip start: 1 if a tile starts at row i for column interval (a,b)
+  t : Fin p.N → Fin p.N → Fin p.N → ℤ  -- strip end: 1 if a tile ends at row i for column interval (a,b)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Each row contains exactly one hole
-  hrow : ∀ i : Fin p.N, ∑ j : Fin p.N, v.h i.val j.val = 1
+  hrow : ∀ i : Fin p.N, ∑ j : Fin p.N, v.h i j = 1
   -- Each column contains exactly one hole
-  hcol : ∀ j : Fin p.N, ∑ i : Fin p.N, v.h i.val j.val = 1
+  hcol : ∀ j : Fin p.N, ∑ i : Fin p.N, v.h i j = 1
   -- Each cell is either a hole or covered by exactly one tile interval
   hcov : ∀ i : Fin p.N, ∀ j : Fin p.N,
-    ∑ ab ∈ strips_covering p.N j, v.x i.val ab.1.val ab.2.val + v.h i.val j.val = 1
+    ∑ ab ∈ strips_covering p.N j, v.x i ab.1 ab.2 + v.h i j = 1
   -- Top-row flow: strip activity equals strip start at row 0
   htop : ∀ ab : Fin p.N × Fin p.N,
-    v.x 0 ab.1.val ab.2.val = v.s 0 ab.1.val ab.2.val
+    haveI := p.hN
+    v.x 0 ab.1 ab.2 = v.s 0 ab.1 ab.2
   -- Middle-row flow balance
-  hflow : ∀ i : Fin p.N, ∀ ab : Fin p.N × Fin p.N, 0 < i.val →
-    v.x i.val ab.1.val ab.2.val - v.x (i.val - 1) ab.1.val ab.2.val -
-    v.s i.val ab.1.val ab.2.val + v.t (i.val - 1) ab.1.val ab.2.val = 0
+  hflow : ∀ i : Fin p.N, ∀ ab : Fin p.N × Fin p.N, ∀ hi : 0 < i.val,
+    v.x i ab.1 ab.2 - v.x ⟨i.val - 1, by omega⟩ ab.1 ab.2 -
+    v.s i ab.1 ab.2 + v.t ⟨i.val - 1, by omega⟩ ab.1 ab.2 = 0
   -- Bottom-row flow: strip activity equals strip end at last row
   hbot : ∀ ab : Fin p.N × Fin p.N,
-    v.x (p.N - 1) ab.1.val ab.2.val = v.t (p.N - 1) ab.1.val ab.2.val
-  hh_bin : ∀ i : Fin p.N, ∀ j : Fin p.N, v.h i.val j.val = 0 ∨ v.h i.val j.val = 1
+    v.x ⟨p.N - 1, Nat.sub_lt (Nat.pos_of_ne_zero p.hN.out) Nat.one_pos⟩ ab.1 ab.2 =
+    v.t ⟨p.N - 1, Nat.sub_lt (Nat.pos_of_ne_zero p.hN.out) Nat.one_pos⟩ ab.1 ab.2
+  hh_bin : ∀ i : Fin p.N, ∀ j : Fin p.N, v.h i j = 0 ∨ v.h i j = 1
   hx_bin : ∀ i : Fin p.N, ∀ ab : Fin p.N × Fin p.N,
-    v.x i.val ab.1.val ab.2.val = 0 ∨ v.x i.val ab.1.val ab.2.val = 1
+    v.x i ab.1 ab.2 = 0 ∨ v.x i ab.1 ab.2 = 1
   hs_bin : ∀ i : Fin p.N, ∀ ab : Fin p.N × Fin p.N,
-    v.s i.val ab.1.val ab.2.val = 0 ∨ v.s i.val ab.1.val ab.2.val = 1
+    v.s i ab.1 ab.2 = 0 ∨ v.s i ab.1 ab.2 = 1
   ht_bin : ∀ i : Fin p.N, ∀ ab : Fin p.N × Fin p.N,
-    v.t i.val ab.1.val ab.2.val = 0 ∨ v.t i.val ab.1.val ab.2.val = 1
+    v.t i ab.1 ab.2 = 0 ∨ v.t i ab.1 ab.2 = 1
   -- EC5 (V1): Interior Vertical-Above Break
   -- An interior hole forces a strip covering that column span to end in the row above
-  hintBreakAbove : ∀ i : Fin p.N, ∀ j : Fin p.N, 0 < i.val → i.val < p.N - 1 →
-    v.h i.val j.val ≤ ∑ ab ∈ strips_covering p.N j, v.t (i.val - 1) ab.1.val ab.2.val
+  hintBreakAbove : ∀ i : Fin p.N, ∀ j : Fin p.N, ∀ hi : 0 < i.val, i.val < p.N - 1 →
+    v.h i j ≤ ∑ ab ∈ strips_covering p.N j, v.t ⟨i.val - 1, by omega⟩ ab.1 ab.2
 
 -- Minimize the total number of rectangular tiles used (each tile contributes exactly one start)
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   ∑ i : Fin p.N, ∑ ab : Fin p.N × Fin p.N,
-    (v.s i.val ab.1.val ab.2.val : ℝ)
+    (v.s i ab.1 ab.2 : ℝ)
 
 def formulation : MILPFormulation where
   Params   := Params
