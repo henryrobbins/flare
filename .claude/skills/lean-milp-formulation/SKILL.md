@@ -22,9 +22,9 @@ Every formulation file contains, in order:
 2. `open BigOperators Finset` if the file uses `∑` or `Finset`.
 3. A `namespace` scoped to the formulation (e.g. `P1.a`).
 4. `structure Params` — problem data and assumptions on the data.
-5. `structure Vars` — decision variables.
-6. `structure Feasible (p : Params) (v : Vars) : Prop` — constraints.
-7. `def obj (p : Params) (v : Vars) : ℝ` — objective (always ℝ-valued).
+5. `structure Vars (p : Params)` — decision variables.
+6. `structure Feasible (p : Params) (v : Vars p) : Prop` — constraints.
+7. `def obj (p : Params) (v : Vars p) : ℝ` — objective (always ℝ-valued).
 8. `def formulation : MILPFormulation` — bundles the above.
 9. `end <namespace>`.
 
@@ -51,21 +51,16 @@ in a formulation is for problem _dimensions_ (sizes used to build `Fin`).
 
 ## Formulation Modeling Rules
 
-### No type-level parameters
+### No type-level parameters on `Params`
 
-`Params`, `Vars`, `Feasible`, and `formulation` are all written as plain
-(parameter-less) structures / `def`s. Problem dimensions are fields of `Params`,
-not type-level arguments. This allows proving equivalences between formulations
-with different dimension variables.
+`Params` itself is a plain (parameter-less) structure. Problem dimensions
+are fields of `Params`, not type-level arguments to `Params`. This allows
+proving equivalences between formulations with different dimension
+variables.
 
-### Why `ℕ →` in `Vars`
-
-`Vars` is defined without reference to `Params`, so it cannot mention any
-`p.NumFoo`. Vector-valued decision variables therefore use `ℕ → ℤ` /
-`ℕ → ℝ` as their type. Every use of such a variable in `Feasible` and
-`obj` is scoped to the relevant index slice via `∀ i : Fin p.<dim>, …` or
-`∑ i : Fin p.<dim>, …`. The extra (unused) entries at `i ≥ p.<dim>` are
-simply not constrained.
+`Vars`, `Feasible`, and `obj` _are_ parameterized — by `p : Params` (and,
+for `Feasible` and `obj`, also by `v : Vars p`). Vector decision
+variables are typed `Fin p.<dim> → ℤ` / `Fin p.<dim> → ℝ` directly.
 
 ### `NeZero` on dimensions
 
@@ -149,7 +144,7 @@ always write them explicitly.
 - **In `obj`**: cast the first `ℤ` operand with ascription syntax
   `(v.field : ℝ)`; Lean unifies the rest.
   ```lean
-  def obj (_ : Params) (v : Vars) : ℝ := (v.s : ℝ) + v.r
+  def obj (_ : Params) (v : Vars _) : ℝ := (v.s : ℝ) + v.r
   ```
 - **In `Feasible` constraints**: cast each `ℤ` variable that appears
   alongside `ℝ` parameters in an arithmetic expression.
@@ -167,14 +162,12 @@ always write them explicitly.
   Inconsistent casts (explicit in one constraint, implicit in another) make
   equivalence proofs harder to follow and can cause `exact h.hconstraint`
   to fail when the elaborated type does not match the goal.
-- **Type-level dimensions.** Do NOT write `structure Params (n : ℕ)`,
-  `structure Vars (n : ℕ)`, `Feasible {n : ℕ} [NeZero n] …`, or
-  `def formulation (n : ℕ) [NeZero n] : …`. Every structure is
-  parameter-less; dimensions are `ℕ` fields of `Params`.
-- **`Fin <dim> → …` in `Vars`.** Vector variables use `ℕ → ℤ` / `ℕ → ℝ`.
-  `Vars` has no access to `Params` so it cannot mention `p.<dim>`. Scope
-  the variable to the real range in `Feasible` and `obj` via
-  `∀ i : Fin p.<dim>, …` and `∑ i : Fin p.<dim>, …`.
+- **Type-level dimensions on `Params`.** Do NOT write
+  `structure Params (n : ℕ)` or `def formulation (n : ℕ) [NeZero n] : …`.
+  `Params` is parameter-less; dimensions are `ℕ` fields of `Params`.
+- **`ℕ →` in `Vars` for vector variables.** Vector decision variables
+  should be typed `Fin p.<dim> → ℤ` / `Fin p.<dim> → ℝ`, not `ℕ → ℤ` /
+  `ℕ → ℝ`. Since `Vars` takes `p : Params`, it has access to dimensions.
 - **`[NeZero]` attached to a structure.** Nonzero-ness of a dimension is
   an _assumption field_ inside `Params`: `hNumFoo : NeZero NumFoo`. Do
   NOT write `[NeZero n]` anywhere.

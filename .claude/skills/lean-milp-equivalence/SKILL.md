@@ -19,8 +19,8 @@ map that makes forward and backward objective diagrams commute.
 The project's common MILP module defines `MILPReformulation F G` with fields:
 
 - `paramMap    : F.Params → G.Params`
-- `fwd         : F.Params → F.Vars → G.Vars`
-- `bwd         : F.Params → G.Vars → F.Vars`
+- `fwd         : (p : F.Params) → F.Vars p → G.Vars (paramMap p)`
+- `bwd         : (p : F.Params) → G.Vars (paramMap p) → F.Vars p`
 - `fwd_feas    : ∀ p x, F.feasible p x → G.feasible (paramMap p) (fwd p x)`
 - `bwd_feas    : ∀ p x', G.feasible (paramMap p) x' → F.feasible p (bwd p x')`
 - `objMap      : ℝ → ℝ`
@@ -81,7 +81,8 @@ when there are `private` helper lemmas or definitions that depend on a
 feasible solution. Inside:
 
 - Introduce `Params` and `Vars` as **implicit** parameters (e.g.
-  `{p : <A>.Params} {v : <A>.Vars}`). Do NOT introduce any separate
+  `{p : <A>.Params} {v : <A>.Vars p}`). `Vars` is parameterized by `p`,
+  so the `v` binder must reference it. Do NOT introduce any separate
   dimension parameters — dimensions live as fields of `p`.
 - Introduce the feasibility hypothesis as an **explicit** parameter `h`,
   then `include h` so Lean uses it.
