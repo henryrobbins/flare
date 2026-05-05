@@ -27,7 +27,7 @@ private def paramMap (p : P1.a.Params) : P1.e.Params :=
 -- ============================================================================
 
 -- Slacks absorb the surplus/slack of each inequality constraint in Fa
-private def fwd (p : P1.a.Params) (v : P1.a.Vars) : P1.e.Vars :=
+private def fwd (p : P1.a.Params) (v : P1.a.Vars p) : P1.e.Vars (paramMap p) :=
   { s       := v.NumCashMachines
     r       := v.NumCardMachines
     slack_0 := p.CashMachineProcessingRate * (v.NumCashMachines : ℝ) +
@@ -36,7 +36,7 @@ private def fwd (p : P1.a.Params) (v : P1.a.Vars) : P1.e.Vars :=
     slack_2 := p.MaxPaperRolls - (v.NumCashMachines : ℝ) * p.CashMachinePaperRolls -
                (v.NumCardMachines : ℝ) * p.CardMachinePaperRolls }
 
-private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars)
+private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars p)
     (h : P1.a.Feasible p v) :
     P1.e.Feasible (paramMap p) (fwd p v) := by
   have hcard_r : (↑v.NumCardMachines : ℝ) ≤ ↑v.NumCashMachines := by exact_mod_cast h.hcard
@@ -49,11 +49,11 @@ private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars)
 -- ============================================================================
 
 -- Slack variables are dropped; s and r project directly to NumCashMachines/NumCardMachines
-private def bwd (_ : P1.a.Params) (v : P1.e.Vars) : P1.a.Vars :=
+private def bwd (p : P1.a.Params) (v : P1.e.Vars (paramMap p)) : P1.a.Vars p :=
   { NumCashMachines := v.s
     NumCardMachines := v.r }
 
-private lemma bwd_feas (p : P1.a.Params) (v : P1.e.Vars)
+private lemma bwd_feas (p : P1.a.Params) (v : P1.e.Vars (paramMap p))
     (h : P1.e.Feasible (paramMap p) v) :
     P1.a.Feasible p (bwd p v) := by
   have hpe := h.hpeople;  simp only [paramMap] at hpe
