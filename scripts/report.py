@@ -40,7 +40,11 @@ def fmt_cost(c) -> str:
 
 
 if args.instance:
-    header = f"  {'Method':<18} {'Pair':<30} {'GT':>4} {'Pred':>6} {'Err':>4} {'Time':>8} {'Cost':>8}"
+    mw = max((len(r["method"]) for r in rows), default=6)
+    mw = max(mw, len("Method"))
+    pw = max((len(f"{r['problem_a']}.{r['formulation_a']} / {r['problem_b']}.{r['formulation_b']}") for r in rows), default=4)
+    pw = max(pw, len("Pair"))
+    header = f"  {'Method':<{mw}} {'Pair':<{pw}} {'GT':>4} {'Pred':>6} {'Err':>4} {'Time':>8} {'Cost':>8}"
     print(header)
     print("  " + "-" * (len(header) - 2))
     for r in rows:
@@ -58,7 +62,7 @@ if args.instance:
         err_str = "Y" if err else "N"
         time_str = fmt_duration(r.get("duration_s"))
         cost_str = fmt_cost(r.get("cost_usd"))
-        print(f"  {method:<18} {pair:<30} {gt_str:>4} {pred_str:>6} {err_str:>4} {time_str:>8} {cost_str:>8}")
+        print(f"  {method:<{mw}} {pair:<{pw}} {gt_str:>4} {pred_str:>6} {err_str:>4} {time_str:>8} {cost_str:>8}")
 else:
     stats = defaultdict(lambda: {
         "tp": 0, "fp": 0, "tn": 0, "fn": 0,
@@ -91,7 +95,9 @@ else:
             stats[method]["cost_n"] += 1
 
     methods = sorted(stats)
-    header = f"  {'Method':<18} {'TP':>4} {'FP':>4} {'TN':>4} {'FN':>4} {'Prec':>7} {'Rec':>7} {'F1':>7} {'Acc':>7} {'AvgTime':>8} {'AvgCost':>9}"
+    mw = max((len(m) for m in methods), default=6)
+    mw = max(mw, len("Method"))
+    header = f"  {'Method':<{mw}} {'TP':>4} {'FP':>4} {'TN':>4} {'FN':>4} {'Prec':>7} {'Rec':>7} {'F1':>7} {'Acc':>7} {'AvgTime':>8} {'AvgCost':>9}"
     print(header)
     print("  " + "-" * (len(header) - 2))
     for m in methods:
@@ -103,4 +109,4 @@ else:
         acc  = (tp + tn) / (tp + fp + tn + fn) if (tp + fp + tn + fn) > 0 else 0.0
         avg_time = fmt_duration(s["duration_sum"] / s["duration_n"] if s["duration_n"] else None)
         avg_cost = fmt_cost(s["cost_sum"] / s["cost_n"] if s["cost_n"] else None)
-        print(f"  {m:<18} {tp:>4} {fp:>4} {tn:>4} {fn:>4} {prec:>7.3f} {rec:>7.3f} {f1:>7.3f} {acc:>7.3f} {avg_time:>8} {avg_cost:>9}")
+        print(f"  {m:<{mw}} {tp:>4} {fp:>4} {tn:>4} {fn:>4} {prec:>7.3f} {rec:>7.3f} {f1:>7.3f} {acc:>7.3f} {avg_time:>8} {avg_cost:>9}")
