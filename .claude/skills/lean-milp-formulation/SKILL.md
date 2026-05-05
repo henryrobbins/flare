@@ -55,8 +55,7 @@ in a formulation is for problem _dimensions_ (sizes used to build `Fin`).
 
 `Params` itself is a plain (parameter-less) structure. Problem dimensions
 are fields of `Params`, not type-level arguments to `Params`. This allows
-proving equivalences between formulations with different dimension
-variables.
+proving a formulation with different dimension variables is a reformulation.
 
 `Vars`, `Feasible`, and `obj` _are_ parameterized — by `p : Params` (and,
 for `Feasible` and `obj`, also by `v : Vars p`). Vector decision
@@ -160,7 +159,7 @@ always write them explicitly.
 - **Implicit ℤ→ℝ casts in `obj` and `Feasible`.** Lean coerces silently,
   but the cast must always be written explicitly using `(v.field : ℝ)`.
   Inconsistent casts (explicit in one constraint, implicit in another) make
-  equivalence proofs harder to follow and can cause `exact h.hconstraint`
+  reformulation proofs harder to follow and can cause `exact h.hconstraint`
   to fail when the elaborated type does not match the goal.
 - **Type-level dimensions on `Params`.** Do NOT write
   `structure Params (n : ℕ)` or `def formulation (n : ℕ) [NeZero n] : …`.
@@ -179,7 +178,7 @@ always write them explicitly.
   negate: `- (∑ …)`.
 - **Padding field names.** Single space before `:`, always.
 - **Parenthesized inline comments.** Use `-- arc cost`, not `-- (arc cost)`.
-- **Missing implicit assumptions.** If a formulation needs a property for
-  equivalence (e.g. non-self-loops, triangle inequality), mark it
+- **Missing implicit assumptions.** If a formulation needs a property to prove
+  it is a valid reformulation (e.g. non-self-loops, triangle inequality), mark it
   explicitly in the `-- Implicit Assumptions` section rather than
   assuming it silently.

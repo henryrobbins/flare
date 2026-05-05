@@ -71,22 +71,22 @@ def build_formulation_record(pid: int, fid: str, problem, formulation) -> dict:
 
 def build_pair_record(pair: dict, dataset_root: Path) -> dict:
     a, b = pair["a"], pair["b"]
-    equivalent = pair["equivalent"]
+    reformulation = pair["reformulation"]
 
     lean_proof = None
-    if equivalent:
+    if reformulation:
         fa, fb = a["formulation"], b["formulation"]
         # canonical ordering: alphabetically smaller first
         if fa > fb:
             fa, fb = fb, fa
-        proof_path = dataset_root / "equivalences" / f"p{a['problem']}" / f"{fa}_{fb}.lean"
+        proof_path = dataset_root / "reformulations" / f"p{a['problem']}" / f"{fa}_{fb}.lean"
         lean_proof = _read_text(proof_path)
 
     return {
         "problem_id": a["problem"],
         "formulation_a": a["formulation"],
         "formulation_b": b["formulation"],
-        "equivalent": equivalent,
+        "reformulation": reformulation,
         "lean_proof": lean_proof,
     }
 

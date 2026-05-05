@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "reasoning": { "type": "string" },
+    "is_reformulation": { "type": "boolean" }
+  },
+  "required": ["reasoning", "is_reformulation"],
+  "additionalProperties": false
+}

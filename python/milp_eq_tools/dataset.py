@@ -28,7 +28,7 @@ class Dataset:
             Pair(
                 a=self.problems[entry["a"]["problem"]].formulations[entry["a"]["formulation"]],
                 b=self.problems[entry["b"]["problem"]].formulations[entry["b"]["formulation"]],
-                equivalent=entry["equivalent"],
+                reformulation=entry["reformulation"],
             )
             for entry in raw
         ]

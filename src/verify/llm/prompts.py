@@ -10,11 +10,11 @@ from src.verify.equivaproof.equivaproof import render_formulation
 
 SYSTEM = (
     "You are an expert in mathematical optimization problems. "
-    "You decide if two given MILP formulations are equivalent."
+    "You decide if one given MILP formulation is a reformulation of another."
 )
 
-EQUIVALENCE_SCHEMA: dict = json.loads(
-    (Path(__file__).parent / "equivalence_schema.json").read_text()
+REFORMULATION_SCHEMA: dict = json.loads(
+    (Path(__file__).parent / "reformulation_schema.json").read_text()
 )
 
 _env = Environment(
@@ -25,10 +25,10 @@ _env = Environment(
 )
 
 
-def render_equivalence(
+def render_reformulation(
     a: Formulation,
     b: Formulation,
-    template: str = "equivalence.j2",
+    template: str = "reformulation.j2",
     include_implicit: bool = True,
 ) -> RenderedPrompt:
     tmpl = _env.get_template(template)

@@ -21,26 +21,26 @@ def test_pair_formulations_are_formulation_instances(dataset: Dataset) -> None:
     assert isinstance(pair.b, Formulation)
 
 
-def test_pair_equivalent_is_bool(dataset: Dataset) -> None:
+def test_pair_reformulation_is_bool(dataset: Dataset) -> None:
     for pair in dataset.pairs:
-        assert isinstance(pair.equivalent, bool)
+        assert isinstance(pair.reformulation, bool)
 
 
-def test_equivalent_true_when_both_valid(dataset: Dataset) -> None:
+def test_reformulation_true_when_both_valid(dataset: Dataset) -> None:
     for pair in dataset.pairs:
-        if pair.equivalent:
+        if pair.reformulation:
             assert pair.a.valid and pair.b.valid
 
 
-def test_equivalent_false_when_any_invalid(dataset: Dataset) -> None:
+def test_reformulation_false_when_any_invalid(dataset: Dataset) -> None:
     for pair in dataset.pairs:
-        if not pair.equivalent:
+        if not pair.reformulation:
             assert not pair.a.valid or not pair.b.valid
 
 
 def test_has_both_true_and_false_pairs(dataset: Dataset) -> None:
-    assert any(p.equivalent for p in dataset.pairs)
-    assert any(not p.equivalent for p in dataset.pairs)
+    assert any(p.reformulation for p in dataset.pairs)
+    assert any(not p.reformulation for p in dataset.pairs)
 
 
 def test_no_pairs_when_file_missing(tmp_path: pytest.TempPathFactory) -> None:

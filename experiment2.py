@@ -1,5 +1,5 @@
 """
-experiment1.py — run all equivalence checkers on every pair in dataset/pairs.json.
+experiment1.py — run all reformulation checkers on every pair in dataset/pairs.json.
 
 Each invocation creates a fresh timestamped subdirectory under runs/, e.g.
 runs/20260424T093000Z/. Results stream to results.jsonl inside that directory;
@@ -23,7 +23,7 @@ load_dotenv()
 from milp_eq_tools import Dataset, Formulation, Pair
 
 from src.llm_client import AnthropicClient, LLMConfig
-from src.verify.base import EquivalenceVerifier
+from src.verify.base import ReformulationVerifier
 from src.verify.llm.llm import LLMVerifier
 
 DEFAULT_WORKERS = 5
@@ -48,7 +48,7 @@ def pair_id(a: Formulation, b: Formulation) -> str:
 
 def process_pair(
     pair: Pair,
-    checkers: list[EquivalenceVerifier],
+    checkers: list[ReformulationVerifier],
     results_path: Path,
     write_lock: Lock,
 ) -> None:
@@ -63,9 +63,9 @@ def process_pair(
             "formulation_a": fa,
             "problem_b": pb,
             "formulation_b": fb,
-            "ground_truth": pair.equivalent,
+            "ground_truth": pair.reformulation,
             "method": checker.name,
-            "is_equivalent": None,
+            "is_reformulation": None,
             "duration_s": None,
             "cost_usd": None,
             "artifacts_dir": None,
@@ -75,7 +75,7 @@ def process_pair(
             result = checker.verify(
                 pair.a, pair.b, results_path.parent / "pairs" / pid / checker.name
             )
-            entry["is_equivalent"] = result.is_equivalent
+            entry["is_reformulation"] = result.is_reformulation
             entry["duration_s"] = result.duration_s
             entry["cost_usd"] = result.cost_usd
             entry["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
@@ -87,8 +87,8 @@ def process_pair(
                 f.write(json.dumps(entry) + "\n")
 
             status = "✓" if entry["error"] is None else "✗"
-            equiv = entry["is_equivalent"]
-            gt = pair.equivalent
+            equiv = entry["is_reformulation"]
+            gt = pair.reformulation
             match = equiv == gt if equiv is not None else None
             if entry["error"]:
                 print(f"  {status} [{checker.name}] {pid}\n{entry['error']}")
@@ -123,17 +123,17 @@ def main() -> None:
     dataset = Dataset(Path("dataset"))
 
     modes = [
-        ("regular", "equivalence.j2", True),
+        ("regular", "reformulation.j2", True),
         ("no_construction", "no_construction.j2", True),
         ("no_definition", "no_definition.j2", True),
-        ("only_explicit", "equivalence.j2", False),
+        ("only_explicit", "reformulation.j2", False),
     ]
     models = [
         ("sonnet", "claude-sonnet-4-6"),
         ("opus", "claude-opus-4-6"),
     ]
 
-    checkers: list[EquivalenceVerifier] = [
+    checkers: list[ReformulationVerifier] = [
         LLMVerifier(
             AnthropicClient(
                 LLMConfig(

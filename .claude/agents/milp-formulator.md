@@ -51,7 +51,7 @@ Read every description source supplied. Extract:
 - **Constraints** — identify each constraint family and its role.
 - **Implicit assumptions** on the data (parameter signs, structural
   properties) that the source does not state explicitly but that are
-  plausibly needed for downstream equivalence or cutting-plane proofs.
+  plausibly needed for downstream reformulation or cutting-plane proofs.
 
 ### Step 2 — Read the standard
 

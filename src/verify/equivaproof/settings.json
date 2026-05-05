@@ -16,7 +16,7 @@
         "allow": [
             "Skill(lean4:lean4)",
             "Skill(lean-milp-formulation)",
-            "Skill(lean-milp-equivalence)",
+            "Skill(lean-milp-reformulation)",
             "mcp__lean-lsp__*",
             "ToolSearch",
             "Bash(lake env lean:*)",

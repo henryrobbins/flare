@@ -10,7 +10,7 @@ from pathlib import Path
 from milp_eq_tools import Formulation
 
 from src.prompts import render_formulation
-from src.verify.base import EquivalenceResult, EquivalenceVerifier
+from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.verify.equivaproof.prompts import render_agent_prompt
 
 _HERE = Path(__file__).parent
@@ -50,7 +50,7 @@ def _claude_code_settings(wd: Path, repo_root: Path) -> dict:
     return settings
 
 
-class EquivaProofVerifier(EquivalenceVerifier):
+class EquivaProofVerifier(ReformulationVerifier):
     def __init__(self, repo_root: Path, model: str) -> None:
         self.repo_root = repo_root
         self.model = model
@@ -64,7 +64,7 @@ class EquivaProofVerifier(EquivalenceVerifier):
 
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path
-    ) -> EquivalenceResult:
+    ) -> ReformulationResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(
@@ -88,14 +88,14 @@ class EquivaProofVerifier(EquivalenceVerifier):
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
         # Copy generated Lean outputs alongside other artifacts for inspection.
-        for rel in ["A/Formulation.lean", "B/Formulation.lean", "Equivalence.lean"]:
+        for rel in ["A/Formulation.lean", "B/Formulation.lean", "Reformulation.lean"]:
             src = wd / rel
             if src.exists() and src.stat().st_size > 0:
                 dst = artifacts_dir / Path(rel).name
                 shutil.copy2(src, dst)
 
-        return EquivalenceResult(
-            is_equivalent=meta["is_equivalent"],
+        return ReformulationResult(
+            is_reformulation=meta["is_reformulation"],
             method=self.name,
             artifacts_dir=artifacts_dir,
             duration_s=meta.get("duration_s"),
@@ -130,11 +130,11 @@ class EquivaProofVerifier(EquivalenceVerifier):
                 shutil.copy2(solve_src, form_dir / "solve.py")
             (form_dir / "Formulation.lean").write_text("")
 
-        (wd / "Equivalence.lean").write_text("")
+        (wd / "Reformulation.lean").write_text("")
 
         # Share the repo's pre-built Mathlib oleans instead of downloading a
         # fresh copy per pair. Each wd still gets its own .lake/build/ for
-        # A/B/Equivalence modules, so parallel runs don't conflict.
+        # A/B/Reformulation modules, so parallel runs don't conflict.
         wd_lake = wd / ".lake"
         wd_lake.mkdir(parents=True, exist_ok=True)
         (wd_lake / "packages").symlink_to(
@@ -204,14 +204,14 @@ class EquivaProofVerifier(EquivalenceVerifier):
     def _evaluate(self, wd: Path) -> dict:
         form_a_lean = wd / "A" / "Formulation.lean"
         form_b_lean = wd / "B" / "Formulation.lean"
-        equiv_file = wd / "Equivalence.lean"
+        reform_file = wd / "Reformulation.lean"
 
-        equiv_content = equiv_file.read_text().strip() if equiv_file.exists() else ""
+        reform_content = reform_file.read_text().strip() if reform_file.exists() else ""
 
         # Normalize the first meaningful line: strip Lean comment markers so
-        # "-- NOT EQUIVALENT: ..." is detected the same as "NOT EQUIVALENT: ...".
+        # "-- NOT REFORMULATION: ..." is detected the same as "NOT REFORMULATION: ...".
         first_line = next(
-            (l.strip() for l in equiv_content.splitlines() if l.strip()), ""
+            (l.strip() for l in reform_content.splitlines() if l.strip()), ""
         )
         normalized = re.sub(r"^-+\s*", "", first_line).upper()
 
@@ -221,29 +221,29 @@ class EquivaProofVerifier(EquivalenceVerifier):
             "form_a_compiled": None,
             "form_b_compiled": None,
             "proof_compiled": None,
-            "milp_equiv_found": None,
+            "milp_reform_found": None,
             "sorry_free": None,
         }
 
-        if normalized.startswith("NOT EQUIVALENT"):
+        if normalized.startswith("NOT REFORMULATION"):
             return {
-                "is_equivalent": False,
-                "agent_decision": "not_equivalent",
-                "agent_reason": equiv_content,
+                "is_reformulation": False,
+                "agent_decision": "not_reformulation",
+                "agent_reason": reform_content,
                 **base,
             }
 
         if normalized.startswith("MCP_UNAVAILABLE"):
             return {
-                "is_equivalent": False,
+                "is_reformulation": False,
                 "agent_decision": "mcp_unavailable",
-                "agent_reason": equiv_content,
+                "agent_reason": reform_content,
                 **base,
             }
 
         form_a_written = base["form_a_written"]
         form_b_written = base["form_b_written"]
-        proof_written = bool(equiv_content)
+        proof_written = bool(reform_content)
 
         compile_log_path = wd.parent / "compile_log.txt"
         with compile_log_path.open("w") as log:
@@ -258,43 +258,43 @@ class EquivaProofVerifier(EquivalenceVerifier):
                 else False
             )
             proof_compiled, proof_output = (
-                _lean_compiles_with_output(wd, equiv_file, log, "Equivalence.lean")
+                _lean_compiles_with_output(wd, reform_file, log, "Reformulation.lean")
                 if proof_written
                 else (False, "")
             )
             # MILPReformulation presence: require a 'def _ : MILPReformulation' in the file.
-            milp_equiv_found = bool(
-                re.search(r"\bdef\s+\w+\s*:\s*MILPReformulation\b", equiv_content)
+            milp_reform_found = bool(
+                re.search(r"\bdef\s+\w+\s*:\s*MILPReformulation\b", reform_content)
             )
             # Lean emits "warning: 'X' uses sorry" when sorry is present.
             # Only meaningful when the file compiled and the def was found.
             sorry_free = (
                 "uses `sorry`" not in proof_output
-                if (proof_compiled and milp_equiv_found)
+                if (proof_compiled and milp_reform_found)
                 else False
             )
             log.write(
-                f"=== sorry check ===\nmilp_equiv_found: {milp_equiv_found}\n"
+                f"=== sorry check ===\nmilp_reform_found: {milp_reform_found}\n"
                 f"sorry_free: {sorry_free}\n\n"
             )
 
-        is_equivalent = (
+        is_reformulation = (
             form_a_compiled
             and form_b_compiled
             and proof_compiled
-            and milp_equiv_found
+            and milp_reform_found
             and sorry_free
         )
 
         return {
-            "is_equivalent": is_equivalent,
-            "agent_decision": "equivalent" if is_equivalent else "failed",
+            "is_reformulation": is_reformulation,
+            "agent_decision": "reformulation" if is_reformulation else "failed",
             "form_a_written": form_a_written,
             "form_b_written": form_b_written,
             "form_a_compiled": form_a_compiled,
             "form_b_compiled": form_b_compiled,
             "proof_compiled": proof_compiled,
-            "milp_equiv_found": milp_equiv_found,
+            "milp_reform_found": milp_reform_found,
             "sorry_free": sorry_free,
         }
 
