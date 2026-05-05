@@ -10,6 +10,9 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
+-- ============================================================================
+-- § Parameter Mapping
+-- ============================================================================
 
 private def paramMap (p : P11.a.Params) : P11.c.Params :=
   { nT         := p.nT
@@ -70,6 +73,9 @@ private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.c.Vars (paramMap p) 
     r     := V.r
     c_var  := V.c_var
     p_wind := V.p_wind
+-- ============================================================================
+-- § Forward Mapping and Feasibility
+-- ============================================================================
     P_bar  := fun _ _ => 0 }
 
 private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
@@ -105,6 +111,7 @@ private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
       hec2a       := ?hec2a }
   case hec2a =>
     intro g t
+    -- Goal: 0 ≤ P_max * u - max(P_max - SU, 0) * v
     show (0 : ℝ) ≤
       p.P_max g * (V.u g t : ℝ) -
         max (p.P_max g - p.SU g) 0 * (V.v g t : ℝ)
@@ -116,15 +123,20 @@ private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
       rcases h.hu_bin g t with hu0 | hu1
       · rw [hu0]; simp
       · rw [hu1]; norm_num
+    -- From hcap_su: 0 ≤ p + r ≤ (P_max - P_min)*u - max(P_max-SU,0)*v
     have h1 : (0 : ℝ) ≤
         (p.P_max g - p.P_min g) * (V.u g t : ℝ) -
           max (p.P_max g - p.SU g) 0 * (V.v g t : ℝ) := by
       linarith
     have h2 : (0 : ℝ) ≤ p.P_min g * (V.u g t : ℝ) :=
+    -- Add P_min * u ≥ 0 to both sides
       mul_nonneg hPmin hu_nn
     linarith [h1, h2]
 
 private def bwd (p : P11.a.Params) (v : P11.c.Vars (paramMap p)) : P11.a.Vars p :=
+-- ============================================================================
+-- § Backward Mapping and Feasibility
+-- ============================================================================
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -166,6 +178,9 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.c.Vars (paramMap p))
       hpwind_lo   := h.hpwind_lo
       hpwind_hi   := h.hpwind_hi }
 
+-- ============================================================================
+-- § Equivalence Structure
+-- ============================================================================
 def aCEquiv : MILPReformulation P11.a.formulation P11.c.formulation where
   paramMap    := paramMap
   fwd         := fwd

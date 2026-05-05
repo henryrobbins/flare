@@ -10,6 +10,9 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
+-- ============================================================================
+-- § Parameter Mapping
+-- ============================================================================
 
 private def paramMap (p : P11.a.Params) : P11.e.Params :=
   { nT         := p.nT
@@ -74,6 +77,9 @@ private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.e.Vars (paramMap p) 
       if h : t.val + 1 < p.nT then
         V.v g t * V.w g ⟨t.val + 1, h⟩
       else 0
+-- ============================================================================
+-- § Forward Mapping and Feasibility
+-- ============================================================================
     P_bar  := fun g t =>
       if h : t.val + 1 < p.nT then
         p.P_max g * (V.u g t : ℝ) -
@@ -179,6 +185,9 @@ private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
     rfl
 
 private def bwd (p : P11.a.Params) (v : P11.e.Vars (paramMap p)) : P11.a.Vars p :=
+-- ============================================================================
+-- § Backward Mapping and Feasibility
+-- ============================================================================
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -220,6 +229,9 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.e.Vars (paramMap p))
       hpwind_lo   := h.hpwind_lo
       hpwind_hi   := h.hpwind_hi }
 
+-- ============================================================================
+-- § Equivalence Structure
+-- ============================================================================
 def aEEquiv : MILPReformulation P11.a.formulation P11.e.formulation where
   paramMap    := paramMap
   fwd         := fwd
