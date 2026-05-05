@@ -30,17 +30,17 @@ private def paramMap (p : P8.a.Params) : P8.b.Params :=
 
 section ForwardHelpers
 
-variable {p : P8.a.Params} {v : P8.a.Vars} (h : P8.a.Feasible p v)
+variable {p : P8.a.Params} {v : P8.a.Vars p} (h : P8.a.Feasible p v)
 include h
 
 /-- For any operation (j, k), its completion time S j k + p j k is ≤ Cmax.
     Proof: chain precedence from k to m-1, then apply the makespan bound. -/
 private lemma tail_le_Cmax (j : Fin p.n) (k : Fin p.m) :
-    v.S j.val k.val + p.p j k ≤ v.Cmax := by
+    v.S j k + p.p j k ≤ v.Cmax := by
   haveI := p.hM
   have hm_pos : 0 < p.m := Nat.pos_of_ne_zero p.hM.out
   have key : ∀ q : ℕ, (hq : q < p.m) → k.val ≤ q →
-      v.S j.val k.val + p.p j k ≤ v.S j.val q + p.p j ⟨q, hq⟩ := by
+      v.S j k + p.p j k ≤ v.S j ⟨q, hq⟩ + p.p j ⟨q, hq⟩ := by
     intro q hq hkq
     induction q with
     | zero =>
@@ -69,9 +69,9 @@ private lemma tail_le_Cmax (j : Fin p.n) (k : Fin p.m) :
 private lemma nonoverlap_sum_le_span :
     ∀ (T : Finset (Fin p.n × Fin p.m)),
       (∀ a ∈ T, ∀ b ∈ T, a ≠ b →
-        v.S a.1.val a.2.val + p.p a.1 a.2 ≤ v.S b.1.val b.2.val ∨
-        v.S b.1.val b.2.val + p.p b.1 b.2 ≤ v.S a.1.val a.2.val) →
-      ∀ M : ℝ, (∀ e ∈ T, v.S e.1.val e.2.val + p.p e.1 e.2 ≤ M) →
+        v.S a.1 a.2 + p.p a.1 a.2 ≤ v.S b.1 b.2 ∨
+        v.S b.1 b.2 + p.p b.1 b.2 ≤ v.S a.1 a.2) →
+      ∀ M : ℝ, (∀ e ∈ T, v.S e.1 e.2 + p.p e.1 e.2 ≤ M) →
         0 ≤ M →
         (∑ e ∈ T, p.p e.1 e.2) ≤ M := by
   intro T
@@ -80,25 +80,25 @@ private lemma nonoverlap_sum_le_span :
     intro hno M hM_bound hM_nn
     by_cases hT : T.Nonempty
     · obtain ⟨e_star, he_star_mem, he_star_max⟩ :=
-        T.exists_max_image (fun e => v.S e.1.val e.2.val + p.p e.1 e.2) hT
-      have hC_star_le_M : v.S e_star.1.val e_star.2.val + p.p e_star.1 e_star.2 ≤ M :=
+        T.exists_max_image (fun e => v.S e.1 e.2 + p.p e.1 e.2) hT
+      have hC_star_le_M : v.S e_star.1 e_star.2 + p.p e_star.1 e_star.2 ≤ M :=
         hM_bound e_star he_star_mem
       set T' := T.erase e_star with hT'_def
       have hT'_sub : T' ⊂ T := Finset.erase_ssubset he_star_mem
       set A : Finset (Fin p.n × Fin p.m) :=
-        T'.filter (fun e => v.S e.1.val e.2.val + p.p e.1 e.2 ≤ v.S e_star.1.val e_star.2.val)
+        T'.filter (fun e => v.S e.1 e.2 + p.p e.1 e.2 ≤ v.S e_star.1 e_star.2)
         with hA_def
       have hAsub_T' : A ⊆ T' := Finset.filter_subset _ _
       have hAsub_T : A ⊆ T := hAsub_T'.trans (Finset.erase_subset _ _)
       have hno_A : ∀ a ∈ A, ∀ b ∈ A, a ≠ b →
-          v.S a.1.val a.2.val + p.p a.1 a.2 ≤ v.S b.1.val b.2.val ∨
-          v.S b.1.val b.2.val + p.p b.1 b.2 ≤ v.S a.1.val a.2.val :=
+          v.S a.1 a.2 + p.p a.1 a.2 ≤ v.S b.1 b.2 ∨
+          v.S b.1 b.2 + p.p b.1 b.2 ≤ v.S a.1 a.2 :=
         fun a ha b hb hab => hno a (hAsub_T ha) b (hAsub_T hb) hab
-      have hbound_A : ∀ e ∈ A, v.S e.1.val e.2.val + p.p e.1 e.2 ≤ v.S e_star.1.val e_star.2.val :=
+      have hbound_A : ∀ e ∈ A, v.S e.1 e.2 + p.p e.1 e.2 ≤ v.S e_star.1 e_star.2 :=
         fun e he => (Finset.mem_filter.mp he).2
-      have hSstar_nn : 0 ≤ v.S e_star.1.val e_star.2.val := h.hS_nn e_star.1 e_star.2
+      have hSstar_nn : 0 ≤ v.S e_star.1 e_star.2 := h.hS_nn e_star.1 e_star.2
       have hA_ssub : A ⊂ T := lt_of_le_of_lt (Finset.le_iff_subset.mpr hAsub_T') hT'_sub
-      have hA_sum_bound : (∑ e ∈ A, p.p e.1 e.2) ≤ v.S e_star.1.val e_star.2.val :=
+      have hA_sum_bound : (∑ e ∈ A, p.p e.1 e.2) ≤ v.S e_star.1 e_star.2 :=
         ih A hA_ssub hno_A _ hbound_A hSstar_nn
       have hB_zero : ∀ e ∈ T' \ A, p.p e.1 e.2 = 0 := by
         intro e he
@@ -106,7 +106,7 @@ private lemma nonoverlap_sum_le_span :
         obtain ⟨heT', hnotA⟩ := he
         rw [Finset.mem_filter] at hnotA
         push_neg at hnotA
-        have hC_gt : v.S e_star.1.val e_star.2.val < v.S e.1.val e.2.val + p.p e.1 e.2 :=
+        have hC_gt : v.S e_star.1 e_star.2 < v.S e.1 e.2 + p.p e.1 e.2 :=
           hnotA heT'
         have heT : e ∈ T := Finset.mem_of_mem_erase heT'
         have hne : e ≠ e_star := (Finset.mem_erase.mp heT').1
@@ -159,11 +159,11 @@ end ForwardHelpers
 **P8.a → P8.b**: identity on variables. The new EC1 constraint `hec1` is
 derived by summing machine load bounds over all machines and dividing by m.
 -/
-private def fwd (_ : P8.a.Params) (v : P8.a.Vars) : P8.b.Vars :=
+private def fwd (p : P8.a.Params) (v : P8.a.Vars p) : P8.b.Vars (paramMap p) :=
   { S    := v.S
     Cmax := v.Cmax }
 
-private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars)
+private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars p)
     (h : P8.a.Feasible p v) :
     P8.b.Feasible (paramMap p) (fwd p v) := by
   haveI := p.hM
@@ -219,11 +219,11 @@ private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars)
 /--
 **P8.b → P8.a**: identity on variables. Drop the `hec1` constraint.
 -/
-private def bwd (_ : P8.a.Params) (v : P8.b.Vars) : P8.a.Vars :=
+private def bwd (p : P8.a.Params) (v : P8.b.Vars (paramMap p)) : P8.a.Vars p :=
   { S    := v.S
     Cmax := v.Cmax }
 
-private lemma bwd_feas (p : P8.a.Params) (v : P8.b.Vars)
+private lemma bwd_feas (p : P8.a.Params) (v : P8.b.Vars (paramMap p))
     (h : P8.b.Feasible (paramMap p) v) :
     P8.a.Feasible p (bwd p v) :=
   { hprec     := h.hprec

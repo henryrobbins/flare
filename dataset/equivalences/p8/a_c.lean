@@ -125,14 +125,14 @@ private lemma tl_eq_Ico_sum (p : P8.a.Params) (j : Fin p.n) (k : Fin p.m) :
 
 section ForwardHelpers
 
-variable {p : P8.a.Params} {v : P8.a.Vars} (h : P8.a.Feasible p v)
+variable {p : P8.a.Params} {v : P8.a.Vars p} (h : P8.a.Feasible p v)
 include h
 
 /-- Telescoping (ascending): for every `n < p.m`, the start time of op `n` of
     job `j` is at least the sum of the processing times of the previous ops. -/
 private lemma job_telescoping_asc (j : Fin p.n) :
-    ∀ n : ℕ, n < p.m →
-      (∑ i ∈ range n, pext p j i) ≤ v.S j.val n := by
+    ∀ n : ℕ, (hn : n < p.m) →
+      (∑ i ∈ range n, pext p j i) ≤ v.S j ⟨n, hn⟩ := by
   intro n hn
   induction n with
   | zero =>
@@ -152,28 +152,31 @@ private lemma job_telescoping_asc (j : Fin p.n) :
       rw [hsplit, hpext_k]
       linarith
 
-/-- `hd p.p j k ≤ v.S j.val k.val`. -/
+/-- `hd p.p j k ≤ v.S j k`. -/
 private lemma head_le_start (j : Fin p.n) (k : Fin p.m) :
-    hd p.p j k ≤ v.S j.val k.val := by
+    hd p.p j k ≤ v.S j k := by
   rw [hd_eq_range_sum]
-  exact job_telescoping_asc h j k.val k.isLt
+  have := job_telescoping_asc h j k.val k.isLt
+  simpa using this
 
 /-- Telescoping (descending): for every `k < p.m`,
     `v.S j.val k + (∑ i ∈ Ico k p.m, pext p j i) ≤ v.Cmax`. -/
 private lemma job_telescoping_desc (j : Fin p.n) :
-    ∀ k : ℕ, k < p.m →
-      v.S j.val k + (∑ i ∈ Ico k p.m, pext p j i) ≤ v.Cmax := by
+    ∀ k : ℕ, (hk : k < p.m) →
+      v.S j ⟨k, hk⟩ + (∑ i ∈ Ico k p.m, pext p j i) ≤ v.Cmax := by
   haveI := p.hM
   have hm_pos : 0 < p.m := Nat.pos_of_ne_zero p.hM.out
-  suffices hsuff : ∀ d : ℕ, d ≤ p.m - 1 →
-      v.S j.val (p.m - 1 - d) +
+  suffices hsuff : ∀ d : ℕ, (hd : d ≤ p.m - 1) →
+      v.S j ⟨p.m - 1 - d, by omega⟩ +
         (∑ i ∈ Ico (p.m - 1 - d) p.m, pext p j i) ≤ v.Cmax by
     intro k hk
     have hd_le : p.m - 1 - k ≤ p.m - 1 := Nat.sub_le _ _
-    have := hsuff (p.m - 1 - k) hd_le
+    have hres := hsuff (p.m - 1 - k) hd_le
     have hk_eq : p.m - 1 - (p.m - 1 - k) = k := by omega
-    rw [hk_eq] at this
-    exact this
+    have : (⟨p.m - 1 - (p.m - 1 - k), by omega⟩ : Fin p.m) = ⟨k, hk⟩ := Fin.ext hk_eq
+    rw [this] at hres
+    rw [hk_eq] at hres
+    exact hres
   intro d hd
   induction d with
   | zero =>
@@ -201,7 +204,9 @@ private lemma job_telescoping_desc (j : Fin p.n) :
       have hprec :=
         h.hprec j ⟨p.m - 1 - (d + 1), hk_new_lt⟩ hsucc_lt
       simp only at hprec
-      rw [hsucc_eq] at hprec
+      have hfin_eq : (⟨p.m - 1 - (d + 1) + 1, hsucc_lt⟩ : Fin p.m)
+                      = ⟨p.m - 1 - d, hk_old_lt⟩ := Fin.ext hsucc_eq
+      rw [hfin_eq] at hprec
       have hIco_split :
           Ico (p.m - 1 - (d + 1)) p.m
             = insert (p.m - 1 - (d + 1)) (Ico (p.m - 1 - d) p.m) := by
@@ -216,9 +221,9 @@ private lemma job_telescoping_desc (j : Fin p.n) :
       rw [hpext_eq]
       linarith
 
-/-- `v.S j.val k.val + p.p j k + tl p.p j k ≤ v.Cmax`. -/
+/-- `v.S j k + p.p j k + tl p.p j k ≤ v.Cmax`. -/
 private lemma start_plus_tail_bound (j : Fin p.n) (k : Fin p.m) :
-    v.S j.val k.val + p.p j k + tl p.p j k ≤ v.Cmax := by
+    v.S j k + p.p j k + tl p.p j k ≤ v.Cmax := by
   have hk_lt : k.val < p.m := k.isLt
   have htele := job_telescoping_desc h j k.val hk_lt
   have hIco_split :
@@ -231,6 +236,8 @@ private lemma start_plus_tail_bound (j : Fin p.n) (k : Fin p.m) :
     simp only [hk_lt, dite_true, Fin.eta]
   rw [hpext_k] at htele
   rw [tl_eq_Ico_sum]
+  have hfin_eq : (⟨k.val, hk_lt⟩ : Fin p.m) = k := Fin.ext rfl
+  rw [hfin_eq] at htele
   linarith
 
 /-- Key combinatorial lemma: for any nonempty subset `T` of `machineOps p i`,
@@ -240,9 +247,9 @@ private lemma nonoverlap_chain_sum
     (i : Fin p.m) (T : Finset (Fin p.n × Fin p.m))
     (hT_sub : T ⊆ machineOps p i) (hT_ne : T.Nonempty) :
     (T.sum (fun a : Fin p.n × Fin p.m => p.p a.1 a.2)) +
-        T.inf' hT_ne (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val)
+        T.inf' hT_ne (fun a : Fin p.n × Fin p.m => v.S a.1 a.2)
       ≤ T.sup' hT_ne
-          (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val + p.p a.1 a.2) := by
+          (fun a : Fin p.n × Fin p.m => v.S a.1 a.2 + p.p a.1 a.2) := by
   classical
   induction T using Finset.strongInduction with
   | _ T ih =>
@@ -260,20 +267,20 @@ private lemma nonoverlap_chain_sum
       have hcard_ge_two : 2 ≤ T.card := hT_sing
       obtain ⟨aS, haS_mem, haS_min⟩ :=
         T.exists_min_image
-          (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val) hT_ne
+          (fun a : Fin p.n × Fin p.m => v.S a.1 a.2) hT_ne
       set Tmin : Finset (Fin p.n × Fin p.m) :=
-        T.filter (fun a => v.S a.1.val a.2.val = v.S aS.1.val aS.2.val) with hTmin_def
+        T.filter (fun a => v.S a.1 a.2 = v.S aS.1 aS.2) with hTmin_def
       have hTmin_ne : Tmin.Nonempty := ⟨aS, by simp [hTmin_def, haS_mem]⟩
       obtain ⟨a₀, ha₀_Tmin, ha₀_min_p⟩ :=
         Tmin.exists_min_image
           (fun a : Fin p.n × Fin p.m => p.p a.1 a.2) hTmin_ne
       have ha₀_mem : a₀ ∈ T := (Finset.mem_filter.mp ha₀_Tmin).1
-      have ha₀_S : v.S a₀.1.val a₀.2.val = v.S aS.1.val aS.2.val :=
+      have ha₀_S : v.S a₀.1 a₀.2 = v.S aS.1 aS.2 :=
         (Finset.mem_filter.mp ha₀_Tmin).2
-      have ha₀_min : ∀ b ∈ T, v.S a₀.1.val a₀.2.val ≤ v.S b.1.val b.2.val := by
+      have ha₀_min : ∀ b ∈ T, v.S a₀.1 a₀.2 ≤ v.S b.1 b.2 := by
         intro b hb
         rw [ha₀_S]; exact haS_min b hb
-      have ha₀_min_p' : ∀ b ∈ T, v.S b.1.val b.2.val = v.S a₀.1.val a₀.2.val →
+      have ha₀_min_p' : ∀ b ∈ T, v.S b.1 b.2 = v.S a₀.1 a₀.2 →
           p.p a₀.1 a₀.2 ≤ p.p b.1 b.2 := by
         intro b hb hS_eq
         have hb_Tmin : b ∈ Tmin := by
@@ -290,7 +297,7 @@ private lemma nonoverlap_chain_sum
       have hT'_ssub : T' ⊂ T := Finset.erase_ssubset ha₀_mem
       -- For every a ∈ T' (a ≠ a₀), both a and a₀ map to machine i,
       -- so non-overlap gives S(a₀) + p(a₀) ≤ S(a) (or vice versa, with tie-break).
-      have hchain : ∀ a ∈ T', v.S a₀.1.val a₀.2.val + p.p a₀.1 a₀.2 ≤ v.S a.1.val a.2.val := by
+      have hchain : ∀ a ∈ T', v.S a₀.1 a₀.2 + p.p a₀.1 a₀.2 ≤ v.S a.1 a.2 := by
         intro a ha'
         have ha_T : a ∈ T := hT'_sub ha'
         have ha_ne : a ≠ a₀ := by
@@ -313,32 +320,32 @@ private lemma nonoverlap_chain_sum
           exact ha_ne.symm (Prod.ext (Prod.mk.inj heq).1 (Prod.mk.inj heq).2)
         rcases h.hoverlap a₀.1 a₀.2 a.1 a.2 hOm_eq hne_pair with hcase | hcase
         · exact hcase
-        · have hSa_eq : v.S a.1.val a.2.val = v.S a₀.1.val a₀.2.val := by linarith
+        · have hSa_eq : v.S a.1 a.2 = v.S a₀.1 a₀.2 := by linarith
           have hpa_zero : p.p a.1 a.2 = 0 := by linarith
           have hpa₀_le := ha₀_min_p' a ha_T hSa_eq
           have hpa₀_zero : p.p a₀.1 a₀.2 = 0 := by linarith
           linarith
       have hih := ih T' hT'_ssub hT'_sub_mops hT'_ne
-      have hinf_ge : v.S a₀.1.val a₀.2.val + p.p a₀.1 a₀.2
+      have hinf_ge : v.S a₀.1 a₀.2 + p.p a₀.1 a₀.2
                       ≤ T'.inf' hT'_ne
-                          (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val) := by
+                          (fun a : Fin p.n × Fin p.m => v.S a.1 a.2) := by
         apply Finset.le_inf'
         intro a ha'; exact hchain a ha'
       have hsum_decomp :
           (∑ a ∈ T, p.p a.1 a.2) = p.p a₀.1 a₀.2 + ∑ a ∈ T', p.p a.1 a.2 := by
         rw [hT'_def, ← Finset.add_sum_erase _ _ ha₀_mem]
       have hT_inf_eq :
-          T.inf' hT_ne (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val)
-            = v.S a₀.1.val a₀.2.val := by
+          T.inf' hT_ne (fun a : Fin p.n × Fin p.m => v.S a.1 a.2)
+            = v.S a₀.1 a₀.2 := by
         apply le_antisymm
         · exact Finset.inf'_le _ ha₀_mem
         · apply Finset.le_inf'
           intro a ha; exact ha₀_min a ha
       have hT_sup_ge_T'_sup :
           T'.sup' hT'_ne
-              (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val + p.p a.1 a.2)
+              (fun a : Fin p.n × Fin p.m => v.S a.1 a.2 + p.p a.1 a.2)
             ≤ T.sup' hT_ne
-                (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val + p.p a.1 a.2) :=
+                (fun a : Fin p.n × Fin p.m => v.S a.1 a.2 + p.p a.1 a.2) :=
         Finset.sup'_mono _ hT'_sub hT'_ne
       rw [hsum_decomp, hT_inf_eq]
       linarith
@@ -353,15 +360,15 @@ private lemma ec2_proof (i : Fin p.m) :
   have hchain := nonoverlap_chain_sum h i M (by rw [hM_def]) hM_ne
   obtain ⟨first, hfirst_mem, hfirst_eq⟩ :=
     M.exists_mem_eq_inf' hM_ne
-      (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val)
+      (fun a : Fin p.n × Fin p.m => v.S a.1 a.2)
   obtain ⟨last, hlast_mem, hlast_eq⟩ :=
     M.exists_mem_eq_sup' hM_ne
-      (fun a : Fin p.n × Fin p.m => v.S a.1.val a.2.val + p.p a.1 a.2)
+      (fun a : Fin p.n × Fin p.m => v.S a.1 a.2 + p.p a.1 a.2)
   rw [hfirst_eq, hlast_eq] at hchain
-  have htail_bd : v.S last.1.val last.2.val + p.p last.1 last.2
+  have htail_bd : v.S last.1 last.2 + p.p last.1 last.2
                     + tl p.p last.1 last.2 ≤ v.Cmax :=
     start_plus_tail_bound h last.1 last.2
-  have hhead_bd : hd p.p first.1 first.2 ≤ v.S first.1.val first.2.val :=
+  have hhead_bd : hd p.p first.1 first.2 ≤ v.S first.1 first.2 :=
     head_le_start h first.1 first.2
   have hhd_inf :
       (machineOps p i).inf' (machineOps_ne p i) (fun a => hd p.p a.1 a.2)
@@ -376,11 +383,11 @@ private lemma ec2_proof (i : Fin p.m) :
 end ForwardHelpers
 
 /-- P8.a → P8.c: identity on variables, derive EC2 from base constraints. -/
-private def fwd (_ : P8.a.Params) (v : P8.a.Vars) : P8.c.Vars :=
+private def fwd (p : P8.a.Params) (v : P8.a.Vars p) : P8.c.Vars (paramMap p) :=
   { S    := v.S
     Cmax := v.Cmax }
 
-private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars)
+private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars p)
     (h : P8.a.Feasible p v) :
     P8.c.Feasible (paramMap p) (fwd p v) := by
   refine
@@ -402,11 +409,11 @@ private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars)
 -- ============================================================================
 
 /-- P8.c → P8.a: identity on variables, drop the EC2 constraint. -/
-private def bwd (_ : P8.a.Params) (v : P8.c.Vars) : P8.a.Vars :=
+private def bwd (p : P8.a.Params) (v : P8.c.Vars (paramMap p)) : P8.a.Vars p :=
   { S    := v.S
     Cmax := v.Cmax }
 
-private lemma bwd_feas (p : P8.a.Params) (v : P8.c.Vars)
+private lemma bwd_feas (p : P8.a.Params) (v : P8.c.Vars (paramMap p))
     (h : P8.c.Feasible (paramMap p) v) :
     P8.a.Feasible p (bwd p v) :=
   { hprec     := h.hprec
