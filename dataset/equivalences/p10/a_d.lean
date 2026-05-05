@@ -36,29 +36,32 @@ private def paramMap (p : P10.a.Params) : P10.d.Params :=
 -- § Helper Lemmas
 -- ============================================================================
 
-/-- Embed job `i : Fin p.N` as the natural-number node `p.K + i.val`. -/
-private def jobNode (p : P10.a.Params) (i : Fin p.N) : ℕ := p.K + i.val
+/-- Embed job `i : Fin p.N` as the node `⟨p.K + i.val, _⟩`. -/
+private def jobNode (p : P10.a.Params) (i : Fin p.N) : Fin (p.K + p.N) :=
+  ⟨p.K + i.val, by have := i.isLt; omega⟩
 
-/-- Embed truck `k : Fin p.K` as the natural-number node `k.val`. -/
-private def truckNode (p : P10.a.Params) (k : Fin p.K) : ℕ := k.val
+/-- Embed truck `k : Fin p.K` as the node `⟨k.val, _⟩`. -/
+private def truckNode (p : P10.a.Params) (k : Fin p.K) : Fin (p.K + p.N) :=
+  ⟨k.val, by have := k.isLt; omega⟩
 
 private lemma jobNode_injective (p : P10.a.Params) :
     Function.Injective (jobNode p) := by
   intro i j h
   apply Fin.ext
   unfold jobNode at h
-  exact Nat.add_left_cancel h
+  have hv : p.K + i.val = p.K + j.val := congrArg Fin.val h
+  omega
 
 /-- Earliest start time, mirrored from P10.d. -/
 private noncomputable def EST (p : P10.a.Params) (i : Fin p.N) : ℝ :=
   haveI := p.hK
   max (p.τ_min i) (univ.inf' univ_nonempty (fun k : Fin p.K => p.v k + p.d0 k i))
 
-private noncomputable def rank (p : P10.a.Params) (δ : ℕ → ℝ) (i : Fin p.N) : ℕ :=
+private noncomputable def rank (p : P10.a.Params) (δ : Fin p.N → ℝ) (i : Fin p.N) : ℕ :=
   (univ.filter (fun j : Fin p.N => δ j < δ i)).card
 
 /-- A routing path of accepted jobs from i to l (depends only on `x`). -/
-private inductive RoutingPath (p : P10.a.Params) (x : ℕ → ℕ → ℤ) :
+private inductive RoutingPath (p : P10.a.Params) (x : Fin (p.K + p.N) → Fin (p.K + p.N) → ℤ) :
     Fin p.N → Fin p.N → Prop where
   | single (i j : Fin p.N) (hij : i ≠ j)
       (harc : x (jobNode p i) (jobNode p j) = 1)
@@ -71,7 +74,8 @@ private inductive RoutingPath (p : P10.a.Params) (x : ℕ → ℕ → ℤ) :
       (hjl : RoutingPath p x j l) :
       RoutingPath p x i l
 
-private lemma RoutingPath.snoc' {p : P10.a.Params} {x : ℕ → ℕ → ℤ} {a b c : Fin p.N}
+private lemma RoutingPath.snoc' {p : P10.a.Params}
+    {x : Fin (p.K + p.N) → Fin (p.K + p.N) → ℤ} {a b c : Fin p.N}
     (hab : RoutingPath p x a b)
     (hbc : b ≠ c)
     (harc : x (jobNode p b) (jobNode p c) = 1)
@@ -89,26 +93,21 @@ private lemma RoutingPath.snoc' {p : P10.a.Params} {x : ℕ → ℕ → ℤ} {a 
 
 section ForwardHelpers
 
-variable {p : P10.a.Params} {v : P10.a.Vars} (h : P10.a.Feasible p v)
+variable {p : P10.a.Params} {v : P10.a.Vars p} (h : P10.a.Feasible p v)
 include h
 
 private lemma x_nn (u w : Fin (p.K + p.N)) : 0 ≤ v.x u w := by
   rcases h.hx_bin u w with hh | hh <;> omega
 
-private lemma x_nn_nat (u w : ℕ) (hu : u < p.K + p.N) (hw : w < p.K + p.N) :
-    0 ≤ v.x u w := by
-  have := x_nn h ⟨u, hu⟩ ⟨w, hw⟩
-  simpa using this
-
 private lemma out_pair_le (u a b : Fin (p.K + p.N)) (hab : a ≠ b) :
     v.x u a + v.x u b ≤ 1 := by
   have hcalc :
-      v.x ↑u ↑a + v.x ↑u ↑b
-        = ∑ w ∈ ({a, b} : Finset (Fin (p.K + p.N))), v.x ↑u ↑w := by
+      v.x u a + v.x u b
+        = ∑ w ∈ ({a, b} : Finset (Fin (p.K + p.N))), v.x u w := by
     rw [sum_pair hab]
   have hsub :
-      (∑ w ∈ ({a, b} : Finset (Fin (p.K + p.N))), v.x ↑u ↑w)
-        ≤ ∑ w : Fin (p.K + p.N), v.x ↑u ↑w := by
+      (∑ w ∈ ({a, b} : Finset (Fin (p.K + p.N))), v.x u w)
+        ≤ ∑ w : Fin (p.K + p.N), v.x u w := by
     apply sum_le_sum_of_subset_of_nonneg (subset_univ _)
     intro w _ _; exact x_nn h u w
   have hsum := h.hout u
@@ -118,12 +117,12 @@ private lemma out_pair_le (u a b : Fin (p.K + p.N)) (hab : a ≠ b) :
 private lemma in_pair_le (a b u : Fin (p.K + p.N)) (hab : a ≠ b) :
     v.x a u + v.x b u ≤ 1 := by
   have hcalc :
-      v.x ↑a ↑u + v.x ↑b ↑u
-        = ∑ w ∈ ({a, b} : Finset (Fin (p.K + p.N))), v.x ↑w ↑u := by
+      v.x a u + v.x b u
+        = ∑ w ∈ ({a, b} : Finset (Fin (p.K + p.N))), v.x w u := by
     rw [sum_pair hab]
   have hsub :
-      (∑ w ∈ ({a, b} : Finset (Fin (p.K + p.N))), v.x ↑w ↑u)
-        ≤ ∑ w : Fin (p.K + p.N), v.x ↑w ↑u := by
+      (∑ w ∈ ({a, b} : Finset (Fin (p.K + p.N))), v.x w u)
+        ≤ ∑ w : Fin (p.K + p.N), v.x w u := by
     apply sum_le_sum_of_subset_of_nonneg (subset_univ _)
     intro w _ _; exact x_nn h w u
   have hsum := h.hin u
@@ -186,89 +185,75 @@ private lemma reach_truck_path (i : Fin p.N)
   | zero => intro i hrk; exact absurd hrk (Nat.not_lt_zero _)
   | succ n ih =>
     intro i hrk hacc
-    have hi_lt : jobNode p i < p.K + p.N := by unfold jobNode; omega
-    set iF : Fin (p.K + p.N) := ⟨jobNode p i, hi_lt⟩ with hiF_def
-    have hpred : ∃ u : Fin (p.K + p.N), v.x u.val (jobNode p i) = 1 := by
+    have hpred : ∃ u : Fin (p.K + p.N), v.x u (jobNode p i) = 1 := by
       by_contra hall
       push_neg at hall
-      have hzero : ∀ u : Fin (p.K + p.N), v.x u.val (jobNode p i) = 0 := by
+      have hzero : ∀ u : Fin (p.K + p.N), v.x u (jobNode p i) = 0 := by
         intro u
-        have hb := h.hx_bin u iF
-        have hbn : v.x u.val (jobNode p i) = 0 ∨ v.x u.val (jobNode p i) = 1 := by
-          simpa [iF] using hb
-        rcases hbn with h0 | h1
+        rcases h.hx_bin u (jobNode p i) with h0 | h1
         · exact h0
         · exfalso; exact hall u h1
-      have hsum := h.hin iF
-      have hsum' : ∑ w : Fin (p.K + p.N), v.x w.val (jobNode p i) = 0 := by
+      have hsum := h.hin (jobNode p i)
+      have hsum' : ∑ w : Fin (p.K + p.N), v.x w (jobNode p i) = 0 := by
         apply Finset.sum_eq_zero
         intro w _; exact hzero w
-      have hsum_eq : ∑ w : Fin (p.K + p.N), v.x w.val (jobNode p i) =
-          ∑ w : Fin (p.K + p.N), v.x ↑w ↑iF := by
-        apply Finset.sum_congr rfl; intros; rfl
-      rw [hsum_eq] at hsum'
       omega
     obtain ⟨u, hu⟩ := hpred
     have hpred_uniq : ∀ w : Fin (p.K + p.N), w ≠ u →
-        v.x w.val (jobNode p i) = 0 := by
+        v.x w (jobNode p i) = 0 := by
       intro w hw
-      have hnn : 0 ≤ v.x w.val (jobNode p i) := by
-        have := x_nn h w iF; simpa [iF] using this
-      have hpair : v.x w.val (jobNode p i) + v.x u.val (jobNode p i) ≤ 1 := by
-        have := in_pair_le h w u iF hw; simpa [iF] using this
+      have hnn : 0 ≤ v.x w (jobNode p i) := x_nn h w (jobNode p i)
+      have hpair : v.x w (jobNode p i) + v.x u (jobNode p i) ≤ 1 :=
+        in_pair_le h w u (jobNode p i) hw
       omega
     rcases Nat.lt_or_ge u.val p.K with hlt | hge
     · -- Truck case
       refine ⟨⟨u.val, hlt⟩, ?_, Or.inl ?_⟩
       · have harrival := h.harrival i
-        have hk_one : v.x (⟨u.val, hlt⟩ : Fin p.K).val (jobNode p i) = 1 := hu
+        have hu_eq_truck : truckNode p ⟨u.val, hlt⟩ = u := by
+          unfold truckNode; exact Fin.ext rfl
+        have hk_one : v.x (truckNode p ⟨u.val, hlt⟩) (jobNode p i) = 1 := by
+          rw [hu_eq_truck]; exact hu
         have hk_other : ∀ l : Fin p.K, l ≠ ⟨u.val, hlt⟩ →
-            v.x l.val (jobNode p i) = 0 := by
+            v.x (truckNode p l) (jobNode p i) = 0 := by
           intro l hl
-          have hne : (⟨l.val, by omega⟩ : Fin (p.K + p.N)) ≠ u := by
+          have hne : truckNode p l ≠ u := by
             intro heq; apply hl; apply Fin.ext
-            have := congrArg Fin.val heq; simpa using this
+            have := congrArg Fin.val heq
+            unfold truckNode at this; simpa using this
           exact hpred_uniq _ hne
         set kF : Fin p.K := ⟨u.val, hlt⟩ with hkF_def
         have hsum_eq :
             ∑ l : Fin p.K, (p.d0 l i + p.v l) *
-              ((v.x l.val (p.K + i.val) : ℤ) : ℝ) =
+              ((v.x ⟨l.val, by have := l.isLt; omega⟩
+                    ⟨p.K + i.val, by have := i.isLt; omega⟩ : ℤ) : ℝ) =
             p.d0 kF i + p.v kF := by
           rw [sum_eq_single kF]
-          · have h1 : v.x kF.val (p.K + i.val) = 1 := hk_one
+          · have h1 : v.x ⟨kF.val, by have := kF.isLt; omega⟩
+                ⟨p.K + i.val, by have := i.isLt; omega⟩ = 1 := hk_one
             rw [h1]; push_cast; ring
           · intro l _ hlk
-            have hl0 : v.x l.val (p.K + i.val) = 0 := hk_other l hlk
+            have hl0 : v.x ⟨l.val, by have := l.isLt; omega⟩
+                ⟨p.K + i.val, by have := i.isLt; omega⟩ = 0 := hk_other l hlk
             rw [hl0]; push_cast; ring
           · simp
-        have harrival' :
-            v.δ i ≥ ∑ l : Fin p.K, (p.d0 l i + p.v l) *
-              ((v.x l.val (p.K + i.val) : ℤ) : ℝ) := by
-          convert harrival using 1
         linarith
       · unfold truckNode; exact hu
     · -- Job case
       have hlt2 : u.val - p.K < p.N := by omega
       set j : Fin p.N := ⟨u.val - p.K, hlt2⟩ with hj_def
-      have huj : u.val = jobNode p j := by
-        unfold jobNode; show u.val = p.K + (u.val - p.K); omega
+      have huj : u = jobNode p j := by
+        apply Fin.ext; unfold jobNode
+        show u.val = p.K + (u.val - p.K); omega
       have hji : j ≠ i := by
         intro heq
-        have : u.val = jobNode p i := by rw [huj, heq]
+        have : u = jobNode p i := by rw [huj, heq]
         rw [this] at hu; omega
       have hji_arc : v.x (jobNode p j) (jobNode p i) = 1 := by
         rw [← huj]; exact hu
       have hne_ji : jobNode p j ≠ jobNode p i := fun e => hji ((jobNode_injective p) e)
-      have hj_acc : v.x (jobNode p j) (jobNode p j) = 0 := by
-        have hjf_lt : jobNode p j < p.K + p.N := by unfold jobNode; omega
-        have hfin_ne :
-            (⟨jobNode p j, hjf_lt⟩ : Fin (p.K + p.N)) ≠
-            ⟨jobNode p i, hi_lt⟩ := by
-          intro heq; apply hne_ji
-          have := congrArg Fin.val heq; simpa using this
-        have := arc_forces_self_zero h
-          ⟨jobNode p j, hjf_lt⟩ ⟨jobNode p i, hi_lt⟩ hfin_ne (by simpa using hji_arc)
-        simpa using this
+      have hj_acc : v.x (jobNode p j) (jobNode p j) = 0 :=
+        arc_forces_self_zero h (jobNode p j) (jobNode p i) hne_ji hji_arc
       have hseq_ji := h.hseq j i hji_arc hj_acc
       have hdlt : v.δ j < v.δ i := by linarith [p.hd_pos j j, p.hd_pos j i]
       have hrk_j : rank p v.δ j < rank p v.δ i := rank_lt_of_delta_lt (p := p) hdlt
@@ -322,16 +307,8 @@ private lemma unique_job_successor {a b c : Fin p.N}
     (hab : v.x (jobNode p a) (jobNode p b) = 1)
     (hac : v.x (jobNode p a) (jobNode p c) = 1) : b = c := by
   by_contra hbc
-  have hb_lt : jobNode p b < p.K + p.N := by unfold jobNode; omega
-  have hc_lt : jobNode p c < p.K + p.N := by unfold jobNode; omega
-  have ha_lt : jobNode p a < p.K + p.N := by unfold jobNode; omega
-  have hne : (⟨jobNode p b, hb_lt⟩ : Fin (p.K + p.N)) ≠ ⟨jobNode p c, hc_lt⟩ := by
-    intro heq; apply hbc; apply (jobNode_injective p)
-    have := congrArg Fin.val heq; simpa using this
-  have hop := out_pair_le h ⟨jobNode p a, ha_lt⟩
-    ⟨jobNode p b, hb_lt⟩ ⟨jobNode p c, hc_lt⟩ hne
-  have h1 : v.x (jobNode p a) (jobNode p b) + v.x (jobNode p a) (jobNode p c) ≤ 1 := by
-    simpa using hop
+  have hne : jobNode p b ≠ jobNode p c := fun e => hbc ((jobNode_injective p) e)
+  have hop := out_pair_le h (jobNode p a) (jobNode p b) (jobNode p c) hne
   omega
 
 private lemma fork {a b c : Fin p.N}
@@ -373,55 +350,30 @@ private lemma same_truck_path {i l : Fin p.N}
       ∃ j₀ : Fin p.N, v.x (truckNode p k) (jobNode p j₀) = 1 ∧
         v.x (jobNode p j₀) (jobNode p j₀) = 0 ∧ RoutingPath p v.x j₀ l := by
     rw [← hk_l]; exact hl_path0
-  have hk_lt : truckNode p k < p.K + p.N := by unfold truckNode; omega
   rcases hi_path with hi_direct | ⟨j_i, hj_i_arc, hj_i_acc, hpath_i⟩ <;>
   rcases hl_path with hl_direct | ⟨j_l, hj_l_arc, hj_l_acc, hpath_l⟩
   · -- Both direct: unique successor at truck k forces i = l, contradiction with hne.
-    have hi_lt : jobNode p i < p.K + p.N := by unfold jobNode; omega
-    have hl_lt : jobNode p l < p.K + p.N := by unfold jobNode; omega
-    have hne_jij : (⟨jobNode p i, hi_lt⟩ : Fin (p.K + p.N)) ≠ ⟨jobNode p l, hl_lt⟩ := by
-      intro heq; apply hne; apply (jobNode_injective p)
-      have := congrArg Fin.val heq; simpa using this
-    have hop := out_pair_le h ⟨truckNode p k, hk_lt⟩
-      ⟨jobNode p i, hi_lt⟩ ⟨jobNode p l, hl_lt⟩ hne_jij
-    have h1 : v.x (truckNode p k) (jobNode p i) + v.x (truckNode p k) (jobNode p l) ≤ 1 := by
-      simpa using hop
+    have hne_jij : jobNode p i ≠ jobNode p l :=
+      fun e => hne ((jobNode_injective p) e)
+    have hop := out_pair_le h (truckNode p k) (jobNode p i) (jobNode p l) hne_jij
     omega
-  · have hi_lt : jobNode p i < p.K + p.N := by unfold jobNode; omega
-    have hjl_lt : jobNode p j_l < p.K + p.N := by unfold jobNode; omega
-    by_cases heq : i = j_l
+  · by_cases heq : i = j_l
     · subst heq; exact Or.inl hpath_l
-    · have hne' : (⟨jobNode p i, hi_lt⟩ : Fin (p.K + p.N)) ≠ ⟨jobNode p j_l, hjl_lt⟩ := by
-        intro hh; apply heq; apply (jobNode_injective p)
-        have := congrArg Fin.val hh; simpa using this
-      have hop := out_pair_le h ⟨truckNode p k, hk_lt⟩
-        ⟨jobNode p i, hi_lt⟩ ⟨jobNode p j_l, hjl_lt⟩ hne'
-      have h1 : v.x (truckNode p k) (jobNode p i) + v.x (truckNode p k) (jobNode p j_l) ≤ 1 := by
-        simpa using hop
+    · have hne' : jobNode p i ≠ jobNode p j_l :=
+        fun e => heq ((jobNode_injective p) e)
+      have hop := out_pair_le h (truckNode p k) (jobNode p i) (jobNode p j_l) hne'
       omega
-  · have hl_lt : jobNode p l < p.K + p.N := by unfold jobNode; omega
-    have hji_lt : jobNode p j_i < p.K + p.N := by unfold jobNode; omega
-    by_cases heq : l = j_i
+  · by_cases heq : l = j_i
     · subst heq; exact Or.inr hpath_i
-    · have hne' : (⟨jobNode p l, hl_lt⟩ : Fin (p.K + p.N)) ≠ ⟨jobNode p j_i, hji_lt⟩ := by
-        intro hh; apply heq; apply (jobNode_injective p)
-        have := congrArg Fin.val hh; simpa using this
-      have hop := out_pair_le h ⟨truckNode p k, hk_lt⟩
-        ⟨jobNode p l, hl_lt⟩ ⟨jobNode p j_i, hji_lt⟩ hne'
-      have h1 : v.x (truckNode p k) (jobNode p l) + v.x (truckNode p k) (jobNode p j_i) ≤ 1 := by
-        simpa using hop
+    · have hne' : jobNode p l ≠ jobNode p j_i :=
+        fun e => heq ((jobNode_injective p) e)
+      have hop := out_pair_le h (truckNode p k) (jobNode p l) (jobNode p j_i) hne'
       omega
-  · have hji_lt : jobNode p j_i < p.K + p.N := by unfold jobNode; omega
-    have hjl_lt : jobNode p j_l < p.K + p.N := by unfold jobNode; omega
-    by_cases heq : j_i = j_l
+  · by_cases heq : j_i = j_l
     · subst heq; exact fork h hpath_i hpath_l hne
-    · have hne' : (⟨jobNode p j_i, hji_lt⟩ : Fin (p.K + p.N)) ≠ ⟨jobNode p j_l, hjl_lt⟩ := by
-        intro hh; apply heq; apply (jobNode_injective p)
-        have := congrArg Fin.val hh; simpa using this
-      have hop := out_pair_le h ⟨truckNode p k, hk_lt⟩
-        ⟨jobNode p j_i, hji_lt⟩ ⟨jobNode p j_l, hjl_lt⟩ hne'
-      have h1 : v.x (truckNode p k) (jobNode p j_i) + v.x (truckNode p k) (jobNode p j_l) ≤ 1 := by
-        simpa using hop
+    · have hne' : jobNode p j_i ≠ jobNode p j_l :=
+        fun e => heq ((jobNode_injective p) e)
+      have hop := out_pair_le h (truckNode p k) (jobNode p j_i) (jobNode p j_l) hne'
       omega
 
 private lemma clique_accepted_le_KC (C : Finset (Fin p.N))
@@ -461,25 +413,24 @@ private lemma hec3_proof (C : Finset (Fin p.N))
     (hclique : ∀ i ∈ C, ∀ j ∈ C, i ≠ j →
       (i, j) ∈ P10.d.A_minus (paramMap p) ∧ (j, i) ∈ P10.d.A_minus (paramMap p)) :
     (C.card - (P10.d.KC (paramMap p) C).card : ℤ) ≤
-      ∑ i ∈ C, v.x (p.K + i) (p.K + i) := by
+      ∑ i ∈ C, v.x ⟨p.K + i.val, by have := i.isLt; omega⟩
+                    ⟨p.K + i.val, by have := i.isLt; omega⟩ := by
   have hinj := clique_accepted_le_KC h C hclique
   have hsum_lb :
       ((C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 1)).card : ℤ) ≤
-      ∑ i ∈ C, v.x (p.K + i.val) (p.K + i.val) := by
+      ∑ i ∈ C, v.x (jobNode p i) (jobNode p i) := by
     calc ((C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 1)).card : ℤ)
         = ∑ _i ∈ C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 1), (1 : ℤ) := by simp
       _ = ∑ i ∈ C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 1),
-            v.x (p.K + i.val) (p.K + i.val) := by
+            v.x (jobNode p i) (jobNode p i) := by
           apply sum_congr rfl
           intro i hi
           have h1 := (mem_filter.mp hi).2
-          unfold jobNode at h1
           exact h1.symm
-      _ ≤ ∑ i ∈ C, v.x (p.K + i.val) (p.K + i.val) := by
+      _ ≤ ∑ i ∈ C, v.x (jobNode p i) (jobNode p i) := by
           apply sum_le_sum_of_subset_of_nonneg (filter_subset _ C)
           intro i _ _
-          exact x_nn_nat h (p.K + i.val) (p.K + i.val)
-            (by have := i.isLt; omega) (by have := i.isLt; omega)
+          exact x_nn h (jobNode p i) (jobNode p i)
   have hcard : C.card =
       (C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 0)).card +
       (C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 1)).card := by
@@ -489,10 +440,9 @@ private lemma hec3_proof (C : Finset (Fin p.N))
       ext a; simp only [mem_union, mem_filter]
       refine ⟨?_, ?_⟩
       · intro ha
-        have ha_lt : jobNode p a < p.K + p.N := by unfold jobNode; omega
-        rcases h.hx_bin ⟨jobNode p a, ha_lt⟩ ⟨jobNode p a, ha_lt⟩ with h0 | h1
-        · left; exact ⟨ha, by simpa using h0⟩
-        · right; exact ⟨ha, by simpa using h1⟩
+        rcases h.hx_bin (jobNode p a) (jobNode p a) with h0 | h1
+        · left; exact ⟨ha, h0⟩
+        · right; exact ⟨ha, h1⟩
       · rintro (⟨ha, _⟩ | ⟨ha, _⟩) <;> exact ha
     have hdisj :
         Disjoint (C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 0))
@@ -502,7 +452,7 @@ private lemma hec3_proof (C : Finset (Fin p.N))
     conv_lhs => rw [hpart]
     exact card_union_of_disjoint hdisj
   have main : (C.card : ℤ) - (P10.d.KC (paramMap p) C).card ≤
-      ∑ i ∈ C, v.x (p.K + i.val) (p.K + i.val) := by
+      ∑ i ∈ C, v.x (jobNode p i) (jobNode p i) := by
     have h1 : (C.card : ℤ) =
         ((C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 0)).card : ℤ) +
         ((C.filter (fun i => v.x (jobNode p i) (jobNode p i) = 1)).card : ℤ) := by
@@ -520,11 +470,11 @@ end ForwardHelpers
 
 /-- **P10.a → P10.d**: identity on variables. The new EC3 constraint `hec3` is
 derived by a `truckOf` injection from accepted clique jobs into K(C). -/
-private def fwd (_ : P10.a.Params) (v : P10.a.Vars) : P10.d.Vars :=
+private def fwd (p : P10.a.Params) (v : P10.a.Vars p) : P10.d.Vars (paramMap p) :=
   { x := v.x
     δ := v.δ }
 
-private lemma fwd_feas (p : P10.a.Params) (v : P10.a.Vars)
+private lemma fwd_feas (p : P10.a.Params) (v : P10.a.Vars p)
     (h : P10.a.Feasible p v) :
     P10.d.Feasible (paramMap p) (fwd p v) := by
   exact
@@ -542,11 +492,11 @@ private lemma fwd_feas (p : P10.a.Params) (v : P10.a.Vars)
 -- ============================================================================
 
 /-- **P10.d → P10.a**: identity on variables. Drop the `hec3` constraint. -/
-private def bwd (_ : P10.a.Params) (v : P10.d.Vars) : P10.a.Vars :=
+private def bwd (p : P10.a.Params) (v : P10.d.Vars (paramMap p)) : P10.a.Vars p :=
   { x := v.x
     δ := v.δ }
 
-private lemma bwd_feas (p : P10.a.Params) (v : P10.d.Vars)
+private lemma bwd_feas (p : P10.a.Params) (v : P10.d.Vars (paramMap p))
     (h : P10.d.Feasible (paramMap p) v) :
     P10.a.Feasible p (bwd p v) := by
   exact

@@ -38,22 +38,23 @@ def A_minus (p : Params) : Set (Fin p.N × Fin p.N) :=
 def F₂ (p : Params) : Set (Fin p.N × Fin p.N) :=
   {pr | pr.1 ≠ pr.2 ∧ (pr.1, pr.2) ∉ A_minus p ∧ (pr.2, pr.1) ∉ A_minus p}
 
-structure Vars where
-  x : ℕ → ℕ → ℤ -- arc indicator
-  δ : ℕ → ℝ -- arrival time
+structure Vars (p : Params) where
+  x : Fin (p.K + p.N) → Fin (p.K + p.N) → ℤ -- arc indicator
+  δ : Fin p.N → ℝ -- arrival time
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Each node has exactly one outgoing arc
   hout : ∀ u : Fin (p.K + p.N), ∑ w : Fin (p.K + p.N), v.x u w = 1
   -- Each node has exactly one incoming arc
   hin : ∀ u : Fin (p.K + p.N), ∑ w : Fin (p.K + p.N), v.x w u = 1
   -- Arrival time lower bound at each job
   harrival : ∀ i : Fin p.N,
-    v.δ i ≥ ∑ k : Fin p.K, (p.d0 k i + p.v k) * (v.x k (p.K + i) : ℝ)
+    v.δ i ≥ ∑ k : Fin p.K, (p.d0 k i + p.v k) *
+      (v.x ⟨k.val, by omega⟩ ⟨p.K + i.val, by omega⟩ : ℝ)
   -- Arrival time propagation between consecutive jobs
   hseq : ∀ i j : Fin p.N,
-    v.x (p.K + i) (p.K + j) = 1 →
-    v.x (p.K + i) (p.K + i) = 0 →
+    v.x ⟨p.K + i.val, by omega⟩ ⟨p.K + j.val, by omega⟩ = 1 →
+    v.x ⟨p.K + i.val, by omega⟩ ⟨p.K + i.val, by omega⟩ = 0 →
     v.δ j ≥ v.δ i + p.d i i + p.d i j
   -- Time window bounds
   htw_min : ∀ i : Fin p.N, p.τ_min i ≤ v.δ i
@@ -61,14 +62,18 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hx_bin : ∀ u w : Fin (p.K + p.N), v.x u w = 0 ∨ v.x u w = 1
   -- EC2: For each mutually feasible pair, at most one direction or a rejection of i
   hec2 : ∀ i j : Fin p.N, (i, j) ∈ F₂ p →
-    v.x (p.K + i) (p.K + j) + v.x (p.K + j) (p.K + i)
-      + v.x (p.K + i) (p.K + i) ≤ 1
+    v.x ⟨p.K + i.val, by omega⟩ ⟨p.K + j.val, by omega⟩
+      + v.x ⟨p.K + j.val, by omega⟩ ⟨p.K + i.val, by omega⟩
+      + v.x ⟨p.K + i.val, by omega⟩ ⟨p.K + i.val, by omega⟩ ≤ 1
 
 -- Minimize total routing cost
-def obj (p : Params) (v : Vars) : ℝ :=
-  (∑ k : Fin p.K, ∑ i : Fin p.N, p.d0 k i * (v.x k (p.K + i) : ℝ))
-  + (∑ i : Fin p.N, ∑ j : Fin p.N, p.d i j * (v.x (p.K + i) (p.K + j) : ℝ))
-  + (∑ i : Fin p.N, ∑ k : Fin p.K, p.dH k i * (v.x (p.K + i) k : ℝ))
+def obj (p : Params) (v : Vars p) : ℝ :=
+  (∑ k : Fin p.K, ∑ i : Fin p.N, p.d0 k i *
+    (v.x ⟨k.val, by omega⟩ ⟨p.K + i.val, by omega⟩ : ℝ))
+  + (∑ i : Fin p.N, ∑ j : Fin p.N, p.d i j *
+    (v.x ⟨p.K + i.val, by omega⟩ ⟨p.K + j.val, by omega⟩ : ℝ))
+  + (∑ i : Fin p.N, ∑ k : Fin p.K, p.dH k i *
+    (v.x ⟨p.K + i.val, by omega⟩ ⟨k.val, by omega⟩ : ℝ))
 
 def formulation : MILPFormulation where
   Params   := Params

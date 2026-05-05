@@ -38,7 +38,7 @@ private def paramMap (p : P10.a.Params) : P10.b.Params :=
 
 section ForwardHelpers
 
-variable {p : P10.a.Params} {v : P10.a.Vars} (h : P10.a.Feasible p v)
+variable {p : P10.a.Params} {v : P10.a.Vars p} (h : P10.a.Feasible p v)
 include h
 
 /-- Arc variables are non-negative. -/
@@ -81,7 +81,7 @@ private lemma arc_forces_self_zero (u t : Fin (p.K + p.N)) (hut : u ≠ t)
   omega
 
 /-- Number of jobs with strictly earlier arrival time than i. -/
-private noncomputable def rank (δ : ℕ → ℝ) (i : Fin p.N) : ℕ :=
+private noncomputable def rank (δ : Fin p.N → ℝ) (i : Fin p.N) : ℕ :=
   (univ.filter (fun j : Fin p.N => δ j < δ i)).card
 
 omit h in
@@ -103,12 +103,14 @@ private lemma rank_lt {i j : Fin p.N} (hdlt : v.δ j < v.δ i) :
 /-- If job `i`'s self-loop is zero, then some truck `k` satisfies
     `v_k + d0(k,i) ≤ δ_i`. -/
 private lemma reach_truck (i : Fin p.N)
-    (hi : v.x (p.K + i) (p.K + i) = 0) :
+    (hi : v.x ⟨p.K + i.val, by have := i.isLt; omega⟩
+            ⟨p.K + i.val, by have := i.isLt; omega⟩ = 0) :
     ∃ k : Fin p.K, p.v k + p.d0 k i ≤ v.δ i := by
   haveI := p.hK
   haveI := p.hN
   suffices hind : ∀ n (i : Fin p.N), rank (p := p) v.δ i < n →
-      v.x (p.K + i) (p.K + i) = 0 →
+      v.x ⟨p.K + i.val, by have := i.isLt; omega⟩
+          ⟨p.K + i.val, by have := i.isLt; omega⟩ = 0 →
       ∃ k : Fin p.K, p.v k + p.d0 k i ≤ v.δ i from
     hind (rank (p := p) v.δ i + 1) i (Nat.lt_succ_self _) hi
   intro n
@@ -140,14 +142,16 @@ private lemma reach_truck (i : Fin p.N)
       set ku : Fin p.K := ⟨u.val, hlt⟩ with hku_def
       refine ⟨ku, ?_⟩
       have harrival := h.harrival i
-      have hu_eq : v.x u.val (p.K + i.val) = 1 := hu
+      have hu_eq : v.x ⟨ku.val, by have := ku.isLt; omega⟩ Ji = 1 := by
+        have : (⟨ku.val, by have := ku.isLt; omega⟩ : Fin (p.K + p.N)) = u := Fin.ext rfl
+        rw [this]; exact hu
       -- Compute the sum: only k = ku contributes.
       have hsum_eq : ∑ k : Fin p.K, (p.d0 k i + p.v k) *
-          (v.x k.val (p.K + i.val) : ℝ) =
+          (v.x ⟨k.val, by have := k.isLt; omega⟩ Ji : ℝ) =
           p.d0 ku i + p.v ku := by
         rw [sum_eq_single ku]
-        · have hxk : v.x ku.val (p.K + i.val) = 1 := hu_eq
-          rw [show (v.x ku.val (p.K + i.val) : ℝ) = 1 from by exact_mod_cast hxk]
+        · rw [show (v.x ⟨ku.val, by have := ku.isLt; omega⟩ Ji : ℝ) = 1 from by
+            exact_mod_cast hu_eq]
           ring
         · intro k _ hkne
           have hkfin : (⟨k.val, by have := k.isLt; omega⟩ : Fin (p.K + p.N)) ≠ u := by
@@ -157,13 +161,13 @@ private lemma reach_truck (i : Fin p.N)
             have hval : (⟨k.val, by have := k.isLt; omega⟩ : Fin (p.K + p.N)).val
                 = u.val := by rw [heq]
             simpa [hku_def] using hval
-          have hzero : v.x k.val (p.K + i.val) = 0 :=
+          have hzero : v.x ⟨k.val, by have := k.isLt; omega⟩ Ji = 0 :=
             hpred_uniq ⟨k.val, by have := k.isLt; omega⟩ hkfin
-          rw [show (v.x k.val (p.K + i.val) : ℝ) = 0 from by exact_mod_cast hzero]
+          rw [show (v.x ⟨k.val, by have := k.isLt; omega⟩ Ji : ℝ) = 0 from by
+            exact_mod_cast hzero]
           ring
         · simp
-      have hku_val : (ku : ℕ) = u.val := rfl
-      -- harrival uses (v.x ↑k (p.K + ↑i)) where ↑k = k.val
+      -- harrival uses v.x ⟨k.val, _⟩ ⟨p.K + i.val, _⟩ which equals v.x ⟨k.val,_⟩ Ji
       linarith
     · -- Job case: u = jobNode for some j
       have hu_lt : u.val < p.K + p.N := u.isLt
@@ -171,19 +175,21 @@ private lemma reach_truck (i : Fin p.N)
       set j : Fin p.N := ⟨u.val - p.K, hlt2⟩ with hj_def
       have huj_val : u.val = p.K + j.val := by
         show u.val = p.K + (u.val - p.K); omega
+      have hu_eq_Jj : u = ⟨p.K + j.val, by have := j.isLt; omega⟩ := Fin.ext huj_val
       have hji : j ≠ i := by
         intro heq
-        -- If j = i then u = (p.K + i) = Ji, but v.x Ji Ji = 0 contradicts v.x u Ji = 1.
         have hu_eq_Ji : u = Ji := by
           apply Fin.ext
           show u.val = p.K + i.val
           rw [huj_val, heq]
         rw [hu_eq_Ji] at hu
         -- hu : v.x Ji Ji = 1, but hacc says it's 0
-        have : v.x (p.K + i.val) (p.K + i.val) = 1 := hu
+        have : v.x ⟨p.K + i.val, by have := i.isLt; omega⟩
+            ⟨p.K + i.val, by have := i.isLt; omega⟩ = 1 := hu
         omega
-      have hji_arc : v.x (p.K + j.val) (p.K + i.val) = 1 := by
-        rw [← huj_val]; exact hu
+      have hji_arc : v.x ⟨p.K + j.val, by have := j.isLt; omega⟩
+          ⟨p.K + i.val, by have := i.isLt; omega⟩ = 1 := by
+        rw [← hu_eq_Jj]; exact hu
       have hne_uJi : u ≠ Ji := by
         intro heq
         have : u.val = Ji.val := by rw [heq]
@@ -192,9 +198,10 @@ private lemma reach_truck (i : Fin p.N)
           have hJiv : (Ji : ℕ) = p.K + i.val := rfl
           omega
         exact hji (Fin.ext this)
-      have hj_acc : v.x (p.K + j.val) (p.K + j.val) = 0 := by
+      have hj_acc : v.x ⟨p.K + j.val, by have := j.isLt; omega⟩
+          ⟨p.K + j.val, by have := j.isLt; omega⟩ = 0 := by
         have huu : v.x u u = 0 := arc_forces_self_zero h u Ji hne_uJi hu
-        rw [← huj_val]; exact huu
+        rw [hu_eq_Jj] at huu; exact huu
       have hseq_ji := h.hseq j i hji_arc hj_acc
       have hdlt : v.δ j < v.δ i := by
         have hdjj := p.hd_pos j j
@@ -210,7 +217,8 @@ private lemma reach_truck (i : Fin p.N)
 
 /-- Arrival time is at least the earliest start time. -/
 private lemma EST_le_delta (i : Fin p.N)
-    (hi : v.x (p.K + i) (p.K + i) = 0) :
+    (hi : v.x ⟨p.K + i.val, by have := i.isLt; omega⟩
+            ⟨p.K + i.val, by have := i.isLt; omega⟩ = 0) :
     P10.b.EST (paramMap p) i ≤ v.δ i := by
   haveI := p.hK
   -- (paramMap p).N = p.N, but i : Fin p.N — need a cast for EST.
@@ -226,7 +234,8 @@ private lemma EST_le_delta (i : Fin p.N)
 /-- The EC1 cut is implied by the existing constraints. -/
 private lemma hec1_proof : ∀ i j : Fin p.N,
     (i, j) ∈ P10.b.A_minus (paramMap p) →
-    v.x (p.K + i) (p.K + j) = 0 := by
+    v.x ⟨p.K + i.val, by have := i.isLt; omega⟩
+        ⟨p.K + j.val, by have := j.isLt; omega⟩ = 0 := by
   intro i j hmem
   obtain ⟨hij, hinfeas⟩ := hmem
   set Ji : Fin (p.K + p.N) := ⟨p.K + i.val, by have := i.isLt; omega⟩ with hJi
@@ -235,20 +244,18 @@ private lemma hec1_proof : ∀ i j : Fin p.N,
     intro heq
     apply hij
     have hval : (Ji : ℕ) = (Jj : ℕ) := congrArg Fin.val heq
-    -- Ji.val = p.K + i.val, Jj.val = p.K + j.val
     have hkij : p.K + (i : ℕ) = p.K + (j : ℕ) := hval
     have : (i : ℕ) = (j : ℕ) := Nat.add_left_cancel hkij
     exact Fin.ext this
   rcases h.hx_bin Ji Jj with h0 | h1
   · exact h0
   · exfalso
-    -- h1 : v.x (p.K + i) (p.K + j) = 1
-    have hself : v.x (p.K + i.val) (p.K + i.val) = 0 :=
+    have hself : v.x ⟨p.K + i.val, by have := i.isLt; omega⟩
+        ⟨p.K + i.val, by have := i.isLt; omega⟩ = 0 :=
       arc_forces_self_zero h _ _ hne h1
     have hseq := h.hseq i j h1 hself
     have htw := h.htw_max j
     have hest := EST_le_delta h i hself
-    -- hinfeas mentions (paramMap p).τ_max j, .d, etc — they equal p.τ_max j, p.d
     have hinfeas' : p.τ_max j < P10.b.EST (paramMap p) i + p.d i i + p.d i j := hinfeas
     linarith
 
@@ -258,11 +265,11 @@ end ForwardHelpers
 **P10.a → P10.b**: identity on variables. The new EC1 cut is derived from the
 existing time-window and arrival-propagation constraints.
 -/
-private def fwd (_ : P10.a.Params) (v : P10.a.Vars) : P10.b.Vars :=
+private def fwd (p : P10.a.Params) (v : P10.a.Vars p) : P10.b.Vars (paramMap p) :=
   { x := v.x
     δ := v.δ }
 
-private lemma fwd_feas (p : P10.a.Params) (v : P10.a.Vars)
+private lemma fwd_feas (p : P10.a.Params) (v : P10.a.Vars p)
     (h : P10.a.Feasible p v) :
     P10.b.Feasible (paramMap p) (fwd p v) := by
   exact
@@ -282,11 +289,11 @@ private lemma fwd_feas (p : P10.a.Params) (v : P10.a.Vars)
 /--
 **P10.b → P10.a**: identity on variables. Drop the EC1 constraint.
 -/
-private def bwd (_ : P10.a.Params) (v : P10.b.Vars) : P10.a.Vars :=
+private def bwd (p : P10.a.Params) (v : P10.b.Vars (paramMap p)) : P10.a.Vars p :=
   { x := v.x
     δ := v.δ }
 
-private lemma bwd_feas (p : P10.a.Params) (v : P10.b.Vars)
+private lemma bwd_feas (p : P10.a.Params) (v : P10.b.Vars (paramMap p))
     (h : P10.b.Feasible (paramMap p) v) :
     P10.a.Feasible p (bwd p v) := by
   exact
