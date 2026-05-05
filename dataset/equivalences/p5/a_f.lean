@@ -25,13 +25,13 @@ private def paramMap (p : P5.a.Params) : P5.f.Params :=
 -- ============================================================================
 
 -- Each bag count is placed entirely in the first part; second part is zero
-private def fwd (_ : P5.a.Params) (v : P5.a.Vars) : P5.f.Vars :=
+private def fwd (p : P5.a.Params) (v : P5.a.Vars p) : P5.f.Vars (paramMap p) :=
   { d1 := v.TopsoilBags
     d2 := 0
     h1 := v.SubsoilBags
     h2 := 0 }
 
-private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
+private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars p)
     (h : P5.a.Feasible p v) :
     P5.f.Feasible (paramMap p) (fwd p v) := by
   refine ⟨?_, ?_, ?_, h.hts_nn, le_refl 0, h.hss_nn, le_refl 0⟩
@@ -44,11 +44,11 @@ private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
 -- ============================================================================
 
 -- Both parts are summed to recover the original bag counts
-private def bwd (_ : P5.a.Params) (v : P5.f.Vars) : P5.a.Vars :=
+private def bwd (p : P5.a.Params) (v : P5.f.Vars (paramMap p)) : P5.a.Vars p :=
   { SubsoilBags := v.h1 + v.h2
     TopsoilBags := v.d1 + v.d2 }
 
-private lemma bwd_feas (p : P5.a.Params) (v : P5.f.Vars)
+private lemma bwd_feas (p : P5.a.Params) (v : P5.f.Vars (paramMap p))
     (h : P5.f.Feasible (paramMap p) v) :
     P5.a.Feasible p (bwd p v) := by
   simp only [bwd]

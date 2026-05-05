@@ -10,7 +10,6 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
-
 -- ============================================================================
 -- § Parameter Mapping
 -- ============================================================================
@@ -64,30 +63,24 @@ private def paramMap (p : P11.a.Params) : P11.d.Params :=
     hD_pos     := p.hD_pos
     hMR_bin    := p.hMR_bin }
 
+private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.d.Vars (paramMap p) :=
+  { u      := V.u
+    v      := V.v
+    w      := V.w
+    d_su   := V.d_su
+    lam    := V.lam
+    p      := V.p
+    r      := V.r
+    c_var  := V.c_var
+    p_wind := V.p_wind
 -- ============================================================================
 -- § Forward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.a → P11.d**: identity on all variables; `P_bar` is set to `0`, which
-trivially satisfies the EC2b upper bound since the RHS is nonnegative
-(combining `hcap_sd`, `hPmin_nn`, and binary `u`).
--/
-private def fwd (_ : P11.a.Params) (v : P11.a.Vars) : P11.d.Vars :=
-  { u      := v.u
-    v      := v.v
-    w      := v.w
-    d_su   := v.d_su
-    lam    := v.lam
-    p      := v.p
-    r      := v.r
-    c_var  := v.c_var
-    p_wind := v.p_wind
     P_bar  := fun _ _ => 0 }
 
-private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
-    (h : P11.a.Feasible p v) :
-    P11.d.Feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
+    (h : P11.a.Feasible p V) :
+    P11.d.Feasible (paramMap p) (fwd p V) := by
   refine
     { hdemand     := h.hdemand
       hreserve    := h.hreserve
@@ -119,32 +112,28 @@ private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
   case hec2b =>
     intro g t ht
     show (0 : ℝ) ≤
-      p.P_max g * (v.u g.val t.val : ℝ) - max (p.P_max g - p.SD g) 0 * (v.w g.val (t.val + 1) : ℝ)
+      p.P_max g * (V.u g t : ℝ) -
+        max (p.P_max g - p.SD g) 0 * (V.w g ⟨t.val + 1, ht⟩ : ℝ)
     have hcap := h.hcap_sd g t ht
     have hpnn := h.hp_nn g t
     have hrnn := h.hr_nn g t
     have hPmin := p.hPmin_nn g
-    have hu_nn : (0 : ℝ) ≤ (v.u g.val t.val : ℝ) := by
+    have hu_nn : (0 : ℝ) ≤ (V.u g t : ℝ) := by
       rcases h.hu_bin g t with hu0 | hu1
       · rw [hu0]; simp
       · rw [hu1]; norm_num
     have h1 : (0 : ℝ) ≤
-        (p.P_max g - p.P_min g) * (v.u g.val t.val : ℝ) -
-          max (p.P_max g - p.SD g) 0 * (v.w g.val (t.val + 1) : ℝ) := by
+        (p.P_max g - p.P_min g) * (V.u g t : ℝ) -
+          max (p.P_max g - p.SD g) 0 * (V.w g ⟨t.val + 1, ht⟩ : ℝ) := by
       linarith
-    have h2 : (0 : ℝ) ≤ p.P_min g * (v.u g.val t.val : ℝ) :=
+    have h2 : (0 : ℝ) ≤ p.P_min g * (V.u g t : ℝ) :=
       mul_nonneg hPmin hu_nn
     linarith [h1, h2]
 
+private def bwd (p : P11.a.Params) (v : P11.d.Vars (paramMap p)) : P11.a.Vars p :=
 -- ============================================================================
 -- § Backward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.d → P11.a**: drop the `P_bar` auxiliary variable; all other variables are
-carried over unchanged.
--/
-private def bwd (_ : P11.a.Params) (v : P11.d.Vars) : P11.a.Vars :=
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -155,7 +144,7 @@ private def bwd (_ : P11.a.Params) (v : P11.d.Vars) : P11.a.Vars :=
     c_var  := v.c_var
     p_wind := v.p_wind }
 
-private lemma bwd_feas (p : P11.a.Params) (v : P11.d.Vars)
+private lemma bwd_feas (p : P11.a.Params) (v : P11.d.Vars (paramMap p))
     (h : P11.d.Feasible (paramMap p) v) :
     P11.a.Feasible p (bwd p v) := by
   exact
@@ -189,7 +178,6 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.d.Vars)
 -- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
-
 def aDEquiv : MILPReformulation P11.a.formulation P11.d.formulation where
   paramMap    := paramMap
   fwd         := fwd

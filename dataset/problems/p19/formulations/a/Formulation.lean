@@ -26,11 +26,11 @@ structure Params where
   hC_nn : ∀ h : Fin nH, ∀ c : Fin nC, 0 ≤ C h c
   ht_nn : ∀ h : Fin nH, ∀ c : Fin nC, 0 ≤ t h c
 
-structure Vars where
-  x : ℕ → ℕ → ℝ  -- supply fraction from hub to region
-  y : ℕ → ℤ  -- hub-open indicator (binary)
+structure Vars (p : Params) where
+  x : Fin p.nH → Fin p.nC → ℝ  -- supply fraction from hub to region
+  y : Fin p.nH → ℤ  -- hub-open indicator (binary)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Each hub can serve regions only if it is open
   hcap : ∀ h : Fin p.nH, ∑ c : Fin p.nC, v.x h c ≤ (p.nC : ℝ) * (v.y h : ℝ)
   -- Each disaster region's demand must be fully supplied
@@ -45,7 +45,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hy_bin : ∀ h : Fin p.nH, v.y h = 0 ∨ v.y h = 1
 
 -- Minimize total per-person-weighted transportation cost
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   ∑ h : Fin p.nH, ∑ c : Fin p.nC, p.a c * p.C h c * v.x h c
 
 def formulation : MILPFormulation where

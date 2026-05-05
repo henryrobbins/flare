@@ -47,11 +47,11 @@ structure Params where
   hs_nn : ∀ i : Fin nI, 0 ≤ s i
   ho_nn : ∀ h : Fin nH, 0 ≤ o h
 
-structure Vars where
-  x : ℕ → ℕ → ℕ → ℤ  -- binary: floor k uses configuration v with owner h; indexed (k, v, h)
-  y : ℕ → ℕ → ℕ → ℕ → ℕ → ℤ  -- binary: apartment a on floor k (config v, owner h) in sector i; indexed (k, v, h, i, a)
+structure Vars (p : Params) where
+  x : Fin p.nK → Fin p.nV → Fin p.nH → ℤ  -- binary: floor k uses configuration v with owner h; indexed (k, v, h)
+  y : Fin p.nK → Fin p.nV → Fin p.nH → Fin p.nI → Fin p.nA → ℤ  -- binary: apartment a on floor k (config v, owner h) in sector i; indexed (k, v, h, i, a)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Each floor has exactly one configuration and owner
   hfloor : ∀ k : Fin p.nK,
     ∑ cfg : Fin p.nV, ∑ h : Fin p.nH, v.x k cfg h = 1
@@ -83,7 +83,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   -- Corporations cannot own free sector apartments
   hno_free_corp : ∀ (k : Fin p.nK) (cfg : Fin p.nV) (a : Fin p.nA),
     a ∈ apts p.cap cfg p.nA →
-    v.y k cfg p.hCorp p.iFree a = 0
+    v.y k cfg ⟨p.hCorp, p.hhCorp⟩ ⟨p.iFree, p.hiFree⟩ a = 0
   -- Minimum ownership fraction requirements
   howner_pct : ∀ h : Fin p.nH,
     (∑ k : Fin p.nK, ∑ cfg : Fin p.nV,
@@ -97,7 +97,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
     v.y k cfg h i a = 0 ∨ v.y k cfg h i a = 1
 
 -- Maximize total profit from apartment assignments
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ k : Fin p.nK, ∑ cfg : Fin p.nV, ∑ h : Fin p.nH, ∑ i : Fin p.nI,
       ∑ a ∈ apts p.cap cfg p.nA,
         p.pProfit i (p.jApt cfg a) h * (v.y k cfg h i a : ℝ))

@@ -10,7 +10,6 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
-
 -- ============================================================================
 -- § Parameter Mapping
 -- ============================================================================
@@ -64,30 +63,24 @@ private def paramMap (p : P11.a.Params) : P11.f.Params :=
     hD_pos     := p.hD_pos
     hMR_bin    := p.hMR_bin }
 
+private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.f.Vars (paramMap p) :=
+  { u     := V.u
+    v     := V.v
+    w     := V.w
+    d_su  := V.d_su
+    lam   := V.lam
+    p     := V.p
+    r     := V.r
+    c_var  := V.c_var
+    p_wind := V.p_wind
 -- ============================================================================
 -- § Forward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.a → P11.f**: identity on all variables; the new auxiliary variable
-`P_bar` is set to `0`, which trivially satisfies the EC3a upper bound since
-the right-hand side is nonnegative.
--/
-private def fwd (_ : P11.a.Params) (v : P11.a.Vars) : P11.f.Vars :=
-  { u     := v.u
-    v     := v.v
-    w     := v.w
-    d_su  := v.d_su
-    lam   := v.lam
-    p     := v.p
-    r     := v.r
-    c_var  := v.c_var
-    p_wind := v.p_wind
     P_bar  := fun _ _ => 0 }
 
-private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
-    (h : P11.a.Feasible p v) :
-    P11.f.Feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
+    (h : P11.a.Feasible p V) :
+    P11.f.Feasible (paramMap p) (fwd p V) := by
   refine
     { hdemand     := h.hdemand
       hreserve    := h.hreserve
@@ -118,41 +111,38 @@ private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
       hec3a       := ?hec3a }
   case hec3a =>
     intro g t ht
-    have hnT : t.val < p.nT := t.isLt
+    have ht_lt : t.val < p.nT := t.isLt
     -- RHS: P_min g * u_t + p_{t-1} + RU g + (P_max - P_min) * (1 - u_{t-1})
     -- All terms are nonnegative; LHS (P_bar) is 0.
     show (0 : ℝ) ≤
-      p.P_min g * (v.u g.val t.val : ℝ) + v.p g.val (t.val - 1) + p.RU g +
-        (p.P_max g - p.P_min g) * (1 - (v.u g.val (t.val - 1) : ℝ))
+      p.P_min g * (V.u g t : ℝ) + V.p g ⟨t.val - 1, by omega⟩ + p.RU g +
+        (p.P_max g - p.P_min g) * (1 - (V.u g ⟨t.val - 1, by omega⟩ : ℝ))
     have hPmin_nn := p.hPmin_nn g
     have hPmax_ge := p.hPmax_ge g
     have hRU_nn := p.hRU_nn g
     have hp_nn := h.hp_nn g ⟨t.val - 1, by omega⟩
-    have hu_t : (0 : ℝ) ≤ (v.u g.val t.val : ℝ) := by
+    have hu_t : (0 : ℝ) ≤ (V.u g t : ℝ) := by
       rcases h.hu_bin g t with h0 | h1
-      · rw [show (v.u g.val t.val : ℝ) = 0 by exact_mod_cast h0]
-      · rw [show (v.u g.val t.val : ℝ) = 1 by exact_mod_cast h1]; norm_num
-    have hu_prev : (v.u g.val (t.val - 1) : ℝ) = 0 ∨ (v.u g.val (t.val - 1) : ℝ) = 1 := by
+      · rw [show (V.u g t : ℝ) = 0 by exact_mod_cast h0]
+      · rw [show (V.u g t : ℝ) = 1 by exact_mod_cast h1]; norm_num
+    have hu_prev : (V.u g ⟨t.val - 1, by omega⟩ : ℝ) = 0 ∨
+        (V.u g ⟨t.val - 1, by omega⟩ : ℝ) = 1 := by
       rcases h.hu_bin g ⟨t.val - 1, by omega⟩ with h0 | h1
       · left; exact_mod_cast h0
       · right; exact_mod_cast h1
-    have h1 : 0 ≤ p.P_min g * (v.u g.val t.val : ℝ) := mul_nonneg hPmin_nn hu_t
-    have h2 : 0 ≤ (p.P_max g - p.P_min g) * (1 - (v.u g.val (t.val - 1) : ℝ)) := by
+    have h1 : 0 ≤ p.P_min g * (V.u g t : ℝ) := mul_nonneg hPmin_nn hu_t
+    have h2 : 0 ≤ (p.P_max g - p.P_min g) *
+        (1 - (V.u g ⟨t.val - 1, by omega⟩ : ℝ)) := by
       apply mul_nonneg (by linarith)
       rcases hu_prev with hp0 | hp1
       · rw [hp0]; linarith
       · rw [hp1]; linarith
     linarith
 
+private def bwd (p : P11.a.Params) (v : P11.f.Vars (paramMap p)) : P11.a.Vars p :=
 -- ============================================================================
 -- § Backward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.f → P11.a**: drop the `P_bar` auxiliary variable; all other variables
-are carried over unchanged.
--/
-private def bwd (_ : P11.a.Params) (v : P11.f.Vars) : P11.a.Vars :=
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -163,7 +153,7 @@ private def bwd (_ : P11.a.Params) (v : P11.f.Vars) : P11.a.Vars :=
     c_var  := v.c_var
     p_wind := v.p_wind }
 
-private lemma bwd_feas (p : P11.a.Params) (v : P11.f.Vars)
+private lemma bwd_feas (p : P11.a.Params) (v : P11.f.Vars (paramMap p))
     (h : P11.f.Feasible (paramMap p) v) :
     P11.a.Feasible p (bwd p v) := by
   exact
@@ -197,7 +187,6 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.f.Vars)
 -- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
-
 def aFEquiv : MILPReformulation P11.a.formulation P11.f.formulation where
   paramMap    := paramMap
   fwd         := fwd

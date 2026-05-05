@@ -35,10 +35,10 @@ structure Params where
   hPC : PC_min ≤ PC_max
   hMC : MC_min ≤ MC_max
 
-structure Vars where
-  x : ℕ → ℕ → ℤ  -- 1 if block i is mined in period t, 0 otherwise
+structure Vars (P : Params) where
+  x : Fin P.n → Fin P.T → ℤ  -- 1 if block i is mined in period t, 0 otherwise
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Upper grade blending constraint
   hgrade_hi : ∀ t : Fin p.T,
     ∑ i : Fin p.n, (p.g i - p.G_max) * p.O i * (v.x i t : ℝ) ≤ 0
@@ -67,7 +67,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hx_bin : ∀ i : Fin p.n, ∀ t : Fin p.T, v.x i t = 0 ∨ v.x i t = 1
 
 -- Maximize total NPV (negated for minimization convention)
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ t : Fin p.T, ∑ i : Fin p.n, p.c i t * (v.x i t : ℝ))
 
 def formulation : MILPFormulation where

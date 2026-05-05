@@ -17,11 +17,11 @@ structure Params where
   hMinEmployeesToTransport_nn : 0 ≤ MinEmployeesToTransport
   hMaxBuses_nn : 0 ≤ MaxBuses
 
-structure Vars where
+structure Vars (p : Params) where
   xCars : ℤ  -- number of cars used
   xBuses : ℤ  -- number of buses used
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Transport at least MinEmployeesToTransport employees
   htransport : p.MinEmployeesToTransport ≤ (v.xCars : ℝ) * (p.CarCapacity : ℝ) + (v.xBuses : ℝ) * (p.BusCapacity : ℝ)
   -- Use at most MaxBuses buses
@@ -31,7 +31,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hbus_nn : 0 ≤ v.xBuses
 
 -- Minimize total pollution
-def obj (p : Params) (v : Vars) : ℝ := (v.xCars : ℝ) * p.CarPollution + (v.xBuses : ℝ) * p.BusPollution
+def obj (p : Params) (v : Vars p) : ℝ := (v.xCars : ℝ) * p.CarPollution + (v.xBuses : ℝ) * p.BusPollution
 
 def formulation : MILPFormulation where
   Params   := Params

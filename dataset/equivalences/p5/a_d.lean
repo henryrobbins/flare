@@ -25,12 +25,12 @@ private def paramMap (p : P5.a.Params) : P5.d.Params :=
 -- ============================================================================
 
 -- zed is set to the total water cost so it satisfies the auxiliary constraint
-private def fwd (p : P5.a.Params) (v : P5.a.Vars) : P5.d.Vars :=
+private def fwd (p : P5.a.Params) (v : P5.a.Vars p) : P5.d.Vars (paramMap p) :=
   { h   := v.SubsoilBags
     d   := v.TopsoilBags
     zed := p.WaterSubsoil * (v.SubsoilBags : ℝ) + p.WaterTopsoil * v.TopsoilBags }
 
-private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
+private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars p)
     (h : P5.a.Feasible p v) :
     P5.d.Feasible (paramMap p) (fwd p v) := by
   refine ⟨rfl, h.hprop, ?_, h.hmin_top, h.hss_nn, h.hts_nn⟩
@@ -41,11 +41,11 @@ private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
 -- ============================================================================
 
 -- zed is dropped; SubsoilBags and TopsoilBags project directly
-private def bwd (_ : P5.a.Params) (v : P5.d.Vars) : P5.a.Vars :=
+private def bwd (p : P5.a.Params) (v : P5.d.Vars (paramMap p)) : P5.a.Vars p :=
   { SubsoilBags := v.h
     TopsoilBags := v.d }
 
-private lemma bwd_feas (p : P5.a.Params) (v : P5.d.Vars)
+private lemma bwd_feas (p : P5.a.Params) (v : P5.d.Vars (paramMap p))
     (h : P5.d.Feasible (paramMap p) v) :
     P5.a.Feasible p (bwd p v) := by
   have ht := h.htotal; simp only [paramMap] at ht

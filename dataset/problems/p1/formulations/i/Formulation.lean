@@ -15,11 +15,11 @@ structure Params where
   hY_nn : 0 ≤ Y
   hK_nn : 0 ≤ K
 
-structure Vars where
+structure Vars (p : Params) where
   c : ℤ  -- number of containers
   p : ℤ  -- number of trucks
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Trucks ≤ K times containers
   htruck_ratio : (v.p : ℝ) ≤ p.K * (v.c : ℝ)
   -- At least L containers required
@@ -31,7 +31,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hp_nn : 0 ≤ v.p
 
 -- Objective replaced by optimal solution value
-def obj (_ : Params) (_ : Vars) : ℝ := 20
+def obj (p : Params) (_ : Vars p) : ℝ := 20
 
 def formulation : MILPFormulation where
   Params   := Params

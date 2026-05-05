@@ -33,7 +33,7 @@ follow-up PR can attack it directly.
 /-- A weakened feasibility predicate that omits the demand and nutrition
 constraints. This is what's preserved under bottleneck subtraction during
 flow decomposition. -/
-structure WeakFeasible (p : P20.a.Params) (v : P20.a.Vars) : Prop where
+structure WeakFeasible (p : P20.a.Params) (v : P20.a.Vars p) : Prop where
   hS_noinflow : ∀ s : Fin p.nS, ∀ k : Fin p.nK,
     ∑ i : Fin p.nN, (p.E i (p.S s) : ℝ) * v.F i (p.S s) k = 0
   hflow : ∀ j : Fin p.nT, ∀ k : Fin p.nK,
@@ -49,7 +49,7 @@ structure WeakFeasible (p : P20.a.Params) (v : P20.a.Vars) : Prop where
   hR_nn : ∀ k : Fin p.nK, 0 ≤ v.R k
 
 /-- Every `Feasible` is `WeakFeasible`. -/
-lemma Feasible.toWeak {p : P20.a.Params} {v : P20.a.Vars}
+lemma Feasible.toWeak {p : P20.a.Params} {v : P20.a.Vars p}
     (h : P20.a.Feasible p v) : WeakFeasible p v :=
   { hS_noinflow := h.hS_noinflow
     hflow := h.hflow
@@ -65,18 +65,18 @@ lemma Feasible.toWeak {p : P20.a.Params} {v : P20.a.Vars}
 
 namespace FlowDecomp
 
-variable (pa : P20.a.Params) (v : P20.a.Vars)
+variable (pa : P20.a.Params) (v : P20.a.Vars pa)
 
 /-- The positive-flow support for commodity `k`: pairs `(i, j)` such
 that `E i j = 1` and `0 < F i j k`. Used for strong induction in the
 flow-decomposition argument. -/
 noncomputable def posSupport (k : Fin pa.nK) : Finset (Fin pa.nN × Fin pa.nN) :=
   (univ : Finset (Fin pa.nN × Fin pa.nN)).filter
-    (fun ij => pa.E ij.1 ij.2 = 1 ∧ 0 < v.F ij.1.val ij.2.val k.val)
+    (fun ij => pa.E ij.1 ij.2 = 1 ∧ 0 < v.F ij.1 ij.2 k)
 
 lemma mem_posSupport {k : Fin pa.nK} {i j : Fin pa.nN} :
     (i, j) ∈ posSupport pa v k ↔
-      pa.E i j = 1 ∧ 0 < v.F i.val j.val k.val := by
+      pa.E i j = 1 ∧ 0 < v.F i j k := by
   simp [posSupport]
 
 /-- If the positive-flow support for commodity `k` is empty, then
@@ -84,10 +84,10 @@ lemma mem_posSupport {k : Fin pa.nK} {i j : Fin pa.nN} :
 lemma flow_zero_on_edges_of_support_empty
     (h : WeakFeasible pa v) (k : Fin pa.nK)
     (hsupp : posSupport pa v k = ∅) :
-    ∀ i j : Fin pa.nN, pa.E i j = 1 → v.F i.val j.val k.val = 0 := by
+    ∀ i j : Fin pa.nN, pa.E i j = 1 → v.F i j k = 0 := by
   intro i j hE
   by_contra hne
-  have hpos : 0 < v.F i.val j.val k.val :=
+  have hpos : 0 < v.F i j k :=
     lt_of_le_of_ne (h.hF_nn i j k) (Ne.symm hne)
   have hmem : (i, j) ∈ posSupport pa v k := by
     rw [mem_posSupport]; exact ⟨hE, hpos⟩
@@ -99,7 +99,7 @@ support emptiness implies `F i j k = 0` everywhere. -/
 lemma flow_zero_of_support_empty
     (h : WeakFeasible pa v) (k : Fin pa.nK)
     (hsupp : posSupport pa v k = ∅) :
-    ∀ i j : Fin pa.nN, v.F i.val j.val k.val = 0 := by
+    ∀ i j : Fin pa.nN, v.F i j k = 0 := by
   intro i j
   rcases pa.hE_bin i j with hE0 | hE1
   · exact h.hF_offedge i j k hE0
@@ -113,15 +113,15 @@ end FlowDecomp
 
 namespace FlowDecomp
 
-variable (pa : P20.a.Params) (v : P20.a.Vars)
+variable (pa : P20.a.Params) (v : P20.a.Vars pa)
 
 /-- Total inflow at node `j` on commodity `k`, over edges. -/
 noncomputable def inflow (k : Fin pa.nK) (j : Fin pa.nN) : ℝ :=
-  ∑ i : Fin pa.nN, (pa.E i j : ℝ) * v.F i.val j.val k.val
+  ∑ i : Fin pa.nN, (pa.E i j : ℝ) * v.F i j k
 
 /-- Total outflow at node `i` on commodity `k`, over edges. -/
 noncomputable def outflow (k : Fin pa.nK) (i : Fin pa.nN) : ℝ :=
-  ∑ j : Fin pa.nN, (pa.E i j : ℝ) * v.F i.val j.val k.val
+  ∑ j : Fin pa.nN, (pa.E i j : ℝ) * v.F i j k
 
 /-- A node with positive outflow on commodity `k` cannot be a beneficiary. -/
 lemma not_beneficiary_of_pos_outflow
@@ -148,7 +148,7 @@ lemma not_supplier_of_pos_inflow
 /-- Each summand in `inflow` is non-negative. -/
 lemma inflow_summand_nn
     (h : WeakFeasible pa v) (k : Fin pa.nK) (j i : Fin pa.nN) :
-    0 ≤ (pa.E i j : ℝ) * v.F i.val j.val k.val := by
+    0 ≤ (pa.E i j : ℝ) * v.F i j k := by
   rcases pa.hE_bin i j with hE0 | hE1
   · rw [hE0]; simp
   · rw [hE1]; simp; exact h.hF_nn i j k
@@ -156,7 +156,7 @@ lemma inflow_summand_nn
 /-- Each summand in `outflow` is non-negative. -/
 lemma outflow_summand_nn
     (h : WeakFeasible pa v) (k : Fin pa.nK) (i j : Fin pa.nN) :
-    0 ≤ (pa.E i j : ℝ) * v.F i.val j.val k.val :=
+    0 ≤ (pa.E i j : ℝ) * v.F i j k :=
   inflow_summand_nn pa v h k j i
 
 /-- If outflow at node `i` on commodity `k` is positive, then there is some
@@ -164,7 +164,7 @@ edge `(i, j)` carrying positive flow on `k`. -/
 lemma exists_pos_out_edge_of_pos_outflow
     (h : WeakFeasible pa v) (k : Fin pa.nK) (i : Fin pa.nN)
     (hpos : 0 < outflow pa v k i) :
-    ∃ j : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i.val j.val k.val := by
+    ∃ j : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i j k := by
   classical
   by_contra hne
   push_neg at hne
@@ -175,8 +175,8 @@ lemma exists_pos_out_edge_of_pos_outflow
     rcases pa.hE_bin i j with hE0 | hE1
     · rw [hE0]; simp
     · -- E i j = 1; hne gives v.F i j k ≤ 0
-      have hF0 : v.F i.val j.val k.val ≤ 0 := hne j hE1
-      have : v.F i.val j.val k.val = 0 :=
+      have hF0 : v.F i j k ≤ 0 := hne j hE1
+      have : v.F i j k = 0 :=
         le_antisymm hF0 (h.hF_nn i j k)
       rw [hE1, this]; simp
   linarith
@@ -186,7 +186,7 @@ edge `(i, j)` carrying positive flow on `k`. -/
 lemma exists_pos_in_edge_of_pos_inflow
     (h : WeakFeasible pa v) (k : Fin pa.nK) (j : Fin pa.nN)
     (hpos : 0 < inflow pa v k j) :
-    ∃ i : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i.val j.val k.val := by
+    ∃ i : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i j k := by
   classical
   by_contra hne
   push_neg at hne
@@ -196,8 +196,8 @@ lemma exists_pos_in_edge_of_pos_inflow
     intro i _
     rcases pa.hE_bin i j with hE0 | hE1
     · rw [hE0]; simp
-    · have hF0 : v.F i.val j.val k.val ≤ 0 := hne i hE1
-      have : v.F i.val j.val k.val = 0 :=
+    · have hF0 : v.F i j k ≤ 0 := hne i hE1
+      have : v.F i j k = 0 :=
         le_antisymm hF0 (h.hF_nn i j k)
       rw [hE1, this]; simp
   linarith
@@ -205,7 +205,7 @@ lemma exists_pos_in_edge_of_pos_inflow
 /-- A positive-flow edge `(i, j)` produces positive outflow at `i`. -/
 lemma pos_outflow_of_pos_edge
     (h : WeakFeasible pa v) (k : Fin pa.nK) (i j : Fin pa.nN)
-    (hE : pa.E i j = 1) (hF : 0 < v.F i.val j.val k.val) :
+    (hE : pa.E i j = 1) (hF : 0 < v.F i j k) :
     0 < outflow pa v k i := by
   classical
   unfold outflow
@@ -216,7 +216,7 @@ lemma pos_outflow_of_pos_edge
 /-- A positive-flow edge `(i, j)` produces positive inflow at `j`. -/
 lemma pos_inflow_of_pos_edge
     (h : WeakFeasible pa v) (k : Fin pa.nK) (i j : Fin pa.nN)
-    (hE : pa.E i j = 1) (hF : 0 < v.F i.val j.val k.val) :
+    (hE : pa.E i j = 1) (hF : 0 < v.F i j k) :
     0 < inflow pa v k j := by
   classical
   unfold inflow
@@ -231,7 +231,7 @@ lemma forward_step_transshipment
     (h : WeakFeasible pa v) (k : Fin pa.nK) (t : Fin pa.nT)
     (hin : 0 < inflow pa v k (pa.T t)) :
     ∃ j' : Fin pa.nN, pa.E (pa.T t) j' = 1 ∧
-        0 < v.F (pa.T t).val j'.val k.val := by
+        0 < v.F (pa.T t) j' k := by
   classical
   have hin_eq_out : inflow pa v k (pa.T t) = outflow pa v k (pa.T t) := by
     unfold inflow outflow
@@ -246,7 +246,7 @@ lemma backward_step_transshipment
     (h : WeakFeasible pa v) (k : Fin pa.nK) (t : Fin pa.nT)
     (hout : 0 < outflow pa v k (pa.T t)) :
     ∃ i' : Fin pa.nN, pa.E i' (pa.T t) = 1 ∧
-        0 < v.F i'.val (pa.T t).val k.val := by
+        0 < v.F i' (pa.T t) k := by
   classical
   have hin_eq_out : inflow pa v k (pa.T t) = outflow pa v k (pa.T t) := by
     unfold inflow outflow
@@ -262,7 +262,7 @@ by `forward_step_transshipment` (or, equivalently, directly by the outflow). -/
 lemma forward_step
     (h : WeakFeasible pa v) (k : Fin pa.nK) (i : Fin pa.nN)
     (hout : 0 < outflow pa v k i) :
-    ∃ j : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i.val j.val k.val :=
+    ∃ j : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i j k :=
   exists_pos_out_edge_of_pos_outflow pa v h k i hout
 
 /-- **Backward step (general).** At a node `j` with positive inflow on
@@ -270,7 +270,7 @@ commodity `k`, there is an incoming positive-flow edge. -/
 lemma backward_step
     (h : WeakFeasible pa v) (k : Fin pa.nK) (j : Fin pa.nN)
     (hin : 0 < inflow pa v k j) :
-    ∃ i : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i.val j.val k.val :=
+    ∃ i : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i j k :=
   exists_pos_in_edge_of_pos_inflow pa v h k j hin
 
 /-- A non-beneficiary, non-supplier node is a transshipment node. -/
@@ -289,7 +289,7 @@ inflow if it is not a supplier (using transshipment conservation). -/
 lemma pos_inflow_of_pos_outflow_not_S
     (h : WeakFeasible pa v) (k : Fin pa.nK) (i : Fin pa.nN)
     (hout : 0 < outflow pa v k i) (hnotS : ∀ s : Fin pa.nS, i ≠ pa.S s) :
-    ∃ i' : Fin pa.nN, pa.E i' i = 1 ∧ 0 < v.F i'.val i.val k.val := by
+    ∃ i' : Fin pa.nN, pa.E i' i = 1 ∧ 0 < v.F i' i k := by
   -- i is not a supplier; by hSTB_partition either transshipment or beneficiary
   -- but beneficiary has zero outflow.
   have hnotB : ∀ b : Fin pa.nB, i ≠ pa.B b :=
@@ -303,7 +303,7 @@ outflow if it is not a beneficiary (using transshipment conservation). -/
 lemma pos_outflow_of_pos_inflow_not_B
     (h : WeakFeasible pa v) (k : Fin pa.nK) (j : Fin pa.nN)
     (hin : 0 < inflow pa v k j) (hnotB : ∀ b : Fin pa.nB, j ≠ pa.B b) :
-    ∃ j' : Fin pa.nN, pa.E j j' = 1 ∧ 0 < v.F j.val j'.val k.val := by
+    ∃ j' : Fin pa.nN, pa.E j j' = 1 ∧ 0 < v.F j j' k := by
   have hnotS : ∀ s : Fin pa.nS, j ≠ pa.S s :=
     not_supplier_of_pos_inflow pa v h k j hin
   obtain ⟨t, ht⟩ := transshipment_of_not_S_not_B pa j hnotS hnotB
@@ -331,13 +331,13 @@ This is the core ingredient for the eventual `MILPReformulation.fwd` map.
 def IsFlowDecomposition
     (pa : P20.a.Params) (pb : P20.b.Params)
     (hN : pa.nN = pb.nN)
-    (v : P20.a.Vars) (k : Fin pa.nK) : Prop :=
+    (v : P20.a.Vars pa) (k : Fin pa.nK) : Prop :=
   ∃ x : Fin pb.nP → ℝ,
     (∀ p, 0 ≤ x p) ∧
     (∀ i j : Fin pa.nN,
       ∑ p : Fin pb.nP,
         (pb.pE p (Fin.cast hN i) (Fin.cast hN j) : ℝ) * x p
-      = v.F i.val j.val k.val)
+      = v.F i j k)
 
 -- ============================================================================
 -- § Base case of flow decomposition
@@ -350,7 +350,7 @@ empty, taking `x ≡ 0` is a flow decomposition. -/
 lemma flow_decomposition_empty_support
     (pa : P20.a.Params) (pb : P20.b.Params)
     (hN : pa.nN = pb.nN)
-    (v : P20.a.Vars) (h : WeakFeasible pa v) (k : Fin pa.nK)
+    (v : P20.a.Vars pa) (h : WeakFeasible pa v) (k : Fin pa.nK)
     (hsupp : posSupport pa v k = ∅) :
     IsFlowDecomposition pa pb hN v k := by
   refine ⟨fun _ => 0, ?_, ?_⟩
@@ -494,7 +494,7 @@ of `hF_acyclic k`.
 
 namespace FlowDecomp
 
-variable (pa : P20.a.Params) (v : P20.a.Vars)
+variable (pa : P20.a.Params) (v : P20.a.Vars pa)
 
 /-- Maximum rank value over all nodes (plus 1). Used as a strict upper
 bound for the rank-decreasing well-founded recursion. -/
@@ -529,9 +529,9 @@ lemma bwdMeasure_lt
 
 /-- The edge predicate carried along walks: a positive-flow edge in the
 support of commodity `k`. -/
-def WalkEdge (pa : P20.a.Params) (v : P20.a.Vars) (k : Fin pa.nK)
+def WalkEdge (pa : P20.a.Params) (v : P20.a.Vars pa) (k : Fin pa.nK)
     (u w : Fin pa.nN) : Prop :=
-  pa.E u w = 1 ∧ 0 < v.F u.val w.val k.val
+  pa.E u w = 1 ∧ 0 < v.F u w k
 
 /-- In a list with pairwise strictly-increasing `rank`, every element's
 rank is ≤ that of the last element. -/
@@ -557,7 +557,7 @@ lemma rank_le_last_of_pairwise {α : Type*} (rank : α → ℕ)
       · exact ih h hp.2 x hxas
 
 /-- The bundled invariant for a forward walk starting at `i`. -/
-def IsForwardWalk (pa : P20.a.Params) (v : P20.a.Vars) (k : Fin pa.nK)
+def IsForwardWalk (pa : P20.a.Params) (v : P20.a.Vars pa) (k : Fin pa.nK)
     (rank : Fin pa.nN → ℕ) (i : Fin pa.nN) (L : List (Fin pa.nN)) : Prop :=
   L ≠ [] ∧
   L.head? = some i ∧
@@ -570,7 +570,7 @@ The list is stored in reverse-traversal order: `head = j`, `last = supplier`,
 and `IsChain (WalkEdge ·.swap)` holds (i.e., consecutive `(u, w)` in the
 list satisfy `WalkEdge w u`, meaning `w → u` is a positive-flow edge).
 The user reverses it via `.reverse` to obtain a forward-oriented walk. -/
-def IsBackwardWalk (pa : P20.a.Params) (v : P20.a.Vars) (k : Fin pa.nK)
+def IsBackwardWalk (pa : P20.a.Params) (v : P20.a.Vars pa) (k : Fin pa.nK)
     (rank : Fin pa.nN → ℕ) (j : Fin pa.nN) (L : List (Fin pa.nN)) : Prop :=
   L ≠ [] ∧
   L.head? = some j ∧
@@ -590,7 +590,7 @@ Well-founded via `fwdMeasure pa rank` (strictly decreases per step). -/
 noncomputable def forwardWalk
     (h : WeakFeasible pa v) (k : Fin pa.nK)
     (rank : Fin pa.nN → ℕ)
-    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i.val j.val k.val →
+    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i j k →
       rank i < rank j)
     (i : Fin pa.nN)
     (hi : (∃ b : Fin pa.nB, i = pa.B b) ∨ 0 < outflow pa v k i) :
@@ -608,11 +608,11 @@ noncomputable def forwardWalk
       cases hi with
       | inl hB' => exact absurd hB' hB
       | inr h'  => exact h'
-    have hex : ∃ j : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i.val j.val k.val :=
+    have hex : ∃ j : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i j k :=
       forward_step pa v h k i hout
     let j : Fin pa.nN := hex.choose
     have hEij : pa.E i j = 1 := hex.choose_spec.1
-    have hFij : 0 < v.F i.val j.val k.val := hex.choose_spec.2
+    have hFij : 0 < v.F i j k := hex.choose_spec.2
     have hr : rank i < rank j := hRank i j hEij hFij
     have hdec : fwdMeasure pa rank j < fwdMeasure pa rank i :=
       fwdMeasure_lt pa rank i j hr
@@ -695,7 +695,7 @@ Well-founded via `rank j` (strictly decreases per step). -/
 noncomputable def backwardWalk
     (h : WeakFeasible pa v) (k : Fin pa.nK)
     (rank : Fin pa.nN → ℕ)
-    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i.val j.val k.val →
+    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i j k →
       rank i < rank j)
     (j : Fin pa.nN)
     (hj : (∃ s : Fin pa.nS, j = pa.S s) ∨ 0 < inflow pa v k j) :
@@ -713,11 +713,11 @@ noncomputable def backwardWalk
       cases hj with
       | inl hS' => exact absurd hS' hS
       | inr h'  => exact h'
-    have hex : ∃ i : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i.val j.val k.val :=
+    have hex : ∃ i : Fin pa.nN, pa.E i j = 1 ∧ 0 < v.F i j k :=
       backward_step pa v h k j hin
     let i : Fin pa.nN := hex.choose
     have hEij : pa.E i j = 1 := hex.choose_spec.1
-    have hFij : 0 < v.F i.val j.val k.val := hex.choose_spec.2
+    have hFij : 0 < v.F i j k := hex.choose_spec.2
     have hr : rank i < rank j := hRank i j hEij hFij
     -- i is either a supplier, or has positive outflow → positive inflow.
     have hinext : (∃ s : Fin pa.nS, i = pa.S s) ∨ 0 < inflow pa v k i := by
@@ -786,7 +786,7 @@ positive outflow and so cannot be a beneficiary — `i` has positive
 inflow.) -/
 lemma pos_edge_source_is_supplier_or_pos_inflow
     (h : WeakFeasible pa v) (k : Fin pa.nK) (i j : Fin pa.nN)
-    (hE : pa.E i j = 1) (hF : 0 < v.F i.val j.val k.val) :
+    (hE : pa.E i j = 1) (hF : 0 < v.F i j k) :
     (∃ s : Fin pa.nS, i = pa.S s) ∨ 0 < inflow pa v k i := by
   classical
   by_cases hiS : ∃ s : Fin pa.nS, i = pa.S s
@@ -805,7 +805,7 @@ then by flow conservation at `j` — a transshipment node — `j` has
 positive outflow.) -/
 lemma pos_edge_dest_is_beneficiary_or_pos_outflow
     (h : WeakFeasible pa v) (k : Fin pa.nK) (i j : Fin pa.nN)
-    (hE : pa.E i j = 1) (hF : 0 < v.F i.val j.val k.val) :
+    (hE : pa.E i j = 1) (hF : 0 < v.F i j k) :
     (∃ b : Fin pa.nB, j = pa.B b) ∨ 0 < outflow pa v k j := by
   classical
   by_cases hjB : ∃ b : Fin pa.nB, j = pa.B b
@@ -827,10 +827,10 @@ concatenation is `(bwd).reverse ++ fwd`. -/
 noncomputable def concatenatedWalk
     (h : WeakFeasible pa v) (k : Fin pa.nK)
     (rank : Fin pa.nN → ℕ)
-    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i.val j.val k.val →
+    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i j k →
       rank i < rank j)
     (i j : Fin pa.nN)
-    (hE : pa.E i j = 1) (hF : 0 < v.F i.val j.val k.val) :
+    (hE : pa.E i j = 1) (hF : 0 < v.F i j k) :
     List (Fin pa.nN) :=
   let bwd := backwardWalk pa v h k rank hRank i
     (pos_edge_source_is_supplier_or_pos_inflow pa v h k i j hE hF)
@@ -1291,7 +1291,7 @@ lemma exists_valid_path_of_walk
 -- § Main lemma: extracting a valid path from a positive-flow edge
 -- ============================================================================
 
-variable (pa : P20.a.Params) (v : P20.a.Vars)
+variable (pa : P20.a.Params) (v : P20.a.Vars pa)
 
 /-- The concatenation of a (reversed) backward walk and a forward walk forms
 a list `(bwd).reverse ++ fwd` whose head is the supplier (last of the
@@ -1303,13 +1303,13 @@ This is the central technical lemma used to discharge `IsValidPath`. -/
 lemma exists_valid_path_in_pos_support
     (h : WeakFeasible pa v) (k : Fin pa.nK)
     (rank : Fin pa.nN → ℕ)
-    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i.val j.val k.val →
+    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i j k →
       rank i < rank j)
     (i j : Fin pa.nN)
-    (hE : pa.E i j = 1) (hF : 0 < v.F i.val j.val k.val) :
+    (hE : pa.E i j = 1) (hF : 0 < v.F i j k) :
     ∃ (pE' : Fin pa.nN → Fin pa.nN → ℤ) (pRank' : Fin pa.nN → ℕ),
       P20.b.IsValidPath pa.S pa.B pa.E pE' pRank' ∧
-      (∀ i j : Fin pa.nN, pE' i j = 1 → 0 < v.F i.val j.val k.val) := by
+      (∀ i j : Fin pa.nN, pE' i j = 1 → 0 < v.F i j k) := by
   classical
   -- Build the backward walk from i (ending at a supplier) and the forward
   -- walk from j (ending at a beneficiary).
@@ -1483,7 +1483,7 @@ structure ParamsMatch (pa : P20.a.Params) (pb : P20.b.Params) : Prop where
 
 namespace FlowDecomp
 
-variable (pa : P20.a.Params) (v : P20.a.Vars)
+variable (pa : P20.a.Params) (v : P20.a.Vars pa)
 
 -- ============================================================================
 -- § Path index extraction via `hpE_complete`
@@ -1634,17 +1634,17 @@ extracted abstract path. We also get back the underlying `(pE', pRank')`
 on the a-side for downstream use. -/
 lemma exists_path_index_of_pos_edge
     (pa : P20.a.Params) (pb : P20.b.Params) (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) (h : WeakFeasible pa v) (k : Fin pa.nK)
+    (v : P20.a.Vars pa) (h : WeakFeasible pa v) (k : Fin pa.nK)
     (rank : Fin pa.nN → ℕ)
-    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i.val j.val k.val →
+    (hRank : ∀ i j : Fin pa.nN, pa.E i j = 1 → 0 < v.F i j k →
       rank i < rank j)
-    (i j : Fin pa.nN) (hE : pa.E i j = 1) (hF : 0 < v.F i.val j.val k.val) :
+    (i j : Fin pa.nN) (hE : pa.E i j = 1) (hF : 0 < v.F i j k) :
     ∃ (p : Fin pb.nP) (pE' : Fin pa.nN → Fin pa.nN → ℤ)
       (pRank' : Fin pa.nN → ℕ),
       P20.b.IsValidPath pa.S pa.B pa.E pE' pRank' ∧
       (∀ i j : Fin pa.nN,
         pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = pE' i j) ∧
-      (∀ i j : Fin pa.nN, pE' i j = 1 → 0 < v.F i.val j.val k.val) := by
+      (∀ i j : Fin pa.nN, pE' i j = 1 → 0 < v.F i j k) := by
   classical
   obtain ⟨pE', pRank', hVP, hpos_arc⟩ :=
     exists_valid_path_in_pos_support pa v h k rank hRank i j hE hF
@@ -1662,14 +1662,14 @@ lemma exists_path_index_of_pos_edge
 /-- Variant: extract path index given non-empty `posSupport`. -/
 lemma exists_path_index_of_pos_support
     (pa : P20.a.Params) (pb : P20.b.Params) (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) (h : WeakFeasible pa v) (k : Fin pa.nK)
+    (v : P20.a.Vars pa) (h : WeakFeasible pa v) (k : Fin pa.nK)
     (hne : (posSupport pa v k).Nonempty) :
     ∃ (p : Fin pb.nP) (pE' : Fin pa.nN → Fin pa.nN → ℤ)
       (pRank' : Fin pa.nN → ℕ),
       P20.b.IsValidPath pa.S pa.B pa.E pE' pRank' ∧
       (∀ i j : Fin pa.nN,
         pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = pE' i j) ∧
-      (∀ i j : Fin pa.nN, pE' i j = 1 → 0 < v.F i.val j.val k.val) := by
+      (∀ i j : Fin pa.nN, pE' i j = 1 → 0 < v.F i j k) := by
   classical
   obtain ⟨⟨i, j⟩, hij⟩ := hne
   rw [mem_posSupport] at hij
@@ -1728,29 +1728,29 @@ lemma pathArcs_nonempty (M : ParamsMatch pa pb) (p : Fin pb.nP) :
 /-- The bottleneck flow value: minimum of `v.F i j k` over arcs `(i,j)` of
 path `p`. Defined via `Finset.min'` on the (nonempty) arc set. -/
 noncomputable def bottleneck (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) (k : Fin pa.nK) (p : Fin pb.nP) : ℝ :=
-  ((pathArcs pa pb M p).image (fun ij => v.F ij.1.val ij.2.val k.val)).min'
+    (v : P20.a.Vars pa) (k : Fin pa.nK) (p : Fin pb.nP) : ℝ :=
+  ((pathArcs pa pb M p).image (fun ij => v.F ij.1 ij.2 k)).min'
     (by
       apply Finset.image_nonempty.mpr
       exact pathArcs_nonempty pa pb M p)
 
 /-- The bottleneck is achieved at some path arc. -/
-lemma bottleneck_le (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma bottleneck_le (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (k : Fin pa.nK) (p : Fin pb.nP)
     {i j : Fin pa.nN} (hij : (i, j) ∈ pathArcs pa pb M p) :
-    bottleneck pa pb M v k p ≤ v.F i.val j.val k.val := by
+    bottleneck pa pb M v k p ≤ v.F i j k := by
   classical
   unfold bottleneck
   apply Finset.min'_le
   exact Finset.mem_image.mpr ⟨(i, j), hij, rfl⟩
 
 /-- The bottleneck is achieved: some path arc attains it. -/
-lemma exists_bottleneck_arc (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma exists_bottleneck_arc (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (k : Fin pa.nK) (p : Fin pb.nP) :
     ∃ ij : Fin pa.nN × Fin pa.nN, ij ∈ pathArcs pa pb M p ∧
-      v.F ij.1.val ij.2.val k.val = bottleneck pa pb M v k p := by
+      v.F ij.1 ij.2 k = bottleneck pa pb M v k p := by
   classical
-  set S := (pathArcs pa pb M p).image (fun ij => v.F ij.1.val ij.2.val k.val)
+  set S := (pathArcs pa pb M p).image (fun ij => v.F ij.1 ij.2 k)
   have hSne : S.Nonempty := Finset.image_nonempty.mpr (pathArcs_nonempty pa pb M p)
   have hmem : S.min' hSne ∈ S := Finset.min'_mem _ _
   obtain ⟨ij, hij, heq⟩ := Finset.mem_image.mp hmem
@@ -1758,10 +1758,10 @@ lemma exists_bottleneck_arc (M : ParamsMatch pa pb) (v : P20.a.Vars)
 
 /-- If every path arc carries strictly positive flow on commodity `k`,
 the bottleneck is strictly positive. -/
-lemma bottleneck_pos (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma bottleneck_pos (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (k : Fin pa.nK) (p : Fin pb.nP)
     (hpos : ∀ i j : Fin pa.nN, (i, j) ∈ pathArcs pa pb M p →
-      0 < v.F i.val j.val k.val) :
+      0 < v.F i j k) :
     0 < bottleneck pa pb M v k p := by
   classical
   obtain ⟨ij, hij, heq⟩ := exists_bottleneck_arc pa pb M v k p
@@ -1770,79 +1770,53 @@ lemma bottleneck_pos (M : ParamsMatch pa pb) (v : P20.a.Vars)
 /-- The subtracted flow: along arcs of path `p` on commodity `k`, subtract
 `δ`; elsewhere unchanged. -/
 noncomputable def subtractFlow (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) (k : Fin pa.nK) (p : Fin pb.nP) (δ : ℝ) : P20.a.Vars :=
+    (v : P20.a.Vars pa) (k : Fin pa.nK) (p : Fin pb.nP) (δ : ℝ) : P20.a.Vars pa :=
   { F := fun i j k' =>
-      if h : i < pa.nN ∧ j < pa.nN ∧ k' = k.val then
-        if pb.pE p (Fin.cast M.hN ⟨i, h.1⟩) (Fin.cast M.hN ⟨j, h.2.1⟩) = 1 then
-          v.F i j k' - δ
-        else v.F i j k'
+      if k' = k ∧ pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1 then
+        v.F i j k' - δ
       else v.F i j k'
     R := v.R }
 
 /-- The subtracted flow on a Fin-Fin-Fin triple, in convenient form. -/
-lemma subtractFlow_F (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma subtractFlow_F (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (k : Fin pa.nK) (p : Fin pb.nP) (δ : ℝ)
     (i j : Fin pa.nN) (k' : Fin pa.nK) :
-    (subtractFlow pa pb M v k p δ).F i.val j.val k'.val =
+    (subtractFlow pa pb M v k p δ).F i j k' =
       if k' = k ∧ pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1 then
-        v.F i.val j.val k'.val - δ
-      else v.F i.val j.val k'.val := by
-  unfold subtractFlow
-  simp only
-  by_cases hkk : k' = k
-  · subst hkk
-    have hcond : i.val < pa.nN ∧ j.val < pa.nN ∧ k'.val = k'.val :=
-      ⟨i.isLt, j.isLt, rfl⟩
-    rw [dif_pos hcond]
-    by_cases hpE : pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1
-    · have h1 : pb.pE p (Fin.cast M.hN ⟨i.val, i.isLt⟩) (Fin.cast M.hN ⟨j.val, j.isLt⟩) = 1 := by
-        convert hpE using 3
-      rw [if_pos h1]
-      simp [hpE]
-    · have h1 : ¬ pb.pE p (Fin.cast M.hN ⟨i.val, i.isLt⟩) (Fin.cast M.hN ⟨j.val, j.isLt⟩) = 1 := by
-        intro h; apply hpE
-        convert h using 3
-      rw [if_neg h1]
-      simp [hpE]
-  · have hcond : ¬ (i.val < pa.nN ∧ j.val < pa.nN ∧ k'.val = k.val) := by
-      intro ⟨_, _, hk⟩
-      apply hkk
-      exact Fin.ext hk
-    rw [dif_neg hcond]
-    have : ¬ (k' = k ∧ pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1) := by
-      intro ⟨h, _⟩; exact hkk h
-    rw [if_neg this]
+        v.F i j k' - δ
+      else v.F i j k' := by
+  rfl
 
 /-- Off-arc, off-commodity entries are unchanged. -/
-lemma subtractFlow_F_off (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma subtractFlow_F_off (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (k : Fin pa.nK) (p : Fin pb.nP) (δ : ℝ)
     (i j : Fin pa.nN) (k' : Fin pa.nK)
     (h : ¬ (k' = k ∧ pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1)) :
-    (subtractFlow pa pb M v k p δ).F i.val j.val k'.val =
-      v.F i.val j.val k'.val := by
+    (subtractFlow pa pb M v k p δ).F i j k' =
+      v.F i j k' := by
   rw [subtractFlow_F, if_neg h]
 
 /-- On-arc entries on commodity `k` get reduced by `δ`. -/
-lemma subtractFlow_F_on (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma subtractFlow_F_on (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (k : Fin pa.nK) (p : Fin pb.nP) (δ : ℝ)
     (i j : Fin pa.nN)
     (hpE : pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1) :
-    (subtractFlow pa pb M v k p δ).F i.val j.val k.val =
-      v.F i.val j.val k.val - δ := by
+    (subtractFlow pa pb M v k p δ).F i j k =
+      v.F i j k - δ := by
   rw [subtractFlow_F]
   rw [if_pos ⟨rfl, hpE⟩]
 
 /-- The R component is unchanged by subtraction. -/
-@[simp] lemma subtractFlow_R (M : ParamsMatch pa pb) (v : P20.a.Vars)
+@[simp] lemma subtractFlow_R (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (k : Fin pa.nK) (p : Fin pb.nP) (δ : ℝ) :
     (subtractFlow pa pb M v k p δ).R = v.R := rfl
 
 /-- Subtraction preserves non-negativity provided `δ ≤ bottleneck`. -/
-lemma subtractFlow_F_nn (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma subtractFlow_F_nn (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (h : WeakFeasible pa v) (k : Fin pa.nK) (p : Fin pb.nP) (δ : ℝ)
     (_hδ_nn : 0 ≤ δ) (hδ_le : δ ≤ bottleneck pa pb M v k p) :
     ∀ i j : Fin pa.nN, ∀ k' : Fin pa.nK,
-      0 ≤ (subtractFlow pa pb M v k p δ).F i.val j.val k'.val := by
+      0 ≤ (subtractFlow pa pb M v k p δ).F i j k' := by
   intro i j k'
   rw [subtractFlow_F]
   by_cases hcond : k' = k ∧ pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1
@@ -1856,10 +1830,10 @@ lemma subtractFlow_F_nn (M : ParamsMatch pa pb) (v : P20.a.Vars)
 
 /-- Subtraction with positive `δ` strictly decreases the support of
 commodity `k`: the bottleneck arc leaves the support. -/
-lemma subtractFlow_support_lt (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma subtractFlow_support_lt (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (_h : WeakFeasible pa v) (k : Fin pa.nK) (p : Fin pb.nP)
     (hpos : ∀ i j : Fin pa.nN, (i, j) ∈ pathArcs pa pb M p →
-      0 < v.F i.val j.val k.val)
+      0 < v.F i j k)
     (hpE_le_E : ∀ i j : Fin pa.nN, (i, j) ∈ pathArcs pa pb M p → pa.E i j = 1) :
     (posSupport pa (subtractFlow pa pb M v k p (bottleneck pa pb M v k p)) k).card
       < (posSupport pa v k).card := by
@@ -1884,8 +1858,8 @@ lemma subtractFlow_support_lt (M : ParamsMatch pa pb) (v : P20.a.Vars)
     · push_neg at hcond
       have hpE_ne : ¬ pb.pE p (Fin.cast M.hN ab.1) (Fin.cast M.hN ab.2) = 1 := by
         by_contra hh; exact hcond rfl hh
-      simp only [show v'.F ab.1.val ab.2.val k.val =
-                v.F ab.1.val ab.2.val k.val from by
+      simp only [show v'.F ab.1 ab.2 k =
+                v.F ab.1 ab.2 k from by
                   rw [show v'.F = (subtractFlow pa pb M v k p δ).F from rfl,
                     subtractFlow_F]
                   rw [if_neg]
@@ -1902,8 +1876,8 @@ lemma subtractFlow_support_lt (M : ParamsMatch pa pb) (v : P20.a.Vars)
     intro hin
     rw [mem_posSupport] at hin
     have hpE := (mem_pathArcs pa pb).mp hij_mem
-    have heq2 : v'.F ij.1.val ij.2.val k.val = 0 := by
-      have h1 : v'.F ij.1.val ij.2.val k.val = v.F ij.1.val ij.2.val k.val - δ :=
+    have heq2 : v'.F ij.1 ij.2 k = 0 := by
+      have h1 : v'.F ij.1 ij.2 k = v.F ij.1 ij.2 k - δ :=
         subtractFlow_F_on pa pb M v k p δ ij.1 ij.2 hpE
       rw [h1, hij_eq]; ring
     rw [heq2] at hin
@@ -1940,75 +1914,75 @@ lemma pathArcs_subset_E (M : ParamsMatch pa pb) (p : Fin pb.nP)
 /-- If all entering edges of a node `u` have `v.F i u k = 0` (e.g. by
 `hS_noinflow`), then no path arc enters `u`. -/
 lemma no_path_arc_into_zero_inflow (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) (k : Fin pa.nK) (p : Fin pb.nP) (u : Fin pa.nN)
-    (hzero : ∀ i : Fin pa.nN, pa.E i u = 1 → v.F i.val u.val k.val = 0)
+    (v : P20.a.Vars pa) (k : Fin pa.nK) (p : Fin pb.nP) (u : Fin pa.nN)
+    (hzero : ∀ i : Fin pa.nN, pa.E i u = 1 → v.F i u k = 0)
     (hpos : ∀ i j : Fin pa.nN, (i, j) ∈ pathArcs pa pb M p →
-      0 < v.F i.val j.val k.val) :
+      0 < v.F i j k) :
     ∀ i : Fin pa.nN, ¬ (i, u) ∈ pathArcs pa pb M p := by
   intro i hmem
   have hE : pa.E i u = 1 := pathArcs_subset_E pa pb M p hmem
-  have hF : v.F i.val u.val k.val = 0 := hzero i hE
-  have : 0 < v.F i.val u.val k.val := hpos i u hmem
+  have hF : v.F i u k = 0 := hzero i hE
+  have : 0 < v.F i u k := hpos i u hmem
   linarith
 
 /-- Symmetric: if all leaving edges have zero flow, no path arc leaves. -/
 lemma no_path_arc_outof_zero_outflow (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) (k : Fin pa.nK) (p : Fin pb.nP) (u : Fin pa.nN)
-    (hzero : ∀ j : Fin pa.nN, pa.E u j = 1 → v.F u.val j.val k.val = 0)
+    (v : P20.a.Vars pa) (k : Fin pa.nK) (p : Fin pb.nP) (u : Fin pa.nN)
+    (hzero : ∀ j : Fin pa.nN, pa.E u j = 1 → v.F u j k = 0)
     (hpos : ∀ i j : Fin pa.nN, (i, j) ∈ pathArcs pa pb M p →
-      0 < v.F i.val j.val k.val) :
+      0 < v.F i j k) :
     ∀ j : Fin pa.nN, ¬ (u, j) ∈ pathArcs pa pb M p := by
   intro j hmem
   have hE : pa.E u j = 1 := pathArcs_subset_E pa pb M p hmem
-  have hF : v.F u.val j.val k.val = 0 := hzero j hE
-  have : 0 < v.F u.val j.val k.val := hpos u j hmem
+  have hF : v.F u j k = 0 := hzero j hE
+  have : 0 < v.F u j k := hpos u j hmem
   linarith
 
 /-- From `hS_noinflow`: every edge into a supplier carries zero flow. -/
-lemma zero_inflow_at_supplier {pa : P20.a.Params} {v : P20.a.Vars}
+lemma zero_inflow_at_supplier {pa : P20.a.Params} {v : P20.a.Vars pa}
     (h : WeakFeasible pa v) (s : Fin pa.nS) (k : Fin pa.nK)
     (i : Fin pa.nN) (hE : pa.E i (pa.S s) = 1) :
-    v.F i.val (pa.S s).val k.val = 0 := by
+    v.F i (pa.S s) k = 0 := by
   classical
   have hsum := h.hS_noinflow s k
   have hnn : ∀ j ∈ (Finset.univ : Finset (Fin pa.nN)),
-      0 ≤ (pa.E j (pa.S s) : ℝ) * v.F j.val (pa.S s).val k.val := by
+      0 ≤ (pa.E j (pa.S s) : ℝ) * v.F j (pa.S s) k := by
     intro j _
     rcases pa.hE_bin j (pa.S s) with h0 | h1
     · rw [h0]; simp
     · rw [h1]; simp; exact h.hF_nn _ _ _
   have hzero_each :
-      (pa.E i (pa.S s) : ℝ) * v.F i.val (pa.S s).val k.val = 0 := by
+      (pa.E i (pa.S s) : ℝ) * v.F i (pa.S s) k = 0 := by
     have := (Finset.sum_eq_zero_iff_of_nonneg hnn).mp hsum i (Finset.mem_univ _)
     exact this
   rw [hE] at hzero_each
   simpa using hzero_each
 
 /-- From `hB_nooutflow`: every edge out of a beneficiary carries zero flow. -/
-lemma zero_outflow_at_beneficiary {pa : P20.a.Params} {v : P20.a.Vars}
+lemma zero_outflow_at_beneficiary {pa : P20.a.Params} {v : P20.a.Vars pa}
     (h : WeakFeasible pa v) (b : Fin pa.nB) (k : Fin pa.nK)
     (j : Fin pa.nN) (hE : pa.E (pa.B b) j = 1) :
-    v.F (pa.B b).val j.val k.val = 0 := by
+    v.F (pa.B b) j k = 0 := by
   classical
   have hsum := h.hB_nooutflow b k
   have hnn : ∀ j' ∈ (Finset.univ : Finset (Fin pa.nN)),
-      0 ≤ (pa.E (pa.B b) j' : ℝ) * v.F (pa.B b).val j'.val k.val := by
+      0 ≤ (pa.E (pa.B b) j' : ℝ) * v.F (pa.B b) j' k := by
     intro j' _
     rcases pa.hE_bin (pa.B b) j' with h0 | h1
     · rw [h0]; simp
     · rw [h1]; simp; exact h.hF_nn _ _ _
   have hzero_each :
-      (pa.E (pa.B b) j : ℝ) * v.F (pa.B b).val j.val k.val = 0 := by
+      (pa.E (pa.B b) j : ℝ) * v.F (pa.B b) j k = 0 := by
     exact (Finset.sum_eq_zero_iff_of_nonneg hnn).mp hsum j (Finset.mem_univ _)
   rw [hE] at hzero_each
   simpa using hzero_each
 
 /-- Bottleneck subtraction preserves WeakFeasible, given the path's arcs
 all carry positive flow on commodity `k`. -/
-lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
+lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars pa)
     (h : WeakFeasible pa v) (k : Fin pa.nK) (p : Fin pb.nP)
     (hpos : ∀ i j : Fin pa.nN, (i, j) ∈ pathArcs pa pb M p →
-      0 < v.F i.val j.val k.val) :
+      0 < v.F i j k) :
     WeakFeasible pa (subtractFlow pa pb M v k p (bottleneck pa pb M v k p)) := by
   classical
   set δ := bottleneck pa pb M v k p with hδ_def
@@ -2017,10 +1991,10 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
   have hδ_le : δ ≤ bottleneck pa pb M v k p := le_refl _
   -- Helper: F'.F i j k' relates to F.F.
   have hF'_eq : ∀ (i j : Fin pa.nN) (k' : Fin pa.nK),
-      v'.F i.val j.val k'.val =
+      v'.F i j k' =
         if k' = k ∧ pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1 then
-          v.F i.val j.val k'.val - δ
-        else v.F i.val j.val k'.val := by
+          v.F i j k' - δ
+        else v.F i j k' := by
     intro i j k'; exact subtractFlow_F pa pb M v k p δ i j k'
   refine
     { hS_noinflow := ?_
@@ -2035,8 +2009,8 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
     have hold := h.hS_noinflow s k'
     -- Show ∑ i, E i (S s) * v'.F i (S s) k' = ∑ i, E i (S s) * v.F i (S s) k'
     have hpt : ∀ i : Fin pa.nN,
-        (pa.E i (pa.S s) : ℝ) * v'.F i.val (pa.S s).val k'.val =
-        (pa.E i (pa.S s) : ℝ) * v.F i.val (pa.S s).val k'.val := by
+        (pa.E i (pa.S s) : ℝ) * v'.F i (pa.S s) k' =
+        (pa.E i (pa.S s) : ℝ) * v.F i (pa.S s) k' := by
       intro i
       rw [hF'_eq]
       by_cases hcond : k' = k ∧ pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN (pa.S s)) = 1
@@ -2052,8 +2026,8 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
         have hpos' := hpos i (pa.S s) hmem
         linarith
       · rw [if_neg hcond]
-    calc ∑ i : Fin pa.nN, (pa.E i (pa.S s) : ℝ) * v'.F i.val (pa.S s).val k'.val
-        = ∑ i : Fin pa.nN, (pa.E i (pa.S s) : ℝ) * v.F i.val (pa.S s).val k'.val := by
+    calc ∑ i : Fin pa.nN, (pa.E i (pa.S s) : ℝ) * v'.F i (pa.S s) k'
+        = ∑ i : Fin pa.nN, (pa.E i (pa.S s) : ℝ) * v.F i (pa.S s) k' := by
               apply Finset.sum_congr rfl; intro i _; exact hpt i
       _ = 0 := hold
   · -- hflow at transshipment: inflow = outflow.
@@ -2080,8 +2054,8 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
       obtain ⟨_, _, _, _, ⟨ssrc, _, _, _⟩, ⟨bsink, _, _, _⟩, _⟩ := hVP
       -- Express new inflow.
       have hin_eq :
-          ∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v'.F i.val (pa.T t).val k.val =
-          (∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v.F i.val (pa.T t).val k.val)
+          ∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v'.F i (pa.T t) k =
+          (∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v.F i (pa.T t) k)
             - δ * ∑ i : Fin pa.nN,
                 (pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN (pa.T t)) : ℝ) := by
         rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
@@ -2105,8 +2079,8 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
             · exfalso; apply hcond; exact ⟨rfl, h1⟩
           rw [hpE0]; push_cast; ring
       have hout_eq :
-          ∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v'.F (pa.T t).val i.val k.val =
-          (∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v.F (pa.T t).val i.val k.val)
+          ∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v'.F (pa.T t) i k =
+          (∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v.F (pa.T t) i k)
             - δ * ∑ i : Fin pa.nN,
                 (pb.pE p (Fin.cast M.hN (pa.T t)) (Fin.cast M.hN i) : ℝ) := by
         rw [Finset.mul_sum, ← Finset.sum_sub_distrib]
@@ -2241,21 +2215,21 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
       -- Combine: new inflow = new outflow.
       rw [hin_eq, hout_eq, hpath_deg]
       have hold' :
-          ∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v.F i.val (pa.T t).val k.val =
-          ∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v.F (pa.T t).val i.val k.val := by
+          ∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v.F i (pa.T t) k =
+          ∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v.F (pa.T t) i k := by
         rw [← hkk]; exact hold
       rw [hold']
     · -- k' ≠ k: F unchanged.
       have hin_unchanged :
-          ∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v'.F i.val (pa.T t).val k'.val =
-          ∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v.F i.val (pa.T t).val k'.val := by
+          ∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v'.F i (pa.T t) k' =
+          ∑ i : Fin pa.nN, (pa.E i (pa.T t) : ℝ) * v.F i (pa.T t) k' := by
         apply Finset.sum_congr rfl
         intro i _
         rw [hF'_eq, if_neg]
         intro ⟨hk, _⟩; exact hkk hk
       have hout_unchanged :
-          ∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v'.F (pa.T t).val i.val k'.val =
-          ∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v.F (pa.T t).val i.val k'.val := by
+          ∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v'.F (pa.T t) i k' =
+          ∑ i : Fin pa.nN, (pa.E (pa.T t) i : ℝ) * v.F (pa.T t) i k' := by
         apply Finset.sum_congr rfl
         intro i _
         rw [hF'_eq, if_neg]
@@ -2265,8 +2239,8 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
     intro b k'
     have hold := h.hB_nooutflow b k'
     have hpt : ∀ j : Fin pa.nN,
-        (pa.E (pa.B b) j : ℝ) * v'.F (pa.B b).val j.val k'.val =
-        (pa.E (pa.B b) j : ℝ) * v.F (pa.B b).val j.val k'.val := by
+        (pa.E (pa.B b) j : ℝ) * v'.F (pa.B b) j k' =
+        (pa.E (pa.B b) j : ℝ) * v.F (pa.B b) j k' := by
       intro j
       rw [hF'_eq]
       by_cases hcond : k' = k ∧ pb.pE p (Fin.cast M.hN (pa.B b)) (Fin.cast M.hN j) = 1
@@ -2280,8 +2254,8 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
         have hpos' := hpos (pa.B b) j hmem
         linarith
       · rw [if_neg hcond]
-    calc ∑ j : Fin pa.nN, (pa.E (pa.B b) j : ℝ) * v'.F (pa.B b).val j.val k'.val
-        = ∑ j : Fin pa.nN, (pa.E (pa.B b) j : ℝ) * v.F (pa.B b).val j.val k'.val := by
+    calc ∑ j : Fin pa.nN, (pa.E (pa.B b) j : ℝ) * v'.F (pa.B b) j k'
+        = ∑ j : Fin pa.nN, (pa.E (pa.B b) j : ℝ) * v.F (pa.B b) j k' := by
               apply Finset.sum_congr rfl; intro j _; exact hpt j
       _ = 0 := hold
   · -- hF_acyclic: same rank witness still strictly increases on positive
@@ -2295,7 +2269,7 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
       by_cases hcond : k' = k ∧ pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1
       · rw [if_pos hcond] at heq
         -- v'.F i j k' = v.F i j k' - δ; v'.F > 0 ⇒ v.F > δ ≥ 0.
-        have : v.F i.val j.val k'.val - δ > 0 := heq ▸ hF'
+        have : v.F i j k' - δ > 0 := heq ▸ hF'
         linarith
       · rw [if_neg hcond] at heq
         rw [heq] at hF'
@@ -2331,12 +2305,12 @@ lemma subtractFlow_weakFeasible (M : ParamsMatch pa pb) (v : P20.a.Vars)
 positive-flow support cardinality. -/
 lemma flow_decomp_single_commodity
     (pa : P20.a.Params) (pb : P20.b.Params) (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) (h : WeakFeasible pa v) (k : Fin pa.nK) :
+    (v : P20.a.Vars pa) (h : WeakFeasible pa v) (k : Fin pa.nK) :
     IsFlowDecomposition pa pb M.hN v k := by
   classical
   -- Strong induction on (posSupport pa v k).card.
   -- We do strong induction on n with the invariant n = card.
-  suffices H : ∀ n : ℕ, ∀ v : P20.a.Vars, WeakFeasible pa v →
+  suffices H : ∀ n : ℕ, ∀ v : P20.a.Vars pa, WeakFeasible pa v →
       (posSupport pa v k).card = n → IsFlowDecomposition pa pb M.hN v k by
     exact H _ v h rfl
   intro n
@@ -2352,7 +2326,7 @@ lemma flow_decomp_single_commodity
           exists_path_index_of_pos_support pa pb M v h k hne
         -- Path arcs all carry positive flow.
         have hpos_arcs : ∀ i j : Fin pa.nN, (i, j) ∈ pathArcs pa pb M p →
-            0 < v.F i.val j.val k.val := by
+            0 < v.F i j k := by
           intro i j hij
           rw [mem_pathArcs] at hij
           rw [hpEp_eq] at hij
@@ -2415,7 +2389,7 @@ lemma flow_decomp_single_commodity
           -- v'.F i j k = if k=k ∧ pE p (cast i) (cast j) = 1 then v.F-δ else v.F.
           by_cases hcond : pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) = 1
           · rw [hcond]; push_cast
-            have : v'.F i.val j.val k.val = v.F i.val j.val k.val - δ := by
+            have : v'.F i j k = v.F i j k - δ := by
               rw [hv'_def]
               exact subtractFlow_F_on pa pb M v k p δ i j hcond
             rw [this]; ring
@@ -2426,7 +2400,7 @@ lemma flow_decomp_single_commodity
               · exact h0
               · exact absurd h1 hcond
             rw [hpE0]; push_cast
-            have : v'.F i.val j.val k.val = v.F i.val j.val k.val := by
+            have : v'.F i j k = v.F i j k := by
               rw [hv'_def]
               apply subtractFlow_F_off
               intro ⟨_, h2⟩; exact hcond h2
@@ -2440,20 +2414,20 @@ lemma flow_decomp_single_commodity
 Fin pb.nK → ℝ` reproducing each commodity's flow. -/
 def IsFullFlowDecomposition
     (pa : P20.a.Params) (pb : P20.b.Params) (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) : Prop :=
+    (v : P20.a.Vars pa) : Prop :=
   ∃ x : Fin pb.nP → Fin pb.nK → ℝ,
     (∀ p k, 0 ≤ x p k) ∧
     (∀ i j : Fin pa.nN, ∀ k : Fin pa.nK,
       ∑ p : Fin pb.nP,
         (pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) : ℝ) *
           x p (Fin.cast M.hK k)
-      = v.F i.val j.val k.val)
+      = v.F i j k)
 
 /-- **Multi-commodity lift.** Apply single-commodity decomposition for each
 `k` independently, then assemble. -/
 lemma flow_decomp_full
     (pa : P20.a.Params) (pb : P20.b.Params) (M : ParamsMatch pa pb)
-    (v : P20.a.Vars) (h : WeakFeasible pa v) :
+    (v : P20.a.Vars pa) (h : WeakFeasible pa v) :
     IsFullFlowDecomposition pa pb M v := by
   classical
   -- For each k, get x_k : Fin pb.nP → ℝ via single-commodity decomp.
@@ -2462,7 +2436,7 @@ lemma flow_decomp_full
       (∀ i j : Fin pa.nN,
         ∑ p : Fin pb.nP,
           (pb.pE p (Fin.cast M.hN i) (Fin.cast M.hN j) : ℝ) * xk p
-        = v.F i.val j.val k.val) := by
+        = v.F i j k) := by
     intro k
     obtain ⟨xk, hxk_nn, hxk_eq⟩ := flow_decomp_single_commodity pa pb M v h k
     exact ⟨xk, hxk_nn, hxk_eq⟩

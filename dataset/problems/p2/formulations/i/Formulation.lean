@@ -17,11 +17,11 @@ structure Params where
   hS_nn : 0 ≤ S
   hZ_nn : 0 ≤ Z
 
-structure Vars where
+structure Vars (p : Params) where
   n : ℤ  -- kg of mix 1 produced
   v : ℤ  -- kg of mix 2 produced
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Cat paw treats usage ≤ available
   hcat : p.F * (v.n : ℝ) + p.M * (v.v : ℝ) ≤ p.R
   -- Gold shark treats usage ≤ available
@@ -31,7 +31,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hv_nn : 0 ≤ v.v
 
 -- Objective replaced by optimal solution value
-def obj (_ : Params) (_ : Vars) : ℝ := -1680
+def obj (p : Params) (_ : Vars p) : ℝ := -1680
 
 def formulation : MILPFormulation where
   Params := Params

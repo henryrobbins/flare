@@ -31,11 +31,11 @@ private def paramMap (p : P3.a.Params) : P3.d.Params :=
 -- ============================================================================
 
 /-- **P3.a → P3.d**: Set zed to total slime so it satisfies the auxiliary equality. -/
-private def fwd (p : P3.a.Params) (v : P3.a.Vars) : P3.d.Vars :=
+private def fwd (p : P3.a.Params) (v : P3.a.Vars p) : P3.d.Vars (paramMap p) :=
   { n   := v.NumBeakersUsed
     zed := ∑ i : Fin p.NumBeakers, p.SlimeProducedPerBeaker i * (v.NumBeakersUsed i : ℝ) }
 
-private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
+private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars p)
     (h : P3.a.Feasible p v) :
     P3.d.Feasible (paramMap p) (fwd p v) :=
   { hzed    := rfl
@@ -49,10 +49,10 @@ private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
 -- ============================================================================
 
 /-- **P3.d → P3.a**: Drop zed; beaker counts project directly. -/
-private def bwd (_ : P3.a.Params) (v : P3.d.Vars) : P3.a.Vars :=
+private def bwd (p : P3.a.Params) (v : P3.d.Vars (paramMap p)) : P3.a.Vars p :=
   { NumBeakersUsed := v.n }
 
-private lemma bwd_feas (p : P3.a.Params) (v : P3.d.Vars)
+private lemma bwd_feas (p : P3.a.Params) (v : P3.d.Vars (paramMap p))
     (h : P3.d.Feasible (paramMap p) v) :
     P3.a.Feasible p (bwd p v) :=
   { hflour  := h.hflour

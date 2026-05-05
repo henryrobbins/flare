@@ -24,11 +24,11 @@ structure Params where
   hT_nn : ∀ i, 0 ≤ T i
   hV_nn : ∀ i, 0 ≤ V i
 
-structure Vars where
-  n : ℕ → ℤ  -- number of beakers of type i used
+structure Vars (p : Params) where
+  n : Fin p.N → ℤ  -- number of beakers of type i used
   zed : ℝ  -- auxiliary variable representing total slime produced
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- zed equals total slime produced
   hzed : v.zed = ∑ i : Fin p.N, p.X i * (v.n i : ℝ)
   -- Total liquid used does not exceed available amount
@@ -41,7 +41,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hn_nn : ∀ i : Fin p.N, 0 ≤ v.n i
 
 -- Maximize zed (total slime produced)
-def obj (_ : Params) (v : Vars) : ℝ := -v.zed
+def obj (p : Params) (v : Vars p) : ℝ := -v.zed
 
 def formulation : MILPFormulation where
   Params   := Params

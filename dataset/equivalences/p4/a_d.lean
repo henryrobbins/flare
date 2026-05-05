@@ -27,12 +27,12 @@ private def paramMap (p : P4.a.Params) : P4.d.Params :=
 -- ============================================================================
 
 -- zed is set to the total pollution so it satisfies the auxiliary constraint
-private def fwd (p : P4.a.Params) (v : P4.a.Vars) : P4.d.Vars :=
+private def fwd (p : P4.a.Params) (v : P4.a.Vars p) : P4.d.Vars (paramMap p) :=
   { m   := v.xCars
     h   := v.xBuses
     zed := (v.xCars : ℝ) * p.CarPollution + (v.xBuses : ℝ) * p.BusPollution }
 
-private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
+private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars p)
     (h : P4.a.Feasible p v) :
     P4.d.Feasible (paramMap p) (fwd p v) :=
   { hzed       := rfl
@@ -46,11 +46,11 @@ private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
 -- ============================================================================
 
 -- zed is dropped; xCars and xBuses are projected directly
-private def bwd (_ : P4.a.Params) (v : P4.d.Vars) : P4.a.Vars :=
+private def bwd (p : P4.a.Params) (v : P4.d.Vars (paramMap p)) : P4.a.Vars p :=
   { xCars  := v.m
     xBuses := v.h }
 
-private lemma bwd_feas (p : P4.a.Params) (v : P4.d.Vars)
+private lemma bwd_feas (p : P4.a.Params) (v : P4.d.Vars (paramMap p))
     (h : P4.d.Feasible (paramMap p) v) :
     P4.a.Feasible p (bwd p v) :=
   { htransport := h.htransport

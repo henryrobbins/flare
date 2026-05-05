@@ -28,11 +28,11 @@ private def paramMap (p : P2.a.Params) : P2.d.Params :=
 -- ============================================================================
 
 -- zed is set to total electricity so it satisfies the auxiliary equality
-private def fwd (p : P2.a.Params) (v : P2.a.Vars) : P2.d.Vars :=
+private def fwd (p : P2.a.Params) (v : P2.a.Vars p) : P2.d.Vars (paramMap p) :=
   { j := v.ConductExperiment
     zed := ∑ i : Fin p.NumExperiments, p.ElectricityProduced i * (v.ConductExperiment i : ℝ) }
 
-private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars)
+private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars p)
     (h : P2.a.Feasible p v) :
     P2.d.Feasible (paramMap p) (fwd p v) :=
   { hzed := rfl
@@ -44,10 +44,10 @@ private lemma fwd_feas (p : P2.a.Params) (v : P2.a.Vars)
 -- ============================================================================
 
 -- zed is dropped; experiment counts project directly
-private def bwd (_ : P2.a.Params) (v : P2.d.Vars) : P2.a.Vars :=
+private def bwd (p : P2.a.Params) (v : P2.d.Vars (paramMap p)) : P2.a.Vars p :=
   { ConductExperiment := v.j }
 
-private lemma bwd_feas (p : P2.a.Params) (v : P2.d.Vars)
+private lemma bwd_feas (p : P2.a.Params) (v : P2.d.Vars (paramMap p))
     (h : P2.d.Feasible (paramMap p) v) :
     P2.a.Feasible p (bwd p v) :=
   { hres := h.hres

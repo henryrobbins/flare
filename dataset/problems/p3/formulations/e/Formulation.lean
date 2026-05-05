@@ -24,13 +24,13 @@ structure Params where
   hT_nn : ∀ i, 0 ≤ T i
   hV_nn : ∀ i, 0 ≤ V i
 
-structure Vars where
-  n       : ℕ → ℤ  -- number of beakers of type i used
+structure Vars (p : Params) where
+  n       : Fin p.N → ℤ  -- number of beakers of type i used
   slack_0 : ℝ       -- slack for liquid constraint
   slack_1 : ℝ       -- slack for flour constraint
   slack_2 : ℝ       -- slack for waste constraint
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Total liquid used plus slack equals available amount
   hliquid    : ∑ i : Fin p.N, p.V i * (v.n i : ℝ) + v.slack_0 = p.Z
   -- Total flour used plus slack equals available amount
@@ -44,7 +44,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hslack2_nn : 0 ≤ v.slack_2
 
 -- Maximize total slime produced
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.N, p.X i * (v.n i : ℝ))
 
 def formulation : MILPFormulation where

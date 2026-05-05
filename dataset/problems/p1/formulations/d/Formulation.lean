@@ -17,12 +17,12 @@ structure Params where
   hU_nn : 0 ≤ U
   hV_nn : 0 ≤ V
 
-structure Vars where
+structure Vars (p : Params) where
   s : ℤ  -- number of cash machines
   r : ℤ  -- number of card machines
   zed : ℝ  -- auxiliary objective variable (= s + r)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Auxiliary variable equals total machine count
   hzed : v.zed = (v.s : ℝ) + (v.r : ℝ)
   -- Process at least U people per hour
@@ -36,7 +36,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hr_nn : 0 ≤ v.r
 
 -- Minimize the auxiliary objective variable
-def obj (_ : Params) (v : Vars) : ℝ := v.zed
+def obj (p : Params) (v : Vars p) : ℝ := v.zed
 
 def formulation : MILPFormulation where
   Params   := Params

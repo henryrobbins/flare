@@ -21,11 +21,11 @@ structure Params where
   hD_nn : 0 ≤ D
   hV_nn : 0 ≤ V
 
-structure Vars where
+structure Vars (p : Params) where
   e : ℝ  -- number of regular panes produced
   h : ℝ  -- number of tempered panes produced
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Total heating time does not exceed machine capacity
   hheating : p.C * v.e + p.P * v.h ≤ p.D
   -- Total cooling time does not exceed machine capacity
@@ -35,7 +35,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hh_nn : 0 ≤ v.h
 
 -- Maximize total profit
-def obj (p : Params) (v : Vars) : ℝ := -(p.T * v.e + p.H * v.h)
+def obj (p : Params) (v : Vars p) : ℝ := -(p.T * v.e + p.H * v.h)
 
 def formulation : MILPFormulation where
   Params   := Params

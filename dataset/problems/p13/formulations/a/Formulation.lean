@@ -22,19 +22,19 @@ structure Params where
   htau_nn : ∀ a a', 0 ≤ tau a a'
   hcap_nn : ∀ a t, 0 ≤ cap a t
 
-structure Vars where
-  y : ℕ → ℕ → ℕ → ℤ  -- 1 if flight p is at location a at time t
-  z : ℕ → ℕ → ℕ → ℕ → ℤ  -- 1 if flight p departs location a to a' at time t
+structure Vars (p : Params) where
+  y : Fin p.nP → Fin p.nA → Fin p.nT → ℤ  -- 1 if flight pl is at location a at time t
+  z : Fin p.nP → Fin p.nA → Fin p.nA → Fin p.nT → ℤ  -- 1 if flight pl departs location a to a' at time t
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Each flight is at exactly one location at each time
   hassign : ∀ (pl : Fin p.nP) (t : Fin p.nT), ∑ a : Fin p.nA, v.y pl a t = 1
   -- Respect location capacity at each time
   hcap : ∀ (a : Fin p.nA) (t : Fin p.nT), (∑ pl : Fin p.nP, (v.y pl a t : ℝ)) ≤ (p.cap a t : ℝ)
   -- Flow conservation with travel time (for t > 0)
-  hflow : ∀ (pl : Fin p.nP) (a : Fin p.nA) (t : Fin p.nT), 0 < t.val →
+  hflow : ∀ (pl : Fin p.nP) (a : Fin p.nA) (t : Fin p.nT), ∀ ht : 0 < t.val,
     v.y pl a t =
-      v.y pl a (t.val - 1) +
+      v.y pl a ⟨t.val - 1, by omega⟩ +
       ∑ a' : Fin p.nA, (univ.filter (fun t' : Fin p.nT => t'.val + p.tau a' a = t.val)).sum
               (fun t' => v.z pl a' a t') -
       ∑ a' : Fin p.nA, v.z pl a a' t
@@ -44,7 +44,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hz_bin : ∀ (pl : Fin p.nP) (a a' : Fin p.nA) (t : Fin p.nT), v.z pl a a' t = 0 ∨ v.z pl a a' t = 1
 
 -- Maximize total reward for visiting locations
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   ∑ pl : Fin p.nP, ∑ a : Fin p.nA, ∑ t : Fin p.nT, p.r a t * (v.y pl a t : ℝ)
 
 def formulation : MILPFormulation where

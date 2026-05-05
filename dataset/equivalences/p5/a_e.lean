@@ -25,14 +25,14 @@ private def paramMap (p : P5.a.Params) : P5.e.Params :=
 -- ============================================================================
 
 -- Slacks absorb the surplus of each inequality constraint in P5.a
-private def fwd (p : P5.a.Params) (v : P5.a.Vars) : P5.e.Vars :=
+private def fwd (p : P5.a.Params) (v : P5.a.Vars p) : P5.e.Vars (paramMap p) :=
   { h       := v.SubsoilBags
     d       := v.TopsoilBags
     slack_0 := p.MaxTopsoilProportion * ((v.TopsoilBags : ℝ) + v.SubsoilBags) - v.TopsoilBags
     slack_1 := p.MaxTotalBags - (v.SubsoilBags : ℝ) - v.TopsoilBags
     slack_2 := (v.TopsoilBags : ℝ) - p.MinTopsoilBags }
 
-private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
+private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars p)
     (h : P5.a.Feasible p v) :
     P5.e.Feasible (paramMap p) (fwd p v) := by
   simp only [paramMap, fwd]
@@ -44,11 +44,11 @@ private lemma fwd_feas (p : P5.a.Params) (v : P5.a.Vars)
 -- ============================================================================
 
 -- Slack variables are dropped; SubsoilBags and TopsoilBags project directly
-private def bwd (_ : P5.a.Params) (v : P5.e.Vars) : P5.a.Vars :=
+private def bwd (p : P5.a.Params) (v : P5.e.Vars (paramMap p)) : P5.a.Vars p :=
   { SubsoilBags := v.h
     TopsoilBags := v.d }
 
-private lemma bwd_feas (p : P5.a.Params) (v : P5.e.Vars)
+private lemma bwd_feas (p : P5.a.Params) (v : P5.e.Vars (paramMap p))
     (h : P5.e.Feasible (paramMap p) v) :
     P5.a.Feasible p (bwd p v) := by
   have hprop  := h.hprop;   simp only [paramMap] at hprop

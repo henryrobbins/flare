@@ -95,11 +95,11 @@ structure Params where
   hpE_inj : ∀ p₁ p₂ : Fin nP,
     (∀ i j : Fin nN, pE p₁ i j = pE p₂ i j) → p₁ = p₂
 
-structure Vars where
-  x : ℕ → ℕ → ℝ  -- amount of commodity k shipped along path p (kg)
-  R : ℕ → ℝ  -- ration size per person of each commodity (kg)
+structure Vars (p : Params) where
+  x : Fin p.nP → Fin p.nK → ℝ  -- amount of commodity k shipped along path p (kg)
+  R : Fin p.nK → ℝ  -- ration size per person of each commodity (kg)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Each camp receives at least its ration demand from paths ending there
   hdemand : ∀ j : Fin p.nB, ∀ k : Fin p.nK,
     p.dem j * v.R k ≤ ∑ π : Fin p.nP, (p.e j π : ℝ) * v.x π k
@@ -111,7 +111,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hR_nn : ∀ k : Fin p.nK, 0 ≤ v.R k
 
 -- Minimize total shipping and procurement cost
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   (∑ π : Fin p.nP, ∑ k : Fin p.nK, p.c π k * v.x π k)
     + ∑ k : Fin p.nK, p.q k * (∑ π : Fin p.nP, v.x π k)
 

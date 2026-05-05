@@ -15,14 +15,14 @@ structure Params where
   hP_nn : 0 ≤ P
   hK_nn : 0 ≤ K
 
-structure Vars where
+structure Vars (p : Params) where
   h       : ℤ  -- number of subsoil bags
   d       : ℤ  -- number of topsoil bags
   slack_0 : ℝ  -- slack for topsoil proportion constraint
   slack_1 : ℝ  -- slack for total bags constraint
   slack_2 : ℝ  -- slack for min topsoil constraint
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Topsoil proportion equality with slack
   hprop    : (v.d : ℝ) + v.slack_0 = p.K * ((v.d : ℝ) + v.h)
   -- Total bags equality with slack
@@ -37,7 +37,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hslack2_nn : 0 ≤ v.slack_2
 
 -- Minimize total water required
-def obj (p : Params) (v : Vars) : ℝ := p.Z * (v.h : ℝ) + p.B * v.d
+def obj (p : Params) (v : Vars p) : ℝ := p.Z * (v.h : ℝ) + p.B * v.d
 
 def formulation : MILPFormulation where
   Params   := Params

@@ -21,17 +21,17 @@ structure Params where
   hY_nn : ∀ j, 0 ≤ Y j
   hI_nn : ∀ j i, 0 ≤ I j i
 
-structure Vars where
-  j : ℕ → ℤ  -- number of times experiment i is conducted
+structure Vars (p : Params) where
+  j : Fin p.M → ℤ  -- number of times experiment i is conducted
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Resource usage (using scaled variable) does not exceed available
   hres : ∀ k : Fin p.N, ∑ i : Fin p.M, p.I k i * (v.j i : ℝ) ≤ p.Y k
   -- [Implicit Constraints]
   hj_nn : ∀ i : Fin p.M, 0 ≤ v.j i
 
 -- Maximize total electricity produced (using scaled variable)
-noncomputable def obj (p : Params) (v : Vars) : ℝ :=
+noncomputable def obj (p : Params) (v : Vars p) : ℝ :=
   -2 * (∑ i : Fin p.M, p.A i * (v.j i : ℝ))
 
 noncomputable def formulation : MILPFormulation where

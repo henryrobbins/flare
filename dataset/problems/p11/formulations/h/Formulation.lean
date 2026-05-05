@@ -67,107 +67,106 @@ structure Params where
   hU_pos : ∀ g : Fin nG, 1 ≤ U g
   hD_pos : ∀ g : Fin nG, 1 ≤ D g
 
-structure Vars where
-  u : ℕ → ℕ → ℤ -- on status of generator g at time t
-  v : ℕ → ℕ → ℤ -- startup indicator of generator g at time t
-  w : ℕ → ℕ → ℤ -- shutdown indicator of generator g at time t
-  d_su : ℕ → ℕ → ℕ → ℤ -- startup category selection (g, s, t)
-  lam : ℕ → ℕ → ℕ → ℝ -- piecewise weight (g, l, t)
-  p : ℕ → ℕ → ℝ -- thermal output above P_min for generator g at time t
-  r : ℕ → ℕ → ℝ -- spinning reserve of generator g at time t
-  c_var : ℕ → ℕ → ℝ -- variable production cost above fixed cost
-  p_wind : ℕ → ℕ → ℝ -- renewable output for wind generator w at time t
-  P_bar : ℕ → ℕ → ℝ -- maximum reachable output of generator g at time t
+structure Vars (P : Params) where
+  u : Fin P.nG → Fin P.nT → ℤ -- on status of generator g at time t
+  v : Fin P.nG → Fin P.nT → ℤ -- startup indicator of generator g at time t
+  w : Fin P.nG → Fin P.nT → ℤ -- shutdown indicator of generator g at time t
+  d_su : ∀ g : Fin P.nG, Fin (P.nS g) → Fin P.nT → ℤ -- startup category selection (g, s, t)
+  lam : ∀ g : Fin P.nG, Fin (P.nL g) → Fin P.nT → ℝ -- piecewise weight (g, l, t)
+  p : Fin P.nG → Fin P.nT → ℝ -- thermal output above P_min for generator g at time t
+  r : Fin P.nG → Fin P.nT → ℝ -- spinning reserve of generator g at time t
+  c_var : Fin P.nG → Fin P.nT → ℝ -- variable production cost above fixed cost
+  p_wind : Fin P.nW → Fin P.nT → ℝ -- renewable output for wind generator w at time t
+  P_bar : Fin P.nG → Fin P.nT → ℝ -- maximum reachable output of generator g at time t
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Demand balance: total thermal output equals demand at each period
   hdemand : ∀ t : Fin p.nT,
-    ∑ g : Fin p.nG, (v.p g.val t.val + p.P_min g * (v.u g.val t.val : ℝ)) = p.L t
+    ∑ g : Fin p.nG, (v.p g t + p.P_min g * (v.u g t : ℝ)) = p.L t
   -- Spinning reserve: total reserve meets or exceeds requirement
   hreserve : ∀ t : Fin p.nT,
-    p.R t ≤ ∑ g : Fin p.nG, v.r g.val t.val
+    p.R t ≤ ∑ g : Fin p.nG, v.r g t
   -- Commitment transition for t ≥ 1
-  htransition : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 < t.val →
-    (v.u g.val t.val : ℤ) - v.u g.val (t.val - 1) = v.v g.val t.val - v.w g.val t.val
+  htransition : ∀ g : Fin p.nG, ∀ t : Fin p.nT, ∀ ht : 0 < t.val,
+    (v.u g t : ℤ) - v.u g ⟨t.val - 1, by omega⟩ = v.v g t - v.w g t
   -- Minimum up time: sum of startups in window ≤ on-status
   hmin_up : ∀ g : Fin p.nG, ∀ t : Fin p.nT, p.U g - 1 ≤ t.val →
     ∑ τ ∈ (univ : Finset (Fin p.nT)).filter
       (fun τ => t.val - (p.U g - 1) ≤ τ.val ∧ τ.val ≤ t.val),
-      v.v g.val τ.val ≤ (v.u g.val t.val : ℤ)
+      v.v g τ ≤ (v.u g t : ℤ)
   -- Minimum down time: sum of shutdowns in window ≤ 1 - on-status
   hmin_dn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, p.D g - 1 ≤ t.val →
     ∑ τ ∈ (univ : Finset (Fin p.nT)).filter
       (fun τ => t.val - (p.D g - 1) ≤ τ.val ∧ τ.val ≤ t.val),
-      v.w g.val τ.val ≤ 1 - (v.u g.val t.val : ℤ)
+      v.w g τ ≤ 1 - (v.u g t : ℤ)
   -- Startup decomposition: startup indicator equals sum of category selections
   hv_decomp : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
-    v.v g.val t.val = ∑ s : Fin (p.nS g), v.d_su g.val s.val t.val
+    v.v g t = ∑ s : Fin (p.nS g), v.d_su g s t
   -- Startup category timing: category s can be selected only after required lag
   hlag : ∀ g : Fin p.nG, ∀ s : Fin (p.nS g), ∀ t : Fin p.nT,
     ∀ hs : s.val + 1 < p.nS g, p.ell g ⟨s.val + 1, hs⟩ - 1 ≤ t.val →
-    v.d_su g.val s.val t.val ≤
+    v.d_su g s t ≤
       ∑ i ∈ (Finset.range (p.ell g ⟨s.val + 1, hs⟩ - p.ell g s)).filter
         (fun i => p.ell g s + i ≤ t.val),
-        v.w g.val (t.val - (p.ell g s + i))
+        v.w g ⟨t.val - (p.ell g s + i), by have := t.isLt; omega⟩
   -- Must-run: generators with MR > 0 must remain on
   hmust_run : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
-    (p.MR g : ℝ) ≤ (v.u g.val t.val : ℝ)
+    (p.MR g : ℝ) ≤ (v.u g t : ℝ)
   -- Startup derating: output + reserve limited by startup ramp during startup
   hcap_su : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
-    v.p g.val t.val + v.r g.val t.val ≤
-      (p.P_max g - p.P_min g) * (v.u g.val t.val : ℝ) -
-        max (p.P_max g - p.SU g) 0 * (v.v g.val t.val : ℝ)
+    v.p g t + v.r g t ≤
+      (p.P_max g - p.P_min g) * (v.u g t : ℝ) -
+        max (p.P_max g - p.SU g) 0 * (v.v g t : ℝ)
   -- Shutdown derating: output + reserve limited by shutdown ramp the period before shutdown
-  hcap_sd : ∀ g : Fin p.nG, ∀ t : Fin p.nT, t.val + 1 < p.nT →
-    v.p g.val t.val + v.r g.val t.val ≤
-      (p.P_max g - p.P_min g) * (v.u g.val t.val : ℝ) -
-        max (p.P_max g - p.SD g) 0 * (v.w g.val (t.val + 1) : ℝ)
+  hcap_sd : ∀ g : Fin p.nG, ∀ t : Fin p.nT, ∀ ht : t.val + 1 < p.nT,
+    v.p g t + v.r g t ≤
+      (p.P_max g - p.P_min g) * (v.u g t : ℝ) -
+        max (p.P_max g - p.SD g) 0 * (v.w g ⟨t.val + 1, ht⟩ : ℝ)
   -- Ramp-up limit for t ≥ 1
-  hramp_up : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 < t.val →
-    v.p g.val t.val + v.r g.val t.val - v.p g.val (t.val - 1) ≤ p.RU g
+  hramp_up : ∀ g : Fin p.nG, ∀ t : Fin p.nT, ∀ ht : 0 < t.val,
+    v.p g t + v.r g t - v.p g ⟨t.val - 1, by omega⟩ ≤ p.RU g
   -- Ramp-down limit for t ≥ 1
-  hramp_dn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 < t.val →
-    v.p g.val (t.val - 1) - v.p g.val t.val ≤ p.RD g
+  hramp_dn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, ∀ ht : 0 < t.val,
+    v.p g ⟨t.val - 1, by omega⟩ - v.p g t ≤ p.RD g
   -- Piecewise production: output equals convex combination of breakpoints above min
   hp_eq : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
-    v.p g.val t.val = ∑ l : Fin (p.nL g),
-      (p.P g l - p.P g ⟨0, (p.hnL_pos g).pos⟩) * v.lam g.val l.val t.val
+    v.p g t = ∑ l : Fin (p.nL g),
+      (p.P g l - p.P g ⟨0, (p.hnL_pos g).pos⟩) * v.lam g l t
   -- Piecewise cost: variable cost equals convex combination of cost breakpoints above fixed cost
   hc_eq : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
-    v.c_var g.val t.val = ∑ l : Fin (p.nL g),
-      (p.C g l - p.C_fixed g) * v.lam g.val l.val t.val
+    v.c_var g t = ∑ l : Fin (p.nL g),
+      (p.C g l - p.C_fixed g) * v.lam g l t
   -- Piecewise weights sum to on-status
   hlam_sum : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
-    ∑ l : Fin (p.nL g), v.lam g.val l.val t.val = (v.u g.val t.val : ℝ)
+    ∑ l : Fin (p.nL g), v.lam g l t = (v.u g t : ℝ)
   -- Binary variables
-  hu_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.u g.val t.val = 0 ∨ v.u g.val t.val = 1
-  hv_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.v g.val t.val = 0 ∨ v.v g.val t.val = 1
-  hw_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.w g.val t.val = 0 ∨ v.w g.val t.val = 1
+  hu_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.u g t = 0 ∨ v.u g t = 1
+  hv_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.v g t = 0 ∨ v.v g t = 1
+  hw_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.w g t = 0 ∨ v.w g t = 1
   hd_bin : ∀ g : Fin p.nG, ∀ s : Fin (p.nS g), ∀ t : Fin p.nT,
-    v.d_su g.val s.val t.val = 0 ∨ v.d_su g.val s.val t.val = 1
+    v.d_su g s t = 0 ∨ v.d_su g s t = 1
   -- Non-negativity of continuous variables
-  hlam_nn : ∀ g : Fin p.nG, ∀ l : Fin (p.nL g), ∀ t : Fin p.nT, 0 ≤ v.lam g.val l.val t.val
-  hlam_le : ∀ g : Fin p.nG, ∀ l : Fin (p.nL g), ∀ t : Fin p.nT, v.lam g.val l.val t.val ≤ 1
-  hp_nn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 ≤ v.p g.val t.val
-  hr_nn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 ≤ v.r g.val t.val
-  hcvar_nn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 ≤ v.c_var g.val t.val
+  hlam_nn : ∀ g : Fin p.nG, ∀ l : Fin (p.nL g), ∀ t : Fin p.nT, 0 ≤ v.lam g l t
+  hlam_le : ∀ g : Fin p.nG, ∀ l : Fin (p.nL g), ∀ t : Fin p.nT, v.lam g l t ≤ 1
+  hp_nn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 ≤ v.p g t
+  hr_nn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 ≤ v.r g t
+  hcvar_nn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 ≤ v.c_var g t
   -- Renewable output bounds
-  hpwind_lo : ∀ w : Fin p.nW, ∀ t : Fin p.nT, p.P_wind_min w t ≤ v.p_wind w.val t.val
-  hpwind_hi : ∀ w : Fin p.nW, ∀ t : Fin p.nT, v.p_wind w.val t.val ≤ p.P_wind_max w t
+  hpwind_lo : ∀ w : Fin p.nW, ∀ t : Fin p.nT, p.P_wind_min w t ≤ v.p_wind w t
+  hpwind_hi : ∀ w : Fin p.nW, ∀ t : Fin p.nT, v.p_wind w t ≤ p.P_wind_max w t
   -- EC3c: P_bar bounded by ramp-reachability with shutdown derating at current period t
-  hec3c : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 < t.val →
-    v.P_bar g.val t.val ≤
-      p.P_min g * (v.u g.val t.val : ℝ) +
-        (p.P_max g - p.P_min g) * (v.u g.val (t.val - 1) : ℝ) -
-          max (p.P_max g - p.SD g) 0 * (v.w g.val t.val : ℝ) +
+  hec3c : ∀ g : Fin p.nG, ∀ t : Fin p.nT, ∀ ht : 0 < t.val,
+    v.P_bar g t ≤
+      p.P_min g * (v.u g t : ℝ) +
+        (p.P_max g - p.P_min g) * (v.u g ⟨t.val - 1, by omega⟩ : ℝ) -
+          max (p.P_max g - p.SD g) 0 * (v.w g t : ℝ) +
             p.RU g
 
--- Minimize total production cost (fixed on-cost + variable cost) and startup costs
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   (∑ g : Fin p.nG, ∑ t : Fin p.nT,
-    (v.c_var g.val t.val + p.C_fixed g * (v.u g.val t.val : ℝ))) +
+    (v.c_var g t + p.C_fixed g * (v.u g t : ℝ))) +
   ∑ g : Fin p.nG, ∑ s : Fin (p.nS g), ∑ t : Fin p.nT,
-    p.C_su g s * (v.d_su g.val s.val t.val : ℝ)
+    p.C_su g s * (v.d_su g s t : ℝ)
 
 def formulation : MILPFormulation where
   Params   := Params

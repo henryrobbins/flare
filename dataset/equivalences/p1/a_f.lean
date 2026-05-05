@@ -28,13 +28,13 @@ private def paramMap (p : P1.a.Params) : P1.f.Params :=
 -- ============================================================================
 
 -- Each machine count is placed entirely in the first part; second part is zero
-private def fwd (_ : P1.a.Params) (v : P1.a.Vars) : P1.f.Vars :=
+private def fwd (p : P1.a.Params) (v : P1.a.Vars p) : P1.f.Vars (paramMap p) :=
   { s1 := v.NumCashMachines
     s2 := 0
     r1 := v.NumCardMachines
     r2 := 0 }
 
-private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars)
+private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars p)
     (h : P1.a.Feasible p v) :
     P1.f.Feasible (paramMap p) (fwd p v) := by
   refine ⟨?_, ?_, ?_, h.hNumCashMachines_nn, le_refl 0, h.hNumCardMachines_nn, le_refl 0⟩
@@ -47,11 +47,11 @@ private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars)
 -- ============================================================================
 
 -- Both parts are summed to recover the original machine counts
-private def bwd (_ : P1.a.Params) (v : P1.f.Vars) : P1.a.Vars :=
+private def bwd (p : P1.a.Params) (v : P1.f.Vars (paramMap p)) : P1.a.Vars p :=
   { NumCashMachines := v.s1 + v.s2
     NumCardMachines := v.r1 + v.r2 }
 
-private lemma bwd_feas (p : P1.a.Params) (v : P1.f.Vars)
+private lemma bwd_feas (p : P1.a.Params) (v : P1.f.Vars (paramMap p))
     (h : P1.f.Feasible (paramMap p) v) :
     P1.a.Feasible p (bwd p v) := by
   simp only [bwd]
@@ -65,13 +65,13 @@ private lemma bwd_feas (p : P1.a.Params) (v : P1.f.Vars)
 -- § Objective Mapping
 -- ============================================================================
 
-private lemma fwd_obj (p : P1.a.Params) (v : P1.a.Vars) (_ : P1.a.Feasible p v) :
+private lemma fwd_obj (p : P1.a.Params) (v : P1.a.Vars p) (_ : P1.a.Feasible p v) :
     P1.f.obj (paramMap p) (fwd p v) = id (P1.a.obj p v) := by
   show (↑v.NumCashMachines : ℝ) + ↑(0 : ℤ) + ↑v.NumCardMachines + ↑(0 : ℤ) =
        ↑v.NumCashMachines + ↑v.NumCardMachines
   simp [Int.cast_zero]
 
-private lemma bwd_obj (p : P1.a.Params) (v : P1.f.Vars) (_ : P1.f.Feasible (paramMap p) v) :
+private lemma bwd_obj (p : P1.a.Params) (v : P1.f.Vars (paramMap p)) (_ : P1.f.Feasible (paramMap p) v) :
     P1.f.obj (paramMap p) v = id (P1.a.obj p (bwd p v)) := by
   show (↑v.s1 + ↑v.s2 + ↑v.r1 + ↑v.r2 : ℝ) = ↑(v.s1 + v.s2) + ↑(v.r1 + v.r2)
   push_cast; ring

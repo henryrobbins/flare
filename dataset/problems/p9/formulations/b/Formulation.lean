@@ -37,11 +37,11 @@ private abbrev incArcs (p : Params) (k : Fin p.K) : Finset (Fin p.m) :=
 private noncomputable def uMax (p : Params) (k : Fin p.K) : ℝ :=
   if h : (incArcs p k).Nonempty then (incArcs p k).sup' h p.u else 0
 
-structure Vars where
-  x : ℕ → ℕ → ℝ  -- flow of commodity k on arc e
-  y : ℕ → ℤ       -- 1 if arc e is activated, 0 otherwise
+structure Vars (p : Params) where
+  x : Fin p.m → Fin p.K → ℝ  -- flow of commodity k on arc e
+  y : Fin p.m → ℤ             -- 1 if arc e is activated, 0 otherwise
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Commodity source outflow equals demand
   hout : ∀ k : Fin p.K,
     (univ.filter (fun e : Fin p.m => p.tail e = p.O k)).sum (fun e => v.x e k) = p.d k
@@ -68,7 +68,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
     p.d k + uMax p k
 
 -- Minimize total flow cost plus fixed arc activation cost
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   (∑ e : Fin p.m, ∑ k : Fin p.K, p.c e * v.x e k) +
   ∑ e : Fin p.m, p.f e * (v.y e : ℝ)
 

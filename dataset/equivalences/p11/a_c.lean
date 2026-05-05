@@ -10,7 +10,6 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
-
 -- ============================================================================
 -- § Parameter Mapping
 -- ============================================================================
@@ -64,32 +63,24 @@ private def paramMap (p : P11.a.Params) : P11.c.Params :=
     hD_pos     := p.hD_pos
     hMR_bin    := p.hMR_bin }
 
+private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.c.Vars (paramMap p) :=
+  { u     := V.u
+    v     := V.v
+    w     := V.w
+    d_su  := V.d_su
+    lam   := V.lam
+    p     := V.p
+    r     := V.r
+    c_var  := V.c_var
+    p_wind := V.p_wind
 -- ============================================================================
 -- § Forward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.a → P11.c**: identity on shared variables; set the new auxiliary
-`P_bar` to `0`. The EC2a constraint
-`P_bar ≤ P_max * u - max(P_max - SU, 0) * v`
-then follows because the RHS is non-negative (combining `hcap_su`,
-`hp_nn`, `hr_nn`, and `hPmin_nn` with `u ≥ 0`).
--/
-private def fwd (_ : P11.a.Params) (v : P11.a.Vars) : P11.c.Vars :=
-  { u     := v.u
-    v     := v.v
-    w     := v.w
-    d_su  := v.d_su
-    lam   := v.lam
-    p     := v.p
-    r     := v.r
-    c_var  := v.c_var
-    p_wind := v.p_wind
     P_bar  := fun _ _ => 0 }
 
-private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
-    (h : P11.a.Feasible p v) :
-    P11.c.Feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
+    (h : P11.a.Feasible p V) :
+    P11.c.Feasible (paramMap p) (fwd p V) := by
   refine
     { hdemand     := h.hdemand
       hreserve    := h.hreserve
@@ -122,35 +113,30 @@ private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
     intro g t
     -- Goal: 0 ≤ P_max * u - max(P_max - SU, 0) * v
     show (0 : ℝ) ≤
-      p.P_max g * (v.u g.val t.val : ℝ) -
-        max (p.P_max g - p.SU g) 0 * (v.v g.val t.val : ℝ)
+      p.P_max g * (V.u g t : ℝ) -
+        max (p.P_max g - p.SU g) 0 * (V.v g t : ℝ)
     have hcap := h.hcap_su g t
     have hpnn := h.hp_nn g t
     have hrnn := h.hr_nn g t
     have hPmin := p.hPmin_nn g
-    have hu_nn : (0 : ℝ) ≤ (v.u g.val t.val : ℝ) := by
+    have hu_nn : (0 : ℝ) ≤ (V.u g t : ℝ) := by
       rcases h.hu_bin g t with hu0 | hu1
       · rw [hu0]; simp
       · rw [hu1]; norm_num
     -- From hcap_su: 0 ≤ p + r ≤ (P_max - P_min)*u - max(P_max-SU,0)*v
     have h1 : (0 : ℝ) ≤
-        (p.P_max g - p.P_min g) * (v.u g.val t.val : ℝ) -
-          max (p.P_max g - p.SU g) 0 * (v.v g.val t.val : ℝ) := by
+        (p.P_max g - p.P_min g) * (V.u g t : ℝ) -
+          max (p.P_max g - p.SU g) 0 * (V.v g t : ℝ) := by
       linarith
+    have h2 : (0 : ℝ) ≤ p.P_min g * (V.u g t : ℝ) :=
     -- Add P_min * u ≥ 0 to both sides
-    have h2 : (0 : ℝ) ≤ p.P_min g * (v.u g.val t.val : ℝ) :=
       mul_nonneg hPmin hu_nn
     linarith [h1, h2]
 
+private def bwd (p : P11.a.Params) (v : P11.c.Vars (paramMap p)) : P11.a.Vars p :=
 -- ============================================================================
 -- § Backward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.c → P11.a**: drop the `P_bar` auxiliary variable; all other variables
-are carried over unchanged.
--/
-private def bwd (_ : P11.a.Params) (v : P11.c.Vars) : P11.a.Vars :=
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -161,7 +147,7 @@ private def bwd (_ : P11.a.Params) (v : P11.c.Vars) : P11.a.Vars :=
     c_var  := v.c_var
     p_wind := v.p_wind }
 
-private lemma bwd_feas (p : P11.a.Params) (v : P11.c.Vars)
+private lemma bwd_feas (p : P11.a.Params) (v : P11.c.Vars (paramMap p))
     (h : P11.c.Feasible (paramMap p) v) :
     P11.a.Feasible p (bwd p v) := by
   exact
@@ -195,7 +181,6 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.c.Vars)
 -- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
-
 def aCEquiv : MILPReformulation P11.a.formulation P11.c.formulation where
   paramMap    := paramMap
   fwd         := fwd

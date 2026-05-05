@@ -45,11 +45,12 @@ private def paramMap (p : P12.a.Params) : P12.b.Params :=
 
 -- fwd modifies u: if x 0 j = 1, set u j = 2; otherwise keep u j.
 -- This ensures hec1 holds: when x 0 j = 1, u j = 2 ≤ 2 + 0.
-private def fwd (_ : P12.a.Params) (v : P12.a.Vars) : P12.b.Vars :=
+private def fwd (p : P12.a.Params) (v : P12.a.Vars p) : P12.b.Vars (paramMap p) :=
+  haveI : NeZero p.n := p.hn
   { x := v.x
     u := fun i => if v.x 0 i = 1 then 2 else v.u i }
 
-private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
+private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars p)
     (h : P12.a.Feasible p v) :
     P12.b.Feasible (paramMap p) (fwd p v) := by
   haveI : NeZero p.n := p.hn
@@ -72,8 +73,8 @@ private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
   · -- hmtz: u' i - u' j + n * x i j ≤ n - 1
     intro i j hi hj hij
     simp only [fwd, paramMap]
-    by_cases hxi : v.x 0 i.val = 1
-    · by_cases hxj : v.x 0 j.val = 1
+    by_cases hxi : v.x 0 i = 1
+    · by_cases hxj : v.x 0 j = 1
       · -- Both x_{0i} = 1 and x_{0j} = 1: contradicts hout (sum = 1 but ≥ 2)
         exfalso
         have hout0 := h.hout depot
@@ -81,24 +82,26 @@ private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
         have hdi : depot ≠ i := Fin.val_ne_iff.mp (Ne.symm hi)
         have hdj : depot ≠ j := Fin.val_ne_iff.mp (Ne.symm hj)
         -- split sum: x depot i + ∑ (erase i) = 1
-        rw [← Finset.add_sum_erase univ (fun k : Fin p.n => v.x depot.val k.val)
+        rw [← Finset.add_sum_erase univ (fun k : Fin p.n => v.x depot k)
               (mem_univ i)] at hout0
         -- further split: x depot j + ∑ (erase i, erase j) ≤ sum over erase i
         have hj_in : j ∈ (univ (α := Fin p.n)).erase i :=
           Finset.mem_erase.mpr ⟨hij.symm, mem_univ _⟩
-        rw [← Finset.add_sum_erase _ (fun k : Fin p.n => v.x depot.val k.val) hj_in] at hout0
-        have hge3 : 0 ≤ ∑ k ∈ ((univ (α := Fin p.n)).erase i).erase j, v.x depot.val k.val :=
+        rw [← Finset.add_sum_erase _ (fun k : Fin p.n => v.x depot k) hj_in] at hout0
+        have hge3 : 0 ≤ ∑ k ∈ ((univ (α := Fin p.n)).erase i).erase j, v.x depot k :=
           Finset.sum_nonneg (fun k _ => xnn depot k)
-        linarith [hxi, hxj]
+        have hxi' : v.x depot i = 1 := hxi
+        have hxj' : v.x depot j = 1 := hxj
+        linarith [hxi', hxj']
       · -- x_{0i} = 1, x_{0j} ≠ 1 (so = 0): u'_i = 2, u'_j = v.u j
         rw [if_pos hxi, if_neg hxj]
         linarith [h.hmtz i j hi hj hij, h.hu_lo i hi]
-    · by_cases hxj : v.x 0 j.val = 1
+    · by_cases hxj : v.x 0 j = 1
       · -- x_{0i} ≠ 1 (so = 0), x_{0j} = 1: u'_i = v.u i, u'_j = 2
         rw [if_neg hxi, if_pos hxj]
         -- x i j = 0: from hin j and x depot j = 1
         have hdi : depot ≠ i := Fin.val_ne_iff.mp (Ne.symm hi)
-        have hxij : v.x i.val j.val = 0 :=
+        have hxij : v.x i j = 0 :=
           sum_one_of_ne_zero (s := univ)
             (a := (⟨0, hn_pos⟩ : Fin (paramMap p).n)) (b := i)
             (mem_univ _) (mem_univ i) (Fin.val_ne_iff.mp (Ne.symm hi))
@@ -126,7 +129,8 @@ private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
     · -- u'_i = 2; need (2 : ℝ) ≤ (p.n : ℝ)
       -- x 0 i = 1, x 0 0 = 0, so i ≠ 0, so hu_lo gives 2 ≤ u i ≤ n
       have hi_ne_0 : i.val ≠ 0 := fun heq => by
-        simp only [show (↑i : ℕ) = 0 from heq, hself0] at hxi
+        have hi0 : i = (0 : Fin p.n) := Fin.ext (by simpa using heq)
+        rw [hi0, hself0] at hxi
         omega
       linarith [h.hu_lo i hi_ne_0, h.hu_hi i]
     · exact h.hu_hi i
@@ -146,11 +150,11 @@ private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
 -- ============================================================================
 
 -- bwd simply drops hec1
-private def bwd (_ : P12.a.Params) (v : P12.b.Vars) : P12.a.Vars :=
+private def bwd (p : P12.a.Params) (v : P12.b.Vars (paramMap p)) : P12.a.Vars p :=
   { x := v.x
     u := v.u }
 
-private lemma bwd_feas (p : P12.a.Params) (v : P12.b.Vars)
+private lemma bwd_feas (p : P12.a.Params) (v : P12.b.Vars (paramMap p))
     (h : P12.b.Feasible (paramMap p) v) :
     P12.a.Feasible p (bwd p v) := by
   simp only [bwd, paramMap] at *

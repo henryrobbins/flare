@@ -10,7 +10,6 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
-
 -- ============================================================================
 -- § Parameter Mapping
 -- ============================================================================
@@ -64,35 +63,32 @@ private def paramMap (p : P11.a.Params) : P11.g.Params :=
     hD_pos     := p.hD_pos
     hMR_bin    := p.hMR_bin }
 
+private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.g.Vars (paramMap p) :=
+  { u     := V.u
+    v     := V.v
+    w     := V.w
+    d_su  := V.d_su
+    lam   := V.lam
+    p     := V.p
+    r     := V.r
+    c_var  := V.c_var
+    p_wind := V.p_wind
+    P_bar  := fun g t =>
+      if h : 0 < t.val then
+        have ht_lt : t.val < p.nT := show t.val < (paramMap p).nT from t.isLt
+        have hlt : t.val - 1 < p.nT := by omega
+        p.P_min g * (V.u g t : ℝ) +
+          (p.P_max g - p.P_min g) * (V.u g ⟨t.val - 1, hlt⟩ : ℝ) -
+          max (p.P_max g - p.SU g) 0 * (V.v g ⟨t.val - 1, hlt⟩ : ℝ) +
+          p.RU g
+      else 0 }
 -- ============================================================================
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-/--
-**P11.a → P11.g**: identity on all existing variables; the new auxiliary
-variable `P_bar g t` is set to the RHS of the EC3b constraint, making that
-constraint hold with equality.
--/
-private def fwd (p : P11.a.Params) (v : P11.a.Vars) : P11.g.Vars :=
-  { u     := v.u
-    v     := v.v
-    w     := v.w
-    d_su  := v.d_su
-    lam   := v.lam
-    p     := v.p
-    r     := v.r
-    c_var  := v.c_var
-    p_wind := v.p_wind
-    P_bar  := fun g t =>
-      let gf : Fin p.nG := ⟨g % p.nG, Nat.mod_lt _ (p.hG_pos.pos)⟩
-      p.P_min gf * (v.u g t : ℝ) +
-        (p.P_max gf - p.P_min gf) * (v.u g (t - 1) : ℝ) -
-        max (p.P_max gf - p.SU gf) 0 * (v.v g (t - 1) : ℝ) +
-        p.RU gf }
-
-private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
-    (h : P11.a.Feasible p v) :
-    P11.g.Feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
+    (h : P11.a.Feasible p V) :
+    P11.g.Feasible (paramMap p) (fwd p V) := by
   refine
     { hdemand     := h.hdemand
       hreserve    := h.hreserve
@@ -123,34 +119,17 @@ private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
       hec3b       := ?hec3b }
   case hec3b =>
     intro g t ht
+    show (fwd p V).P_bar g t ≤ _
+    simp only [fwd]
+    rw [dif_pos ht]
+    rfl
     -- P_bar was defined as exactly the RHS (mod the g index normalization);
     -- since g : Fin p.nG, g.val % p.nG = g.val, so the cast is trivial.
-    show p.P_min ⟨g.val % p.nG, Nat.mod_lt _ (p.hG_pos.pos)⟩ * (v.u g.val t.val : ℝ) +
-        (p.P_max ⟨g.val % p.nG, Nat.mod_lt _ (p.hG_pos.pos)⟩ -
-          p.P_min ⟨g.val % p.nG, Nat.mod_lt _ (p.hG_pos.pos)⟩) *
-          (v.u g.val (t.val - 1) : ℝ) -
-        max (p.P_max ⟨g.val % p.nG, Nat.mod_lt _ (p.hG_pos.pos)⟩ -
-              p.SU ⟨g.val % p.nG, Nat.mod_lt _ (p.hG_pos.pos)⟩) 0 *
-          (v.v g.val (t.val - 1) : ℝ) +
-        p.RU ⟨g.val % p.nG, Nat.mod_lt _ (p.hG_pos.pos)⟩ ≤
-      p.P_min g * (v.u g.val t.val : ℝ) +
-        (p.P_max g - p.P_min g) * (v.u g.val (t.val - 1) : ℝ) -
-          max (p.P_max g - p.SU g) 0 * (v.v g.val (t.val - 1) : ℝ) +
-            p.RU g
-    have hg : (⟨g.val % p.nG, Nat.mod_lt _ (p.hG_pos.pos)⟩ : Fin p.nG) = g := by
-      apply Fin.ext
-      exact Nat.mod_eq_of_lt g.isLt
-    rw [hg]
 
+private def bwd (p : P11.a.Params) (v : P11.g.Vars (paramMap p)) : P11.a.Vars p :=
 -- ============================================================================
 -- § Backward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.g → P11.a**: drop the `P_bar` auxiliary variable; all other variables
-are carried over unchanged.
--/
-private def bwd (_ : P11.a.Params) (v : P11.g.Vars) : P11.a.Vars :=
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -161,7 +140,7 @@ private def bwd (_ : P11.a.Params) (v : P11.g.Vars) : P11.a.Vars :=
     c_var  := v.c_var
     p_wind := v.p_wind }
 
-private lemma bwd_feas (p : P11.a.Params) (v : P11.g.Vars)
+private lemma bwd_feas (p : P11.a.Params) (v : P11.g.Vars (paramMap p))
     (h : P11.g.Feasible (paramMap p) v) :
     P11.a.Feasible p (bwd p v) := by
   exact
@@ -195,7 +174,6 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.g.Vars)
 -- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
-
 def aGEquiv : MILPReformulation P11.a.formulation P11.g.formulation where
   paramMap    := paramMap
   fwd         := fwd

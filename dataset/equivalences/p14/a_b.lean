@@ -30,11 +30,11 @@ private def paramMap (p : P14.a.Params) : P14.b.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P14.a.Params) (v : P14.a.Vars) : P14.b.Vars :=
+private def fwd (p : P14.a.Params) (v : P14.a.Vars p) : P14.b.Vars (paramMap p) :=
   { x := v.x
     y := v.y }
 
-private lemma fwd_feas (p : P14.a.Params) (v : P14.a.Vars)
+private lemma fwd_feas (p : P14.a.Params) (v : P14.a.Vars p)
     (h : P14.a.Feasible p v) :
     P14.b.Feasible (paramMap p) (fwd p v) := by
   -- `y` is non-negative everywhere (binary) and vanishes when `delta = 0`
@@ -122,11 +122,11 @@ private lemma fwd_feas (p : P14.a.Params) (v : P14.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P14.a.Params) (v : P14.b.Vars) : P14.a.Vars :=
+private def bwd (p : P14.a.Params) (v : P14.b.Vars (paramMap p)) : P14.a.Vars p :=
   { x := v.x
     y := v.y }
 
-private lemma bwd_feas (p : P14.a.Params) (v : P14.b.Vars)
+private lemma bwd_feas (p : P14.a.Params) (v : P14.b.Vars (paramMap p))
     (h : P14.b.Feasible (paramMap p) v) :
     P14.a.Feasible p (bwd p v) := by
   -- `y` is binary non-negative; when delta = 0 (T > T_limit), y = 0 by htime.
@@ -211,7 +211,7 @@ private lemma bwd_feas (p : P14.a.Params) (v : P14.b.Vars)
 -- § Objective Mapping
 -- ============================================================================
 
-private lemma fwd_obj (p : P14.a.Params) (v : P14.a.Vars)
+private lemma fwd_obj (p : P14.a.Params) (v : P14.a.Vars p)
     (h : P14.a.Feasible p v) :
     (P14.b.formulation).obj (paramMap p) (fwd p v) = P14.a.formulation.obj p v := by
   show P14.b.obj (paramMap p) (fwd p v) = P14.a.obj p v
@@ -229,7 +229,7 @@ private lemma fwd_obj (p : P14.a.Params) (v : P14.a.Vars)
     rw [hd0, hy0]; push_cast; ring
   · rw [hd1]; push_cast; ring
 
-private lemma bwd_obj (p : P14.a.Params) (v : P14.b.Vars)
+private lemma bwd_obj (p : P14.a.Params) (v : P14.b.Vars (paramMap p))
     (h : P14.b.Feasible (paramMap p) v) :
     (P14.b.formulation).obj (paramMap p) v = P14.a.formulation.obj p (bwd p v) := by
   show P14.b.obj (paramMap p) v = P14.a.obj p (bwd p v)

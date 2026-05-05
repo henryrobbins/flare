@@ -38,11 +38,11 @@ structure Params where
   hs_nn : ∀ i, 0 ≤ s i
   ho_nn : ∀ h, 0 ≤ o h
 
-structure Vars where
-  x : ℕ → ℕ → ℤ  -- number of floors with configuration v and owner h; indexed (v, h)
-  y : ℕ → ℕ → ℕ → ℤ  -- number of apartments in sector i, area j, owner h; indexed (i, j, h)
+structure Vars (p : Params) where
+  x : Fin p.nV → Fin p.nH → ℤ  -- number of floors with configuration v and owner h; indexed (v, h)
+  y : Fin p.nI → Fin p.nJ → Fin p.nH → ℤ  -- number of apartments in sector i, area j, owner h; indexed (i, j, h)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Total number of floors equals K
   hfloors : ∑ cfg : Fin p.nV, ∑ h : Fin p.nH, v.x cfg h = (p.K : ℤ)
   -- Apartment-count consistency between configurations and sector assignments
@@ -60,7 +60,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hmin_area : ∀ (i : Fin p.nI) (j : Fin p.nJ) (h : Fin p.nH),
     p.area j < p.m i h → v.y i j h = 0
   -- Corporations cannot own free sector apartments
-  hno_free_corp : ∀ j : Fin p.nJ, v.y p.iFree j p.hCorp = 0
+  hno_free_corp : ∀ j : Fin p.nJ, v.y ⟨p.iFree, p.hiFree⟩ j ⟨p.hCorp, p.hhCorp⟩ = 0
   -- Minimum fraction of apartments for owner h
   howner_pct : ∀ h : Fin p.nH,
     ((∑ i : Fin p.nI, ∑ j : Fin p.nJ, v.y i j h : ℤ) : ℝ) ≥
@@ -70,7 +70,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hy_nn : ∀ (i : Fin p.nI) (j : Fin p.nJ) (h : Fin p.nH), 0 ≤ v.y i j h
 
 -- Maximize total profit from apartment assignments
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.nI, ∑ j : Fin p.nJ, ∑ h : Fin p.nH, p.O i j h * (v.y i j h : ℝ))
 
 def formulation : MILPFormulation where

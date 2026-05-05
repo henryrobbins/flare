@@ -15,18 +15,18 @@ structure Params where
   hP_nn : 0 ≤ P
   hK_nn : 0 ≤ K
 
-structure Vars where
+structure Vars (p : Params) where
   h : ℤ  -- number of subsoil bags
   d : ℤ  -- number of topsoil bags
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Topsoil proportion ≤ K
   hprop : (v.d : ℝ) ≤ p.K * ((v.d : ℝ) + v.h)
   hh_nn : 0 ≤ v.h
   hd_nn : 0 ≤ v.d
 
 -- Minimize total water required
-def obj (p : Params) (v : Vars) : ℝ := p.Z * (v.h : ℝ) + p.B * v.d
+def obj (p : Params) (v : Vars p) : ℝ := p.Z * (v.h : ℝ) + p.B * v.d
 
 def formulation : MILPFormulation where
   Params   := Params

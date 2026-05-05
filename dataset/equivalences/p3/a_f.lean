@@ -31,11 +31,11 @@ private def paramMap (p : P3.a.Params) : P3.f.Params :=
 -- ============================================================================
 
 /-- **P3.a → P3.f**: Count placed entirely in n1; n2 is zero. -/
-private def fwd (_ : P3.a.Params) (v : P3.a.Vars) : P3.f.Vars :=
+private def fwd (p : P3.a.Params) (v : P3.a.Vars p) : P3.f.Vars (paramMap p) :=
   { n1 := v.NumBeakersUsed
     n2 := fun _ => 0 }
 
-private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
+private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars p)
     (h : P3.a.Feasible p v) :
     P3.f.Feasible (paramMap p) (fwd p v) := by
   refine ⟨?_, ?_, ?_, h.hNumBeakersUsed_nn, fun _ => le_refl 0⟩
@@ -48,10 +48,10 @@ private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
 -- ============================================================================
 
 /-- **P3.f → P3.a**: Both parts are summed to recover the beaker count. -/
-private def bwd (_ : P3.a.Params) (v : P3.f.Vars) : P3.a.Vars :=
+private def bwd (p : P3.a.Params) (v : P3.f.Vars (paramMap p)) : P3.a.Vars p :=
   { NumBeakersUsed := fun i => v.n1 i + v.n2 i }
 
-private lemma bwd_feas (p : P3.a.Params) (v : P3.f.Vars)
+private lemma bwd_feas (p : P3.a.Params) (v : P3.f.Vars (paramMap p))
     (h : P3.f.Feasible (paramMap p) v) :
     P3.a.Feasible p (bwd p v) :=
   { hliquid := by

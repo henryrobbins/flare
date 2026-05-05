@@ -27,11 +27,12 @@ private def paramMap (p : P12.a.Params) : P12.c.Params :=
 -- fwd overrides u: if x i 0 = 1, set u i = n. This ensures hec2 holds without
 -- breaking hmtz (the unique outgoing arc from such an i is 0, so x_{i j} = 0
 -- for all j in Fin p.n, and the incoming constraint forbids two such i's).
-private def fwd (p : P12.a.Params) (v : P12.a.Vars) : P12.c.Vars :=
+private def fwd (p : P12.a.Params) (v : P12.a.Vars p) : P12.c.Vars (paramMap p) :=
+  haveI : NeZero p.n := p.hn
   { x := v.x
     u := fun i => if v.x i 0 = 1 then (p.n : ℝ) else v.u i }
 
-private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
+private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars p)
     (h : P12.a.Feasible p v) :
     P12.c.Feasible (paramMap p) (fwd p v) := by
   haveI : NeZero p.n := p.hn
@@ -66,46 +67,48 @@ private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
   · -- hmtz
     intro i j hi hj hij
     simp only [fwd, paramMap]
-    by_cases hxi : v.x i.val 0 = 1
+    by_cases hxi : v.x i 0 = 1
     · -- x_{i 0} = 1: u'_i = n; x_{i j} = 0 by hout (unique outgoing)
-      have hxij : v.x i.val j.val = 0 := by
+      have hxij : v.x i j = 0 := by
         have hout_i := h.hout i
         have h0_in : (⟨0, hn_pos⟩ : Fin p.n) ∈ (univ : Finset (Fin p.n)) := mem_univ _
         have hj_ne_0 : j ≠ ⟨0, hn_pos⟩ := fun heq => hj (by rw [heq])
         have hj_in_erase : j ∈ (univ : Finset (Fin p.n)).erase ⟨0, hn_pos⟩ :=
           Finset.mem_erase.mpr ⟨hj_ne_0, mem_univ _⟩
-        rw [← Finset.add_sum_erase univ (fun k : Fin p.n => v.x i.val k.val) h0_in]
+        rw [← Finset.add_sum_erase univ (fun k : Fin p.n => v.x i k) h0_in]
           at hout_i
-        rw [← Finset.add_sum_erase _ (fun k : Fin p.n => v.x i.val k.val) hj_in_erase]
+        rw [← Finset.add_sum_erase _ (fun k : Fin p.n => v.x i k) hj_in_erase]
           at hout_i
-        simp only at hout_i
         have hrest_nn : 0 ≤ ∑ k ∈ ((univ : Finset (Fin p.n)).erase ⟨0, hn_pos⟩).erase j,
-            v.x i.val k.val :=
+            v.x i k :=
           Finset.sum_nonneg (fun k _ => xnn _ _)
-        have hxij_nn : 0 ≤ v.x i.val j.val := xnn _ _
+        have hxij_nn : 0 ≤ v.x i j := xnn _ _
+        have hxi0' : v.x i ⟨0, hn_pos⟩ = 1 := hxi
         omega
       rw [if_pos hxi]
-      by_cases hxj : v.x j.val 0 = 1
+      by_cases hxj : v.x j 0 = 1
       · -- Two distinct nodes both point to 0: violates hin 0
         exfalso
         have hin0 := h.hin ⟨0, hn_pos⟩
         have hi_in : i ∈ (univ : Finset (Fin p.n)) := mem_univ _
         have hj_in_erase : j ∈ (univ : Finset (Fin p.n)).erase i :=
           Finset.mem_erase.mpr ⟨hij.symm, mem_univ _⟩
-        rw [← Finset.add_sum_erase univ (fun k : Fin p.n => v.x k.val 0) hi_in]
+        rw [← Finset.add_sum_erase univ (fun k : Fin p.n => v.x k ⟨0, hn_pos⟩) hi_in]
           at hin0
-        rw [← Finset.add_sum_erase _ (fun k : Fin p.n => v.x k.val 0) hj_in_erase]
+        rw [← Finset.add_sum_erase _ (fun k : Fin p.n => v.x k ⟨0, hn_pos⟩) hj_in_erase]
           at hin0
         have hrest_nn : 0 ≤ ∑ k ∈ ((univ : Finset (Fin p.n)).erase i).erase j,
-            v.x k.val 0 :=
+            v.x k ⟨0, hn_pos⟩ :=
           Finset.sum_nonneg (fun k _ => xnn k ⟨0, hn_pos⟩)
+        have hxi0' : v.x i ⟨0, hn_pos⟩ = 1 := hxi
+        have hxj0' : v.x j ⟨0, hn_pos⟩ = 1 := hxj
         omega
       · rw [if_neg hxj, hxij]
         push_cast
         have hulo_j := h.hu_lo j hj
         linarith
     · rw [if_neg hxi]
-      by_cases hxj : v.x j.val 0 = 1
+      by_cases hxj : v.x j 0 = 1
       · rw [if_pos hxj]
         have hmtz := h.hmtz i j hi hj hij
         have huhi_j := h.hu_hi j
@@ -143,11 +146,11 @@ private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars)
 -- ============================================================================
 
 -- bwd simply drops hec2
-private def bwd (_ : P12.a.Params) (v : P12.c.Vars) : P12.a.Vars :=
+private def bwd (p : P12.a.Params) (v : P12.c.Vars (paramMap p)) : P12.a.Vars p :=
   { x := v.x
     u := v.u }
 
-private lemma bwd_feas (p : P12.a.Params) (v : P12.c.Vars)
+private lemma bwd_feas (p : P12.a.Params) (v : P12.c.Vars (paramMap p))
     (h : P12.c.Feasible (paramMap p) v) :
     P12.a.Feasible p (bwd p v) := by
   simp only [bwd, paramMap] at *

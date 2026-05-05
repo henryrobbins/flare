@@ -91,7 +91,7 @@ NOTE: Use `variable` to automatically add parameters for convenience.
 - Introduce the feasibility hypothesis as an *explicit* parameter (h)
 - Explicitly `include h` to avoid issues with Lean inferring the variable
 -/
-variable {p : <A>.Params} {v : <A>.Vars} (h : <A>.Feasible p v)
+variable {p : <A>.Params} {v : <A>.Vars p} (h : <A>.Feasible p v)
 include h
 
 -- Private helper lemmas and definitions depending on h go here.
@@ -101,10 +101,10 @@ end ForwardHelpers
 /--
 **<A> → <B>**: {Brief informal description of the forward map construction}
 -/
-private def fwd (_ : <A>.Params) (v : <A>.Vars) : <B>.Vars :=
+private def fwd (p : <A>.Params) (v : <A>.Vars p) : <B>.Vars (paramMap p) :=
   { ... }
 
-private lemma fwd_feas (p : <A>.Params) (v : <A>.Vars)
+private lemma fwd_feas (p : <A>.Params) (v : <A>.Vars p)
     (h : <A>.Feasible p v) :
     <B>.Feasible (paramMap p) (fwd p v) := by
   sorry
@@ -137,7 +137,8 @@ NOTE: Use `variable` to automatically add parameters for convenience.
 - Introduce the feasibility hypothesis as an *explicit* parameter (h)
 - Explicitly `include h` to avoid issues with Lean inferring the variable
 -/
-variable {p : <B>.Params} {v : <B>.Vars} (h : <B>.Feasible p v)
+variable {p : <A>.Params} {v : <B>.Vars (paramMap p)}
+  (h : <B>.Feasible (paramMap p) v)
 include h
 
 -- Private helper lemmas and definitions depending on h go here.
@@ -147,10 +148,10 @@ end BackwardHelpers
 /--
 **<B> → <A>**: {Brief informal description of the backward map construction}
 -/
-private def bwd (_ : <A>.Params) (v : <B>.Vars) : <A>.Vars :=
+private def bwd (p : <A>.Params) (v : <B>.Vars (paramMap p)) : <A>.Vars p :=
   { ... }
 
-private lemma bwd_feas (p : <A>.Params) (v : <B>.Vars)
+private lemma bwd_feas (p : <A>.Params) (v : <B>.Vars (paramMap p))
     (h : <B>.Feasible (paramMap p) v) :
     <A>.Feasible p (bwd p v) := by
   sorry
@@ -176,12 +177,12 @@ private def objMap : ℝ → ℝ := fun v => ...
 private lemma objMap_mono : StrictMono objMap := by
   sorry
 
-private lemma fwd_obj (p : <A>.Params) (v : <A>.Vars)
+private lemma fwd_obj (p : <A>.Params) (v : <A>.Vars p)
     (h : <A>.Feasible p v) :
     <B>.obj (paramMap p) (fwd p v) = objMap (<A>.obj p v) := by
   sorry
 
-private lemma bwd_obj (p : <A>.Params) (v : <B>.Vars)
+private lemma bwd_obj (p : <A>.Params) (v : <B>.Vars (paramMap p))
     (h : <B>.Feasible (paramMap p) v) :
     <B>.obj (paramMap p) v = objMap (<A>.obj p (bwd p v)) := by
   sorry

@@ -29,11 +29,11 @@ structure Params where
   hd_pos : ∀ k : Fin K, 0 < d k
   hu_nn : ∀ e : Fin m, 0 ≤ u e
 
-structure Vars where
-  x : ℕ → ℕ → ℝ  -- flow of commodity k on arc e
-  y : ℕ → ℤ       -- 1 if arc e is activated, 0 otherwise
+structure Vars (p : Params) where
+  x : Fin p.m → Fin p.K → ℝ  -- flow of commodity k on arc e
+  y : Fin p.m → ℤ             -- 1 if arc e is activated, 0 otherwise
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Commodity source outflow equals demand
   hout : ∀ k : Fin p.K,
     (univ.filter (fun e : Fin p.m => p.tail e = p.O k)).sum (fun e => v.x e k) = p.d k
@@ -55,7 +55,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
     (univ.filter (fun e : Fin p.m => p.tail e = p.D k)).sum (fun e => v.x e k) = 0
 
 -- Minimize total flow cost plus fixed arc activation cost
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   (∑ e : Fin p.m, ∑ k : Fin p.K, p.c e * v.x e k) +
   ∑ e : Fin p.m, p.f e * (v.y e : ℝ)
 

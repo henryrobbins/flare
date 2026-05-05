@@ -31,7 +31,7 @@ private def paramMap (p : P3.a.Params) : P3.e.Params :=
 -- ============================================================================
 
 /-- **P3.a → P3.e**: Each slack absorbs the gap between resource usage and its bound. -/
-private def fwd (p : P3.a.Params) (v : P3.a.Vars) : P3.e.Vars :=
+private def fwd (p : P3.a.Params) (v : P3.a.Vars p) : P3.e.Vars (paramMap p) :=
   { n       := v.NumBeakersUsed
     slack_0 := p.SpecialLiquidAvailable -
                ∑ i : Fin p.NumBeakers, p.SpecialLiquidUsagePerBeaker i * (v.NumBeakersUsed i : ℝ)
@@ -40,7 +40,7 @@ private def fwd (p : P3.a.Params) (v : P3.a.Vars) : P3.e.Vars :=
     slack_2 := p.MaxWasteAllowed -
                ∑ i : Fin p.NumBeakers, p.WasteProducedPerBeaker i * (v.NumBeakersUsed i : ℝ) }
 
-private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
+private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars p)
     (h : P3.a.Feasible p v) :
     P3.e.Feasible (paramMap p) (fwd p v) :=
   { hliquid    := by simp only [paramMap, fwd]; ring
@@ -56,10 +56,10 @@ private lemma fwd_feas (p : P3.a.Params) (v : P3.a.Vars)
 -- ============================================================================
 
 /-- **P3.e → P3.a**: Drop slacks; beaker counts project directly. -/
-private def bwd (_ : P3.a.Params) (v : P3.e.Vars) : P3.a.Vars :=
+private def bwd (p : P3.a.Params) (v : P3.e.Vars (paramMap p)) : P3.a.Vars p :=
   { NumBeakersUsed := v.n }
 
-private lemma bwd_feas (p : P3.a.Params) (v : P3.e.Vars)
+private lemma bwd_feas (p : P3.a.Params) (v : P3.e.Vars (paramMap p))
     (h : P3.e.Feasible (paramMap p) v) :
     P3.a.Feasible p (bwd p v) :=
   { hliquid := by

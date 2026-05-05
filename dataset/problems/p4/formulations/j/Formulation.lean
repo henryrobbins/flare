@@ -18,18 +18,18 @@ structure Params where
   hJ_nn : 0 ≤ J
   hS_nn : 0 ≤ S
 
-structure Vars where
+structure Vars (p : Params) where
   m : ℤ  -- number of cars used
   h : ℤ  -- number of buses used
 
-structure Feasible (_ : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- No constraints (incomplete formulation)
   -- [Implicit Constraints]
   hm_nn : 0 ≤ v.m
   hh_nn : 0 ≤ v.h
 
 -- Minimize total pollution
-def obj (p : Params) (v : Vars) : ℝ := (v.m : ℝ) * p.M + (v.h : ℝ) * p.O
+def obj (p : Params) (v : Vars p) : ℝ := (v.m : ℝ) * p.M + (v.h : ℝ) * p.O
 
 def formulation : MILPFormulation where
   Params   := Params

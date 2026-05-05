@@ -23,9 +23,9 @@ structure Params where
   hn : NeZero n
   hm : NeZero m
 
-structure Vars where
-  x : ℕ → ℕ → ℤ  -- assignment: 1 if customer i assigned to warehouse j
-  y : ℕ → ℤ       -- 1 if warehouse j is opened
+structure Vars (p : Params) where
+  x : Fin p.n → Fin p.m → ℤ  -- assignment: 1 if customer i assigned to warehouse j
+  y : Fin p.m → ℤ       -- 1 if warehouse j is opened
 
 noncomputable def uMax (p : Params) : ℝ := ⨆ j : Fin p.m, p.u j
 
@@ -33,7 +33,7 @@ noncomputable def criticalCustomers (p : Params) : Finset (Fin p.n) :=
   letI : DecidablePred (fun i : Fin p.n => uMax p / 2 < p.d i) := Classical.decPred _
   univ.filter (fun i => uMax p / 2 < p.d i)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Each customer is assigned to exactly one warehouse
   hassign : ∀ i : Fin p.n, ∑ j : Fin p.m, v.x i j = 1
   -- Capacity: total demand assigned to each warehouse cannot exceed its capacity times whether it is open
@@ -44,7 +44,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hec1 : ((criticalCustomers p).card : ℤ) ≤ ∑ j : Fin p.m, v.y j
 
 -- Minimize total fixed opening cost plus transportation cost
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   (∑ j : Fin p.m, p.f j * (v.y j : ℝ)) + ∑ i : Fin p.n, ∑ j : Fin p.m, p.c i j * (v.x i j : ℝ)
 
 def formulation : MILPFormulation where

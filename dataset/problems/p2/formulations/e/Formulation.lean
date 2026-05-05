@@ -21,11 +21,11 @@ structure Params where
   hY_nn : ∀ j, 0 ≤ Y j
   hI_nn : ∀ j i, 0 ≤ I j i
 
-structure Vars where
-  j : ℕ → ℤ  -- number of times experiment i is conducted
-  s : ℕ → ℝ  -- slack for each resource constraint
+structure Vars (p : Params) where
+  j : Fin p.M → ℤ  -- number of times experiment i is conducted
+  s : Fin p.N → ℝ  -- slack for each resource constraint
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Resource usage plus slack equals available (equality form)
   hres : ∀ k : Fin p.N, ∑ i : Fin p.M, p.I k i * (v.j i : ℝ) + v.s k = p.Y k
   -- [Implicit Constraints]
@@ -33,7 +33,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hs_nn : ∀ k : Fin p.N, 0 ≤ v.s k
 
 -- Maximize total electricity produced
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.M, p.A i * (v.j i : ℝ))
 
 def formulation : MILPFormulation where

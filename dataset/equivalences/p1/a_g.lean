@@ -26,11 +26,11 @@ private def paramMap (p : P1.a.Params) : P1.g.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P1.a.Params) (v : P1.a.Vars) : P1.g.Vars :=
+private def fwd (p : P1.a.Params) (v : P1.a.Vars p) : P1.g.Vars (paramMap p) :=
   { s := v.NumCashMachines
     r := v.NumCardMachines }
 
-private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars)
+private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars p)
     (h : P1.a.Feasible p v) :
     P1.g.Feasible (paramMap p) (fwd p v) :=
   { hpeople := h.hpeople
@@ -43,11 +43,11 @@ private lemma fwd_feas (p : P1.a.Params) (v : P1.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P1.a.Params) (v : P1.g.Vars) : P1.a.Vars :=
+private def bwd (p : P1.a.Params) (v : P1.g.Vars (paramMap p)) : P1.a.Vars p :=
   { NumCashMachines := v.s
     NumCardMachines := v.r }
 
-private lemma bwd_feas (p : P1.a.Params) (v : P1.g.Vars)
+private lemma bwd_feas (p : P1.a.Params) (v : P1.g.Vars (paramMap p))
     (h : P1.g.Feasible (paramMap p) v) :
     P1.a.Feasible p (bwd p v) :=
   { hpeople  := h.hpeople

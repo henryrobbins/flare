@@ -17,11 +17,11 @@ structure Params where
   hU_nn : 0 ≤ U
   hV_nn : 0 ≤ V
 
-structure Vars where
+structure Vars (p : Params) where
   s : ℤ  -- number of cash machines
   r : ℤ  -- number of card machines
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Process at least U people per hour
   hpeople : p.U ≤ p.A * (v.s : ℝ) + p.K * (v.r : ℝ)
   -- Use at most V paper rolls per hour
@@ -33,7 +33,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hr_nn : 0 ≤ v.r
 
 -- Minimize the total number of machines (scaled by 2)
-def obj (_ : Params) (v : Vars) : ℝ := 2 * ((v.s : ℝ) + (v.r : ℝ))
+def obj (p : Params) (v : Vars p) : ℝ := 2 * ((v.s : ℝ) + (v.r : ℝ))
 
 def formulation : MILPFormulation where
   Params   := Params

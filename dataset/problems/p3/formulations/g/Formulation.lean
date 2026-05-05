@@ -24,10 +24,10 @@ structure Params where
   hT_nn : ∀ i, 0 ≤ T i
   hV_nn : ∀ i, 0 ≤ V i
 
-structure Vars where
-  n : ℕ → ℤ  -- the number of beakers of type i used
+structure Vars (p : Params) where
+  n : Fin p.N → ℤ  -- the number of beakers of type i used
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Total liquid used does not exceed available amount
   hliquid : ∑ i : Fin p.N, p.V i * (v.n i : ℝ) ≤ p.Z
   -- Total flour used does not exceed available amount
@@ -38,7 +38,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hn_nn   : ∀ i : Fin p.N, 0 ≤ v.n i
 
 -- Maximize total slime produced
-noncomputable def obj (p : Params) (v : Vars) : ℝ :=
+noncomputable def obj (p : Params) (v : Vars p) : ℝ :=
   -2 * (∑ i : Fin p.N, p.X i * (v.n i : ℝ))
 
 noncomputable def formulation : MILPFormulation where

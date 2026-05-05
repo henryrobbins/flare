@@ -10,7 +10,6 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
-
 -- ============================================================================
 -- § Parameter Mapping
 -- ============================================================================
@@ -64,39 +63,35 @@ private def paramMap (p : P11.a.Params) : P11.e.Params :=
     hD_pos     := p.hD_pos
     hMR_bin    := p.hMR_bin }
 
+private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.e.Vars (paramMap p) :=
+  { u     := V.u
+    v     := V.v
+    w     := V.w
+    d_su  := V.d_su
+    lam   := V.lam
+    p     := V.p
+    r     := V.r
+    c_var := V.c_var
+    p_wind := V.p_wind
+    b      := fun g t =>
+      if h : t.val + 1 < p.nT then
+        V.v g t * V.w g ⟨t.val + 1, h⟩
+      else 0
 -- ============================================================================
 -- § Forward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.a → P11.e**: identity on shared variables. `b g t` is set to
-`v.v g t * v.w g (t+1)` (an EC1 indicator); `P_bar g t` is set to the RHS of
-the `hec2c` inequality so the constraint holds with equality.
--/
-private def fwd (p : P11.a.Params) (v : P11.a.Vars) : P11.e.Vars :=
-  { u     := v.u
-    v     := v.v
-    w     := v.w
-    d_su  := v.d_su
-    lam   := v.lam
-    p     := v.p
-    r     := v.r
-    c_var := v.c_var
-    p_wind := v.p_wind
-    b      := fun g t => v.v g t * v.w g (t + 1)
     P_bar  := fun g t =>
-      if h : g < p.nG then
-        p.P_max ⟨g, h⟩ * (v.u g t : ℝ) -
-          max (p.P_max ⟨g, h⟩ - p.SU ⟨g, h⟩) 0 * (v.v g t : ℝ) -
-          max (p.P_max ⟨g, h⟩ - p.SD ⟨g, h⟩) 0 * (v.w g (t + 1) : ℝ) +
-          min (max (p.P_max ⟨g, h⟩ - p.SU ⟨g, h⟩) 0)
-              (max (p.P_max ⟨g, h⟩ - p.SD ⟨g, h⟩) 0) *
-            ((v.v g t * v.w g (t + 1) : ℤ) : ℝ)
+      if h : t.val + 1 < p.nT then
+        p.P_max g * (V.u g t : ℝ) -
+          max (p.P_max g - p.SU g) 0 * (V.v g t : ℝ) -
+          max (p.P_max g - p.SD g) 0 * (V.w g ⟨t.val + 1, h⟩ : ℝ) +
+          min (max (p.P_max g - p.SU g) 0) (max (p.P_max g - p.SD g) 0) *
+            ((V.v g t * V.w g ⟨t.val + 1, h⟩ : ℤ) : ℝ)
       else 0 }
 
-private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
-    (h : P11.a.Feasible p v) :
-    P11.e.Feasible (paramMap p) (fwd p v) := by
+private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
+    (h : P11.a.Feasible p V) :
+    P11.e.Feasible (paramMap p) (fwd p V) := by
   refine
     { hdemand     := h.hdemand
       hreserve    := h.hreserve
@@ -130,72 +125,69 @@ private lemma fwd_feas (p : P11.a.Params) (v : P11.a.Vars)
       hec1_lb     := ?hec1_lb
       hec2c       := ?hec2c }
   case hb_bin =>
-    intro g t _
-    show v.v g.val t.val * v.w g.val (t.val + 1) = 0 ∨
-         v.v g.val t.val * v.w g.val (t.val + 1) = 1
+    intro g t ht
+    have ht' : t.val + 1 < p.nT := ht
+    have heq : (fwd p V).b g t = V.v g t * V.w g ⟨t.val + 1, ht'⟩ := by
+      simp only [fwd]; rw [dif_pos ht']
+    rw [heq]
     rcases h.hv_bin g t with hv0 | hv1
     · left; rw [hv0]; ring
-    · rcases h.hw_bin g ⟨t.val + 1, by assumption⟩ with hw0 | hw1
-      · left
-        have : v.w g.val (t.val + 1) = 0 := hw0
-        rw [this]; ring
-      · right
-        have hw1' : v.w g.val (t.val + 1) = 1 := hw1
-        rw [hv1, hw1']; ring
+    · rcases h.hw_bin g ⟨t.val + 1, ht'⟩ with hw0 | hw1
+      · left; rw [hv1, hw0]; ring
+      · right; rw [hv1, hw1]; ring
   case hec1_ub_v =>
-    intro g t _
-    show v.v g.val t.val * v.w g.val (t.val + 1) ≤ v.v g.val t.val
+    intro g t ht
+    have ht' : t.val + 1 < p.nT := ht
+    show (fwd p V).b g t ≤ V.v g t
+    have heq : (fwd p V).b g t = V.v g t * V.w g ⟨t.val + 1, ht'⟩ := by
+      simp only [fwd]; rw [dif_pos ht']
+    rw [heq]
     rcases h.hv_bin g t with hv0 | hv1
     · rw [hv0]; simp
-    · rcases h.hw_bin g ⟨t.val + 1, by assumption⟩ with hw0 | hw1
-      · have hw0' : v.w g.val (t.val + 1) = 0 := hw0
-        rw [hv1, hw0']; simp
-      · have hw1' : v.w g.val (t.val + 1) = 1 := hw1
-        rw [hv1, hw1']; norm_num
+    · rcases h.hw_bin g ⟨t.val + 1, ht'⟩ with hw0 | hw1
+      · rw [hv1, hw0]; simp
+      · rw [hv1, hw1]; norm_num
   case hec1_ub_w =>
-    intro g t _
-    show v.v g.val t.val * v.w g.val (t.val + 1) ≤ v.w g.val (t.val + 1)
-    rcases h.hw_bin g ⟨t.val + 1, by assumption⟩ with hw0 | hw1
-    · have hw0' : v.w g.val (t.val + 1) = 0 := hw0
-      rw [hw0']; simp
-    · have hw1' : v.w g.val (t.val + 1) = 1 := hw1
-      rw [hw1']
+    intro g t ht
+    have ht' : t.val + 1 < p.nT := ht
+    show (fwd p V).b g t ≤ V.w g ⟨t.val + 1, ht'⟩
+    have heq : (fwd p V).b g t = V.v g t * V.w g ⟨t.val + 1, ht'⟩ := by
+      simp only [fwd]; rw [dif_pos ht']
+    rw [heq]
+    rcases h.hw_bin g ⟨t.val + 1, ht'⟩ with hw0 | hw1
+    · rw [hw0]; simp
+    · rw [hw1]
       rcases h.hv_bin g t with hv0 | hv1
       · rw [hv0]; simp
       · rw [hv1]; norm_num
   case hec1_lb =>
     intro g t ht
-    show v.v g.val t.val + v.w g.val (t.val + 1) - 1 ≤
-         v.v g.val t.val * v.w g.val (t.val + 1)
+    have ht' : t.val + 1 < p.nT := ht
+    show V.v g t + V.w g ⟨t.val + 1, ht'⟩ - 1 ≤ (fwd p V).b g t
+    have heq : (fwd p V).b g t = V.v g t * V.w g ⟨t.val + 1, ht'⟩ := by
+      simp only [fwd]; rw [dif_pos ht']
+    rw [heq]
     rcases h.hv_bin g t with hv0 | hv1
     · rw [hv0]
-      rcases h.hw_bin g ⟨t.val + 1, ht⟩ with hw0 | hw1
-      · have : v.w g.val (t.val + 1) = 0 := hw0
-        rw [this]; omega
-      · have : v.w g.val (t.val + 1) = 1 := hw1
-        rw [this]; omega
+      rcases h.hw_bin g ⟨t.val + 1, ht'⟩ with hw0 | hw1
+      · rw [hw0]; omega
+      · rw [hw1]; omega
     · rw [hv1]
-      rcases h.hw_bin g ⟨t.val + 1, ht⟩ with hw0 | hw1
-      · have : v.w g.val (t.val + 1) = 0 := hw0
-        rw [this]; omega
-      · have : v.w g.val (t.val + 1) = 1 := hw1
-        rw [this]; omega
+      rcases h.hw_bin g ⟨t.val + 1, ht'⟩ with hw0 | hw1
+      · rw [hw0]; omega
+      · rw [hw1]; omega
   case hec2c =>
-    intro g t _
-    show (fwd p v).P_bar g.val t.val ≤ _
-    have hg : g.val < p.nG := g.isLt
-    simp only [fwd, dif_pos hg]
+    intro g t ht
+    have ht' : t.val + 1 < p.nT := ht
+    show (fwd p V).P_bar g t ≤ _
+    simp only [fwd]
+    rw [dif_pos ht', dif_pos ht']
     rfl
 
+private def bwd (p : P11.a.Params) (v : P11.e.Vars (paramMap p)) : P11.a.Vars p :=
 -- ============================================================================
 -- § Backward Mapping and Feasibility
 -- ============================================================================
-
-/--
-**P11.e → P11.a**: drop the `b` and `P_bar` auxiliary variables; all other
-variables are carried over unchanged.
--/
-private def bwd (_ : P11.a.Params) (v : P11.e.Vars) : P11.a.Vars :=
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -206,7 +198,7 @@ private def bwd (_ : P11.a.Params) (v : P11.e.Vars) : P11.a.Vars :=
     c_var  := v.c_var
     p_wind := v.p_wind }
 
-private lemma bwd_feas (p : P11.a.Params) (v : P11.e.Vars)
+private lemma bwd_feas (p : P11.a.Params) (v : P11.e.Vars (paramMap p))
     (h : P11.e.Feasible (paramMap p) v) :
     P11.a.Feasible p (bwd p v) := by
   exact
@@ -240,7 +232,6 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.e.Vars)
 -- ============================================================================
 -- § Equivalence Structure
 -- ============================================================================
-
 def aEEquiv : MILPReformulation P11.a.formulation P11.e.formulation where
   paramMap    := paramMap
   fwd         := fwd

@@ -51,10 +51,9 @@ Read both Lean files. Identify, for each side:
 - The dimensions (`ℕ` fields of `Params`) and their corresponding `NeZero`
   assumption fields.
 - The problem data (`Params` fields) and how it differs between sides.
-- The decision variables (`Vars` fields, typed `ℕ → …` for vectors) and
-  how they differ between sides.
-- The constraint structure (`Feasible` fields, quantifying over
-  `Fin p.<dim>`).
+- The decision variables (`Vars p` fields, typed `Fin p.<dim> → …` for
+  vectors) and how they differ between sides.
+- The constraint structure (`Feasible` fields, quantifying over `Fin p.<dim>`).
 - Any implicit assumptions/constraints.
 
 If additional source files were provided, read those as well.

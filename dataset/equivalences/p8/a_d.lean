@@ -39,14 +39,14 @@ private noncomputable def pext (p : P8.a.Params) (j : Fin p.n) (i : ℕ) : ℝ :
 
 section ForwardHelpers
 
-variable {p : P8.a.Params} {v : P8.a.Vars} (h : P8.a.Feasible p v)
+variable {p : P8.a.Params} {v : P8.a.Vars p} (h : P8.a.Feasible p v)
 include h
 
 /-- Telescoping: for every `n < p.m`, the start time of op `n` of job `j` is
     at least the sum of the processing times of the previous operations. -/
 private lemma job_telescoping (j : Fin p.n) :
-    ∀ n : ℕ, n < p.m →
-      (∑ i ∈ range n, pext p j i) ≤ v.S j.val n := by
+    ∀ n : ℕ, (hn : n < p.m) →
+      (∑ i ∈ range n, pext p j i) ≤ v.S j ⟨n, hn⟩ := by
   intro n hn
   induction n with
   | zero =>
@@ -111,11 +111,11 @@ end ForwardHelpers
 **P8.a → P8.d**: identity on variables. The new EC3 constraint `hec3` is
 derived from the telescoping of precedence plus the makespan bound.
 -/
-private def fwd (_ : P8.a.Params) (v : P8.a.Vars) : P8.d.Vars :=
+private def fwd (p : P8.a.Params) (v : P8.a.Vars p) : P8.d.Vars (paramMap p) :=
   { S    := v.S
     Cmax := v.Cmax }
 
-private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars)
+private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars p)
     (h : P8.a.Feasible p v) :
     P8.d.Feasible (paramMap p) (fwd p v) := by
   exact
@@ -133,11 +133,11 @@ private lemma fwd_feas (p : P8.a.Params) (v : P8.a.Vars)
 /--
 **P8.d → P8.a**: identity on variables. Drop the `hec3` constraint.
 -/
-private def bwd (_ : P8.a.Params) (v : P8.d.Vars) : P8.a.Vars :=
+private def bwd (p : P8.a.Params) (v : P8.d.Vars (paramMap p)) : P8.a.Vars p :=
   { S    := v.S
     Cmax := v.Cmax }
 
-private lemma bwd_feas (p : P8.a.Params) (v : P8.d.Vars)
+private lemma bwd_feas (p : P8.a.Params) (v : P8.d.Vars (paramMap p))
     (h : P8.d.Feasible (paramMap p) v) :
     P8.a.Feasible p (bwd p v) := by
   exact

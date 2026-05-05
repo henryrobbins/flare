@@ -17,14 +17,14 @@ structure Params where
   hU_nn : 0 ≤ U
   hV_nn : 0 ≤ V
 
-structure Vars where
+structure Vars (p : Params) where
   s : ℤ  -- number of cash machines
   r : ℤ  -- number of card machines
   slack_0 : ℝ  -- slack for throughput constraint
   slack_1 : ℝ  -- slack for card ≤ cash constraint
   slack_2 : ℝ  -- slack for paper rolls constraint
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Throughput equality (slack_0 ≥ 0 makes original ≥ constraint)
   hpeople : p.A * (v.s : ℝ) + p.K * (v.r : ℝ) - v.slack_0 = p.U
   -- Card ≤ cash equality
@@ -39,7 +39,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hslack2_nn : 0 ≤ v.slack_2
 
 -- Minimize the total number of machines
-def obj (_ : Params) (v : Vars) : ℝ := (v.s : ℝ) + (v.r : ℝ)
+def obj (p : Params) (v : Vars p) : ℝ := (v.s : ℝ) + (v.r : ℝ)
 
 def formulation : MILPFormulation where
   Params   := Params

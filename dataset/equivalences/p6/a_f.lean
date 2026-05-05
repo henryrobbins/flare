@@ -33,13 +33,13 @@ private def paramMap (p : P6.a.Params) : P6.f.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P6.a.Params) (v : P6.a.Vars) : P6.f.Vars :=
+private def fwd (p : P6.a.Params) (v : P6.a.Vars p) : P6.f.Vars (paramMap p) :=
   { x := v.x
     y := v.y }
 
 section ForwardHelpers
 
-variable {p : P6.a.Params} {v : P6.a.Vars} (h : P6.a.Feasible p v)
+variable {p : P6.a.Params} {v : P6.a.Vars p} (h : P6.a.Feasible p v)
 include h
 
 -- For each warehouse j, the number of qualifying customers (demand ≥ thresh)
@@ -48,18 +48,18 @@ open Classical in
 private lemma count_le_floor_cap
     (thresh : ℝ) (hthresh_pos : 0 < thresh) (j : Fin p.m) :
     (((univ.filter (fun k : Fin p.n => thresh ≤ p.d k)).filter
-        (fun k => v.x k.val j.val = 1)).card : ℤ) ≤
+        (fun k => v.x k j = 1)).card : ℤ) ≤
       ⌊p.u j / thresh⌋ * v.y j := by
   haveI := p.hn
   -- Nonneg for x on Fin indices
-  have xnn : ∀ (a : Fin p.n) (b : Fin p.m), 0 ≤ v.x a.val b.val := fun a b => by
+  have xnn : ∀ (a : Fin p.n) (b : Fin p.m), 0 ≤ v.x a b := fun a b => by
     rcases h.hx_bin a b with h0 | h1
     · rw [h0]
     · rw [h1]; decide
   -- Let S be the selected set
   set S : Finset (Fin p.n) :=
     (univ.filter (fun k : Fin p.n => thresh ≤ p.d k)).filter
-      (fun k => v.x k.val j.val = 1) with hS_def
+      (fun k => v.x k j = 1) with hS_def
   -- Case split on y_j
   rcases h.hy_bin j with hy0 | hy1
   · -- y_j = 0 case: need to show |S| ≤ 0, i.e., S is empty
@@ -71,15 +71,15 @@ private lemma count_le_floor_cap
     simp only [Int.cast_zero, mul_zero] at hcap_j
     -- ∑ d_i * x_{ij} ≤ 0; all nonneg so all zero; in particular x_{kj} = 0 for qualifying k
     have hall_nn : ∀ k : Fin p.n,
-        0 ≤ p.d k * (v.x k.val j.val : ℝ) := by
+        0 ≤ p.d k * (v.x k j : ℝ) := by
       intro k
       exact mul_nonneg (le_of_lt (p.hd_pos k)) (by exact_mod_cast xnn k j)
-    have hsum_zero : ∑ k : Fin p.n, p.d k * (v.x k.val j.val : ℝ) = 0 := by
+    have hsum_zero : ∑ k : Fin p.n, p.d k * (v.x k j : ℝ) = 0 := by
       have hle := hcap_j
-      have hge : 0 ≤ ∑ k : Fin p.n, p.d k * (v.x k.val j.val : ℝ) :=
+      have hge : 0 ≤ ∑ k : Fin p.n, p.d k * (v.x k j : ℝ) :=
         Finset.sum_nonneg (fun k _ => hall_nn k)
       linarith
-    have hall_zero : ∀ k : Fin p.n, p.d k * (v.x k.val j.val : ℝ) = 0 := by
+    have hall_zero : ∀ k : Fin p.n, p.d k * (v.x k j : ℝ) = 0 := by
       intro k
       exact (Finset.sum_eq_zero_iff_of_nonneg (fun k _ => hall_nn k)).mp hsum_zero k (mem_univ _)
     -- So for each qualifying k, x_{kj} = 0, hence not in S
@@ -111,13 +111,13 @@ private lemma count_le_floor_cap
             simp only [S, mem_filter, mem_univ, true_and] at hk
             exact hk.1)
         simpa [mul_comm, Finset.sum_const, nsmul_eq_mul] using this
-      have step2 : ∑ k ∈ S, p.d k = ∑ k ∈ S, p.d k * (v.x k.val j.val : ℝ) := by
+      have step2 : ∑ k ∈ S, p.d k = ∑ k ∈ S, p.d k * (v.x k j : ℝ) := by
         apply Finset.sum_congr rfl
         intro k hk
         simp only [S, mem_filter, mem_univ, true_and] at hk
         rw [hk.2]; push_cast; ring
-      have step3 : ∑ k ∈ S, p.d k * (v.x k.val j.val : ℝ) ≤
-          ∑ k : Fin p.n, p.d k * (v.x k.val j.val : ℝ) := by
+      have step3 : ∑ k ∈ S, p.d k * (v.x k j : ℝ) ≤
+          ∑ k : Fin p.n, p.d k * (v.x k j : ℝ) := by
         apply Finset.sum_le_sum_of_subset_of_nonneg
         · exact fun k _ => mem_univ _
         · intro k _ _
@@ -134,7 +134,7 @@ private lemma count_le_floor_cap
 
 end ForwardHelpers
 
-private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
+private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars p)
     (h : P6.a.Feasible p v) :
     P6.f.Feasible (paramMap p) (fwd p v) := by
   haveI := p.hn
@@ -167,14 +167,14 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
   -- For each k ∈ Q, exactly one j has x k j = 1
   have hcount_eq :
       (Q.card : ℤ) =
-      ∑ j : Fin p.m, ((Q.filter (fun k => v.x k.val j.val = 1)).card : ℤ) := by
+      ∑ j : Fin p.m, ((Q.filter (fun k => v.x k j = 1)).card : ℤ) := by
     -- Rewrite using double counting: card(Q) = ∑_{k ∈ Q} 1 = ∑_{k ∈ Q} ∑_j [x k j = 1] = ∑_j ∑_{k ∈ Q} [x k j = 1]
     have hone : ∀ k : Fin p.n, k ∈ Q →
-        ∑ j : Fin p.m, (if v.x k.val j.val = 1 then (1 : ℤ) else 0) = 1 := by
+        ∑ j : Fin p.m, (if v.x k j = 1 then (1 : ℤ) else 0) = 1 := by
       intro k _
       have hka := hassign k
       have : ∀ j : Fin p.m,
-          (if v.x k.val j.val = 1 then (1 : ℤ) else 0) = v.x k.val j.val := by
+          (if v.x k j = 1 then (1 : ℤ) else 0) = v.x k j := by
         intro j
         rcases hx_bin k j with h0 | h1
         · simp [h0]
@@ -184,13 +184,13 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
     calc (Q.card : ℤ)
         = ∑ k ∈ Q, (1 : ℤ) := by
           rw [Finset.sum_const, nsmul_eq_mul, mul_one]
-      _ = ∑ k ∈ Q, ∑ j : Fin p.m, (if v.x k.val j.val = 1 then (1 : ℤ) else 0) := by
+      _ = ∑ k ∈ Q, ∑ j : Fin p.m, (if v.x k j = 1 then (1 : ℤ) else 0) := by
           apply Finset.sum_congr rfl
           intro k hk
           rw [hone k hk]
-      _ = ∑ j : Fin p.m, ∑ k ∈ Q, (if v.x k.val j.val = 1 then (1 : ℤ) else 0) := by
+      _ = ∑ j : Fin p.m, ∑ k ∈ Q, (if v.x k j = 1 then (1 : ℤ) else 0) := by
           rw [Finset.sum_comm]
-      _ = ∑ j : Fin p.m, ((Q.filter (fun k => v.x k.val j.val = 1)).card : ℤ) := by
+      _ = ∑ j : Fin p.m, ((Q.filter (fun k => v.x k j = 1)).card : ℤ) := by
           apply Finset.sum_congr rfl
           intro j _
           rw [Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.sum_const,
@@ -205,11 +205,11 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P6.a.Params) (v : P6.f.Vars) : P6.a.Vars :=
+private def bwd (p : P6.a.Params) (v : P6.f.Vars (paramMap p)) : P6.a.Vars p :=
   { x := v.x
     y := v.y }
 
-private lemma bwd_feas (p : P6.a.Params) (v : P6.f.Vars)
+private lemma bwd_feas (p : P6.a.Params) (v : P6.f.Vars (paramMap p))
     (h : P6.f.Feasible (paramMap p) v) :
     P6.a.Feasible p (bwd p v) := by
   exact

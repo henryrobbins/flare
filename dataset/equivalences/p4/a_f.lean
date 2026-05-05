@@ -27,13 +27,13 @@ private def paramMap (p : P4.a.Params) : P4.f.Params :=
 -- ============================================================================
 
 -- Each count is placed entirely in the first part; second part is zero
-private def fwd (_ : P4.a.Params) (v : P4.a.Vars) : P4.f.Vars :=
+private def fwd (p : P4.a.Params) (v : P4.a.Vars p) : P4.f.Vars (paramMap p) :=
   { m1 := v.xCars
     m2 := 0
     h1 := v.xBuses
     h2 := 0 }
 
-private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
+private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars p)
     (h : P4.a.Feasible p v) :
     P4.f.Feasible (paramMap p) (fwd p v) := by
   refine ⟨?_, ?_, h.hcars_nn, le_refl 0, h.hbus_nn, le_refl 0⟩
@@ -45,11 +45,11 @@ private lemma fwd_feas (p : P4.a.Params) (v : P4.a.Vars)
 -- ============================================================================
 
 -- Both parts are summed to recover the original counts
-private def bwd (_ : P4.a.Params) (v : P4.f.Vars) : P4.a.Vars :=
+private def bwd (p : P4.a.Params) (v : P4.f.Vars (paramMap p)) : P4.a.Vars p :=
   { xCars  := v.m1 + v.m2
     xBuses := v.h1 + v.h2 }
 
-private lemma bwd_feas (p : P4.a.Params) (v : P4.f.Vars)
+private lemma bwd_feas (p : P4.a.Params) (v : P4.f.Vars (paramMap p))
     (h : P4.f.Feasible (paramMap p) v) :
     P4.a.Feasible p (bwd p v) :=
   { htransport := by simp only [bwd, paramMap] at *; push_cast; exact h.htransport
@@ -61,12 +61,12 @@ private lemma bwd_feas (p : P4.a.Params) (v : P4.f.Vars)
 -- § Objective Mapping
 -- ============================================================================
 
-private lemma fwd_obj (p : P4.a.Params) (v : P4.a.Vars) (_ : P4.a.Feasible p v) :
+private lemma fwd_obj (p : P4.a.Params) (v : P4.a.Vars p) (_ : P4.a.Feasible p v) :
     P4.f.obj (paramMap p) (fwd p v) = id (P4.a.obj p v) := by
   simp only [P4.f.obj, P4.a.obj, fwd, paramMap, id]
   push_cast; ring
 
-private lemma bwd_obj (p : P4.a.Params) (v : P4.f.Vars) (_ : P4.f.Feasible (paramMap p) v) :
+private lemma bwd_obj (p : P4.a.Params) (v : P4.f.Vars (paramMap p)) (_ : P4.f.Feasible (paramMap p) v) :
     P4.f.obj (paramMap p) v = id (P4.a.obj p (bwd p v)) := by
   simp only [P4.f.obj, P4.a.obj, bwd, paramMap, id]
   push_cast; ring

@@ -35,10 +35,10 @@ structure Params where
 
 -- Variables: x[i][t] is a continuous fraction in [0,1] for pure-ore blocks (g=1),
 -- and a binary indicator for mixed/low-grade blocks (g<1)
-structure Vars where
-  x : ℕ → ℕ → ℝ  -- block-period extraction fraction (binary for g<1, continuous for g=1)
+structure Vars (par : Params) where
+  x : Fin par.n → Fin par.T → ℝ  -- block-period extraction fraction (binary for g<1, continuous for g=1)
 
-structure Feasible (par : Params) (v : Vars) : Prop where
+structure Feasible (par : Params) (v : Vars par) : Prop where
   -- Upper grade blending constraint
   hgrade_hi : ∀ t : Fin par.T,
     ∑ i : Fin par.n, (par.g i - par.G_max) * par.O i * v.x i t ≤ 0
@@ -70,7 +70,7 @@ structure Feasible (par : Params) (v : Vars) : Prop where
   hx_hi_I1 : ∀ i : Fin par.n, ∀ t : Fin par.T, par.g i = 1 → v.x i t ≤ 1
 
 -- Maximize total NPV (negated for minimization convention)
-def obj (par : Params) (v : Vars) : ℝ :=
+def obj (par : Params) (v : Vars par) : ℝ :=
   -(∑ t : Fin par.T, ∑ i : Fin par.n, par.c i t * v.x i t)
 
 def formulation : MILPFormulation where

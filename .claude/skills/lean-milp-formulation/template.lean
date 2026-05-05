@@ -86,22 +86,22 @@ structure Params where
 /-
 NOTE: Vars structure — decision variables.
 
-- `Vars` is a plain (parameter-less) structure. It has no access to `Params`.
+- `Vars` is parameterized by `p : Params`. Write `structure Vars (p : Params)`.
 - Scalar variables: `ℤ` or `ℝ`.
-- Vector variables: `ℕ → ℤ` or `ℕ → ℝ`. Do NOT write `Fin <dim> → ℤ` because
-  `<dim>` is a `Params` field and is not in scope here.
+- Vector variables: `Fin p.<dim> → ℤ` or `Fin p.<dim> → ℝ`. `Vars` has
+  access to `p`, so use the real index range — do NOT use `ℕ → ℤ`.
 - Binary-ness is enforced in `Feasible`, not in the type.
 - Each variable has an inline comment with a short description.
 - Single space before `:`; do NOT pad field names for column alignment.
 - `Vars` contains no assumptions; assumptions involving variables go in `Feasible`.
 -/
-structure Vars where
-  ConductExperiment : ℕ → ℤ  -- number of times each experiment is conducted
+structure Vars (p : Params) where
+  ConductExperiment : Fin p.NumExperiments → ℤ  -- number of times each experiment is conducted
 
 /-
 NOTE: Feasible structure — constraints.
 
-- Signature is exactly `(p : Params) (v : Vars) : Prop`. No other args.
+- Signature is exactly `(p : Params) (v : Vars p) : Prop`. No other args.
 - If `Vars` contains fields with names `p` or `v`, that is fine; they will be
   accessed unambiguously as `v.<field>` or `p.<field>`.
 - One `--` comment line precedes each constraint or group of like
@@ -109,7 +109,7 @@ NOTE: Feasible structure — constraints.
 - Use `_nn`, `_pos`, `_bin`, `_lo`, `_hi` suffixes where applicable.
 - Group implicit constraints at the end under `-- [Implicit Constraints]`.
 -/
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- For each resource, total requirement across all experiments is within supply
   hres : ∀ j : Fin p.NumResources,
     ∑ i : Fin p.NumExperiments, p.ResourceRequired j i * (v.ConductExperiment i : ℝ)
@@ -119,7 +119,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
 /-
 NOTE: Objective — always ℝ-valued, named `obj`.
 
-- Signature is exactly `(p : Params) (v : Vars) : ℝ`.
+- Signature is exactly `(p : Params) (v : Vars p) : ℝ`.
 - Define the equation on the second line for readability.
 - Precede with a one-line `--` comment stating direction and what is
   optimized. For maximization, negate the sum (MILPFormulation expects
@@ -127,7 +127,7 @@ NOTE: Objective — always ℝ-valued, named `obj`.
 -/
 
 -- Maximize total electricity produced
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   -(∑ i : Fin p.NumExperiments, p.ElectricityProduced i * (v.ConductExperiment i : ℝ))
 
 /-

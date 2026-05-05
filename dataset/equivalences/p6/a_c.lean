@@ -35,7 +35,7 @@ private def paramMap (p : P6.a.Params) : P6.c.Params :=
 -- ============================================================================
 
 -- fwd: identity on variables; the EC2 demand-cover cut family is implied by capacity/assignment.
-private def fwd (_ : P6.a.Params) (v : P6.a.Vars) : P6.c.Vars :=
+private def fwd (p : P6.a.Params) (v : P6.a.Vars p) : P6.c.Vars (paramMap p) :=
   { x := v.x
     y := v.y }
 
@@ -148,7 +148,7 @@ private lemma sum_u_y_eq_sum_over_S {m : ℕ} (u : Fin m → ℝ) (z : Fin m →
     · exact absurd h1' hj.2
   rw [h1, h2, add_zero]
 
-private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
+private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars p)
     (h : P6.a.Feasible p v) :
     P6.c.Feasible (paramMap p) (fwd p v) := by
   refine
@@ -178,30 +178,30 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
   -- Also: ∑_j u_j * y_j = ∑_{a : Fin m} u(σ a) * y(σ a) (re-index).
   have hreindex : ∑ j : Fin p.m, p.u j * (v.y j : ℝ)
       = ∑ a : Fin p.m, p.u (σ a) * (v.y (σ a) : ℝ) :=
-    (Equiv.sum_comp σ (fun j : Fin p.m => p.u j * (v.y j.val : ℝ))).symm
+    (Equiv.sum_comp σ (fun j : Fin p.m => p.u j * (v.y j : ℝ))).symm
   rw [hreindex] at hdemand_le
   -- Let S = {a : v.y (σ a) = 1}, then ∑_a u(σa) y(σa) = ∑_{a ∈ S} u(σ a).
-  have hy_bin' : ∀ a : Fin p.m, v.y (σ a).val = 0 ∨ v.y (σ a).val = 1 := by
+  have hy_bin' : ∀ a : Fin p.m, v.y (σ a) = 0 ∨ v.y (σ a) = 1 := by
     intro a; exact h.hy_bin (σ a)
   have hsumS := sum_u_y_eq_sum_over_S (m := p.m)
       (fun a : Fin p.m => p.u (σ a))
-      (fun a : Fin p.m => v.y (σ a).val)
+      (fun a : Fin p.m => v.y (σ a))
       hy_bin'
   rw [hsumS] at hdemand_le
   -- Let S := univ.filter (v.y (σ a) = 1). Compute |S| and bound via sum_le_top_k.
-  set S := (univ : Finset (Fin p.m)).filter (fun a : Fin p.m => v.y (σ a).val = 1)
+  set S := (univ : Finset (Fin p.m)).filter (fun a : Fin p.m => v.y (σ a) = 1)
     with hSdef
   -- Y := |S| = ∑_j y_j.
   have hY_eq : (S.card : ℤ) = ∑ j : Fin p.m, v.y j := by
     -- Reindex through σ: ∑_j v.y j = ∑_a v.y (σ a).
-    have hreidx : (∑ j : Fin p.m, v.y j : ℤ) = ∑ a : Fin p.m, v.y (σ a).val :=
-      (Equiv.sum_comp σ (fun j : Fin p.m => (v.y j.val : ℤ))).symm
+    have hreidx : (∑ j : Fin p.m, v.y j : ℤ) = ∑ a : Fin p.m, v.y (σ a) :=
+      (Equiv.sum_comp σ (fun j : Fin p.m => (v.y j : ℤ))).symm
     rw [hreidx]
     -- Split ∑_a v.y (σ a) by filter.
     rw [← Finset.sum_filter_add_sum_filter_not (univ : Finset (Fin p.m))
-      (fun a : Fin p.m => v.y (σ a).val = 1) (fun a : Fin p.m => v.y (σ a).val)]
+      (fun a : Fin p.m => v.y (σ a) = 1) (fun a : Fin p.m => v.y (σ a))]
     have hA : ∑ x ∈ (univ : Finset (Fin p.m)).filter
-        (fun a => v.y (σ a).val = 1), v.y (σ x).val =
+        (fun a => v.y (σ a) = 1), v.y (σ x) =
         (S.card : ℤ) := by
       have hcard : S.card = ∑ _a ∈ S, (1 : ℤ) := by
         simp [Finset.sum_const, S]
@@ -211,7 +211,7 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
       simp at ha
       rw [ha]
     have hB : ∑ x ∈ (univ : Finset (Fin p.m)).filter
-        (fun a => ¬ v.y (σ a).val = 1), v.y (σ x).val = 0 := by
+        (fun a => ¬ v.y (σ a) = 1), v.y (σ x) = 0 := by
       apply Finset.sum_eq_zero
       intros a ha
       simp at ha
@@ -247,11 +247,11 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P6.a.Params) (v : P6.c.Vars) : P6.a.Vars :=
+private def bwd (p : P6.a.Params) (v : P6.c.Vars (paramMap p)) : P6.a.Vars p :=
   { x := v.x
     y := v.y }
 
-private lemma bwd_feas (p : P6.a.Params) (v : P6.c.Vars)
+private lemma bwd_feas (p : P6.a.Params) (v : P6.c.Vars (paramMap p))
     (h : P6.c.Feasible (paramMap p) v) :
     P6.a.Feasible p (bwd p v) := by
   exact

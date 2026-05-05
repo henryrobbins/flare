@@ -14,11 +14,11 @@ structure Params where
   -- Implicit Assumptions
   hn : NeZero n
 
-structure Vars where
-  x : ℕ → ℕ → ℤ  -- arc indicator
-  u : ℕ → ℝ  -- position
+structure Vars (p : Params) where
+  x : Fin p.n → Fin p.n → ℤ  -- arc indicator
+  u : Fin p.n → ℝ  -- position
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Each city has exactly one outgoing arc
   hout : ∀ i : Fin p.n, ∑ j : Fin p.n, v.x i j = 1
   -- Each city has exactly one incoming arc
@@ -27,13 +27,14 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hmtz : ∀ (i : Fin p.n) (j : Fin p.n), i.val ≠ 0 → j.val ≠ 0 → i ≠ j →
     v.u i - v.u j + (p.n : ℝ) * (v.x i j : ℝ) ≤ (p.n : ℝ) - 1
   -- Depot position fixed to 1
-  hu_depot : v.u 0 = 1
+  hu_depot : haveI := p.hn; v.u 0 = 1
   hx_bin : ∀ (i j : Fin p.n), v.x i j = 0 ∨ v.x i j = 1
   -- u ∈ [2, n] for non-depot cities
   hu_lo : ∀ i : Fin p.n, i.val ≠ 0 → 2 ≤ v.u i
   hu_hi : ∀ i : Fin p.n, v.u i ≤ (p.n : ℝ)
   -- EC3: eliminates infeasible two-city detours through the depot
   hec3 : ∀ (i j : Fin p.n), i.val ≠ 0 → j.val ≠ 0 → i ≠ j →
+    haveI := p.hn
     (v.x j 0 : ℝ) + (v.x j i : ℝ) + (v.u j - v.u i - 1) ≤
       ((p.n : ℝ) - 1) * (2 - (v.x 0 i : ℝ) - (v.x i j : ℝ))
   -- [Implicit Constraints]
@@ -41,7 +42,7 @@ structure Feasible (p : Params) (v : Vars) : Prop where
   hx_no_self : ∀ i : Fin p.n, v.x i i = 0
 
 -- Minimize total arc cost
-def obj (p : Params) (v : Vars) : ℝ :=
+def obj (p : Params) (v : Vars p) : ℝ :=
   ∑ i : Fin p.n, ∑ j : Fin p.n, p.c i j * (v.x i j : ℝ)
 
 def formulation : MILPFormulation where
