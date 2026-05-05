@@ -10,9 +10,6 @@ import Mathlib.Tactic
 open BigOperators Finset
 
 namespace P11
--- ============================================================================
--- § Parameter Mapping
--- ============================================================================
 
 private def paramMap (p : P11.a.Params) : P11.h.Params :=
   { nT         := p.nT
@@ -82,9 +79,6 @@ private def fwd (p : P11.a.Params) (V : P11.a.Vars p) : P11.h.Vars (paramMap p) 
             max (p.P_max g - p.SD g) 0 * (V.w g t : ℝ) +
               p.RU g
       else 0 }
--- ============================================================================
--- § Forward Mapping and Feasibility
--- ============================================================================
 
 private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
     (h : P11.a.Feasible p V) :
@@ -120,16 +114,11 @@ private lemma fwd_feas (p : P11.a.Params) (V : P11.a.Vars p)
   case hec3c =>
     intro g t ht
     show (fwd p V).P_bar g t ≤ _
-    -- P_bar is defined to exactly equal the RHS of hec3c for indices in range;
-    -- after simplifying `⟨g.val % p.nG, _⟩ = g`, the constraint is le_refl.
     simp only [fwd]
     rw [dif_pos ht]
     rfl
 
 private def bwd (p : P11.a.Params) (v : P11.h.Vars (paramMap p)) : P11.a.Vars p :=
--- ============================================================================
--- § Backward Mapping and Feasibility
--- ============================================================================
   { u      := v.u
     v      := v.v
     w      := v.w
@@ -171,9 +160,6 @@ private lemma bwd_feas (p : P11.a.Params) (v : P11.h.Vars (paramMap p))
       hpwind_lo   := h.hpwind_lo
       hpwind_hi   := h.hpwind_hi }
 
--- ============================================================================
--- § Equivalence Structure
--- ============================================================================
 def aHEquiv : MILPReformulation P11.a.formulation P11.h.formulation where
   paramMap    := paramMap
   fwd         := fwd

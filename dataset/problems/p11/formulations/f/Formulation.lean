@@ -32,17 +32,7 @@ structure Params where
   U : Fin nG → ℕ
   D : Fin nG → ℕ
   MR : Fin nG → ℤ
-  -- Dimensions
-  -- Startup data
-  -- Piecewise production data
-  -- System parameters
-  -- Thermal generator limits
-  -- Renewable generator bounds
-  -- Ramp and startup/shutdown ramp limits
-  -- Minimum up/down times and must-run
-  -- Assumption
   hMR_bin : ∀ g : Fin nG, MR g = 0 ∨ MR g = 1
-  -- Implicit Assumptions
   hT_pos : NeZero nT
   hG_pos : NeZero nG
   hW_pos : NeZero nW
@@ -80,39 +70,30 @@ structure Vars (P : Params) where
   P_bar : Fin P.nG → Fin P.nT → ℝ
 
 structure Feasible (p : Params) (v : Vars p) : Prop where
-  -- Demand balance: total thermal output equals demand at each period
   hdemand : ∀ t : Fin p.nT,
     ∑ g : Fin p.nG, (v.p g t + p.P_min g * (v.u g t : ℝ)) = p.L t
-  -- Spinning reserve: total reserve meets or exceeds requirement
   hreserve : ∀ t : Fin p.nT,
     p.R t ≤ ∑ g : Fin p.nG, v.r g t
   htransition : ∀ g : Fin p.nG, ∀ t : Fin p.nT, ∀ ht : 0 < t.val,
     (v.u g t : ℤ) - v.u g ⟨t.val - 1, by omega⟩ = v.v g t - v.w g t
-  -- Commitment transition for t ≥ 1
-  -- Minimum up time: sum of startups in window ≤ on-status
   hmin_up : ∀ g : Fin p.nG, ∀ t : Fin p.nT, p.U g - 1 ≤ t.val →
     ∑ τ ∈ (univ : Finset (Fin p.nT)).filter
       (fun τ => t.val - (p.U g - 1) ≤ τ.val ∧ τ.val ≤ t.val),
       v.v g τ ≤ (v.u g t : ℤ)
-  -- Minimum down time: sum of shutdowns in window ≤ 1 - on-status
   hmin_dn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, p.D g - 1 ≤ t.val →
     ∑ τ ∈ (univ : Finset (Fin p.nT)).filter
       (fun τ => t.val - (p.D g - 1) ≤ τ.val ∧ τ.val ≤ t.val),
       v.w g τ ≤ 1 - (v.u g t : ℤ)
-  -- Startup decomposition: startup indicator equals sum of category selections
   hv_decomp : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
     v.v g t = ∑ s : Fin (p.nS g), v.d_su g s t
-  -- Startup category timing: category s can be selected only after required lag
   hlag : ∀ g : Fin p.nG, ∀ s : Fin (p.nS g), ∀ t : Fin p.nT,
     ∀ hs : s.val + 1 < p.nS g, p.ell g ⟨s.val + 1, hs⟩ - 1 ≤ t.val →
     v.d_su g s t ≤
       ∑ i ∈ (Finset.range (p.ell g ⟨s.val + 1, hs⟩ - p.ell g s)).filter
         (fun i => p.ell g s + i ≤ t.val),
         v.w g ⟨t.val - (p.ell g s + i), by have := t.isLt; omega⟩
-  -- Must-run: generators with MR > 0 must remain on
   hmust_run : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
     (p.MR g : ℝ) ≤ (v.u g t : ℝ)
-  -- Startup derating: output + reserve limited by startup ramp during startup
   hcap_su : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
     v.p g t + v.r g t ≤
       (p.P_max g - p.P_min g) * (v.u g t : ℝ) -
@@ -125,24 +106,17 @@ structure Feasible (p : Params) (v : Vars p) : Prop where
     v.p g t + v.r g t - v.p g ⟨t.val - 1, by omega⟩ ≤ p.RU g
   hramp_dn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, ∀ ht : 0 < t.val,
     v.p g ⟨t.val - 1, by omega⟩ - v.p g t ≤ p.RD g
-  -- Shutdown derating: output + reserve limited by shutdown ramp the period before shutdown
-  -- Ramp-up limit for t ≥ 1
-  -- Ramp-down limit for t ≥ 1
-  -- Piecewise production: output equals convex combination of breakpoints above min
   hp_eq : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
     v.p g t = ∑ l : Fin (p.nL g),
       (p.P g l - p.P g ⟨0, (p.hnL_pos g).pos⟩) * v.lam g l t
-  -- Piecewise cost: variable cost equals convex combination of cost breakpoints above fixed cost
   hc_eq : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
     v.c_var g t = ∑ l : Fin (p.nL g),
       (p.C g l - p.C_fixed g) * v.lam g l t
-  -- Piecewise weights sum to on-status
   hlam_sum : ∀ g : Fin p.nG, ∀ t : Fin p.nT,
     ∑ l : Fin (p.nL g), v.lam g l t = (v.u g t : ℝ)
   hu_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.u g t = 0 ∨ v.u g t = 1
   hv_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.v g t = 0 ∨ v.v g t = 1
   hw_bin : ∀ g : Fin p.nG, ∀ t : Fin p.nT, v.w g t = 0 ∨ v.w g t = 1
-  -- Binary variables
   hd_bin : ∀ g : Fin p.nG, ∀ s : Fin (p.nS g), ∀ t : Fin p.nT,
     v.d_su g s t = 0 ∨ v.d_su g s t = 1
   hlam_nn : ∀ g : Fin p.nG, ∀ l : Fin (p.nL g), ∀ t : Fin p.nT, 0 ≤ v.lam g l t
@@ -152,8 +126,6 @@ structure Feasible (p : Params) (v : Vars p) : Prop where
   hcvar_nn : ∀ g : Fin p.nG, ∀ t : Fin p.nT, 0 ≤ v.c_var g t
   hpwind_lo : ∀ w : Fin p.nW, ∀ t : Fin p.nT, p.P_wind_min w t ≤ v.p_wind w t
   hpwind_hi : ∀ w : Fin p.nW, ∀ t : Fin p.nT, v.p_wind w t ≤ p.P_wind_max w t
-  -- Non-negativity of continuous variables
-  -- Renewable output bounds
   -- EC3a: P_bar bounded by previous period output plus ramp-up, relaxed when generator was offline
   hec3a : ∀ g : Fin p.nG, ∀ t : Fin p.nT, ∀ ht : 0 < t.val,
     v.P_bar g t ≤
@@ -161,7 +133,6 @@ structure Feasible (p : Params) (v : Vars p) : Prop where
         (p.P_max g - p.P_min g) * (1 - (v.u g ⟨t.val - 1, by omega⟩ : ℝ))
 
 def obj (p : Params) (v : Vars p) : ℝ :=
--- Minimize total production cost (fixed on-cost + variable cost) and startup costs
   (∑ g : Fin p.nG, ∑ t : Fin p.nT,
     (v.c_var g t + p.C_fixed g * (v.u g t : ℝ))) +
   ∑ g : Fin p.nG, ∑ s : Fin (p.nS g), ∑ t : Fin p.nT,
