@@ -41,7 +41,7 @@ private def paramMap (p : P9.a.Params) : P9.b.Params :=
 
 section ForwardHelpers
 
-variable {p : P9.a.Params} {v : P9.a.Vars} (h : P9.a.Feasible p v)
+variable {p : P9.a.Params} {v : P9.a.Vars p} (h : P9.a.Feasible p v)
 include h
 
 /-- The incoming-arcs set δ⁻(D_k) is nonempty: otherwise the inflow sum is 0 but
@@ -59,7 +59,7 @@ private lemma inArcs_nonempty (k : Fin p.K) :
 /-- Per-commodity capacity: x_{e,k} ≤ u_e * y_e follows from the aggregate bound
     and nonnegativity of all x_{e,k'}. -/
 private lemma per_commodity_cap (e : Fin p.m) (k : Fin p.K) :
-    v.x e k ≤ p.u e * (v.y e.val : ℝ) := by
+    v.x e k ≤ p.u e * (v.y e : ℝ) := by
   haveI := p.hK
   have hsum : v.x e k ≤ ∑ k' : Fin p.K, v.x e k' :=
     Finset.single_le_sum
@@ -75,11 +75,11 @@ end ForwardHelpers
 **P9.a → P9.b**: identity on variables. We must additionally verify the
 destination in-cut bound (EC1).
 -/
-private def fwd (_ : P9.a.Params) (v : P9.a.Vars) : P9.b.Vars :=
+private def fwd (p : P9.a.Params) (v : P9.a.Vars p) : P9.b.Vars (paramMap p) :=
   { x := v.x
     y := v.y }
 
-private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
+private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars p)
     (h : P9.a.Feasible p v) :
     P9.b.Feasible (paramMap p) (fwd p v) := by
   haveI := p.hm
@@ -107,48 +107,48 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
     exact le_trans (p.hu_nn e₀) (le_sup' p.u he₀)
   -- Main inequality on S.
   have hmain :
-      p.d k + uM ≤ S.sum (fun e => (p.u e + uM) * (v.y e.val : ℝ)) := by
+      p.d k + uM ≤ S.sum (fun e => (p.u e + uM) * (v.y e : ℝ)) := by
     -- Decompose the sum.
     have hdecomp :
-        S.sum (fun e => (p.u e + uM) * (v.y e.val : ℝ)) =
-        S.sum (fun e => p.u e * (v.y e.val : ℝ)) +
-        uM * S.sum (fun e => (v.y e.val : ℝ)) := by
+        S.sum (fun e => (p.u e + uM) * (v.y e : ℝ)) =
+        S.sum (fun e => p.u e * (v.y e : ℝ)) +
+        uM * S.sum (fun e => (v.y e : ℝ)) := by
       simp_rw [add_mul]
       rw [sum_add_distrib, ← mul_sum]
     rw [hdecomp]
     -- Step 1: d k ≤ ∑ u_e y_e on S.
-    have hcap_bound : p.d k ≤ S.sum (fun e => p.u e * (v.y e.val : ℝ)) :=
+    have hcap_bound : p.d k ≤ S.sum (fun e => p.u e * (v.y e : ℝ)) :=
       calc p.d k
           = S.sum (fun e => v.x e k) := by
             have := h.hin k; simpa [hS] using this.symm
-        _ ≤ S.sum (fun e => p.u e * (v.y e.val : ℝ)) :=
+        _ ≤ S.sum (fun e => p.u e * (v.y e : ℝ)) :=
             sum_le_sum fun e _ => per_commodity_cap h e k
     -- Step 2: ∑ y_e ≥ 1 on S.
-    have hactive : (1 : ℝ) ≤ S.sum (fun e => (v.y e.val : ℝ)) := by
+    have hactive : (1 : ℝ) ≤ S.sum (fun e => (v.y e : ℝ)) := by
       by_contra hlt
       push_neg at hlt
-      have hall_zero : ∀ e ∈ S, v.y e.val = 0 := by
+      have hall_zero : ∀ e ∈ S, v.y e = 0 := by
         intro e he
         rcases h.hy_bin e with h0 | h1
         · exact h0
         · exfalso
-          have hy_nn : ∀ e' ∈ S, (0 : ℤ) ≤ v.y e'.val := fun e' _ => by
+          have hy_nn : ∀ e' ∈ S, (0 : ℤ) ≤ v.y e' := fun e' _ => by
             rcases h.hy_bin e' with h0' | h1'
             · rw [h0']
             · rw [h1']; omega
-          have hge : (1 : ℤ) ≤ S.sum (fun e' => v.y e'.val) :=
-            calc (1 : ℤ) = v.y e.val := h1.symm
-              _ ≤ S.sum (fun e' => v.y e'.val) :=
-                  single_le_sum (f := fun e' : Fin p.m => v.y e'.val) hy_nn he
-          have hge_r : (1 : ℝ) ≤ S.sum (fun e' => (v.y e'.val : ℝ)) := by
-            have hcast : ((1 : ℤ) : ℝ) ≤ ((S.sum (fun e' => v.y e'.val) : ℤ) : ℝ) :=
+          have hge : (1 : ℤ) ≤ S.sum (fun e' => v.y e') :=
+            calc (1 : ℤ) = v.y e := h1.symm
+              _ ≤ S.sum (fun e' => v.y e') :=
+                  single_le_sum (f := fun e' : Fin p.m => v.y e') hy_nn he
+          have hge_r : (1 : ℝ) ≤ S.sum (fun e' => (v.y e' : ℝ)) := by
+            have hcast : ((1 : ℤ) : ℝ) ≤ ((S.sum (fun e' => v.y e') : ℤ) : ℝ) :=
               by exact_mod_cast hge
             push_cast at hcast
             exact hcast
           linarith
       have hflow_zero : ∀ e ∈ S, v.x e k ≤ 0 := fun e he => by
         have hcap := per_commodity_cap h e k
-        have hye0 : (v.y e.val : ℝ) = 0 := by exact_mod_cast hall_zero e he
+        have hye0 : (v.y e : ℝ) = 0 := by exact_mod_cast hall_zero e he
         rw [hye0, mul_zero] at hcap; exact hcap
       have hsum_le : S.sum (fun e => v.x e k) ≤ 0 :=
         sum_nonpos fun e he => hflow_zero e he
@@ -156,7 +156,7 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
         simpa [hS] using h.hin k
       linarith [p.hd_pos k]
     -- Step 3: uM ≤ uM * ∑ y_e.
-    have humax_bound : uM ≤ uM * S.sum (fun e => (v.y e.val : ℝ)) :=
+    have humax_bound : uM ≤ uM * S.sum (fun e => (v.y e : ℝ)) :=
       le_mul_of_one_le_right huMax_nn hactive
     linarith
   -- Transfer hmain to the actual goal. `incArcs` is an `abbrev` that unfolds
@@ -164,7 +164,7 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
   -- when `S` is nonempty. `(paramMap p).{head,u,D,d}` reduce to `p.{head,u,D,d}`.
   show S.sum (fun e => (p.u e +
       (if h' : S.Nonempty then S.sup' h' p.u else (0 : ℝ))) *
-      (v.y e.val : ℝ)) ≥
+      (v.y e : ℝ)) ≥
     p.d k +
       (if h' : S.Nonempty then S.sup' h' p.u else (0 : ℝ))
   rw [dif_pos hS_ne]
@@ -178,11 +178,11 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
 **P9.b → P9.a**: identity on variables. All the constraints except `hec1`
 transfer directly; `hec1` is simply dropped.
 -/
-private def bwd (_ : P9.a.Params) (v : P9.b.Vars) : P9.a.Vars :=
+private def bwd (p : P9.a.Params) (v : P9.b.Vars (paramMap p)) : P9.a.Vars p :=
   { x := v.x
     y := v.y }
 
-private lemma bwd_feas (p : P9.a.Params) (v : P9.b.Vars)
+private lemma bwd_feas (p : P9.a.Params) (v : P9.b.Vars (paramMap p))
     (h : P9.b.Feasible (paramMap p) v) :
     P9.a.Feasible p (bwd p v) := by
   exact

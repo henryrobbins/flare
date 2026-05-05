@@ -41,12 +41,12 @@ private def paramMap (p : P9.a.Params) : P9.c.Params :=
 
 section ForwardHelpers
 
-variable {p : P9.a.Params} {v : P9.a.Vars} (h : P9.a.Feasible p v)
+variable {p : P9.a.Params} {v : P9.a.Vars p} (h : P9.a.Feasible p v)
 include h
 
 /-- Per-commodity capacity: x_{e,k} ≤ u_e * y_e. -/
 private lemma per_commodity_cap (e : Fin p.m) (k : Fin p.K) :
-    v.x e k ≤ p.u e * (v.y e.val : ℝ) := by
+    v.x e k ≤ p.u e * (v.y e : ℝ) := by
   haveI := p.hK
   have hsum : v.x e k ≤ ∑ k' : Fin p.K, v.x e k' :=
     Finset.single_le_sum
@@ -204,11 +204,11 @@ end ForwardHelpers
 **P9.a → P9.c**: identity on variables. We must additionally verify the
 knapsack-cover capacity cut EC1.
 -/
-private def fwd (_ : P9.a.Params) (v : P9.a.Vars) : P9.c.Vars :=
+private def fwd (p : P9.a.Params) (v : P9.a.Vars p) : P9.c.Vars (paramMap p) :=
   { x := v.x
     y := v.y }
 
-private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
+private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars p)
     (h : P9.a.Feasible p v) :
     P9.c.Feasible (paramMap p) (fwd p v) := by
   haveI := p.hm
@@ -229,7 +229,7 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
   show (univ.filter (fun e : Fin p.m => p.tail e ∈ S ∧ p.head e ∉ S)).sum
       (fun e => min (p.u e)
         ((univ.filter (fun k : Fin p.K => p.O k ∈ S ∧ p.D k ∉ S)).sum p.d) *
-        (v.y e.val : ℝ)) ≥
+        (v.y e : ℝ)) ≥
     (univ.filter (fun k : Fin p.K => p.O k ∈ S ∧ p.D k ∉ S)).sum p.d
   -- B = {k | O k ∈ S ∧ D k ∉ S}, D_B = B.sum p.d
   set B : Finset (Fin p.K) :=
@@ -241,7 +241,7 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
   set cutS : Finset (Fin p.m) :=
     univ.filter (fun e : Fin p.m => p.tail e ∈ S ∧ p.head e ∉ S) with hcutS
   -- T = activated cut arcs
-  set T := cutS.filter (fun e : Fin p.m => v.y e.val = 1) with hTdef
+  set T := cutS.filter (fun e : Fin p.m => v.y e = 1) with hTdef
   -- Step 1: D_B ≤ ∑_{e ∈ cutS} ∑_{k ∈ B} x e k
   have hDB_le :
       DB ≤ cutS.sum (fun e => B.sum (fun k => v.x e k)) := by
@@ -258,10 +258,10 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
   -- Zero-flow on inactive cut arcs
   have hzero : ∀ e ∈ cutS, e ∉ T → B.sum (fun k => v.x e k) = 0 := by
     intro e hec he
-    have hy0 : v.y e.val = 0 := by
-      have hne : v.y e.val ≠ 1 := fun hh => he (mem_filter.mpr ⟨hec, hh⟩)
+    have hy0 : v.y e = 0 := by
+      have hne : v.y e ≠ 1 := fun hh => he (mem_filter.mpr ⟨hec, hh⟩)
       have := h.hy_bin e; omega
-    have hye0 : (v.y e.val : ℝ) = 0 := by exact_mod_cast hy0
+    have hye0 : (v.y e : ℝ) = 0 := by exact_mod_cast hy0
     have htotal0 : ∑ k : Fin p.K, v.x e k ≤ 0 := by
       have := h.hcap e; rw [hye0, mul_zero] at this; exact this
     have hBle : B.sum (fun k => v.x e k) ≤ ∑ k : Fin p.K, v.x e k :=
@@ -276,7 +276,7 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
   -- Step 2: T.sum (B.sum x) ≤ T.sum p.u
   have hT_cap : T.sum (fun e => B.sum (fun k => v.x e k)) ≤ T.sum p.u := by
     refine sum_le_sum fun e he => ?_
-    have hye1 : (v.y e.val : ℝ) = 1 := by exact_mod_cast (mem_filter.mp he).2
+    have hye1 : (v.y e : ℝ) = 1 := by exact_mod_cast (mem_filter.mp he).2
     calc B.sum (fun k => v.x e k)
         ≤ ∑ k : Fin p.K, v.x e k :=
           sum_le_sum_of_subset_of_nonneg (subset_univ B)
@@ -295,19 +295,19 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
         _ ≤ T.sum (fun e => min (p.u e) DB) :=
             single_le_sum (fun e _ => le_min (p.hu_nn e) hDB_nonneg) he₀
   -- Step 4: T.sum (min * y) = T.sum min; extend from T to cutS
-  have hT_eq : T.sum (fun e => min (p.u e) DB * (v.y e.val : ℝ)) =
+  have hT_eq : T.sum (fun e => min (p.u e) DB * (v.y e : ℝ)) =
       T.sum (fun e => min (p.u e) DB) := by
     apply sum_congr rfl
     intro e he
-    rw [show (v.y e.val : ℝ) = 1 from by exact_mod_cast (mem_filter.mp he).2, mul_one]
+    rw [show (v.y e : ℝ) = 1 from by exact_mod_cast (mem_filter.mp he).2, mul_one]
   have hcut_ge_T :
-      T.sum (fun e => min (p.u e) DB * (v.y e.val : ℝ)) ≤
-      cutS.sum (fun e => min (p.u e) DB * (v.y e.val : ℝ)) :=
+      T.sum (fun e => min (p.u e) DB * (v.y e : ℝ)) ≤
+      cutS.sum (fun e => min (p.u e) DB * (v.y e : ℝ)) :=
     sum_le_sum_of_subset_of_nonneg (filter_subset _ _)
       (fun e _ _ => mul_nonneg (le_min (p.hu_nn e) hDB_nonneg)
         (by have := h.hy_bin e; norm_cast; omega))
   -- Goal: cutS.sum (min(u_e, DB) * y_e) ≥ DB
-  show cutS.sum (fun e => min (p.u e) DB * (v.y e.val : ℝ)) ≥ DB
+  show cutS.sum (fun e => min (p.u e) DB * (v.y e : ℝ)) ≥ DB
   linarith
 
 -- ============================================================================
@@ -318,11 +318,11 @@ private lemma fwd_feas (p : P9.a.Params) (v : P9.a.Vars)
 **P9.c → P9.a**: identity on variables. All constraints except `hec1`
 transfer directly; `hec1` is simply dropped.
 -/
-private def bwd (_ : P9.a.Params) (v : P9.c.Vars) : P9.a.Vars :=
+private def bwd (p : P9.a.Params) (v : P9.c.Vars (paramMap p)) : P9.a.Vars p :=
   { x := v.x
     y := v.y }
 
-private lemma bwd_feas (p : P9.a.Params) (v : P9.c.Vars)
+private lemma bwd_feas (p : P9.a.Params) (v : P9.c.Vars (paramMap p))
     (h : P9.c.Feasible (paramMap p) v) :
     P9.a.Feasible p (bwd p v) := by
   exact
