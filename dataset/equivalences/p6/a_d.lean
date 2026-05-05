@@ -108,12 +108,12 @@ private def paramMap (p : P6.a.Params) : P6.d.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P6.a.Params) (v : P6.a.Vars) : P6.d.Vars :=
+private def fwd (p : P6.a.Params) (v : P6.a.Vars p) : P6.d.Vars (paramMap p) :=
   { x := v.x
     y := v.y }
 
 -- `v.x i j ≥ 0` for binary `x`.
-private lemma xnn {p : P6.a.Params} {v : P6.a.Vars} (h : P6.a.Feasible p v)
+private lemma xnn {p : P6.a.Params} {v : P6.a.Vars p} (h : P6.a.Feasible p v)
     (i : Fin p.n) (j : Fin p.m) : (0 : ℝ) ≤ (v.x i j : ℝ) := by
   rcases h.hx_bin i j with h0 | h1
   · rw [h0]; simp
@@ -121,7 +121,7 @@ private lemma xnn {p : P6.a.Params} {v : P6.a.Vars} (h : P6.a.Feasible p v)
 
 -- For a hard customer, the assigned warehouse is a large warehouse and is open.
 private lemma hard_customer_assigned_large_open
-    {p : P6.a.Params} {v : P6.a.Vars} (h : P6.a.Feasible p v)
+    {p : P6.a.Params} {v : P6.a.Vars p} (h : P6.a.Feasible p v)
     (i : Fin p.n) (hi : i ∈ P6.d.hardCustomers (paramMap p))
     (j : Fin p.m) (hxij : v.x i j = 1) :
     j ∈ P6.d.largeWarehouses (paramMap p) ∧ v.y j = 1 := by
@@ -185,7 +185,7 @@ private lemma hard_customer_assigned_large_open
     linarith
   exact ⟨hjT, hyj1⟩
 
-private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
+private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars p)
     (h : P6.a.Feasible p v) :
     P6.d.Feasible (paramMap p) (fwd p v) := by
   haveI : NeZero p.n := p.hn
@@ -208,11 +208,11 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
     let H := P6.d.hardCustomers (paramMap p)
     -- S : open large warehouses (as subset of Fin T.card)
     let S : Finset (Fin T.card) :=
-      (univ : Finset (Fin T.card)).filter (fun a : Fin T.card => v.y (↑(σ a)) = 1)
+      (univ : Finset (Fin T.card)).filter (fun a : Fin T.card => v.y (σ a).val = 1)
     have hTdef : T = P6.d.largeWarehouses (paramMap p) := rfl
     have hHdef : H = P6.d.hardCustomers (paramMap p) := rfl
     have hSdef : S = (univ : Finset (Fin T.card)).filter
-        (fun a : Fin T.card => v.y (↑(σ a)) = 1) := rfl
+        (fun a : Fin T.card => v.y (σ a).val = 1) := rfl
     -- Step 1: ∑_{i ∈ H} d_i ≤ ∑_{a ∈ S} u (σ a).
     -- Reorganize: ∑_i d_i x_ij, sum over j ∈ open large warehouses, ≥ hard demand.
     -- For each hard customer i, assigned j* in T is open.
@@ -235,7 +235,7 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
     -- First, rewrite hard demand as sum over j ∈ open-T of per-j hard demand.
     -- Define h_dem_j := ∑_{i∈H} d_i * x_{ij}.
     have hard_demand_split : ∑ i ∈ H, p.d i =
-        ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1),
+        ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j = 1),
           ∑ i ∈ H, p.d i * (v.x i j : ℝ) := by
       -- For each i, ∑_j d_i * x_{ij} = d_i * ∑_j x_{ij} = d_i.
       -- We restrict the j-sum to open T. Fill non-open with 0.
@@ -263,18 +263,18 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
           have : (2 : ℤ) ≤ 1 := hge.trans_eq hsum
           omega
       -- Sum of d i * x i j over filter = d i * 1 = d i.
-      rw [show ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1),
+      rw [show ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j = 1),
             p.d i * (v.x i j : ℝ) =
-          p.d i * ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1),
+          p.d i * ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j = 1),
             (v.x i j : ℝ) from (Finset.mul_sum _ _ _).symm]
       -- Show ∑_{j in open T} x_{ij} = 1.
       have hj₀_cast : (j₀ : Fin (paramMap p).m) = j₀ := rfl
       have hj₀_in_filter : (j₀ : Fin (paramMap p).m) ∈
-          T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1) :=
+          T.filter (fun j : Fin (paramMap p).m => v.y j = 1) :=
         Finset.mem_filter.mpr ⟨hj₀T, hyj₀1⟩
-      have hxsum : ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1),
+      have hxsum : ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j = 1),
           (v.x i j : ℝ) = 1 := by
-        have h_eq : ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1),
+        have h_eq : ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j = 1),
             (v.x i j : ℝ) = (v.x i j₀ : ℝ) :=
           Finset.sum_eq_single (j₀ : Fin (paramMap p).m)
             (fun j _ hjne => by exact_mod_cast x_eq_zero j hjne)
@@ -282,7 +282,7 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
         rw [h_eq]; exact_mod_cast hxij₀
       rw [hxsum, mul_one]
     -- Per-j bound ∑_{i∈H} d_i * x_ij ≤ u_j * y_j = u_j for j open.
-    have per_j_bound : ∀ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1),
+    have per_j_bound : ∀ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j = 1),
         ∑ i ∈ H, p.d i * (v.x i j : ℝ) ≤ p.u j := by
       intro j hj
       rw [Finset.mem_filter] at hj
@@ -296,12 +296,12 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
       intro i _ _
       exact mul_nonneg (le_of_lt (p.hd_pos i)) (xnn h i j)
     have hard_le_openT_cap : ∑ i ∈ H, p.d i ≤
-        ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1), p.u j := by
+        ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j = 1), p.u j := by
       rw [hard_demand_split]
       exact Finset.sum_le_sum per_j_bound
     -- Express RHS via σ bijection: ∑_{j ∈ open T} u_j = ∑_{a ∈ S} u(σ a).
     have sum_via_sigma :
-        ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j.val = 1), p.u j =
+        ∑ j ∈ T.filter (fun j : Fin (paramMap p).m => v.y j = 1), p.u j =
         ∑ a ∈ S, p.u (σ a).val := by
       -- Bijection between S and T.filter (y = 1). S = {a : y(σ a) = 1}, σ : S ≃ that.
       -- Use Finset.sum_bij via e : S → T.filter (...).
@@ -407,11 +407,11 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P6.a.Params) (v : P6.d.Vars) : P6.a.Vars :=
+private def bwd (p : P6.a.Params) (v : P6.d.Vars (paramMap p)) : P6.a.Vars p :=
   { x := v.x
     y := v.y }
 
-private lemma bwd_feas (p : P6.a.Params) (v : P6.d.Vars)
+private lemma bwd_feas (p : P6.a.Params) (v : P6.d.Vars (paramMap p))
     (h : P6.d.Feasible (paramMap p) v) :
     P6.a.Feasible p (bwd p v) := by
   simp only [bwd, paramMap] at *

@@ -35,7 +35,7 @@ private def paramMap (p : P6.a.Params) : P6.b.Params :=
 -- ============================================================================
 
 -- fwd is the identity on variables; b adds the EC1 cut, which we must prove.
-private def fwd (_ : P6.a.Params) (v : P6.a.Vars) : P6.b.Vars :=
+private def fwd (p : P6.a.Params) (v : P6.a.Vars p) : P6.b.Vars (paramMap p) :=
   { x := v.x
     y := v.y }
 
@@ -47,7 +47,7 @@ private lemma u_le_uMax (p : P6.a.Params) (j : Fin p.m) :
 
 section ForwardHelpers
 
-variable {p : P6.a.Params} {v : P6.a.Vars} (h : P6.a.Feasible p v)
+variable {p : P6.a.Params} {v : P6.a.Vars p} (h : P6.a.Feasible p v)
 include h
 
 -- Assignment values are nonneg (on Fin indices).
@@ -95,7 +95,7 @@ private lemma fwd_exists_unique_assign (i : Fin p.n) :
 
 end ForwardHelpers
 
-private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
+private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars p)
     (h : P6.a.Feasible p v) :
     P6.b.Feasible (paramMap p) (fwd p v) := by
   haveI := p.hm
@@ -233,11 +233,11 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
 -- ============================================================================
 
 -- bwd simply drops the EC1 cut.
-private def bwd (_ : P6.a.Params) (v : P6.b.Vars) : P6.a.Vars :=
+private def bwd (p : P6.a.Params) (v : P6.b.Vars (paramMap p)) : P6.a.Vars p :=
   { x := v.x
     y := v.y }
 
-private lemma bwd_feas (p : P6.a.Params) (v : P6.b.Vars)
+private lemma bwd_feas (p : P6.a.Params) (v : P6.b.Vars (paramMap p))
     (h : P6.b.Feasible (paramMap p) v) :
     P6.a.Feasible p (bwd p v) := by
   exact

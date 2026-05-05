@@ -33,11 +33,11 @@ private def paramMap (p : P6.a.Params) : P6.e.Params :=
 -- § Forward Mapping and Feasibility
 -- ============================================================================
 
-private def fwd (_ : P6.a.Params) (v : P6.a.Vars) : P6.e.Vars :=
+private def fwd (p : P6.a.Params) (v : P6.a.Vars p) : P6.e.Vars (paramMap p) :=
   { x := v.x
     y := v.y }
 
-private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
+private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars p)
     (h : P6.a.Feasible p v) :
     P6.e.Feasible (paramMap p) (fwd p v) := by
   refine
@@ -68,11 +68,11 @@ private lemma fwd_feas (p : P6.a.Params) (v : P6.a.Vars)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-private def bwd (_ : P6.a.Params) (v : P6.e.Vars) : P6.a.Vars :=
+private def bwd (p : P6.a.Params) (v : P6.e.Vars (paramMap p)) : P6.a.Vars p :=
   { x := v.x
     y := v.y }
 
-private lemma bwd_feas (p : P6.a.Params) (v : P6.e.Vars)
+private lemma bwd_feas (p : P6.a.Params) (v : P6.e.Vars (paramMap p))
     (h : P6.e.Feasible (paramMap p) v) :
     P6.a.Feasible p (bwd p v) :=
   { hassign := h.hassign

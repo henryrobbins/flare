@@ -4,14 +4,14 @@ import Mathlib.Order.Basic
 
 structure MILPFormulation where
   Params   : Type
-  Vars     : Type
-  feasible : Params → Vars → Prop
-  obj      : Params → Vars → ℝ
+  Vars     : Params → Type
+  feasible : (p : Params) → Vars p → Prop
+  obj      : (p : Params) → Vars p → ℝ
 
 structure MILPReformulation (F G : MILPFormulation) where
   paramMap    : F.Params → G.Params
-  fwd         : F.Params → F.Vars → G.Vars
-  bwd         : F.Params → G.Vars → F.Vars
+  fwd         : (p : F.Params) → F.Vars p → G.Vars (paramMap p)
+  bwd         : (p : F.Params) → G.Vars (paramMap p) → F.Vars p
   fwd_feas    : ∀ p x, F.feasible p x → G.feasible (paramMap p) (fwd p x)
   bwd_feas    : ∀ p x', G.feasible (paramMap p) x' → F.feasible p (bwd p x')
   objMap      : ℝ → ℝ
