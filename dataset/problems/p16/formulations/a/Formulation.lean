@@ -26,26 +26,26 @@ structure Params where
   hv_nn : ∀ s p, 0 ≤ v s p
   hU_nn : 0 ≤ U
 
-structure Vars where
-  y : ℕ → ℤ  -- hub open indicator (y h = 1 iff hub h is opened)
-  z : ℕ → ℕ → ℤ  -- demand coverage indicator (z s p = 1 iff demand s→p is covered)
+structure Vars (p : Params) where
+  y : Fin p.M → ℤ  -- hub open indicator (y h = 1 iff hub h is opened)
+  z : Fin p.nS → Fin p.nP → ℤ  -- demand coverage indicator (z s p = 1 iff demand s→p is covered)
 
-structure Feasible (p : Params) (v : Vars) : Prop where
+structure Feasible (p : Params) (v : Vars p) : Prop where
   -- At most U new hubs may be opened (hubs N..M-1)
   hnew_cap :
-    ∑ h ∈ (univ : Finset (Fin p.M)).filter (fun h => p.N ≤ h.val), (v.y h.val : ℤ) ≤ p.U
+    ∑ h ∈ (univ : Finset (Fin p.M)).filter (fun h => p.N ≤ h.val), (v.y h : ℤ) ≤ p.U
   -- All existing hubs (hubs 0..N-1) must remain open
   hexisting :
-    ∑ h ∈ (univ : Finset (Fin p.M)).filter (fun h => h.val < p.N), (v.y h.val : ℤ) = (p.N : ℤ)
+    ∑ h ∈ (univ : Finset (Fin p.M)).filter (fun h => h.val < p.N), (v.y h : ℤ) = (p.N : ℤ)
   -- Demand (s,p) is covered only if at least one feasible open hub exists
   hcover : ∀ s : Fin p.nS, ∀ q : Fin p.nP,
-    (v.z s.val q.val : ℤ) ≤ ∑ h : Fin p.M, p.F s h q * v.y h.val
-  hy_bin : ∀ h : Fin p.M, v.y h.val = 0 ∨ v.y h.val = 1
-  hz_bin : ∀ s : Fin p.nS, ∀ q : Fin p.nP, v.z s.val q.val = 0 ∨ v.z s.val q.val = 1
+    (v.z s q : ℤ) ≤ ∑ h : Fin p.M, p.F s h q * v.y h
+  hy_bin : ∀ h : Fin p.M, v.y h = 0 ∨ v.y h = 1
+  hz_bin : ∀ s : Fin p.nS, ∀ q : Fin p.nP, v.z s q = 0 ∨ v.z s q = 1
 
 -- Maximize total covered demand
-def obj (p : Params) (v : Vars) : ℝ :=
-  -(∑ s : Fin p.nS, ∑ q : Fin p.nP, p.v s q * (v.z s.val q.val : ℝ))
+def obj (p : Params) (v : Vars p) : ℝ :=
+  -(∑ s : Fin p.nS, ∑ q : Fin p.nP, p.v s q * (v.z s q : ℝ))
 
 def formulation : MILPFormulation where
   Params   := Params
