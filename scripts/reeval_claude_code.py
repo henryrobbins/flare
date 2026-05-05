@@ -4,7 +4,7 @@ Usage:
     python scripts/reeval_equivaproof.py runs/<timestamp> [--pairs p1_a__p1_b ...]
 
 Updates each pairs/<id>/equivaproof/result.json in place (preserving streaming
-metrics) and rewrites results.jsonl with corrected is_equivalent values.
+metrics) and rewrites results.jsonl with corrected is_reformulation values.
 Pairs missing from results.jsonl entirely are inserted.
 """
 
@@ -122,8 +122,8 @@ def main() -> None:
 
         result_path.write_text(json.dumps(new_meta, indent=2))
 
-        old_equiv = old_result.get("is_equivalent")
-        new_equiv = new_meta["is_equivalent"]
+        old_equiv = old_result.get("is_reformulation")
+        new_equiv = new_meta["is_reformulation"]
         updated[pair_id] = new_equiv
 
         changed = old_equiv != new_equiv
@@ -134,7 +134,7 @@ def main() -> None:
         if pair_id not in existing_ids:
             problem_a, form_a, problem_b, form_b = _pair_id_to_parts(pair_id)
             equiv_file = (
-                repo_root / "dataset" / "equivalences" / problem_a
+                repo_root / "dataset" / "reformulations" / problem_a
                 / f"{form_a}_{form_b}.lean"
             )
             ground_truth = equiv_file.exists()
@@ -146,7 +146,7 @@ def main() -> None:
                 "formulation_b": form_b,
                 "ground_truth": ground_truth,
                 "method": "equivaproof",
-                "is_equivalent": new_equiv,
+                "is_reformulation": new_equiv,
                 "duration_s": new_meta.get("duration_s"),
                 "cost_usd": new_meta.get("cost_usd"),
                 "artifacts_dir": str(cc_dir.resolve().relative_to(repo_root.resolve())),
@@ -161,7 +161,7 @@ def main() -> None:
     rows = [json.loads(l) for l in results_jsonl.read_text().splitlines() if l.strip()]
     for row in rows:
         if row["method"] == "equivaproof" and row["pair_id"] in updated:
-            row["is_equivalent"] = updated[row["pair_id"]]
+            row["is_reformulation"] = updated[row["pair_id"]]
 
     rows.extend(new_rows)
     results_jsonl.write_text("\n".join(json.dumps(r) for r in rows) + "\n")

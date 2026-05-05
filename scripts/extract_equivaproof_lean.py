@@ -4,7 +4,7 @@
 For each pair in the run, copies:
   equivaproof/wd/A/Formulation.lean  -> results/<run_id>/<problem>/<a_b>/A/Formulation.lean
   equivaproof/wd/B/Formulation.lean  -> results/<run_id>/<problem>/<a_b>/B/Formulation.lean
-  equivaproof/wd/Equivalence.lean    -> results/<run_id>/<problem>/<a_b>/Equivalence.lean
+  equivaproof/wd/Reformulation.lean    -> results/<run_id>/<problem>/<a_b>/Reformulation.lean
 
 Pair directory names are expected to follow the pattern p<N>_<a>__p<N>_<b>.
 
@@ -95,7 +95,7 @@ def main():
         files = [
             (wd / "A" / "Formulation.lean", out_dir / "A" / "Formulation.lean"),
             (wd / "B" / "Formulation.lean", out_dir / "B" / "Formulation.lean"),
-            (wd / "Equivalence.lean", out_dir / "Equivalence.lean"),
+            (wd / "Reformulation.lean", out_dir / "Reformulation.lean"),
         ]
 
         pair_ok = True
@@ -107,7 +107,7 @@ def main():
                 shutil.copy2(src, dst)
 
         if pair_ok:
-            rewrite_equivalence_imports(out_dir / "Equivalence.lean", run_id, problem, form_pair)
+            rewrite_equivalence_imports(out_dir / "Reformulation.lean", run_id, problem, form_pair)
             copied += 1
         else:
             skipped += 1

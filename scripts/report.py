@@ -47,7 +47,7 @@ if args.instance:
         method = r["method"]
         pair = f"{r['problem_a']}.{r['formulation_a']} / {r['problem_b']}.{r['formulation_b']}"
         gt = r["ground_truth"]
-        pred = r.get("is_equivalent")
+        pred = r.get("is_reformulation")
         err = r.get("error")
         is_error = bool(err) or pred is None
         is_wrong = not is_error and pred != gt
@@ -68,7 +68,7 @@ else:
     for r in rows:
         method = r["method"]
         gt = r["ground_truth"]
-        pred = r.get("is_equivalent")
+        pred = r.get("is_reformulation")
         err = r.get("error")
 
         if err or pred is None:

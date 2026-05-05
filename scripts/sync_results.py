@@ -22,7 +22,7 @@ with open(pairs_path) as f:
 current = {}
 for p in pairs:
     key = (f"p{p['a']['problem']}", p["a"]["formulation"], f"p{p['b']['problem']}", p["b"]["formulation"])
-    current[key] = p["equivalent"]
+    current[key] = p["reformulation"]
 
 rows = []
 skipped = 0
