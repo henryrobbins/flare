@@ -980,6 +980,17 @@
     },
     {
         "a": {
+            "problem": 15,
+            "formulation": "a"
+        },
+        "b": {
+            "problem": 15,
+            "formulation": "b"
+        },
+        "reformulation": true
+    },
+    {
+        "a": {
             "problem": 16,
             "formulation": "a"
         },
