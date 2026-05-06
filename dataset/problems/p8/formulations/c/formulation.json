@@ -76,6 +76,27 @@
             "code": {
                 "python": "M = sum(p[j][k] for j in range(n) for k in range(m))"
             }
+        },
+        "O": {
+            "description": "Set of operations assigned to machine i: pairs (j,k) with Om_{j,k} = i",
+            "formulation": "O_i = \\{ (j,k) : Om_{j,k} = i \\} \\quad \\forall i \\in \\{0, \\dots, m-1\\}",
+            "code": {
+                "python": "O = {i: [(j, k) for j in range(n) for k in range(m) if Om[j][k] == i] for i in range(m)}"
+            }
+        },
+        "h": {
+            "description": "Head of operation (j,k): total processing time of earlier operations in job j",
+            "formulation": "h_{j,k} = \\sum_{t=0}^{k-1} p_{j,t} \\quad \\forall j, k",
+            "code": {
+                "python": "h = [[sum(p[j][t] for t in range(k)) for k in range(m)] for j in range(n)]"
+            }
+        },
+        "tau": {
+            "description": "Tail of operation (j,k): total processing time of later operations in job j",
+            "formulation": "\\tau_{j,k} = \\sum_{t=k+1}^{m-1} p_{j,t} \\quad \\forall j, k",
+            "code": {
+                "python": "tau = [[sum(p[j][t] for t in range(k + 1, m)) for k in range(m)] for j in range(n)]"
+            }
         }
     },
     "variables": {
@@ -136,7 +157,7 @@
         },
         {
             "description": "Machine Critical-Path Bound (EC2): for each machine, the makespan is at least the total load on that machine plus the minimum head and minimum tail of its operations across all jobs.",
-            "formulation": "C_{\\max} \\ge \\sum_{(j,k)\\in O_m} p_{j,k} + \\min_{(j,k)\\in O_m} h_{j,k} + \\min_{(j,k)\\in O_m} \\tau_{j,k} \\quad \\forall m",
+            "formulation": "C_{\\max} \\ge \\sum_{(j,k)\\in O_i} p_{j,k} + \\min_{(j,k)\\in O_i} h_{j,k} + \\min_{(j,k)\\in O_i} \\tau_{j,k} \\quad \\forall i \\in \\{0, \\dots, m-1\\}",
             "code": {
                 "gurobipy": "for machine in range(m):\n    ops_m = [(j, k) for j in range(n) for k in range(m) if Om[j][k] == machine]\n    load_m = sum(p[j][k] for j, k in ops_m)\n    min_head = min(sum(p[j][t] for t in range(k)) for j, k in ops_m)\n    min_tail = min(sum(p[j][t] for t in range(k + 1, m)) for j, k in ops_m)\n    model.addConstr(C_max >= load_m + min_head + min_tail)"
             },
