@@ -26,6 +26,11 @@ parser.add_argument(
     help="Filter to specific problems (comma-separated, e.g. 10,12)",
 )
 parser.add_argument(
+    "--modes",
+    nargs="+",
+    help="Filter to specific modes (e.g. regular naive). Applies to llm_* methods.",
+)
+parser.add_argument(
     "-g",
     "--group-by",
     choices=["none", "model", "mode"],
@@ -85,6 +90,10 @@ with open(path) as f:
             continue
         if args.problems and r["problem_a"] not in args.problems:
             continue
+        if args.modes and r["method"].startswith("llm_"):
+            _, mode = parse_method(r["method"])
+            if mode not in args.modes:
+                continue
         rows.append(r)
 
 
