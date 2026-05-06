@@ -137,7 +137,7 @@ def main() -> None:
                 )
             )
         ),
-        EquivaMapVerifier(AnthropicClient(LLMConfig(model="claude-sonnet-4-6"))),
+        EquivaMapVerifier(AnthropicClient(LLMConfig(model="claude-sonnet-4-5"))),
         EquivaProofVerifier(repo_root=Path(".").resolve(), model="claude-opus-4-7"),
     ]
 
