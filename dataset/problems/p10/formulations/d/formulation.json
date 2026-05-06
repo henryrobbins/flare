@@ -1,5 +1,8 @@
 {
   "valid": true,
+  "imports": [
+    "import networkx as nx"
+  ],
   "parameters": {
     "K": {
       "description": "Number of trucks/vehicles in the fleet",
@@ -149,7 +152,7 @@
       "description": "Family of cliques in the conflict graph induced by A^-: subsets C of jobs such that every distinct pair (i,j) in C has both (i,j) and (j,i) in A^-",
       "formulation": "\\mathcal{C} = \\{C \\subseteq \\{0,\\dots,N-1\\} : \\forall i, j \\in C,\\ i \\ne j \\Rightarrow (i,j) \\in \\mathcal{A}^- \\wedge (j,i) \\in \\mathcal{A}^-\\}",
       "code": {
-        "python": "C_set = [set(C) for C in __import__('itertools').chain.from_iterable(__import__('itertools').combinations(range(N), r) for r in range(N + 1)) if all(((i, j) in A_minus and (j, i) in A_minus) for i in C for j in C if i != j)]"
+        "python": "_G = nx.Graph()\n_G.add_nodes_from(range(N))\nfor i in range(N):\n    for j in range(i + 1, N):\n        if (i, j) in A_minus and (j, i) in A_minus:\n            _G.add_edge(i, j)\nC_set = [set(C) for C in nx.find_cliques(_G)]"
       }
     },
     "M": {
@@ -222,7 +225,7 @@
       "description": "EC3: For each clique C in the conflict graph, at least |C|-|K_C| jobs in C must be rejected.",
       "formulation": "\\sum_{i \\in C} x_{K+i,K+i} \\ge |C| - |K_C| \\quad \\forall C \\in \\mathcal{C}:\\,|C|>|K_C|",
       "code": {
-        "gurobipy": "import networkx as nx\nG = nx.Graph()\nG.add_nodes_from(range(N))\nfor i in range(N):\n    for j in range(i + 1, N):\n        if (i, j) in A_minus and (j, i) in A_minus:\n            G.add_edge(i, j)\nfor C in nx.find_cliques(G):\n    K_C = KC(C)\n    if len(C) > len(K_C):\n        model.addConstr(gp.quicksum(x[K + i, K + i] for i in C) >= len(C) - len(K_C))"
+        "gurobipy": "for C in C_set:\n    K_C = KC(C)\n    if len(C) > len(K_C):\n        model.addConstr(gp.quicksum(x[K + i, K + i] for i in C) >= len(C) - len(K_C))"
       },
       "explicit": true
     }
