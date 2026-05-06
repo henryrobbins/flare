@@ -127,16 +127,6 @@ def main() -> None:
 
     checkers: list[ReformulationVerifier] = [
         ExecutionVerifier(),
-        LLMVerifier(
-            AnthropicClient(
-                LLMConfig(
-                    model="claude-sonnet-4-6",
-                    max_tokens=4096,
-                    reasoning=True,
-                    reasoning_tokens=2048,
-                )
-            )
-        ),
         EquivaMapVerifier(AnthropicClient(LLMConfig(model="claude-sonnet-4-5"))),
         EquivaProofVerifier(repo_root=Path(".").resolve(), model="claude-opus-4-7"),
     ]
