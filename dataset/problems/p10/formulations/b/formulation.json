@@ -149,7 +149,7 @@
   "variables": {
     "x": {
       "description": "1 if arc (u,v) is selected in the routing cycle cover; x[K+i][K+i]=1 means job i is rejected",
-      "type": "integer",
+      "type": "binary",
       "shape": [
         "K+N",
         "K+N"

@@ -133,16 +133,23 @@
     },
     "A_minus": {
       "description": "Set of directed job pairs (i,j) where job j cannot follow job i due to time window infeasibility",
-      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
+      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : i \\ne j \\wedge \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
       "code": {
-        "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
+        "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if i != j and EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
       }
     },
     "KC": {
       "description": "Set of trucks that can feasibly serve at least one job in clique C within its time window",
-      "formulation": "K_C = \\{k \\in \\{0,\\dots,K-1\\} : \\exists\\, i \\in C,\\ v^k + d^k_{0i} \\le \\tau^+_i\\}",
+      "formulation": "K_C = \\{k \\in \\{0,\\dots,K-1\\} : \\exists\\, i \\in C,\\ v^k + d^k_{0i} \\le \\tau^+_i\\} \\quad \\forall C \\subseteq \\{0,\\dots,N-1\\}",
       "code": {
         "python": "def KC(C): return {k for k in range(K) if any(v[k] + d0[k][i] <= tau_max[i] for i in C)}"
+      }
+    },
+    "C_set": {
+      "description": "Family of cliques in the conflict graph induced by A^-: subsets C of jobs such that every distinct pair (i,j) in C has both (i,j) and (j,i) in A^-",
+      "formulation": "\\mathcal{C} = \\{C \\subseteq \\{0,\\dots,N-1\\} : \\forall i, j \\in C,\\ i \\ne j \\Rightarrow (i,j) \\in \\mathcal{A}^- \\wedge (j,i) \\in \\mathcal{A}^-\\}",
+      "code": {
+        "python": "C_set = [set(C) for C in __import__('itertools').chain.from_iterable(__import__('itertools').combinations(range(N), r) for r in range(N + 1)) if all(((i, j) in A_minus and (j, i) in A_minus) for i in C for j in C if i != j)]"
       }
     },
     "M": {
@@ -156,7 +163,7 @@
   "variables": {
     "x": {
       "description": "1 if arc (u,v) is selected in the routing cycle cover; x[K+i][K+i]=1 means job i is rejected",
-      "type": "integer",
+      "type": "binary",
       "shape": [
         "K+N",
         "K+N"
@@ -212,8 +219,8 @@
       "explicit": true
     },
     {
-      "description": "EC3: For each clique C in the conflict graph, at least |C|-|K(C)| jobs in C must be rejected.",
-      "formulation": "\\sum_{i \\in C} x_{K+i,K+i} \\ge |C| - |K(C)| \\quad \\forall C \\in \\mathcal{C}:\\,|C|>|K(C)|",
+      "description": "EC3: For each clique C in the conflict graph, at least |C|-|K_C| jobs in C must be rejected.",
+      "formulation": "\\sum_{i \\in C} x_{K+i,K+i} \\ge |C| - |K_C| \\quad \\forall C \\in \\mathcal{C}:\\,|C|>|K_C|",
       "code": {
         "gurobipy": "import networkx as nx\nG = nx.Graph()\nG.add_nodes_from(range(N))\nfor i in range(N):\n    for j in range(i + 1, N):\n        if (i, j) in A_minus and (j, i) in A_minus:\n            G.add_edge(i, j)\nfor C in nx.find_cliques(G):\n    K_C = KC(C)\n    if len(C) > len(K_C):\n        model.addConstr(gp.quicksum(x[K + i, K + i] for i in C) >= len(C) - len(K_C))"
       },

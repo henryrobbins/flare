@@ -133,9 +133,9 @@
     },
     "A_minus": {
       "description": "Set of arc pairs (i,j) that are infeasible: serving j after i always violates j's time window upper bound",
-      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
+      "formulation": "\\mathcal{A}^- = \\{(i,j) \\in \\{0,\\dots,N-1\\}^2 : i \\ne j \\wedge \\mathrm{EST}_i + d_{ii} + d_{ij} > \\tau^+_j\\}",
       "code": {
-        "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
+        "python": "A_minus = {(i, j) for i in range(N) for j in range(N) if i != j and EST[i] + d[i][i] + d[i][j] > tau_max[j]}"
       }
     },
     "Q": {
@@ -156,7 +156,7 @@
   "variables": {
     "x": {
       "description": "1 if arc (u,v) is selected in the routing cycle cover; x[K+i][K+i]=1 means job i is rejected",
-      "type": "integer",
+      "type": "binary",
       "shape": [
         "K+N",
         "K+N"
