@@ -22,7 +22,7 @@ load_dotenv()
 
 from milp_eq_tools import Dataset, Formulation, Pair
 
-from src.llm_client import AnthropicClient, LLMConfig
+from src.llm_client import OpenAIClient, LLMConfig
 from src.verify.base import ReformulationVerifier
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.equivaproof.equivaproof import EquivaProofVerifier
@@ -127,7 +127,7 @@ def main() -> None:
 
     checkers: list[ReformulationVerifier] = [
         ExecutionVerifier(),
-        EquivaMapVerifier(AnthropicClient(LLMConfig(model="claude-sonnet-4-5"))),
+        EquivaMapVerifier(OpenAIClient(LLMConfig(model="gpt-4.1", max_tokens=4096))),
         EquivaProofVerifier(repo_root=Path(".").resolve(), model="claude-opus-4-7"),
     ]
 
