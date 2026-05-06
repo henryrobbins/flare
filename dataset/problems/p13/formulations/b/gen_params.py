@@ -10,7 +10,7 @@ def main(data_path: str, output_path: str) -> None:
         "nP": data["nP"],
         "nA": data["nA"],
         "nT": data["nT"],
-        "tau": data["tau"],
+        "adj": data["adj"],
         "r": data["r"],
         "cap": data["cap"],
     }

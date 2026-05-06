@@ -2,17 +2,17 @@
 Generate data.json for the Air Traffic Flow Management problem (p13).
 
 Generates a synthetic instance with a fleet of flights, a set of locations
-(airports/sectors), and a discrete time horizon. Transition times between
-locations are drawn as small random integers; rewards and capacities are
-drawn uniformly at random.
+(airports/sectors), and a discrete time horizon. Adjacency between locations
+is drawn at random (with self-adjacency forced to 1); rewards and capacities
+are drawn uniformly at random.
 
 Output keys match problem.json:
   nP   -- number of flights
   nA   -- number of locations (airports/sectors)
   nT   -- number of time periods
-  tau  -- 2-D list (nA × nA) of integer transition times between locations
-  r    -- 2-D list (nA × nT) of rewards for being at location a at time t
-  cap  -- 2-D list (nA × nT) of integer capacity of location a at time t
+  adj  -- 2-D list (nA x nA) of binary adjacency entries
+  r    -- 2-D list (nA x nT) of rewards for being at location a at time t
+  cap  -- 2-D list (nA x nT) of integer capacity of location a at time t
 """
 
 import json
@@ -42,10 +42,10 @@ def generate_data(
     nA = num_locations
     nT = num_time_periods
 
-    # Transition times: 0 on diagonal, small positive integer for off-diagonal
-    tau = [
+    # Adjacency: 1 on diagonal (self-adjacency), random 0/1 off-diagonal
+    adj = [
         [
-            0 if a == a2 else int(np.random.randint(1, 4))
+            1 if a == a2 else int(np.random.randint(0, 2))
             for a2 in range(nA)
         ]
         for a in range(nA)
@@ -67,7 +67,7 @@ def generate_data(
         "nP": nP,
         "nA": nA,
         "nT": nT,
-        "tau": tau,
+        "adj": adj,
         "r": r,
         "cap": cap,
     }

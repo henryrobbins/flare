@@ -16,9 +16,9 @@
             "type": "integer",
             "shape": []
         },
-        "tau": {
-            "description": "Transition time between each pair of sectors",
-            "type": "integer",
+        "adj": {
+            "description": "Adjacency matrix: 1 if location a is adjacent to a', 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nA",
                 "nA"

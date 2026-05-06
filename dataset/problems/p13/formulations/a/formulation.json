@@ -16,9 +16,9 @@
             "type": "integer",
             "shape": []
         },
-        "tau": {
-            "description": "Transition time from location a to location a'",
-            "type": "integer",
+        "adj": {
+            "description": "Adjacency matrix: 1 if a is adjacent to a', 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nA",
                 "nA"
@@ -43,11 +43,11 @@
     },
     "assumptions": [
         {
-            "description": "Travel times are non-negative.",
-            "formulation": "\\tau_{a,a'} \\geq 0 \\quad \\forall a, a' \\in A",
+            "description": "Every location is adjacent to itself.",
+            "formulation": "\\text{adj}_{a,a} = 1 \\quad \\forall a \\in A",
             "explicit": false,
             "code": {
-                "python": "assert all(tau[a][a2] >= 0 for a in range(nA) for a2 in range(nA))"
+                "python": "assert all(adj[a][a] == 1 for a in range(nA))"
             }
         },
         {
@@ -70,7 +70,7 @@
             ]
         },
         "z": {
-            "description": "1 if flight p departs from location a to location a' at time t, 0 otherwise",
+            "description": "1 if flight p moves from a at time t to a' at time t+1, 0 otherwise",
             "type": "binary",
             "shape": [
                 "nP",
@@ -98,11 +98,35 @@
             }
         },
         {
-            "description": "Flow conservation: the number of flights at location a at time t equals those at t-1 plus arrivals minus departures, accounting for travel times.",
-            "formulation": "y_{p,a,t} = y_{p,a,t-1} + \\sum_{a' \\in A} \\sum_{t' : t' + \\tau_{a',a} = t} z_{p,a',a,t'} - \\sum_{a' \\in A} z_{p,a,a',t} \\quad \\forall p \\in P, a \\in A, t \\in T, t > 0",
+            "description": "Flow conservation: flights at location a at time t equal those at t-1 plus arrivals minus departures (one-step transitions).",
+            "formulation": "y_{p,a,t} = y_{p,a,t-1} + \\sum_{a' \\in A} z_{p,a',a,t-1} - \\sum_{a' \\in A} z_{p,a,a',t-1} \\quad \\forall p \\in P, a \\in A, t \\in T, t > 0",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(y[p, a, t] == y[p, a, t-1] + gp.quicksum(z[p, a2, a, t2] for a2 in range(nA) for t2 in range(nT) if t2 + tau[a2][a] == t) - gp.quicksum(z[p, a, a2, t] for a2 in range(nA)) for p in range(nP) for a in range(nA) for t in range(1, nT))"
+                "gurobipy": "model.addConstrs(y[p, a, t] == y[p, a, t-1] + gp.quicksum(z[p, a2, a, t-1] for a2 in range(nA)) - gp.quicksum(z[p, a, a2, t-1] for a2 in range(nA)) for p in range(nP) for a in range(nA) for t in range(1, nT))"
+            }
+        },
+        {
+            "description": "Movements are only allowed between adjacent locations.",
+            "formulation": "z_{p,a,a',t} \\leq \\text{adj}_{a,a'} \\quad \\forall p \\in P, a, a' \\in A, t \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(z[p, a, a2, t] <= adj[a][a2] for p in range(nP) for a in range(nA) for a2 in range(nA) for t in range(nT))"
+            }
+        },
+        {
+            "description": "No movements out of the final time period (would arrive outside the horizon).",
+            "formulation": "z_{p,a,a',nT-1} = 0 \\quad \\forall p \\in P, a, a' \\in A",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(z[p, a, a2, nT-1] == 0 for p in range(nP) for a in range(nA) for a2 in range(nA))"
+            }
+        },
+        {
+            "description": "Movements at time t require the flight to be present at time t (depart only from where you are).",
+            "formulation": "\\sum_{a' \\in A} z_{p,a,a',t} \\leq y_{p,a,t} \\quad \\forall p \\in P, a \\in A, t \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(z[p, a, a2, t] for a2 in range(nA)) <= y[p, a, t] for p in range(nP) for a in range(nA) for t in range(nT))"
             }
         }
     ],

@@ -967,6 +967,17 @@
         },
         "reformulation": true
     },
+     {
+        "a": {
+            "problem": 13,
+            "formulation": "a"
+        },
+        "b": {
+            "problem": 13,
+            "formulation": "b"
+        },
+        "reformulation": true
+    },
     {
         "a": {
             "problem": 14,

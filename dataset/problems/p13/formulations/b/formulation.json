@@ -16,9 +16,9 @@
             "type": "integer",
             "shape": []
         },
-        "tau": {
-            "description": "Transition time from location a to location a'",
-            "type": "integer",
+        "adj": {
+            "description": "Adjacency matrix: 1 if a is adjacent to a', 0 otherwise",
+            "type": "binary",
             "shape": [
                 "nA",
                 "nA"
@@ -43,11 +43,11 @@
     },
     "assumptions": [
         {
-            "description": "Travel times are non-negative.",
-            "formulation": "\\tau_{a,a'} \\geq 0 \\quad \\forall a, a' \\in A",
+            "description": "Every location is adjacent to itself.",
+            "formulation": "\\text{adj}_{a,a} = 1 \\quad \\forall a \\in A",
             "explicit": false,
             "code": {
-                "python": "assert all(tau[a][a2] >= 0 for a in range(nA) for a2 in range(nA))"
+                "python": "assert all(adj[a][a] == 1 for a in range(nA))"
             }
         },
         {
@@ -69,7 +69,7 @@
             ]
         },
         "f": {
-            "description": "Number of flights departing from location a to location a' at time t",
+            "description": "Number of flights moving from a at time t to a' at time t+1",
             "type": "integer",
             "shape": [
                 "nA",
@@ -96,11 +96,35 @@
             }
         },
         {
-            "description": "Flow conservation: flights at location a at time t equal those at t-1 plus arrivals minus departures, accounting for travel times.",
-            "formulation": "n_{a,t} = n_{a,t-1} + \\sum_{a' \\in A} \\sum_{t' : t' + \\tau_{a',a} = t} f_{a',a,t'} - \\sum_{a' \\in A} f_{a,a',t} \\quad \\forall a \\in A, t \\in T, t > 0",
+            "description": "Flow conservation: flights at location a at time t equal those at t-1 plus arrivals minus departures (one-step transitions).",
+            "formulation": "n_{a,t} = n_{a,t-1} + \\sum_{a' \\in A} f_{a',a,t-1} - \\sum_{a' \\in A} f_{a,a',t-1} \\quad \\forall a \\in A, t \\in T, t > 0",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(n[a, t] == n[a, t-1] + gp.quicksum(f[a2, a, t2] for a2 in range(nA) for t2 in range(nT) if t2 + tau[a2][a] == t) - gp.quicksum(f[a, a2, t] for a2 in range(nA)) for a in range(nA) for t in range(1, nT))"
+                "gurobipy": "model.addConstrs(n[a, t] == n[a, t-1] + gp.quicksum(f[a2, a, t-1] for a2 in range(nA)) - gp.quicksum(f[a, a2, t-1] for a2 in range(nA)) for a in range(nA) for t in range(1, nT))"
+            }
+        },
+        {
+            "description": "Movements are only allowed between adjacent locations.",
+            "formulation": "f_{a,a',t} \\leq nP \\cdot \\text{adj}_{a,a'} \\quad \\forall a, a' \\in A, t \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(f[a, a2, t] <= nP * adj[a][a2] for a in range(nA) for a2 in range(nA) for t in range(nT))"
+            }
+        },
+        {
+            "description": "No movements out of the final time period (would arrive outside the horizon).",
+            "formulation": "f_{a,a',nT-1} = 0 \\quad \\forall a, a' \\in A",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(f[a, a2, nT-1] == 0 for a in range(nA) for a2 in range(nA))"
+            }
+        },
+        {
+            "description": "Aggregate departures at time t do not exceed presence at time t (stay-flow non-negativity).",
+            "formulation": "\\sum_{a' \\in A} f_{a,a',t} \\leq n_{a,t} \\quad \\forall a \\in A, t \\in T",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstrs(gp.quicksum(f[a, a2, t] for a2 in range(nA)) <= n[a, t] for a in range(nA) for t in range(nT))"
             }
         },
         {
