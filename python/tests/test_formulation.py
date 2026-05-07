@@ -1,9 +1,20 @@
 import pytest
 
-from milp_eq_tools import Assumption, Constraint, Dataset, Definition, Objective, Parameter, Problem, Variable, VariableType
-from milp_eq_tools.formulation import Formulation
+from formulation_bench import (
+    Assumption,
+    Constraint,
+    Dataset,
+    Definition,
+    Objective,
+    Parameter,
+    Problem,
+    Variable,
+    VariableType,
+)
+from formulation_bench.formulation import Formulation
 
 from pathlib import Path
+
 DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset"
 
 
@@ -140,5 +151,3 @@ def test_imports_content(formulation_with_imports: Formulation) -> None:
 
 def test_problem_back_reference(problem1: Problem, formulation_a: Formulation) -> None:
     assert formulation_a.problem is problem1
-
-

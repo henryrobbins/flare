@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from milp_eq_tools import Formulation
+from formulation_bench import Formulation
 
 
 @dataclass

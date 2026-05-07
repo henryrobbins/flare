@@ -3,7 +3,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from milp_eq_tools import Formulation
+from formulation_bench import Formulation
 
 from src.verify.base import ReformulationResult, ReformulationVerifier
 
@@ -18,10 +18,14 @@ class ExecutionVerifier(ReformulationVerifier):
     def method_config(self) -> dict:
         return {"tolerance": TOLERANCE}
 
-    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> ReformulationResult:
+    def verify(
+        self, a: Formulation, b: Formulation, output_path: Path
+    ) -> ReformulationResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
-        (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
+        (artifacts_dir / "config.json").write_text(
+            json.dumps(self.method_config(), indent=2)
+        )
 
         start = time.time()
         obj_a = self._solve(a, artifacts_dir / "a")

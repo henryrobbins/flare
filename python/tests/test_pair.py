@@ -2,8 +2,8 @@ import json
 
 import pytest
 
-from milp_eq_tools import Dataset, Pair
-from milp_eq_tools.formulation import Formulation
+from formulation_bench import Dataset, Pair
+from formulation_bench.formulation import Formulation
 
 
 def test_pairs_loaded(dataset: Dataset) -> None:

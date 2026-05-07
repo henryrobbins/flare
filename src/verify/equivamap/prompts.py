@@ -4,7 +4,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from milp_eq_tools import Formulation
+from formulation_bench import Formulation
 
 from src.prompts import RenderedPrompt, problem_info
 
@@ -20,11 +20,14 @@ def constraints_involving(var_name: str, constraints: list[dict]) -> list[dict]:
 def objective_contains(var_name: str, objective: dict) -> bool:
     return _mentions(var_name, objective["code"])
 
+
 VARIABLE_MAPPING_SCHEMA: dict = json.loads(
     (Path(__file__).parent / "variable_mapping_schema.json").read_text()
 )
 
-VARIABLE_MAPPING_SYSTEM = "You are an expert in optimization problems and variable mappings."
+VARIABLE_MAPPING_SYSTEM = (
+    "You are an expert in optimization problems and variable mappings."
+)
 
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent),
@@ -36,7 +39,9 @@ _env.globals["constraints_involving"] = constraints_involving
 _env.globals["objective_contains"] = objective_contains
 
 
-def render_variable_mapping(var_name: str, a: Formulation, b: Formulation) -> RenderedPrompt:
+def render_variable_mapping(
+    var_name: str, a: Formulation, b: Formulation
+) -> RenderedPrompt:
     info_a = problem_info(a)
     info_b = problem_info(b)
     tmpl = _env.get_template("variable_mapping.j2")

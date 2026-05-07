@@ -3,7 +3,7 @@
 
 import argparse
 
-from milp_eq_tools import Dataset
+from formulation_bench import Dataset
 
 
 def parse_problem_ids(s: str | None) -> set[int] | None:

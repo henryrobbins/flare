@@ -3,7 +3,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from milp_eq_tools import Formulation
+from formulation_bench import Formulation
 
 from src.prompts import RenderedPrompt
 from src.verify.flare.flare import render_formulation

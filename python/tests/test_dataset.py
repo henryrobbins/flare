@@ -1,4 +1,4 @@
-from milp_eq_tools import Dataset, Problem
+from formulation_bench import Dataset, Problem
 
 
 def test_problems_keys(dataset: Dataset) -> None:

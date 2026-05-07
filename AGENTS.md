@@ -8,7 +8,7 @@ This monorepo contains a dataset of MILP problems/formulations. Proofs that one 
 .
 ├── Common.lean       # MILPFormulation / MILPReformulation definitions
 ├── dataset/          # the dataset (MILP problems, formulations, reformulations)
-├── python/           # Python package `milp_eq_tools`
+├── python/           # Python package `formulation_bench`
 ├── scripts/          # standalone scripts
 ├── lakefile.toml
 ├── lean-toolchain
@@ -33,14 +33,14 @@ proofs. See `dataset/README.md` for more information.
 
 ## `python/`
 
-Python package `milp_eq_tools` (defined in `python/milp_eq_tools/`) with
+Python package `formulation_bench` (defined in `python/formulation_bench/`) with
 modules for loading and manipulating the dataset: `dataset.py`,
 `problem.py`, `formulation.py`, `pair.py`, `models.py`. Tests are under
 `python/tests/`.
 
 ## `scripts/`
 
-Standalone scripts that use `milp_eq_tools`:
+Standalone scripts that use `formulation_bench`:
 
 - `scripts/gen_solve.py` — generate instance data and solve.
 - `scripts/validate.py` — validate dataset integrity.

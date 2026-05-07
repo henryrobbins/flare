@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from milp_eq_tools import Dataset, Problem
+from formulation_bench import Dataset, Problem
 
 DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset"
 

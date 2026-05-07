@@ -10,7 +10,7 @@ import argparse
 import json
 from pathlib import Path
 
-from milp_eq_tools import Dataset
+from formulation_bench import Dataset
 
 
 def _read_text(path: Path) -> str | None:
@@ -79,7 +79,9 @@ def build_pair_record(pair: dict, dataset_root: Path) -> dict:
         # canonical ordering: alphabetically smaller first
         if fa > fb:
             fa, fb = fb, fa
-        proof_path = dataset_root / "reformulations" / f"p{a['problem']}" / f"{fa}_{fb}.lean"
+        proof_path = (
+            dataset_root / "reformulations" / f"p{a['problem']}" / f"{fa}_{fb}.lean"
+        )
         lean_proof = _read_text(proof_path)
 
     return {

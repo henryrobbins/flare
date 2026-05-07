@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from milp_eq_tools import Dataset, Formulation, Pair
+from formulation_bench import Dataset, Formulation, Pair
 
 from src.llm_client import OpenAIClient, LLMConfig
 from src.verify.base import ReformulationVerifier

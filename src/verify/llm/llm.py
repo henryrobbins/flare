@@ -3,7 +3,7 @@ import json
 import time
 from pathlib import Path
 
-from milp_eq_tools import Formulation
+from formulation_bench import Formulation
 
 from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.verify.llm.prompts import REFORMULATION_SCHEMA, render_reformulation

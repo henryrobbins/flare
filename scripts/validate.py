@@ -9,7 +9,7 @@ import sys
 
 from tqdm import tqdm
 
-from milp_eq_tools import Dataset
+from formulation_bench import Dataset
 
 OBJECTIVE_REL_TOL = 1e-6
 
@@ -45,7 +45,9 @@ def main() -> None:
 
     failures: list[tuple[int, str, str]] = []
 
-    for pid, problem, fid, formulation in tqdm(formulations, desc="validating", unit="formulation"):
+    for pid, problem, fid, formulation in tqdm(
+        formulations, desc="validating", unit="formulation"
+    ):
         label = f"problem {pid} / formulation {fid}"
         try:
             formulation.gen_params()
@@ -70,7 +72,9 @@ def main() -> None:
 
         solution_file = formulation.path / "solution.json"
         actual_objective = json.loads(solution_file.read_text())["objective"]
-        if not math.isclose(actual_objective, expected.objective, rel_tol=OBJECTIVE_REL_TOL):
+        if not math.isclose(
+            actual_objective, expected.objective, rel_tol=OBJECTIVE_REL_TOL
+        ):
             tqdm.write(
                 f"FAIL  solution    {label}"
                 f"  (got {actual_objective}, expected {expected.objective})"

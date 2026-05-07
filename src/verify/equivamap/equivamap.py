@@ -4,8 +4,8 @@ import subprocess
 import time
 from pathlib import Path
 
-from milp_eq_tools import Formulation
-from milp_eq_tools.models import Constraint
+from formulation_bench import Formulation
+from formulation_bench.models import Constraint
 
 from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.prompts import problem_info
@@ -75,7 +75,9 @@ def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:
         for d in range(1, depth):
             inner = it[d + 1] if d < depth - 1 else "_v"
             lines.append(f"{'    ' * d}for {idx[d]}, {inner} in enumerate({it[d]}):")
-        lines.append(f"{'    ' * depth}model.addConstr({var_name}[{', '.join(idx)}] == _v)")
+        lines.append(
+            f"{'    ' * depth}model.addConstr({var_name}[{', '.join(idx)}] == _v)"
+        )
         code = "\n".join(lines)
         formulation = f"{var_name}[{', '.join(idx)}] = rhs[...] for all indices"
     else:
@@ -138,10 +140,14 @@ class EquivaMapVerifier(ReformulationVerifier):
     def method_config(self) -> dict:
         return {"tolerance": TOLERANCE, "llm": dataclasses.asdict(self.client.config)}
 
-    def verify(self, a: Formulation, b: Formulation, output_path: Path) -> ReformulationResult:
+    def verify(
+        self, a: Formulation, b: Formulation, output_path: Path
+    ) -> ReformulationResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
-        (artifacts_dir / "config.json").write_text(json.dumps(self.method_config(), indent=2))
+        (artifacts_dir / "config.json").write_text(
+            json.dumps(self.method_config(), indent=2)
+        )
 
         start = time.time()
 

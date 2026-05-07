@@ -3,7 +3,7 @@ from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
-from milp_eq_tools import Formulation
+from formulation_bench import Formulation
 
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent),
@@ -42,9 +42,7 @@ def problem_info(f: Formulation) -> dict:
     }
 
 
-def render_formulation(
-    formulation: Formulation, include_implicit: bool = True
-) -> str:
+def render_formulation(formulation: Formulation, include_implicit: bool = True) -> str:
     assumptions = formulation.assumptions
     constraints = formulation.constraints
     if not include_implicit:
