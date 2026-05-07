@@ -6,7 +6,7 @@ from jinja2 import Environment, FileSystemLoader
 from milp_eq_tools import Formulation
 
 from src.prompts import RenderedPrompt
-from src.verify.equivaproof.equivaproof import render_formulation
+from src.verify.flare.flare import render_formulation
 
 SYSTEM = (
     "You are an expert in mathematical optimization problems. "

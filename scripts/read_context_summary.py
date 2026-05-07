@@ -27,7 +27,9 @@ _READ_CMDS = re.compile(
 )
 
 # Matches absolute paths in a shell command (excluding /dev/null)
-_ABS_PATH = re.compile(r"(?<!['\"\w])/(?!dev/null\b)(?:[A-Za-z0-9_.~-]+/)+[A-Za-z0-9_.~-]*")
+_ABS_PATH = re.compile(
+    r"(?<!['\"\w])/(?!dev/null\b)(?:[A-Za-z0-9_.~-]+/)+[A-Za-z0-9_.~-]*"
+)
 
 _SHELL_CMDS = frozenset(
     "echo ls find grep awk sed rm cp mv mkdir touch chmod chown python python3 "
@@ -198,13 +200,15 @@ def parse_trace(jsonl_path: Path) -> tuple[list[dict], list[dict], list[dict], d
     return _to_entries(inside), _to_entries(outside), attempted_entries, result_summary
 
 
-def aggregate_run(run_dir: Path) -> tuple[list[dict], list[dict], list[dict], list[dict], int]:
+def aggregate_run(
+    run_dir: Path,
+) -> tuple[list[dict], list[dict], list[dict], list[dict], int]:
     """Aggregate file read stats across all pairs in a run.
 
     Returns (file_entries, outside_entries, attempted_outside_rows, session_summaries, num_pairs).
     file_entries are keyed by relative file path within each pair's wd.
     """
-    jsonl_files = sorted(run_dir.glob("pairs/*/equivaproof/claude_output.jsonl"))
+    jsonl_files = sorted(run_dir.glob("pairs/*/flare/claude_output.jsonl"))
     if not jsonl_files:
         return [], [], [], [], 0
 
@@ -214,7 +218,7 @@ def aggregate_run(run_dir: Path) -> tuple[list[dict], list[dict], list[dict], li
     session_summaries: list[dict] = []
 
     for jf in jsonl_files:
-        pair = jf.parts[-3]  # pairs/<pair>/equivaproof/claude_output.jsonl
+        pair = jf.parts[-3]  # pairs/<pair>/flare/claude_output.jsonl
         inside, outside, attempted_outside, summary = parse_trace(jf)
         for e in inside:
             inside_accum[e["file_path"]].extend(
@@ -239,7 +243,13 @@ def aggregate_run(run_dir: Path) -> tuple[list[dict], list[dict], list[dict], li
     inside_entries.sort(key=lambda r: r["total_tokens"], reverse=True)
     outside_rows.sort(key=lambda r: (r["pair"], r["file_path"]))
     attempted_outside_rows.sort(key=lambda r: (r["pair"], r["file_path"]))
-    return inside_entries, outside_rows, attempted_outside_rows, session_summaries, len(jsonl_files)
+    return (
+        inside_entries,
+        outside_rows,
+        attempted_outside_rows,
+        session_summaries,
+        len(jsonl_files),
+    )
 
 
 def fmt_int(n: int) -> str:
@@ -477,7 +487,9 @@ def main() -> None:
         if not run_dir.exists():
             print(f"Error: {run_dir} not found", file=sys.stderr)
             sys.exit(1)
-        inside, outside, attempted_outside, summaries, num_pairs = aggregate_run(run_dir)
+        inside, outside, attempted_outside, summaries, num_pairs = aggregate_run(
+            run_dir
+        )
         if args.json:
             print(
                 json.dumps(

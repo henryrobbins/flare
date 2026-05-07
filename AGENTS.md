@@ -1,4 +1,4 @@
-# EquivaProof Agent Guide
+# FLARE Agent Guide
 
 This monorepo contains a dataset of MILP problems/formulations. Proofs that one formulation is a reformulation of another (for formulations of the same problem) are given in Lean 4. Additionally, there is a Python package and Python scripts for working with the dataset.
 

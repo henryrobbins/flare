@@ -1,9 +1,9 @@
-"""Re-evaluate existing equivaproof run artifacts using the current _evaluate logic.
+"""Re-evaluate existing flare run artifacts using the current _evaluate logic.
 
 Usage:
-    python scripts/reeval_equivaproof.py runs/<timestamp> [--pairs p1_a__p1_b ...]
+    python scripts/reeval_flare.py runs/<timestamp> [--pairs p1_a__p1_b ...]
 
-Updates each pairs/<id>/equivaproof/result.json in place (preserving streaming
+Updates each pairs/<id>/flare/result.json in place (preserving streaming
 metrics) and rewrites results.jsonl with corrected is_reformulation values.
 Pairs missing from results.jsonl entirely are inserted.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 # Allow importing from src/ without installing.
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.verify.equivaproof.equivaproof import EquivaProofVerifier
+from src.verify.flare.flare import FLAREVerifier
 
 
 def _streaming_metrics_from_jsonl(cc_dir: Path) -> dict:
@@ -54,8 +54,12 @@ def _pair_id_to_parts(pair_id: str) -> tuple[str, str, str, str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run_dir", type=Path, help="Timestamped run directory")
-    parser.add_argument("--pairs", nargs="+", metavar="PAIR_ID",
-                        help="Only re-evaluate these pair IDs (e.g. p4_a__p4_g)")
+    parser.add_argument(
+        "--pairs",
+        nargs="+",
+        metavar="PAIR_ID",
+        help="Only re-evaluate these pair IDs (e.g. p4_a__p4_g)",
+    )
     args = parser.parse_args()
 
     run_dir: Path = args.run_dir
@@ -71,12 +75,12 @@ def main() -> None:
     # the constructor; _evaluate doesn't use it).
     model = "claude-sonnet-4-6"
     for p in pairs_dir.iterdir():
-        cfg = p / "equivaproof" / "config.json"
+        cfg = p / "flare" / "config.json"
         if cfg.exists():
             model = json.loads(cfg.read_text()).get("model", model)
             break
 
-    checker = EquivaProofVerifier(repo_root=repo_root, model=model)
+    checker = FLAREVerifier(repo_root=repo_root, model=model)
 
     updated: dict[str, bool] = {}
     new_rows: list[dict] = []
@@ -95,11 +99,11 @@ def main() -> None:
             line = line.strip()
             if line:
                 row = json.loads(line)
-                if row.get("method") == "equivaproof":
+                if row.get("method") == "flare":
                     existing_ids.add(row["pair_id"])
 
     for pair_dir in pair_dirs:
-        cc_dir = pair_dir / "equivaproof"
+        cc_dir = pair_dir / "flare"
         wd = cc_dir / "wd"
         if not wd.exists():
             continue
@@ -112,7 +116,13 @@ def main() -> None:
         new_meta = checker._evaluate(wd)
 
         # Preserve streaming metrics from result.json; fall back to claude_output.jsonl.
-        streaming_keys = ("duration_s", "stop_reason", "input_tokens", "output_tokens", "cost_usd")
+        streaming_keys = (
+            "duration_s",
+            "stop_reason",
+            "input_tokens",
+            "output_tokens",
+            "cost_usd",
+        )
         fallback = _streaming_metrics_from_jsonl(cc_dir) if not old_result else {}
         for k in streaming_keys:
             if k in old_result:
@@ -134,24 +144,31 @@ def main() -> None:
         if pair_id not in existing_ids:
             problem_a, form_a, problem_b, form_b = _pair_id_to_parts(pair_id)
             equiv_file = (
-                repo_root / "dataset" / "reformulations" / problem_a
+                repo_root
+                / "dataset"
+                / "reformulations"
+                / problem_a
                 / f"{form_a}_{form_b}.lean"
             )
             ground_truth = equiv_file.exists()
-            new_rows.append({
-                "pair_id": pair_id,
-                "problem_a": problem_a,
-                "formulation_a": form_a,
-                "problem_b": problem_b,
-                "formulation_b": form_b,
-                "ground_truth": ground_truth,
-                "method": "equivaproof",
-                "is_reformulation": new_equiv,
-                "duration_s": new_meta.get("duration_s"),
-                "cost_usd": new_meta.get("cost_usd"),
-                "artifacts_dir": str(cc_dir.resolve().relative_to(repo_root.resolve())),
-                "error": None,
-            })
+            new_rows.append(
+                {
+                    "pair_id": pair_id,
+                    "problem_a": problem_a,
+                    "formulation_a": form_a,
+                    "problem_b": problem_b,
+                    "formulation_b": form_b,
+                    "ground_truth": ground_truth,
+                    "method": "flare",
+                    "is_reformulation": new_equiv,
+                    "duration_s": new_meta.get("duration_s"),
+                    "cost_usd": new_meta.get("cost_usd"),
+                    "artifacts_dir": str(
+                        cc_dir.resolve().relative_to(repo_root.resolve())
+                    ),
+                    "error": None,
+                }
+            )
 
     # Patch results.jsonl.
     if not results_jsonl.exists():
@@ -160,14 +177,17 @@ def main() -> None:
 
     rows = [json.loads(l) for l in results_jsonl.read_text().splitlines() if l.strip()]
     for row in rows:
-        if row["method"] == "equivaproof" and row["pair_id"] in updated:
+        if row["method"] == "flare" and row["pair_id"] in updated:
             row["is_reformulation"] = updated[row["pair_id"]]
 
     rows.extend(new_rows)
     results_jsonl.write_text("\n".join(json.dumps(r) for r in rows) + "\n")
     inserted = len(new_rows)
-    print(f"\nPatched results.jsonl ({len(rows)} rows, {len(updated)} equivaproof entries"
-          + (f", {inserted} inserted" if inserted else "") + ").")
+    print(
+        f"\nPatched results.jsonl ({len(rows)} rows, {len(updated)} flare entries"
+        + (f", {inserted} inserted" if inserted else "")
+        + ")."
+    )
 
 
 if __name__ == "__main__":

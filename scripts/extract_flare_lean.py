@@ -2,9 +2,9 @@
 """Extract Lean files from a run's pairs into results/<run_id>/<problem>/<a_b>/.
 
 For each pair in the run, copies:
-  equivaproof/wd/A/Formulation.lean  -> results/<run_id>/<problem>/<a_b>/A/Formulation.lean
-  equivaproof/wd/B/Formulation.lean  -> results/<run_id>/<problem>/<a_b>/B/Formulation.lean
-  equivaproof/wd/Reformulation.lean    -> results/<run_id>/<problem>/<a_b>/Reformulation.lean
+  flare/wd/A/Formulation.lean  -> results/<run_id>/<problem>/<a_b>/A/Formulation.lean
+  flare/wd/B/Formulation.lean  -> results/<run_id>/<problem>/<a_b>/B/Formulation.lean
+  flare/wd/Reformulation.lean    -> results/<run_id>/<problem>/<a_b>/Reformulation.lean
 
 Pair directory names are expected to follow the pattern p<N>_<a>__p<N>_<b>.
 
@@ -19,11 +19,12 @@ import shutil
 import sys
 from pathlib import Path
 
-
 PAIR_RE = re.compile(r"^p(\d+)_(\w+)__p\d+_(\w+)$")
 
 
-def rewrite_equivalence_imports(path: Path, run_id: str, problem: str, form_pair: str) -> None:
+def rewrite_equivalence_imports(
+    path: Path, run_id: str, problem: str, form_pair: str
+) -> None:
     # run_id starts with a digit so it needs Lean's «...» quoting
     base = f"results.«{run_id}».{problem}.{form_pair}"
     text = path.read_text()
@@ -41,7 +42,9 @@ def pair_to_output_path(pair_id: str) -> tuple[str, str] | None:
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("run_id", nargs="?", metavar="RUN_ID", help="Run ID to extract")
     group.add_argument("--last", action="store_true", help="Use the most recent run")
@@ -80,12 +83,15 @@ def main():
         pair_id = pair_path.name
         parsed = pair_to_output_path(pair_id)
         if parsed is None:
-            print(f"  warning: unrecognised pair name '{pair_id}', skipping", file=sys.stderr)
+            print(
+                f"  warning: unrecognised pair name '{pair_id}', skipping",
+                file=sys.stderr,
+            )
             skipped += 1
             continue
 
         problem, form_pair = parsed
-        wd = pair_path / "equivaproof" / "wd"
+        wd = pair_path / "flare" / "wd"
 
         out_dir = results_dir / run_id / problem / form_pair
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -101,13 +107,17 @@ def main():
         pair_ok = True
         for src, dst in files:
             if not src.exists():
-                print(f"  warning: missing {src.relative_to(repo_root)}", file=sys.stderr)
+                print(
+                    f"  warning: missing {src.relative_to(repo_root)}", file=sys.stderr
+                )
                 pair_ok = False
             else:
                 shutil.copy2(src, dst)
 
         if pair_ok:
-            rewrite_equivalence_imports(out_dir / "Reformulation.lean", run_id, problem, form_pair)
+            rewrite_equivalence_imports(
+                out_dir / "Reformulation.lean", run_id, problem, form_pair
+            )
             copied += 1
         else:
             skipped += 1

@@ -25,7 +25,7 @@ from milp_eq_tools import Dataset, Formulation, Pair
 from src.llm_client import OpenAIClient, LLMConfig
 from src.verify.base import ReformulationVerifier
 from src.verify.equivamap.equivamap import EquivaMapVerifier
-from src.verify.equivaproof.equivaproof import EquivaProofVerifier
+from src.verify.flare.flare import FLAREVerifier
 from src.verify.execution.execution import ExecutionVerifier
 from src.verify.llm.llm import LLMVerifier
 
@@ -128,7 +128,7 @@ def main() -> None:
     checkers: list[ReformulationVerifier] = [
         ExecutionVerifier(),
         EquivaMapVerifier(OpenAIClient(LLMConfig(model="gpt-4.1", max_tokens=4096))),
-        EquivaProofVerifier(repo_root=Path(".").resolve(), model="claude-opus-4-7"),
+        FLAREVerifier(repo_root=Path(".").resolve(), model="claude-opus-4-7"),
     ]
 
     pairs = dataset.pairs

@@ -11,7 +11,7 @@ from milp_eq_tools import Formulation
 
 from src.prompts import render_formulation
 from src.verify.base import ReformulationResult, ReformulationVerifier
-from src.verify.equivaproof.prompts import render_agent_prompt
+from src.verify.flare.prompts import render_agent_prompt
 
 _HERE = Path(__file__).parent
 _LAKEFILE: str = (_HERE / "lakefile.toml").read_text()
@@ -50,14 +50,14 @@ def _claude_code_settings(wd: Path, repo_root: Path) -> dict:
     return settings
 
 
-class EquivaProofVerifier(ReformulationVerifier):
+class FLAREVerifier(ReformulationVerifier):
     def __init__(self, repo_root: Path, model: str) -> None:
         self.repo_root = repo_root
         self.model = model
 
     @property
     def name(self) -> str:
-        return "equivaproof"
+        return "flare"
 
     def method_config(self) -> dict:
         return {"model": self.model}
@@ -78,7 +78,7 @@ class EquivaProofVerifier(ReformulationVerifier):
         (artifacts_dir / "prompt.txt").write_text(prompt)
 
         jsonl_path = artifacts_dir / "claude_output.jsonl"
-        print(f"  [equivaproof] monitor: tail -f {jsonl_path}")
+        print(f"  [flare] monitor: tail -f {jsonl_path}")
 
         stream_metrics = self._run_claude(prompt, wd, jsonl_path)
 

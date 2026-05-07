@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Analyse where time is spent by the equivaproof method.
+Analyse where time is spent by the flare method.
 
 Per-tool wall time is estimated from task_progress delta approach:
   - Each task_progress event has a cumulative duration_ms within its task_id.
@@ -106,16 +106,14 @@ def fmt_pct(num, denom) -> str:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Analyse time/cost for equivaproof runs."
-    )
+    parser = argparse.ArgumentParser(description="Analyse time/cost for flare runs.")
     parser.add_argument(
         "-r", "--run-id", required=True, help="Run ID (e.g. 20260425T200341Z)"
     )
     args = parser.parse_args()
 
     run_root = Path("runs") / args.run_id
-    files = sorted(run_root.glob("pairs/*/equivaproof/claude_output.jsonl"))
+    files = sorted(run_root.glob("pairs/*/flare/claude_output.jsonl"))
 
     if not files:
         print(f"No claude_output.jsonl files found under {run_root}")

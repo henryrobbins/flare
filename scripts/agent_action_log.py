@@ -137,8 +137,8 @@ CSV_FIELDS = [
     "task_context",  # description of the containing subagent (empty at depth 0)
     "subtask_description",  # for Task/Agent calls: description of the launched task
     "subtask_tool_uses",  # for Task/Agent calls: tool use count from task_notification
-    "start_ms",   # ms since first tool result (wall-clock relative to session start)
-    "end_ms",     # ms since first tool result (wall-clock relative to session start)
+    "start_ms",  # ms since first tool result (wall-clock relative to session start)
+    "end_ms",  # ms since first tool result (wall-clock relative to session start)
     "duration_ms",  # end_ms - start_ms
     "input_tokens",
     "cache_create_tokens",
@@ -302,7 +302,7 @@ def parse_action_log(path: Path) -> list[dict]:
                     "task_context": task_desc,
                     "subtask_description": subtask_desc,
                     "subtask_tool_uses": subtask_tool_uses,
-                    "_tuid": tuid,        # temporary; stripped before CSV write
+                    "_tuid": tuid,  # temporary; stripped before CSV write
                     "_task_id": task_id,  # temporary
                     "start_ms": "",
                     "end_ms": "",
@@ -382,7 +382,7 @@ def main():
     args = parser.parse_args()
 
     run_root = Path("runs") / args.run_id
-    files = sorted(run_root.glob("pairs/*/equivaproof/claude_output.jsonl"))
+    files = sorted(run_root.glob("pairs/*/flare/claude_output.jsonl"))
 
     if not files:
         print(f"No claude_output.jsonl files found under {run_root}")

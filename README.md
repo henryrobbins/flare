@@ -1,4 +1,4 @@
-# equiva-proof
+# FLARE
 
 ## Building
 
