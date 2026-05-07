@@ -1,4 +1,4 @@
-# FLARE
+# FLARE: Formulation-Level Automated REformulation Verification
 
 ## Building
 
