@@ -14,7 +14,7 @@ tags:
   - theorem-proving
 language:
   - en
-pretty_name: MILP Reformulation (Lean 4)
+pretty_name: FormulationBench
 size_categories:
   - n<1K
 configs:
@@ -24,7 +24,7 @@ configs:
     data_files: data/pairs.jsonl
 ---
 
-# MILP Reformulation Dataset
+# FormulationBench
 
 A dataset of mixed-integer linear programming (MILP) problems, multiple natural-language and code formulations of each problem, and machine-checked Lean 4 proofs of MILP reformulations.
 
