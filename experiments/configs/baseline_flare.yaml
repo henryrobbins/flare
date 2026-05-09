@@ -7,6 +7,6 @@
 workers: 5
 runs: 3
 
-checkers:
+verifiers:
   - type: flare
     model: claude-opus-4-7

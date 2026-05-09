@@ -1,4 +1,4 @@
-# baseline_no_flare.yaml — baseline checkers minus FLARE.
+# baseline_no_flare.yaml — baseline verifiers minus FLARE.
 #
 # Same as baseline.yaml but drops the FLARE Lean-proof agent, which is
 # slow / expensive to run. Useful for iterating on the cheap baselines
@@ -7,7 +7,7 @@
 workers: 5
 runs: 3
 
-checkers:
+verifiers:
   - type: execution
 
   - type: equivamap

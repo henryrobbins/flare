@@ -1,7 +1,7 @@
 # baseline.yaml — default config for baseline.py.
 #
 # Combines the original experiment1 (single-run) and experiment3 (multi-run)
-# checker sets. Each checker entry may set:
+# verifier sets. Each verifier entry may set:
 #   multi_run: false  (default) — one verification per pair, artifacts under
 #                                 pairs/{pid}/{name}/, `run` field is null.
 #   multi_run: true            — `runs` verifications per pair, artifacts under
@@ -13,7 +13,7 @@
 workers: 5
 runs: 3
 
-checkers:
+verifiers:
   - type: execution
 
   - type: equivamap

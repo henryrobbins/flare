@@ -3,7 +3,7 @@
 # LLM-judge ablation across the cross product (model × prompt mode). The
 # script expands `models × modes` into one llm verifier per combination,
 # named `llm_<model.label>_<mode.label>`. Run multiple times per
-# (pair, checker) to estimate variance.
+# (pair, verifier) to estimate variance.
 #
 # Models commented out are omitted because preliminary runs showed strictly
 # worse performance than the kept variants.

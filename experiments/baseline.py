@@ -1,14 +1,14 @@
 """
-baseline.py — run baseline reformulation checkers on every pair.
+baseline.py — run baseline reformulation verifiers on every pair.
 
 Combines the previous experiment1 (single-run) and experiment3 (multi-run)
-into one script. Per-checker `multi_run` in the YAML config decides whether
-that checker is run once (flat artifacts dir, `run` = null in results) or
-N times with `--runs` (artifacts under {checker_name}/{run}/).
+into one script. Per-verifier `multi_run` in the YAML config decides whether
+that verifier is run once (flat artifacts dir, `run` = null in results) or
+N times with `--runs` (artifacts under {verifier_name}/{run}/).
 
 Each invocation creates a fresh timestamped subdirectory under runs/. Results
 stream to results.jsonl inside that directory; intermediate artifacts land
-under pairs/{pair_id}/{checker_name}[/{run}]/ alongside it.
+under pairs/{pair_id}/{verifier_name}[/{run}]/ alongside it.
 """
 
 import argparse
@@ -34,7 +34,7 @@ DEFAULT_CONFIG = Path(__file__).parent / "configs" / "baseline.yaml"
 
 
 @dataclass
-class CheckerEntry:
+class VerifierEntry:
     verifier: ReformulationVerifier
     name: str
     multi_run: bool
@@ -59,7 +59,7 @@ def pair_id(a: Formulation, b: Formulation) -> str:
 
 def process_task(
     pair: Pair,
-    entry: CheckerEntry,
+    entry: VerifierEntry,
     run_idx: int | None,
     results_path: Path,
     write_lock: Lock,
@@ -143,7 +143,7 @@ def main() -> None:
         "--runs",
         type=int,
         default=None,
-        help="runs per (pair, multi_run checker) (overrides YAML)",
+        help="runs per (pair, multi_run verifier) (overrides YAML)",
     )
     args = parser.parse_args()
 
@@ -165,9 +165,9 @@ def main() -> None:
     dataset = Dataset(Path("dataset"))
 
     repo_root = Path(".").resolve()
-    entries: list[CheckerEntry] = []
+    entries: list[VerifierEntry] = []
     seen_names: set[str] = set()
-    for spec in cfg["checkers"]:
+    for spec in cfg["verifiers"]:
         spec = dict(spec)
         multi_run = bool(spec.pop("multi_run", False))
         name_override = spec.pop("name", None)
@@ -175,10 +175,10 @@ def main() -> None:
         name = name_override or verifier.name
         if name in seen_names:
             raise ValueError(
-                f"duplicate checker name {name!r}; set a unique `name:` in YAML"
+                f"duplicate verifier name {name!r}; set a unique `name:` in YAML"
             )
         seen_names.add(name)
-        entries.append(CheckerEntry(verifier=verifier, name=name, multi_run=multi_run))
+        entries.append(VerifierEntry(verifier=verifier, name=name, multi_run=multi_run))
 
     pairs = dataset.pairs
     if problem_filter is not None:
@@ -199,11 +199,11 @@ def main() -> None:
     print(f"Run directory: {run_dir}")
     print(f"Config: {args.config}")
     print(
-        f"Pairs: {len(pairs)}  Checkers: {len(entries)} "
+        f"Pairs: {len(pairs)}  Verifiers: {len(entries)} "
         f"({n_single} single, {n_multi} multi×{runs})  Workers: {workers}\n"
     )
 
-    tasks: list[tuple[Pair, CheckerEntry, int | None]] = []
+    tasks: list[tuple[Pair, VerifierEntry, int | None]] = []
     for pair in pairs:
         for entry in entries:
             if entry.multi_run:

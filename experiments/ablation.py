@@ -1,12 +1,12 @@
 """
 ablation.py — LLM-judge ablation across (model × prompt mode), with
-multiple runs per (pair, checker) to estimate variance.
+multiple runs per (pair, verifier) to estimate variance.
 
 Each invocation creates a fresh timestamped subdirectory under runs/, e.g.
 runs/20260424T093000Z/. Results stream to results.jsonl inside that directory;
 intermediate artifacts land in pairs/{pair_id}/{method}/{run}/ alongside it.
 
-Checker configuration is loaded from a YAML file (default:
+Verifier configuration is loaded from a YAML file (default:
 experiments/configs/ablation.yaml). CLI flags override YAML values.
 """
 
@@ -48,9 +48,9 @@ def pair_id(a: Formulation, b: Formulation) -> str:
     return f"{pa}_{fa}__{pb}_{fb}"
 
 
-def process_pair_checker(
+def process_pair_verifier(
     pair: Pair,
-    checker: ReformulationVerifier,
+    verifier: ReformulationVerifier,
     run_idx: int,
     results_path: Path,
     write_lock: Lock,
@@ -66,7 +66,7 @@ def process_pair_checker(
         "problem_b": pb,
         "formulation_b": fb,
         "ground_truth": pair.reformulation,
-        "method": checker.name,
+        "method": verifier.name,
         "run": run_idx,
         "is_reformulation": None,
         "duration_s": None,
@@ -78,10 +78,10 @@ def process_pair_checker(
         "error": None,
     }
     try:
-        result = checker.verify(
+        result = verifier.verify(
             pair.a,
             pair.b,
-            results_path.parent / "pairs" / pid / checker.name / str(run_idx),
+            results_path.parent / "pairs" / pid / verifier.name / str(run_idx),
         )
         entry["is_reformulation"] = result.is_reformulation
         entry["duration_s"] = result.duration_s
@@ -101,7 +101,7 @@ def process_pair_checker(
         equiv = entry["is_reformulation"]
         gt = pair.reformulation
         match = equiv == gt if equiv is not None else None
-        tag = f"[{checker.name}#{run_idx}] {pid}"
+        tag = f"[{verifier.name}#{run_idx}] {pid}"
         if entry["error"]:
             print(f"  {status} {tag}\n{entry['error']}")
         else:
@@ -134,7 +134,7 @@ def main() -> None:
         "--runs",
         type=int,
         default=None,
-        help="number of runs per (pair, checker) (overrides YAML)",
+        help="number of runs per (pair, verifier) (overrides YAML)",
     )
     args = parser.parse_args()
 
@@ -156,7 +156,7 @@ def main() -> None:
     dataset = Dataset(Path("dataset"))
 
     # Expand the (models × modes) cross product into llm verifier specs.
-    checker_specs = [
+    verifier_specs = [
         {
             "type": "llm",
             "name": f"llm_{model['label']}_{mode['label']}",
@@ -168,8 +168,8 @@ def main() -> None:
         for mode in cfg["modes"]
     ]
     repo_root = Path(".").resolve()
-    checkers: list[ReformulationVerifier] = [
-        build_verifier(spec, repo_root=repo_root) for spec in checker_specs
+    verifiers: list[ReformulationVerifier] = [
+        build_verifier(spec, repo_root=repo_root) for spec in verifier_specs
     ]
 
     pairs = dataset.pairs
@@ -189,35 +189,35 @@ def main() -> None:
     print(f"Run directory: {run_dir}")
     print(f"Config: {args.config}")
     print(
-        f"Pairs: {len(pairs)}  Checkers: {len(checkers)}  Runs: {runs}  "
+        f"Pairs: {len(pairs)}  Verifiers: {len(verifiers)}  Runs: {runs}  "
         f"Workers: {workers}\n"
     )
 
     tasks = [
-        (pair, checker, run_idx)
+        (pair, verifier, run_idx)
         for pair in pairs
-        for checker in checkers
+        for verifier in verifiers
         for run_idx in range(1, runs + 1)
     ]
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(
-                process_pair_checker,
+                process_pair_verifier,
                 pair,
-                checker,
+                verifier,
                 run_idx,
                 results_path,
                 write_lock,
-            ): (pair, checker, run_idx)
-            for pair, checker, run_idx in tasks
+            ): (pair, verifier, run_idx)
+            for pair, verifier, run_idx in tasks
         }
         for future in as_completed(futures):
             exc = future.exception()
             if exc:
-                pair, checker, run_idx = futures[future]
+                pair, verifier, run_idx = futures[future]
                 pid = pair_id(pair.a, pair.b)
-                print(f"  FATAL [{checker.name}#{run_idx}] [{pid}]: {exc}")
+                print(f"  FATAL [{verifier.name}#{run_idx}] [{pid}]: {exc}")
 
 
 if __name__ == "__main__":
