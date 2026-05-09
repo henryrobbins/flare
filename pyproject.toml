@@ -7,7 +7,7 @@ dependencies = [
     "gurobipy",
     "jinja2",
     "matplotlib>=3.10.9",
-    "milp-eq-tools",
+    "formulation-bench",
     "openai",
     "pandas>=2.3.3",
     "python-dotenv>=1.2.2",
@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [tool.uv]
-sources = { milp-eq-tools = { path = "python", editable = true } }
+sources = { formulation-bench = { path = "python", editable = true } }
 dev-dependencies = [
     "mypy>=1.0",
     "ruff>=0.4",
