@@ -42,12 +42,17 @@ class AnthropicClient(LLMClient):
     def complete_json_with_usage(
         self, system: str, user: str, schema: dict
     ) -> tuple[dict, dict]:
+        kwargs = self._build_kwargs()
+        # Merge with any output_config set by _build_kwargs (e.g. adaptive
+        # thinking effort) — both share the same field on the API.
+        output_config = kwargs.pop("output_config", {})
+        output_config["format"] = {"type": "json_schema", "schema": schema}
         message = with_retry(
             lambda: self._client.messages.create(
-                **self._build_kwargs(),
+                **kwargs,
                 system=system,
                 messages=[{"role": "user", "content": user}],
-                output_config={"format": {"type": "json_schema", "schema": schema}},
+                output_config=output_config,
             )
         )
         if message.stop_reason == "max_tokens":
