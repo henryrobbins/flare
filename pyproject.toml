@@ -15,9 +15,21 @@ dependencies = [
     "tsplib95",
 ]
 
-[tool.uv]
-sources = { formulation-bench = { path = "python", editable = true } }
-dev-dependencies = [
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.uv.workspace]
+members = ["packages/formulation_bench"]
+
+[tool.uv.sources]
+formulation-bench = { workspace = true }
+
+[dependency-groups]
+dev = [
     "mypy>=1.0",
     "ruff>=0.4",
 ]
@@ -30,4 +42,4 @@ select = ["E", "F", "I", "UP"]
 
 [tool.mypy]
 strict = true
-files = ["dataset", "scripts", "src"]
+files = ["scripts", "src", "experiments"]

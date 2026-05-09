@@ -16,6 +16,9 @@ dev = [
     "ruff>=0.4",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.ruff]
 line-length = 88
 
@@ -24,7 +27,7 @@ select = ["E", "F", "I", "UP"]
 
 [tool.mypy]
 strict = true
-files = ["formulation_bench"]
+files = ["src/formulation_bench"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

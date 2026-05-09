@@ -6,10 +6,13 @@ This monorepo contains a dataset of MILP problems/formulations. Proofs that one 
 
 ```
 .
-├── Common.lean       # MILPFormulation / MILPReformulation definitions
-├── dataset/          # the dataset (MILP problems, formulations, reformulations)
-├── python/           # Python package `formulation_bench`
-├── scripts/          # standalone scripts
+├── Common.lean              # MILPFormulation / MILPReformulation definitions
+├── dataset/                 # the dataset (MILP problems, formulations, reformulations)
+├── packages/
+│   └── formulation_bench/   # publishable Python package `formulation_bench`
+├── src/                     # experiment code (LLM client, prompts, verifiers)
+├── experiments/             # experiment entry-point scripts
+├── scripts/                 # standalone utility scripts
 ├── lakefile.toml
 ├── lean-toolchain
 └── pyproject.toml
@@ -31,16 +34,29 @@ via `import Common`.
 The dataset itself — MILP problems, their formulations, and reformulation
 proofs. See `dataset/README.md` for more information.
 
-## `python/`
+## `packages/formulation_bench/`
 
-Python package `formulation_bench` (defined in `python/formulation_bench/`) with
-modules for loading and manipulating the dataset: `dataset.py`,
-`problem.py`, `formulation.py`, `pair.py`, `models.py`. Tests are under
-`python/tests/`.
+Publishable Python package `formulation_bench` (src layout under
+`packages/formulation_bench/src/formulation_bench/`) with modules for loading
+and manipulating the dataset: `dataset.py`, `problem.py`, `formulation.py`,
+`pair.py`, `models.py`. Tests are under `packages/formulation_bench/tests/`.
+Owns its own `pyproject.toml` and is wired into the workspace root.
+
+## `src/`
+
+Experiment code (not published): `llm_client.py`, prompt templates under
+`prompts/`, and reformulation-verifier implementations under `verify/`
+(`equivamap/`, `execution/`, `flare/`, `llm/`) sharing a `verify/base.py`
+interface. Installed editable as the package `src`.
+
+## `experiments/`
+
+Entry-point scripts (`experiment1.py`, `experiment2.py`, `experiment3.py`)
+that import from `src` and `formulation_bench`.
 
 ## `scripts/`
 
-Standalone scripts that use `formulation_bench`:
+Standalone utility scripts that use `formulation_bench`:
 
 - `scripts/gen_solve.py` — generate instance data and solve.
 - `scripts/validate.py` — validate dataset integrity.
