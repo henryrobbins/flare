@@ -97,6 +97,8 @@ def run_verification(
     artifacts_dir: Path,
     name: str,
     run_idx: int | None,
+    model: str | None = None,
+    mode: str | None = None,
 ) -> dict:
     """Verify one pair, returning a result row dict (errors captured into row['error'])."""
     pid = pair_id(pair.a, pair.b)
@@ -111,6 +113,8 @@ def run_verification(
         "formulation_b": fb,
         "ground_truth": pair.reformulation,
         "method": name,
+        "model": model,
+        "mode": mode,
         "run": run_idx,
         "is_reformulation": None,
         "duration_s": None,

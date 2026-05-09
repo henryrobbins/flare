@@ -40,6 +40,8 @@ DEFAULT_CONFIG = Path(__file__).parent / "configs" / "ablation.yaml"
 def process_pair_verifier(
     pair: Pair,
     verifier: ReformulationVerifier,
+    model: str,
+    mode: str,
     run_idx: int,
     results_path: Path,
     write_lock: Lock,
@@ -48,7 +50,10 @@ def process_pair_verifier(
     artifacts_dir = (
         results_path.parent / "pairs" / pid / verifier.name / str(run_idx)
     )
-    row = run_verification(verifier, pair, artifacts_dir, verifier.name, run_idx)
+    row = run_verification(
+        verifier, pair, artifacts_dir, verifier.name, run_idx,
+        model=model, mode=mode,
+    )
     write_and_log(
         row, results_path, write_lock, verifier.name, run_idx, pair.reformulation
     )
@@ -68,21 +73,20 @@ def main() -> None:
     dataset = Dataset(Path("dataset"))
 
     # Expand the (models × modes) cross product into llm verifier specs.
-    verifier_specs = [
-        {
-            "type": "llm",
-            "name": f"llm_{model['label']}_{mode['label']}",
-            "client": model["client"],
-            "template": mode["template"],
-            "include_implicit": mode["include_implicit"],
-        }
-        for model in cfg["models"]
-        for mode in cfg["modes"]
-    ]
     repo_root = Path(".").resolve()
-    verifiers: list[ReformulationVerifier] = [
-        build_verifier(spec, repo_root=repo_root) for spec in verifier_specs
-    ]
+    verifiers: list[tuple[ReformulationVerifier, str, str]] = []
+    for model in cfg["models"]:
+        for mode in cfg["modes"]:
+            spec = {
+                "type": "llm",
+                "name": f"llm_{model['label']}_{mode['label']}",
+                "client": model["client"],
+                "template": mode["template"],
+                "include_implicit": mode["include_implicit"],
+            }
+            verifiers.append(
+                (build_verifier(spec, repo_root=repo_root), model["label"], mode["label"])
+            )
 
     pairs = filter_pairs(dataset.pairs, problem_filter)
     results_path = run_dir / "results.jsonl"
@@ -96,9 +100,9 @@ def main() -> None:
     )
 
     tasks = [
-        (pair, verifier, run_idx)
+        (pair, verifier, model, mode, run_idx)
         for pair in pairs
-        for verifier in verifiers
+        for verifier, model, mode in verifiers
         for run_idx in range(1, runs + 1)
     ]
 
@@ -108,11 +112,13 @@ def main() -> None:
                 process_pair_verifier,
                 pair,
                 verifier,
+                model,
+                mode,
                 run_idx,
                 results_path,
                 write_lock,
             ): (pair, verifier, run_idx)
-            for pair, verifier, run_idx in tasks
+            for pair, verifier, model, mode, run_idx in tasks
         }
         for future in as_completed(futures):
             exc = future.exception()
