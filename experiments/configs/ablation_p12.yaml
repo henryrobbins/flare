@@ -1,0 +1,90 @@
+# ablation_p12.yaml — full model sweep restricted to problem 12.
+#
+# Same modes as ablation.yaml, but the model list is expanded to include
+# the variants normally omitted from the headline ablation: non-reasoning
+# versions of the reasoning-capable models, and the cheaper sonnet / 5.4 /
+# flash tiers (with and without reasoning).
+#
+# Restricted to problem 12 to keep cost bounded while sweeping the full grid.
+
+workers: 25
+runs: 3
+problems: [12]
+
+modes:
+  - label: regular
+    template: reformulation.j2
+    include_implicit: true
+  - label: no_definition
+    template: no_definition.j2
+    include_implicit: true
+  - label: allow_implicit
+    template: reformulation.j2
+    include_implicit: false
+  - label: naive
+    template: naive.j2
+    include_implicit: true
+
+models:
+  # ===== Models from the headline ablation =====
+  - label: gpt-4.1  # no reasoning support
+    client: { model: gpt-4.1, max_tokens: 8192 }
+
+  - label: opus_reasoning  # claude-opus-4-7 uses adaptive thinking; use 4-6
+    client:
+      model: claude-opus-4-6
+      max_tokens: 16384
+      reasoning: true
+      reasoning_tokens: 8192
+
+  - label: gpt-5.5_reasoning
+    client:
+      model: gpt-5.5
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: medium
+
+  - label: deepseek-pro_reasoning
+    client:
+      model: deepseek-v4-pro
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: high
+
+  # ===== Non-reasoning variants of the reasoning-capable models =====
+  - label: opus
+    client: { model: claude-opus-4-6, max_tokens: 8192 }
+
+  - label: gpt-5.5
+    client: { model: gpt-5.5, max_tokens: 8192 }
+
+  - label: deepseek-pro
+    client: { model: deepseek-v4-pro, max_tokens: 8192 }
+
+  # ===== Cheaper / smaller models (with and without reasoning) =====
+  - label: sonnet_reasoning
+    client:
+      model: claude-sonnet-4-6
+      max_tokens: 16384
+      reasoning: true
+      reasoning_tokens: 8192
+  - label: sonnet
+    client: { model: claude-sonnet-4-6, max_tokens: 8192 }
+
+  - label: gpt-5.4_reasoning
+    client:
+      model: gpt-5.4
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: medium
+  - label: gpt-5.4
+    client: { model: gpt-5.4, max_tokens: 8192 }
+
+  - label: deepseek-flash_reasoning
+    client:
+      model: deepseek-v4-flash
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: high
+  - label: deepseek-flash
+    client: { model: deepseek-v4-flash, max_tokens: 8192 }

@@ -151,7 +151,12 @@ def main() -> None:
     workers = args.workers if args.workers is not None else cfg.get("workers", 5)
     runs = args.runs if args.runs is not None else cfg.get("runs", 3)
 
-    problem_filter = parse_problem_ids(args.problems)
+    if args.problems is not None:
+        problem_filter = parse_problem_ids(args.problems)
+    elif "problems" in cfg:
+        problem_filter = set(cfg["problems"])
+    else:
+        problem_filter = None
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = Path("runs") / timestamp

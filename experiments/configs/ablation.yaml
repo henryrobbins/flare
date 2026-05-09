@@ -1,4 +1,4 @@
-# experiment2.yaml — default config for experiment2.py.
+# ablation.yaml — default config for ablation.py.
 #
 # LLM-judge ablation across the cross product (model × prompt mode). The
 # script expands `models × modes` into one llm verifier per combination,

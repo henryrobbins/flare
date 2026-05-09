@@ -1,5 +1,5 @@
 """
-experiment2.py — LLM-judge ablation across (model × prompt mode), with
+ablation.py — LLM-judge ablation across (model × prompt mode), with
 multiple runs per (pair, checker) to estimate variance.
 
 Each invocation creates a fresh timestamped subdirectory under runs/, e.g.
@@ -7,7 +7,7 @@ runs/20260424T093000Z/. Results stream to results.jsonl inside that directory;
 intermediate artifacts land in pairs/{pair_id}/{method}/{run}/ alongside it.
 
 Checker configuration is loaded from a YAML file (default:
-experiments/configs/experiment2.yaml). CLI flags override YAML values.
+experiments/configs/ablation.yaml). CLI flags override YAML values.
 """
 
 import argparse
@@ -28,7 +28,7 @@ from formulation_bench import Dataset, Formulation, Pair
 from src.verify.base import ReformulationVerifier
 from src.verify.factory import build_verifier
 
-DEFAULT_CONFIG = Path(__file__).parent / "configs" / "experiment2.yaml"
+DEFAULT_CONFIG = Path(__file__).parent / "configs" / "ablation.yaml"
 
 
 def parse_problem_ids(s: str | None) -> set[int] | None:
@@ -142,7 +142,12 @@ def main() -> None:
     workers = args.workers if args.workers is not None else cfg.get("workers", 25)
     runs = args.runs if args.runs is not None else cfg.get("runs", 3)
 
-    problem_filter = parse_problem_ids(args.problems)
+    if args.problems is not None:
+        problem_filter = parse_problem_ids(args.problems)
+    elif "problems" in cfg:
+        problem_filter = set(cfg["problems"])
+    else:
+        problem_filter = None
 
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = Path("runs") / timestamp

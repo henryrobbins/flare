@@ -51,7 +51,7 @@ interface. Installed editable as the package `src`.
 
 ## `experiments/`
 
-Entry-point scripts (`experiment1.py`, `experiment2.py`, `experiment3.py`)
+Entry-point scripts (`baseline.py`, `ablation.py`)
 that import from `src` and `formulation_bench`.
 
 ## `scripts/`
