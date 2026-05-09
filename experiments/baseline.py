@@ -1,19 +1,21 @@
 """
-experiment3.py — like experiment1.py, but runs each (pair, checker) multiple
-times and parallelizes per (pair, checker, run) task (matching experiment2.py).
+baseline.py — run baseline reformulation checkers on every pair.
 
-Each invocation creates a fresh timestamped subdirectory under runs/, e.g.
-runs/20260424T093000Z/. Results stream to results.jsonl inside that directory;
-intermediate artifacts land in pairs/{pair_id}/{method}/{run}/ alongside it.
+Combines the previous experiment1 (single-run) and experiment3 (multi-run)
+into one script. Per-checker `multi_run` in the YAML config decides whether
+that checker is run once (flat artifacts dir, `run` = null in results) or
+N times with `--runs` (artifacts under {checker_name}/{run}/).
 
-Checker configuration is loaded from a YAML file (default:
-experiments/configs/experiment3.yaml). CLI flags override YAML values.
+Each invocation creates a fresh timestamped subdirectory under runs/. Results
+stream to results.jsonl inside that directory; intermediate artifacts land
+under pairs/{pair_id}/{checker_name}[/{run}]/ alongside it.
 """
 
 import argparse
 import json
 import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
@@ -28,7 +30,14 @@ from formulation_bench import Dataset, Formulation, Pair
 from src.verify.base import ReformulationVerifier
 from src.verify.factory import build_verifier
 
-DEFAULT_CONFIG = Path(__file__).parent / "configs" / "experiment3.yaml"
+DEFAULT_CONFIG = Path(__file__).parent / "configs" / "baseline.yaml"
+
+
+@dataclass
+class CheckerEntry:
+    verifier: ReformulationVerifier
+    name: str
+    multi_run: bool
 
 
 def parse_problem_ids(s: str | None) -> set[int] | None:
@@ -48,10 +57,10 @@ def pair_id(a: Formulation, b: Formulation) -> str:
     return f"{pa}_{fa}__{pb}_{fb}"
 
 
-def process_pair_checker(
+def process_task(
     pair: Pair,
-    checker: ReformulationVerifier,
-    run_idx: int,
+    entry: CheckerEntry,
+    run_idx: int | None,
     results_path: Path,
     write_lock: Lock,
 ) -> None:
@@ -59,14 +68,17 @@ def process_pair_checker(
     pa, fa = pid.split("__")[0].split("_", 1)
     pb, fb = pid.split("__")[1].split("_", 1)
 
-    entry: dict = {
+    artifacts_base = results_path.parent / "pairs" / pid / entry.name
+    artifacts_dir = artifacts_base / str(run_idx) if run_idx is not None else artifacts_base
+
+    row: dict = {
         "pair_id": pid,
         "problem_a": pa,
         "formulation_a": fa,
         "problem_b": pb,
         "formulation_b": fb,
         "ground_truth": pair.reformulation,
-        "method": checker.name,
+        "method": entry.name,
         "run": run_idx,
         "is_reformulation": None,
         "duration_s": None,
@@ -78,32 +90,29 @@ def process_pair_checker(
         "error": None,
     }
     try:
-        result = checker.verify(
-            pair.a,
-            pair.b,
-            results_path.parent / "pairs" / pid / checker.name / str(run_idx),
-        )
-        entry["is_reformulation"] = result.is_reformulation
-        entry["duration_s"] = result.duration_s
-        entry["cost_usd"] = result.cost_usd
-        entry["input_tokens"] = result.metadata.get("input_tokens")
-        entry["output_tokens"] = result.metadata.get("output_tokens")
-        entry["reasoning_tokens"] = result.metadata.get("reasoning_tokens")
-        entry["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
+        result = entry.verifier.verify(pair.a, pair.b, artifacts_dir)
+        row["is_reformulation"] = result.is_reformulation
+        row["duration_s"] = result.duration_s
+        row["cost_usd"] = result.cost_usd
+        row["input_tokens"] = result.metadata.get("input_tokens")
+        row["output_tokens"] = result.metadata.get("output_tokens")
+        row["reasoning_tokens"] = result.metadata.get("reasoning_tokens")
+        row["artifacts_dir"] = str(result.artifacts_dir.relative_to(Path(".")))
     except Exception:
-        entry["error"] = traceback.format_exc()
+        row["error"] = traceback.format_exc()
 
     with write_lock:
         with results_path.open("a") as f:
-            f.write(json.dumps(entry) + "\n")
+            f.write(json.dumps(row) + "\n")
 
-        status = "✓" if entry["error"] is None else "✗"
-        equiv = entry["is_reformulation"]
+        status = "✓" if row["error"] is None else "✗"
+        equiv = row["is_reformulation"]
         gt = pair.reformulation
         match = equiv == gt if equiv is not None else None
-        tag = f"[{checker.name}#{run_idx}] {pid}"
-        if entry["error"]:
-            print(f"  {status} {tag}\n{entry['error']}")
+        suffix = f"#{run_idx}" if run_idx is not None else ""
+        tag = f"[{entry.name}{suffix}] {pid}"
+        if row["error"]:
+            print(f"  {status} {tag}\n{row['error']}")
         else:
             print(f"  {status} {tag}  equiv={equiv}  gt={gt}  correct={match}")
 
@@ -134,7 +143,7 @@ def main() -> None:
         "--runs",
         type=int,
         default=None,
-        help="number of runs per (pair, checker) (overrides YAML)",
+        help="runs per (pair, multi_run checker) (overrides YAML)",
     )
     args = parser.parse_args()
 
@@ -151,9 +160,20 @@ def main() -> None:
     dataset = Dataset(Path("dataset"))
 
     repo_root = Path(".").resolve()
-    checkers: list[ReformulationVerifier] = [
-        build_verifier(spec, repo_root=repo_root) for spec in cfg["checkers"]
-    ]
+    entries: list[CheckerEntry] = []
+    seen_names: set[str] = set()
+    for spec in cfg["checkers"]:
+        spec = dict(spec)
+        multi_run = bool(spec.pop("multi_run", False))
+        name_override = spec.pop("name", None)
+        verifier = build_verifier(spec, repo_root=repo_root)
+        name = name_override or verifier.name
+        if name in seen_names:
+            raise ValueError(
+                f"duplicate checker name {name!r}; set a unique `name:` in YAML"
+            )
+        seen_names.add(name)
+        entries.append(CheckerEntry(verifier=verifier, name=name, multi_run=multi_run))
 
     pairs = dataset.pairs
     if problem_filter is not None:
@@ -169,38 +189,38 @@ def main() -> None:
     results_path = run_dir / "results.jsonl"
     write_lock = Lock()
 
+    n_multi = sum(1 for e in entries if e.multi_run)
+    n_single = len(entries) - n_multi
     print(f"Run directory: {run_dir}")
     print(f"Config: {args.config}")
     print(
-        f"Pairs: {len(pairs)}  Checkers: {len(checkers)}  Runs: {runs}  "
-        f"Workers: {workers}\n"
+        f"Pairs: {len(pairs)}  Checkers: {len(entries)} "
+        f"({n_single} single, {n_multi} multi×{runs})  Workers: {workers}\n"
     )
 
-    tasks = [
-        (pair, checker, run_idx)
-        for pair in pairs
-        for checker in checkers
-        for run_idx in range(1, runs + 1)
-    ]
+    tasks: list[tuple[Pair, CheckerEntry, int | None]] = []
+    for pair in pairs:
+        for entry in entries:
+            if entry.multi_run:
+                for run_idx in range(1, runs + 1):
+                    tasks.append((pair, entry, run_idx))
+            else:
+                tasks.append((pair, entry, None))
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(
-                process_pair_checker,
-                pair,
-                checker,
-                run_idx,
-                results_path,
-                write_lock,
-            ): (pair, checker, run_idx)
-            for pair, checker, run_idx in tasks
+                process_task, pair, entry, run_idx, results_path, write_lock
+            ): (pair, entry, run_idx)
+            for pair, entry, run_idx in tasks
         }
         for future in as_completed(futures):
             exc = future.exception()
             if exc:
-                pair, checker, run_idx = futures[future]
+                pair, entry, run_idx = futures[future]
                 pid = pair_id(pair.a, pair.b)
-                print(f"  FATAL [{checker.name}#{run_idx}] [{pid}]: {exc}")
+                suffix = f"#{run_idx}" if run_idx is not None else ""
+                print(f"  FATAL [{entry.name}{suffix}] [{pid}]: {exc}")
 
 
 if __name__ == "__main__":

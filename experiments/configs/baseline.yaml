@@ -1,0 +1,32 @@
+# baseline.yaml — default config for baseline.py.
+#
+# Combines the original experiment1 (single-run) and experiment3 (multi-run)
+# checker sets. Each checker entry may set:
+#   multi_run: false  (default) — one verification per pair, artifacts under
+#                                 pairs/{pid}/{name}/, `run` field is null.
+#   multi_run: true            — `runs` verifications per pair, artifacts under
+#                                 pairs/{pid}/{name}/{run}/, `run` field set.
+#
+# `name` overrides the verifier's default name and is required if multiple
+# entries share the same default name (e.g. two equivamap variants).
+
+workers: 5
+runs: 3
+
+checkers:
+  - type: execution
+
+  - type: equivamap
+    name: equivamap_gpt-4.1
+    client:
+      model: gpt-4.1
+      max_tokens: 4096
+
+  - type: flare
+    model: claude-opus-4-7
+
+  - type: equivamap
+    name: equivamap_opus_multi
+    multi_run: true
+    client:
+      model: claude-opus-4-7
