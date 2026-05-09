@@ -1,11 +1,13 @@
 """
-experiment1.py — run all reformulation checkers on every pair in dataset/pairs.json.
+experiment2.py — LLM-judge ablation across (model × prompt mode), with
+multiple runs per (pair, checker) to estimate variance.
 
 Each invocation creates a fresh timestamped subdirectory under runs/, e.g.
 runs/20260424T093000Z/. Results stream to results.jsonl inside that directory;
-intermediate artifacts land in pairs/{pair_id}/{method}/ alongside it.
+intermediate artifacts land in pairs/{pair_id}/{method}/{run}/ alongside it.
 
-Pairs are processed in parallel (default: 10 at a time).
+Checker configuration is loaded from a YAML file (default:
+experiments/configs/experiment2.yaml). CLI flags override YAML values.
 """
 
 import argparse
@@ -16,55 +18,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 
+import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from formulation_bench import Dataset, Formulation, Pair
 
-from src.llm_client import (
-    AnthropicClient,
-    DeepSeekClient,
-    LLMClient,
-    LLMConfig,
-    OpenAIClient,
-)
 from src.verify.base import ReformulationVerifier
-from src.verify.llm.llm import LLMVerifier
+from src.verify.factory import build_verifier
 
-DEFAULT_WORKERS = 25
-DEFAULT_RUNS = 3
-
-
-def make_client(model: str, reasoning: bool) -> LLMClient:
-    # Reasoning eats heavily into the output budget; give it more room.
-    max_tokens = 16384 if reasoning else 8192
-    if model.startswith("claude"):
-        return AnthropicClient(
-            LLMConfig(
-                model=model,
-                max_tokens=max_tokens,
-                reasoning=reasoning,
-                reasoning_tokens=8192 if reasoning else None,
-            )
-        )
-    if model.startswith("deepseek"):
-        return DeepSeekClient(
-            LLMConfig(
-                model=model,
-                max_tokens=max_tokens,
-                reasoning=reasoning,
-                reasoning_effort="high" if reasoning else None,
-            )
-        )
-    return OpenAIClient(
-        LLMConfig(
-            model=model,
-            max_tokens=max_tokens,
-            reasoning=reasoning,
-            reasoning_effort="medium" if reasoning else None,
-        )
-    )
+DEFAULT_CONFIG = Path(__file__).parent / "configs" / "experiment2.yaml"
 
 
 def parse_problem_ids(s: str | None) -> set[int] | None:
@@ -147,6 +111,13 @@ def process_pair_checker(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--config",
+        "-c",
+        type=Path,
+        default=DEFAULT_CONFIG,
+        help=f"YAML config (default: {DEFAULT_CONFIG})",
+    )
+    parser.add_argument(
         "--problems",
         "-p",
         help="comma-separated problem numbers to run (e.g. 1,2,3; default: all)",
@@ -155,17 +126,21 @@ def main() -> None:
         "--workers",
         "-w",
         type=int,
-        default=DEFAULT_WORKERS,
-        help=f"parallel workers (default: {DEFAULT_WORKERS})",
+        default=None,
+        help="parallel workers (overrides YAML)",
     )
     parser.add_argument(
         "-n",
         "--runs",
         type=int,
-        default=DEFAULT_RUNS,
-        help=f"number of runs per (pair, checker) (default: {DEFAULT_RUNS})",
+        default=None,
+        help="number of runs per (pair, checker) (overrides YAML)",
     )
     args = parser.parse_args()
+
+    cfg = yaml.safe_load(args.config.read_text())
+    workers = args.workers if args.workers is not None else cfg.get("workers", 25)
+    runs = args.runs if args.runs is not None else cfg.get("runs", 3)
 
     problem_filter = parse_problem_ids(args.problems)
 
@@ -175,41 +150,21 @@ def main() -> None:
 
     dataset = Dataset(Path("dataset"))
 
-    # (mode_label, template, include_implicit)
-    modes = [
-        ("regular", "reformulation.j2", True),
-        ("no_definition", "no_definition.j2", True),
-        ("allow_implicit", "reformulation.j2", False),
-        ("naive", "naive.j2", True),
+    # Expand the (models × modes) cross product into llm verifier specs.
+    checker_specs = [
+        {
+            "type": "llm",
+            "name": f"llm_{model['label']}_{mode['label']}",
+            "client": model["client"],
+            "template": mode["template"],
+            "include_implicit": mode["include_implicit"],
+        }
+        for model in cfg["models"]
+        for mode in cfg["modes"]
     ]
-    # (label, model, reasoning)
-    models = [
-        ("gpt-4.1", "gpt-4.1", False),  # gpt-4.1 doesn't support reasoning
-        ("opus", "claude-opus-4-6", True),  # claude-opus-4-7 uses adaptive thinking
-        ("gpt-5.5", "gpt-5.5", True),
-        ("deepseek-pro", "deepseek-v4-pro", True),
-        # Omit non-reasoning due to strictly worse performance
-        # ("gpt-5.5", "gpt-5.5", False),
-        # ("deepseek-pro", "deepseek-v4-pro", False),
-        # ("opus", "claude-opus-4-6", False),
-        # Omit more affordable models with strictly worse performance
-        # ("sonnet", "claude-sonnet-4-6", True),
-        # ("sonnet", "claude-sonnet-4-6", False),
-        # ("gpt-5.4", "gpt-5.4", True),
-        # ("gpt-5.4", "gpt-5.4", False),
-        # ("deepseek-flash", "deepseek-v4-flash", True),
-        # ("deepseek-flash", "deepseek-v4-flash", False),
-    ]
-
+    repo_root = Path(".").resolve()
     checkers: list[ReformulationVerifier] = [
-        LLMVerifier(
-            make_client(model, reasoning),
-            name=f"llm_{model_label}{'_reasoning' if reasoning else ''}_{mode_label}",
-            template=template,
-            include_implicit=include_implicit,
-        )
-        for model_label, model, reasoning in models
-        for mode_label, template, include_implicit in modes
+        build_verifier(spec, repo_root=repo_root) for spec in checker_specs
     ]
 
     pairs = dataset.pairs
@@ -227,19 +182,20 @@ def main() -> None:
     write_lock = Lock()
 
     print(f"Run directory: {run_dir}")
+    print(f"Config: {args.config}")
     print(
-        f"Pairs: {len(pairs)}  Checkers: {len(checkers)}  Runs: {args.runs}  "
-        f"Workers: {args.workers}\n"
+        f"Pairs: {len(pairs)}  Checkers: {len(checkers)}  Runs: {runs}  "
+        f"Workers: {workers}\n"
     )
 
     tasks = [
         (pair, checker, run_idx)
         for pair in pairs
         for checker in checkers
-        for run_idx in range(1, args.runs + 1)
+        for run_idx in range(1, runs + 1)
     ]
 
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(
                 process_pair_checker,

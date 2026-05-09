@@ -5,7 +5,8 @@ Each invocation creates a fresh timestamped subdirectory under runs/, e.g.
 runs/20260424T093000Z/. Results stream to results.jsonl inside that directory;
 intermediate artifacts land in pairs/{pair_id}/{method}/ alongside it.
 
-Pairs are processed in parallel (default: 10 at a time).
+Checker configuration is loaded from a YAML file (default:
+experiments/configs/experiment1.yaml). CLI flags override YAML values.
 """
 
 import argparse
@@ -16,20 +17,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 
+import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from formulation_bench import Dataset, Formulation, Pair
 
-from src.llm_client import OpenAIClient, LLMConfig
 from src.verify.base import ReformulationVerifier
-from src.verify.equivamap.equivamap import EquivaMapVerifier
-from src.verify.flare.flare import FLAREVerifier
-from src.verify.execution.execution import ExecutionVerifier
-from src.verify.llm.llm import LLMVerifier
+from src.verify.factory import build_verifier
 
-DEFAULT_WORKERS = 5
+DEFAULT_CONFIG = Path(__file__).parent / "configs" / "experiment1.yaml"
 
 
 def parse_problem_ids(s: str | None) -> set[int] | None:
@@ -97,12 +95,20 @@ def process_pair(
                 print(f"  {status} [{checker.name}] {pid}\n{entry['error']}")
             else:
                 print(
-                    f"  {status} [{checker.name}] {pid}  equiv={equiv}  gt={gt}  correct={match}"
+                    f"  {status} [{checker.name}] {pid}  "
+                    f"equiv={equiv}  gt={gt}  correct={match}"
                 )
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--config",
+        "-c",
+        type=Path,
+        default=DEFAULT_CONFIG,
+        help=f"YAML config (default: {DEFAULT_CONFIG})",
+    )
     parser.add_argument(
         "--problems",
         "-p",
@@ -112,10 +118,13 @@ def main() -> None:
         "--workers",
         "-w",
         type=int,
-        default=DEFAULT_WORKERS,
-        help=f"parallel workers (default: {DEFAULT_WORKERS})",
+        default=None,
+        help="parallel workers (overrides YAML)",
     )
     args = parser.parse_args()
+
+    cfg = yaml.safe_load(args.config.read_text())
+    workers = args.workers if args.workers is not None else cfg.get("workers", 5)
 
     problem_filter = parse_problem_ids(args.problems)
 
@@ -125,10 +134,9 @@ def main() -> None:
 
     dataset = Dataset(Path("dataset"))
 
+    repo_root = Path(".").resolve()
     checkers: list[ReformulationVerifier] = [
-        ExecutionVerifier(),
-        EquivaMapVerifier(OpenAIClient(LLMConfig(model="gpt-4.1", max_tokens=4096))),
-        FLAREVerifier(repo_root=Path(".").resolve(), model="claude-opus-4-7"),
+        build_verifier(spec, repo_root=repo_root) for spec in cfg["checkers"]
     ]
 
     pairs = dataset.pairs
@@ -146,9 +154,10 @@ def main() -> None:
     write_lock = Lock()
 
     print(f"Run directory: {run_dir}")
-    print(f"Pairs: {len(pairs)}  Workers: {args.workers}\n")
+    print(f"Config: {args.config}")
+    print(f"Pairs: {len(pairs)}  Checkers: {len(checkers)}  Workers: {workers}\n")
 
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(
                 process_pair, pair, checkers, results_path, write_lock

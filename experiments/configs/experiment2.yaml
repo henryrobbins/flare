@@ -1,0 +1,61 @@
+# experiment2.yaml — default config for experiment2.py.
+#
+# LLM-judge ablation across the cross product (model × prompt mode). The
+# script expands `models × modes` into one llm verifier per combination,
+# named `llm_<model.label>_<mode.label>`. Run multiple times per
+# (pair, checker) to estimate variance.
+#
+# Models commented out are omitted because preliminary runs showed strictly
+# worse performance than the kept variants.
+
+workers: 25
+runs: 3
+
+modes:
+  - label: regular
+    template: reformulation.j2
+    include_implicit: true
+  - label: no_definition  # drop the "what counts as a reformulation" definition
+    template: no_definition.j2
+    include_implicit: true
+  - label: allow_implicit  # full prompt but implicit constraints excluded
+    template: reformulation.j2
+    include_implicit: false
+  - label: naive  # minimal "are these equivalent?" prompt
+    template: naive.j2
+    include_implicit: true
+
+models:
+  # gpt-4.1 doesn't support reasoning.
+  - label: gpt-4.1
+    client: { model: gpt-4.1, max_tokens: 8192 }
+
+  # claude-opus-4-7 uses adaptive thinking, so we use 4-6 for this sweep.
+  - label: opus_reasoning
+    client:
+      model: claude-opus-4-6
+      max_tokens: 16384
+      reasoning: true
+      reasoning_tokens: 8192
+
+  - label: gpt-5.5_reasoning
+    client:
+      model: gpt-5.5
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: medium
+
+  - label: deepseek-pro_reasoning
+    client:
+      model: deepseek-v4-pro
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: high
+
+  # ===== Omitted: non-reasoning variants of the reasoning-capable models =====
+  # gpt-5.5, deepseek-v4-pro, claude-opus-4-6 with reasoning: false
+  #
+  # ===== Omitted: cheaper models with strictly worse performance =====
+  # claude-sonnet-4-6 (with/without reasoning)
+  # gpt-5.4           (with/without reasoning)
+  # deepseek-v4-flash (with/without reasoning)

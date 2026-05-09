@@ -5,6 +5,9 @@ times and parallelizes per (pair, checker, run) task (matching experiment2.py).
 Each invocation creates a fresh timestamped subdirectory under runs/, e.g.
 runs/20260424T093000Z/. Results stream to results.jsonl inside that directory;
 intermediate artifacts land in pairs/{pair_id}/{method}/{run}/ alongside it.
+
+Checker configuration is loaded from a YAML file (default:
+experiments/configs/experiment3.yaml). CLI flags override YAML values.
 """
 
 import argparse
@@ -15,18 +18,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
 
+import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
 from formulation_bench import Dataset, Formulation, Pair
 
-from src.llm_client import LLMConfig, AnthropicClient
 from src.verify.base import ReformulationVerifier
-from src.verify.equivamap.equivamap import EquivaMapVerifier
+from src.verify.factory import build_verifier
 
-DEFAULT_WORKERS = 5
-DEFAULT_RUNS = 3
+DEFAULT_CONFIG = Path(__file__).parent / "configs" / "experiment3.yaml"
 
 
 def parse_problem_ids(s: str | None) -> set[int] | None:
@@ -109,6 +111,13 @@ def process_pair_checker(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
+        "--config",
+        "-c",
+        type=Path,
+        default=DEFAULT_CONFIG,
+        help=f"YAML config (default: {DEFAULT_CONFIG})",
+    )
+    parser.add_argument(
         "--problems",
         "-p",
         help="comma-separated problem numbers to run (e.g. 1,2,3; default: all)",
@@ -117,17 +126,21 @@ def main() -> None:
         "--workers",
         "-w",
         type=int,
-        default=DEFAULT_WORKERS,
-        help=f"parallel workers (default: {DEFAULT_WORKERS})",
+        default=None,
+        help="parallel workers (overrides YAML)",
     )
     parser.add_argument(
         "-n",
         "--runs",
         type=int,
-        default=DEFAULT_RUNS,
-        help=f"number of runs per (pair, checker) (default: {DEFAULT_RUNS})",
+        default=None,
+        help="number of runs per (pair, checker) (overrides YAML)",
     )
     args = parser.parse_args()
+
+    cfg = yaml.safe_load(args.config.read_text())
+    workers = args.workers if args.workers is not None else cfg.get("workers", 5)
+    runs = args.runs if args.runs is not None else cfg.get("runs", 3)
 
     problem_filter = parse_problem_ids(args.problems)
 
@@ -137,8 +150,9 @@ def main() -> None:
 
     dataset = Dataset(Path("dataset"))
 
+    repo_root = Path(".").resolve()
     checkers: list[ReformulationVerifier] = [
-        EquivaMapVerifier(AnthropicClient(LLMConfig(model="claude-opus-4-7"))),
+        build_verifier(spec, repo_root=repo_root) for spec in cfg["checkers"]
     ]
 
     pairs = dataset.pairs
@@ -156,19 +170,20 @@ def main() -> None:
     write_lock = Lock()
 
     print(f"Run directory: {run_dir}")
+    print(f"Config: {args.config}")
     print(
-        f"Pairs: {len(pairs)}  Checkers: {len(checkers)}  Runs: {args.runs}  "
-        f"Workers: {args.workers}\n"
+        f"Pairs: {len(pairs)}  Checkers: {len(checkers)}  Runs: {runs}  "
+        f"Workers: {workers}\n"
     )
 
     tasks = [
         (pair, checker, run_idx)
         for pair in pairs
         for checker in checkers
-        for run_idx in range(1, args.runs + 1)
+        for run_idx in range(1, runs + 1)
     ]
 
-    with ThreadPoolExecutor(max_workers=args.workers) as executor:
+    with ThreadPoolExecutor(max_workers=workers) as executor:
         futures = {
             executor.submit(
                 process_pair_checker,
