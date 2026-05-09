@@ -51,16 +51,17 @@ def _claude_code_settings(wd: Path, repo_root: Path) -> dict:
 
 
 class FLAREVerifier(ReformulationVerifier):
-    def __init__(self, repo_root: Path, model: str) -> None:
+    def __init__(self, repo_root: Path, model: str, effort: str) -> None:
         self.repo_root = repo_root
         self.model = model
+        self.effort = effort
 
     @property
     def name(self) -> str:
         return "flare"
 
     def method_config(self) -> dict:
-        return {"model": self.model}
+        return {"model": self.model, "effort": self.effort}
 
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path
@@ -167,7 +168,7 @@ class FLAREVerifier(ReformulationVerifier):
             "--settings",
             str(settings_path.resolve()),
         ]
-        cmd += ["--model", self.model]
+        cmd += ["--model", self.model, "--effort", self.effort]
         start = time.time()
         stdout_lines: list[str] = []
 

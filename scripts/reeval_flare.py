@@ -71,16 +71,19 @@ def main() -> None:
 
     repo_root = Path(__file__).parent.parent
 
-    # Read the model from the first available config.json (only needed to satisfy
-    # the constructor; _evaluate doesn't use it).
+    # Read the model/effort from the first available config.json (only needed to
+    # satisfy the constructor; _evaluate doesn't use them).
     model = "claude-sonnet-4-6"
+    effort = "medium"
     for p in pairs_dir.iterdir():
         cfg = p / "flare" / "config.json"
         if cfg.exists():
-            model = json.loads(cfg.read_text()).get("model", model)
+            data = json.loads(cfg.read_text())
+            model = data.get("model", model)
+            effort = data.get("effort", effort)
             break
 
-    checker = FLAREVerifier(repo_root=repo_root, model=model)
+    checker = FLAREVerifier(repo_root=repo_root, model=model, effort=effort)
 
     updated: dict[str, bool] = {}
     new_rows: list[dict] = []

@@ -16,7 +16,7 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
     Spec shape (by `type`):
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
-      - {type: flare, model: <str>}
+      - {type: flare, model: <str>, effort: <low|medium|high|xhigh|max>}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
     """
@@ -32,7 +32,8 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
 
     if vtype == "flare":
         model = spec.pop("model")
-        return FLAREVerifier(repo_root=repo_root, model=model)
+        effort = spec.pop("effort")
+        return FLAREVerifier(repo_root=repo_root, model=model, effort=effort)
 
     if vtype == "llm":
         client_spec = spec.pop("client")
