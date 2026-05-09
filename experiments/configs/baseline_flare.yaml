@@ -1,0 +1,12 @@
+# baseline_flare.yaml — FLARE only.
+#
+# Runs just the FLARE Lean-proof agent. Split out from baseline.yaml so
+# the slow / expensive FLARE pass can be scheduled independently of the
+# cheap baselines.
+
+workers: 5
+runs: 3
+
+checkers:
+  - type: flare
+    model: claude-opus-4-7

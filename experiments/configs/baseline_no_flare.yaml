@@ -1,0 +1,23 @@
+# baseline_no_flare.yaml — baseline checkers minus FLARE.
+#
+# Same as baseline.yaml but drops the FLARE Lean-proof agent, which is
+# slow / expensive to run. Useful for iterating on the cheap baselines
+# without paying the FLARE cost each time.
+
+workers: 5
+runs: 3
+
+checkers:
+  - type: execution
+
+  - type: equivamap
+    name: equivamap_gpt-4.1
+    client:
+      model: gpt-4.1
+      max_tokens: 4096
+
+  - type: equivamap
+    name: equivamap_opus_multi
+    multi_run: true
+    client:
+      model: claude-opus-4-7
