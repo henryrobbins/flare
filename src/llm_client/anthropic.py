@@ -63,15 +63,21 @@ class AnthropicClient(LLMClient):
             )
         parsed = json.loads(next(b.text for b in message.content if b.type == "text"))
         # Anthropic bills the full unsummarized thinking via output_tokens but
-        # exposes no breakdown. Estimate visible text tokens (~4 chars/token)
-        # and attribute the remainder to thinking.
-        visible_chars = sum(
-            len(getattr(b, "text", "") or "")
-            for b in message.content
-            if b.type == "text"
-        )
-        visible_tokens = visible_chars // 4
-        reasoning_tokens = max(message.usage.output_tokens - visible_tokens, 0)
+        # exposes no breakdown. When thinking is on, estimate visible text
+        # tokens (~4 chars/token) and attribute the remainder to thinking.
+        # Skip the estimate entirely when reasoning is off — JSON output is
+        # denser than 4 chars/token and would yield a phantom remainder.
+        if self._config.reasoning:
+            visible_chars = sum(
+                len(getattr(b, "text", "") or "")
+                for b in message.content
+                if b.type == "text"
+            )
+            reasoning_tokens = max(
+                message.usage.output_tokens - visible_chars // 4, 0
+            )
+        else:
+            reasoning_tokens = 0
         usage = {
             "input_tokens": message.usage.input_tokens,
             "output_tokens": message.usage.output_tokens,
