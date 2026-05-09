@@ -22,7 +22,9 @@ class AnthropicClient(LLMClient):
         if self._config.reasoning:
             # Adaptive thinking: Claude decides when/how much to think, guided
             # by `effort`. Required on Opus 4.7; recommended on 4.6 / Sonnet 4.6.
-            kwargs["thinking"] = {"type": "adaptive"}
+            # `display: summarized` opts in to thinking text in the response
+            # (Opus 4.7 defaults to "omitted").
+            kwargs["thinking"] = {"type": "adaptive", "display": "summarized"}
             effort = self._config.reasoning_effort or "high"
             kwargs["output_config"] = {"effort": effort}
         elif self._config.temperature is not None:
@@ -60,16 +62,19 @@ class AnthropicClient(LLMClient):
                 f"Anthropic response truncated (max_tokens={self._config.max_tokens})"
             )
         parsed = json.loads(next(b.text for b in message.content if b.type == "text"))
-        # Anthropic's Usage object doesn't break out thinking tokens; estimate
-        # from the raw text length of thinking content blocks (~4 chars/token).
-        thinking_chars = sum(
-            len(getattr(b, "thinking", "") or "")
+        # Anthropic bills the full unsummarized thinking via output_tokens but
+        # exposes no breakdown. Estimate visible text tokens (~4 chars/token)
+        # and attribute the remainder to thinking.
+        visible_chars = sum(
+            len(getattr(b, "text", "") or "")
             for b in message.content
-            if b.type == "thinking"
+            if b.type == "text"
         )
+        visible_tokens = visible_chars // 4
+        reasoning_tokens = max(message.usage.output_tokens - visible_tokens, 0)
         usage = {
             "input_tokens": message.usage.input_tokens,
             "output_tokens": message.usage.output_tokens,
-            "reasoning_tokens": thinking_chars // 4 if thinking_chars else 0,
+            "reasoning_tokens": reasoning_tokens,
         }
         return parsed, usage
