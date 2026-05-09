@@ -25,7 +25,10 @@ class OpenAIClient(LLMClient):
             effort = self._config.reasoning_effort or "medium"
             kwargs["reasoning"] = {"effort": effort}
         else:
-            kwargs["reasoning"] = {"effort": "none"}
+            # GPT-5 family reasons by default; explicitly turn it off.
+            # Older models reject the `reasoning` param entirely.
+            if self._config.model.startswith("gpt-5"):
+                kwargs["reasoning"] = {"effort": "none"}
             if self._config.temperature is not None:
                 kwargs["temperature"] = self._config.temperature
         return kwargs
