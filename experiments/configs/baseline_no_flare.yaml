@@ -11,4 +11,5 @@ verifiers:
     client:
       model: claude-opus-4-7
       max_tokens: 8192
-      reasoning: false
+      reasoning: true
+      effort: medium
