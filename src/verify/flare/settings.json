@@ -1,7 +1,4 @@
 {
-    "env": {
-        "CLAUDE_CODE_THINKING_BUDGET": "10000"
-    },
     "sandbox": {
         "enabled": true,
         "allowUnsandboxedCommands": false,
