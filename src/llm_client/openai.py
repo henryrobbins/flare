@@ -24,8 +24,10 @@ class OpenAIClient(LLMClient):
         if self._config.reasoning:
             effort = self._config.reasoning_effort or "medium"
             kwargs["reasoning"] = {"effort": effort}
-        elif self._config.temperature is not None:
-            kwargs["temperature"] = self._config.temperature
+        else:
+            kwargs["reasoning"] = {"effort": "none"}
+            if self._config.temperature is not None:
+                kwargs["temperature"] = self._config.temperature
         return kwargs
 
     def complete(self, system: str, user: str) -> str:
