@@ -30,12 +30,12 @@ models:
   - label: gpt-4.1  # no reasoning support
     client: { model: gpt-4.1, max_tokens: 8192 }
 
-  - label: opus_reasoning  # claude-opus-4-7 uses adaptive thinking; use 4-6
+  - label: opus_reasoning
     client:
       model: claude-opus-4-6
       max_tokens: 16384
       reasoning: true
-      reasoning_tokens: 8192
+      reasoning_effort: medium
 
   - label: gpt-5.5_reasoning
     client:
@@ -67,7 +67,7 @@ models:
       model: claude-sonnet-4-6
       max_tokens: 16384
       reasoning: true
-      reasoning_tokens: 8192
+      reasoning_effort: medium
   - label: sonnet
     client: { model: claude-sonnet-4-6, max_tokens: 8192 }
 

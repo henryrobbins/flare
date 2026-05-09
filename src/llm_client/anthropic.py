@@ -20,8 +20,11 @@ class AnthropicClient(LLMClient):
             "max_tokens": self._config.max_tokens,
         }
         if self._config.reasoning:
-            budget = self._config.reasoning_tokens or self._config.max_tokens // 2
-            kwargs["thinking"] = {"type": "enabled", "budget_tokens": budget}
+            # Adaptive thinking: Claude decides when/how much to think, guided
+            # by `effort`. Required on Opus 4.7; recommended on 4.6 / Sonnet 4.6.
+            kwargs["thinking"] = {"type": "adaptive"}
+            effort = self._config.reasoning_effort or "high"
+            kwargs["output_config"] = {"effort": effort}
         elif self._config.temperature is not None:
             kwargs["temperature"] = self._config.temperature
         return kwargs

@@ -70,10 +70,11 @@ class LLMConfig:
     max_tokens: int = 2048
     temperature: float | None = None
     reasoning: bool = False
-    # Anthropic: thinking budget in tokens.
-    reasoning_tokens: int | None = None
-    # OpenAI Responses API: "minimal" | "low" | "medium" | "high" | "xhigh"
-    # (model-dependent). Defaults to "medium" when reasoning is enabled.
+    # Effort level passed to the provider when reasoning is enabled. Accepted
+    # values are provider/model-dependent: OpenAI Responses API takes
+    # "minimal" | "low" | "medium" | "high" | "xhigh"; Anthropic adaptive
+    # thinking takes "low" | "medium" | "high" | "xhigh" | "max"; DeepSeek
+    # v4-pro takes "high" | "max".
     reasoning_effort: str | None = None
 
     @classmethod

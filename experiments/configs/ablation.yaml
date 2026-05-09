@@ -30,13 +30,12 @@ models:
   - label: gpt-4.1
     client: { model: gpt-4.1, max_tokens: 8192 }
 
-  # claude-opus-4-7 uses adaptive thinking, so we use 4-6 for this sweep.
   - label: opus_reasoning
     client:
       model: claude-opus-4-6
       max_tokens: 16384
       reasoning: true
-      reasoning_tokens: 8192
+      reasoning_effort: medium
 
   - label: gpt-5.5_reasoning
     client:
