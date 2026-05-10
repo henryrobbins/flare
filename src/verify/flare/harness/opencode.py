@@ -133,9 +133,15 @@ class OpenCodeHarness(Harness):
         (wd / "opencode.json").write_text(json.dumps(cfg, indent=2))
 
     def run(self, prompt: str, wd: Path, jsonl_path: Path) -> HarnessRunResult:
+        # `--dir` pins OpenCode to the isolated wd. Without it OpenCode walks
+        # upward from cwd to the enclosing git worktree root and operates
+        # there, so the agent ends up looking at the FLARE monorepo instead
+        # of the per-pair wd.
         cmd = [
             "opencode",
             "run",
+            "--dir",
+            str(wd.resolve()),
             "--format",
             "json",
             "--model",
@@ -172,60 +178,54 @@ class OpenCodeHarness(Harness):
 
 
 def _parse_stream(lines: list[str]) -> dict:
-    """Best-effort parse of `opencode run --format json` stream output.
+    """Parse `opencode run --format json` stream output.
 
-    OpenCode's event schema is not as load-bearing here as Claude's `result`
-    event — we accumulate token counts across any object that exposes them
-    and pick up `total_cost_usd` / `stop_reason` from whichever event carries
-    them. Missing fields fall back to 0 / None.
+    OpenCode emits one JSON event per line. The events that carry usage
+    metrics are `step_finish` parts with the shape::
+
+        {"type": "step_finish",
+         "part": {"reason": "...",
+                  "tokens": {"input": N, "output": M, "reasoning": R,
+                             "total": T, "cache": {"read": ..., "write": ...}},
+                  "cost": <usd>}}
+
+    `tokens.input` / `tokens.output` are per-step deltas and `cost` is the
+    per-step spend. We sum deltas across all step_finish events to get the
+    session totals, and take the last step's `reason` as the run-level
+    stop_reason. Missing fields fall back to 0 / None.
     """
     input_tokens = 0
     output_tokens = 0
-    stop_reason: str | None = None
     cost_usd: float | None = None
-
-    def harvest(obj):
-        nonlocal input_tokens, output_tokens, stop_reason, cost_usd
-        if not isinstance(obj, dict):
-            return
-        usage = obj.get("usage")
-        if isinstance(usage, dict):
-            it = usage.get("input_tokens") or usage.get("inputTokens")
-            ot = usage.get("output_tokens") or usage.get("outputTokens")
-            if isinstance(it, int):
-                input_tokens = max(input_tokens, it)
-            if isinstance(ot, int):
-                output_tokens = max(output_tokens, ot)
-        for k in ("total_cost_usd", "totalCostUsd", "cost", "cost_usd"):
-            v = obj.get(k)
-            if isinstance(v, (int, float)):
-                cost_usd = float(v)
-                break
-        for k in ("stop_reason", "stopReason", "finish_reason", "finishReason"):
-            v = obj.get(k)
-            if isinstance(v, str):
-                stop_reason = v
-                break
-        for v in obj.values():
-            if isinstance(v, (dict, list)):
-                walk(v)
-
-    def walk(node):
-        if isinstance(node, dict):
-            harvest(node)
-        elif isinstance(node, list):
-            for x in node:
-                walk(x)
+    stop_reason: str | None = None
 
     for line in lines:
         line = line.strip()
         if not line:
             continue
         try:
-            obj = json.loads(line)
+            event = json.loads(line)
         except json.JSONDecodeError:
             continue
-        walk(obj)
+        if event.get("type") != "step_finish":
+            continue
+
+        part = event.get("part") or {}
+        tokens = part.get("tokens") or {}
+        it = tokens.get("input")
+        ot = tokens.get("output")
+        if isinstance(it, int):
+            input_tokens += it
+        if isinstance(ot, int):
+            output_tokens += ot
+
+        c = part.get("cost")
+        if isinstance(c, (int, float)):
+            cost_usd = (cost_usd or 0.0) + float(c)
+
+        r = part.get("reason")
+        if isinstance(r, str):
+            stop_reason = r
 
     return {
         "stop_reason": stop_reason,
