@@ -96,12 +96,12 @@ Rules:
 
 
 @pytest.fixture
-def harness(test_model: str, test_effort: str) -> ClaudeCodeHarness:
+def harness() -> ClaudeCodeHarness:
     cfg = LLMConfig(
-        model=test_model,
+        model="claude-haiku-4-5",
         max_tokens=4096,
         reasoning=False,
-        reasoning_effort=test_effort,
+        reasoning_effort="low",
     )
     return ClaudeCodeHarness(cfg)
 

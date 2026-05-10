@@ -7,8 +7,10 @@ are copied into `wd/.agents/skills/` (Codex's discovery path).
 
 Sandboxing here is weaker than Claude Code's read denylist — Codex's
 `sandbox_mode = "workspace-write"` only constrains writes (to
-`writable_roots`) and network. Reads outside `wd` are not blocked. This
-matches the trust model accepted for OpenCodeHarness.
+`writable_roots`) and network. Reads outside `wd` are not blocked (see
+openai/codex#2847; the new `[permissions]` profile system in 0.130 is
+not yet stable enough to rely on). This matches the trust model
+accepted for OpenCodeHarness.
 
 Auth: forces the cached ChatGPT subscription login (`~/.codex/auth.json`)
 so usage bills against the ChatGPT plan rather than API credits, mirroring
