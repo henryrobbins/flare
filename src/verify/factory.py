@@ -7,7 +7,12 @@ from src.verify.base import ReformulationVerifier
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.execution.execution import ExecutionVerifier
 from src.verify.flare.flare import FLAREVerifier
-from src.verify.flare.harness import ClaudeCodeHarness, Harness, OpenCodeHarness
+from src.verify.flare.harness import (
+    ClaudeCodeHarness,
+    CodexHarness,
+    Harness,
+    OpenCodeHarness,
+)
 from src.verify.llm.llm import LLMVerifier
 
 
@@ -20,6 +25,8 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
       - {type: flare, harness: claude_code, model: <str>,
          effort: <low|medium|high|xhigh|max>}
       - {type: flare, harness: opencode,
+         client: {<LLMConfig fields, optional provider>}}
+      - {type: flare, harness: codex,
          client: {<LLMConfig fields, optional provider>}}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
@@ -65,4 +72,9 @@ def _build_harness(spec: dict) -> Harness:
         provider = client_spec.pop("provider", None)
         config = LLMConfig.from_dict(client_spec)
         return OpenCodeHarness(config=config, provider=provider)
+    if htype == "codex":
+        client_spec = dict(spec.pop("client"))
+        provider = client_spec.pop("provider", None)
+        config = LLMConfig.from_dict(client_spec)
+        return CodexHarness(config=config, provider=provider)
     raise ValueError(f"unknown flare harness: {htype!r}")
