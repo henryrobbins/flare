@@ -1,6 +1,5 @@
-import copy
+import dataclasses
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -11,61 +10,36 @@ from formulation_bench import Formulation
 
 from src.prompts import render_formulation
 from src.verify.base import ReformulationResult, ReformulationVerifier
+from src.verify.flare.harness import Harness
 from src.verify.flare.prompts import render_agent_prompt
 
 _HERE = Path(__file__).parent
 _LAKEFILE: str = (_HERE / "lakefile.toml").read_text()
-_CLAUDE_CODE_SETTINGS_TEMPLATE: dict = json.loads((_HERE / "settings.json").read_text())
-
-# We use a combination of sandboxing and permissions to restrict the agent
-# to only read/write files within its working directory (wd). See the current
-# documentation for details:
-#
-# https://code.claude.com/docs/en/sandboxing
-# https://code.claude.com/docs/en/permissions
-#
-# Sandboxing only applies to the Bash tool. We only apply restrictions to
-# the filesystem. We deny read/write to both ~/ (home directory) and the
-# repo root. We then allow read/write specifically to the wd. In the sandbox
-# configuration, the allow list overrides the deny list. Lastly, we must
-# explicitly disable `allowUnsandboxedCommands` to prevent bypassing.
-#
-# To prevent read/write for other tools (e.g., Read, Write), we must use
-# the permissions setting. We run claude with `--permission-mode dontAsk` so
-# that it doesn't prompt and auto-denies anything outside permissions.allow.
-# We manually specify all allowed commands in `settings.json`. This is a
-# comprehensive and sufficient list for the required task.
-
-
-def _claude_code_settings(wd: Path, repo_root: Path) -> dict:
-    settings = copy.deepcopy(_CLAUDE_CODE_SETTINGS_TEMPLATE)
-    wd_abs = str(wd.resolve())
-    repo_abs = str(repo_root.resolve())
-    fs = settings["sandbox"]["filesystem"]
-    # Dynamically update filesystem permissions with repo and wd paths
-    fs["denyRead"].append(repo_abs)
-    fs["denyWrite"].append(repo_abs)
-    fs["allowRead"].append(wd_abs)
-    fs["allowWrite"].append(wd_abs)
-    return settings
 
 
 class FLAREVerifier(ReformulationVerifier):
-    def __init__(self, repo_root: Path, model: str, effort: str) -> None:
+    def __init__(self, repo_root: Path, harness: Harness | None = None) -> None:
+        # `harness` is optional so that callers that only need ._evaluate
+        # (e.g., scripts/reeval_flare.py) can construct a verifier without
+        # configuring a CLI harness.
         self.repo_root = repo_root
-        self.model = model
-        self.effort = effort
+        self.harness = harness
 
     @property
     def name(self) -> str:
         return "flare"
 
     def method_config(self) -> dict:
-        return {"model": self.model, "effort": self.effort}
+        if self.harness is None:
+            return {}
+        return self.harness.method_config()
 
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path
     ) -> ReformulationResult:
+        if self.harness is None:
+            raise RuntimeError("FLAREVerifier.verify requires a Harness")
+
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(
@@ -74,17 +48,18 @@ class FLAREVerifier(ReformulationVerifier):
 
         wd = artifacts_dir / "wd"
         self._setup_wd(wd, a, b)
+        self.harness.configure_wd(wd, self.repo_root)
 
         prompt = render_agent_prompt()
         (artifacts_dir / "prompt.txt").write_text(prompt)
 
-        jsonl_path = artifacts_dir / "claude_output.jsonl"
+        jsonl_path = artifacts_dir / "agent_output.jsonl"
         print(f"  [flare] monitor: tail -f {jsonl_path}")
 
-        stream_metrics = self._run_claude(prompt, wd, jsonl_path)
+        run_result = self.harness.run(prompt, wd, jsonl_path)
 
         meta = self._evaluate(wd)
-        meta.update(stream_metrics)
+        meta.update(dataclasses.asdict(run_result))
 
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
@@ -109,18 +84,8 @@ class FLAREVerifier(ReformulationVerifier):
 
         shutil.copy2(self.repo_root / "lean-toolchain", wd / "lean-toolchain")
         shutil.copy2(self.repo_root / "Common.lean", wd / "Common.lean")
-        shutil.copy2(self.repo_root / ".mcp.json", wd / ".mcp.json")
         shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
         (wd / "lakefile.toml").write_text(_LAKEFILE)
-
-        # Copy skills and write settings
-        claude_dst = wd / ".claude"
-        claude_dst.mkdir(exist_ok=True)
-        skills_src = self.repo_root / ".claude" / "skills"
-        if skills_src.exists():
-            shutil.copytree(skills_src, claude_dst / "skills", dirs_exist_ok=True)
-        settings = _claude_code_settings(wd, self.repo_root)
-        (claude_dst / "settings.json").write_text(json.dumps(settings, indent=2))
 
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
@@ -153,54 +118,6 @@ class FLAREVerifier(ReformulationVerifier):
             text=True,
             timeout=180,
         )
-
-    def _run_claude(self, prompt: str, wd: Path, jsonl_path: Path) -> dict:
-        settings_path = wd / ".claude" / "settings.json"
-        cmd = [
-            "claude",
-            "-p",
-            prompt,
-            "--output-format",
-            "stream-json",
-            "--verbose",
-            "--permission-mode",
-            "dontAsk",  # auto-deny anything not in permissions.allow
-            "--settings",
-            str(settings_path.resolve()),
-        ]
-        cmd += ["--model", self.model, "--effort", self.effort]
-        start = time.time()
-        stdout_lines: list[str] = []
-
-        # Strip ANTHROPIC_API_KEY so claude uses the Claude.ai plan (OAuth
-        # session) rather than API credits, with automatic extra-usage overage.
-        subprocess_env = {
-            k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"
-        }
-
-        with jsonl_path.open("w") as jsonl_f:
-            with subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                cwd=wd,
-                env=subprocess_env,
-            ) as proc:
-                assert proc.stdout is not None
-                for line in proc.stdout:
-                    jsonl_f.write(line)
-                    jsonl_f.flush()
-                    stdout_lines.append(line)
-                stderr = proc.stderr.read() if proc.stderr else ""
-                proc.wait()
-
-        duration = time.time() - start
-
-        if stderr:
-            jsonl_path.with_name("claude_stderr.txt").write_text(stderr)
-
-        return {"duration_s": round(duration, 1), **_parse_stream(stdout_lines)}
 
     def _evaluate(self, wd: Path) -> dict:
         form_a_lean = wd / "A" / "Formulation.lean"
@@ -360,33 +277,3 @@ def _lean_compiles_with_output(
         log.write(f"FileNotFoundError: {e}\n\n")
         log.flush()
         return False, ""
-
-
-def _parse_stream(lines: list[str]) -> dict:
-    input_tokens = 0
-    output_tokens = 0
-    stop_reason = None
-    cost_usd = None
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            obj = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-
-        if obj.get("type") == "result":
-            stop_reason = obj.get("stop_reason")
-            cost_usd = obj.get("total_cost_usd")
-            usage = obj.get("usage", {})
-            input_tokens = usage.get("input_tokens", input_tokens)
-            output_tokens = usage.get("output_tokens", output_tokens)
-
-    return {
-        "stop_reason": stop_reason,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-        "cost_usd": cost_usd,
-    }

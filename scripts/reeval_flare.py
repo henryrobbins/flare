@@ -20,9 +20,16 @@ from src.verify.flare.flare import FLAREVerifier
 
 
 def _streaming_metrics_from_jsonl(cc_dir: Path) -> dict:
-    """Extract streaming metrics from claude_output.jsonl when result.json is absent."""
-    jsonl = cc_dir / "claude_output.jsonl"
-    if not jsonl.exists():
+    """Extract streaming metrics from the agent output jsonl when result.json is absent.
+
+    Older runs wrote `claude_output.jsonl`; newer runs (post-harness refactor)
+    write `agent_output.jsonl`. Try both.
+    """
+    jsonl = next(
+        (cc_dir / n for n in ("agent_output.jsonl", "claude_output.jsonl") if (cc_dir / n).exists()),
+        None,
+    )
+    if jsonl is None:
         return {}
     for line in reversed(jsonl.read_text().splitlines()):
         line = line.strip()
@@ -71,19 +78,8 @@ def main() -> None:
 
     repo_root = Path(__file__).parent.parent
 
-    # Read the model/effort from the first available config.json (only needed to
-    # satisfy the constructor; _evaluate doesn't use them).
-    model = "claude-sonnet-4-6"
-    effort = "medium"
-    for p in pairs_dir.iterdir():
-        cfg = p / "flare" / "config.json"
-        if cfg.exists():
-            data = json.loads(cfg.read_text())
-            model = data.get("model", model)
-            effort = data.get("effort", effort)
-            break
-
-    checker = FLAREVerifier(repo_root=repo_root, model=model, effort=effort)
+    # _evaluate doesn't need a harness; pass None.
+    checker = FLAREVerifier(repo_root=repo_root, harness=None)
 
     updated: dict[str, bool] = {}
     new_rows: list[dict] = []
