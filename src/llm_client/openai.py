@@ -17,10 +17,9 @@ class OpenAIClient(LLMClient):
         return self._config
 
     def _build_kwargs(self) -> dict:
-        kwargs: dict = {
-            "model": self._config.model,
-            "max_output_tokens": self._config.max_tokens,
-        }
+        kwargs: dict = {"model": self._config.model}
+        if self._config.max_tokens is not None:
+            kwargs["max_output_tokens"] = self._config.max_tokens
         if self._config.reasoning:
             effort = self._config.reasoning_effort or "medium"
             kwargs["reasoning"] = {"effort": effort}

@@ -67,7 +67,10 @@ def compute_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float
 @dataclass
 class LLMConfig:
     model: str
-    max_tokens: int = 2048
+    # Per-response output cap. `None` means "no explicit cap" — each client
+    # falls back to the model's native max (Anthropic requires the field on
+    # the wire, so it substitutes a high sentinel; OpenAI/DeepSeek omit it).
+    max_tokens: int | None = None
     temperature: float | None = None
     reasoning: bool = False
     # Effort level passed to the provider when reasoning is enabled. Accepted

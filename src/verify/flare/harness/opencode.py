@@ -52,8 +52,13 @@ def _model_options(provider: str, cfg: LLMConfig) -> dict:
     options: dict = {}
     if cfg.temperature is not None:
         options["temperature"] = cfg.temperature
-    if cfg.max_tokens:
-        options["maxTokens"] = cfg.max_tokens
+    # Intentionally NOT forwarding cfg.max_tokens. LLMConfig.max_tokens is a
+    # per-response cap aimed at single-shot LLM clients; under an agent
+    # harness, the same cap throttles every turn, and with reasoning on a
+    # small value (e.g. the LLMConfig default 2048) gets eaten by thinking
+    # tokens before the model emits its tool call — the response truncates
+    # mid-stream, no step_finish lands, and the run stalls. Let OpenCode
+    # apply the model's native output limit instead.
 
     if cfg.reasoning:
         if provider == "anthropic":
@@ -190,14 +195,19 @@ def _parse_stream(lines: list[str]) -> dict:
                   "cost": <usd>}}
 
     `tokens.input` / `tokens.output` are per-step deltas and `cost` is the
-    per-step spend. We sum deltas across all step_finish events to get the
-    session totals, and take the last step's `reason` as the run-level
-    stop_reason. Missing fields fall back to 0 / None.
+    per-step spend. Note that `tokens.input` is *uncached* input only;
+    cached prompt tokens appear under `tokens.cache.{write,read}`. We fold
+    all three into `input_tokens` so the total matches what Anthropic
+    actually billed for prompt tokens. We take the last step's `reason` as
+    the run-level stop_reason. Missing fields fall back to 0 / None.
     """
     input_tokens = 0
     output_tokens = 0
     cost_usd: float | None = None
     stop_reason: str | None = None
+
+    def _as_int(x) -> int:
+        return x if isinstance(x, int) else 0
 
     for line in lines:
         line = line.strip()
@@ -212,12 +222,13 @@ def _parse_stream(lines: list[str]) -> dict:
 
         part = event.get("part") or {}
         tokens = part.get("tokens") or {}
-        it = tokens.get("input")
-        ot = tokens.get("output")
-        if isinstance(it, int):
-            input_tokens += it
-        if isinstance(ot, int):
-            output_tokens += ot
+        cache = tokens.get("cache") or {}
+        input_tokens += (
+            _as_int(tokens.get("input"))
+            + _as_int(cache.get("write"))
+            + _as_int(cache.get("read"))
+        )
+        output_tokens += _as_int(tokens.get("output"))
 
         c = part.get("cost")
         if isinstance(c, (int, float)):

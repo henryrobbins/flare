@@ -15,9 +15,12 @@ class AnthropicClient(LLMClient):
         return self._config
 
     def _build_kwargs(self) -> dict:
+        # Anthropic requires `max_tokens` on the wire. When the config leaves
+        # it unset, pass the Claude 4.x family output cap so we don't impose
+        # a low artificial limit.
         kwargs: dict = {
             "model": self._config.model,
-            "max_tokens": self._config.max_tokens,
+            "max_tokens": self._config.max_tokens or 64000,
         }
         if self._config.reasoning:
             # Adaptive thinking: Claude decides when/how much to think, guided
