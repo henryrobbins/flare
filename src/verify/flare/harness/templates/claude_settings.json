@@ -5,7 +5,7 @@
         "filesystem": {
             "denyRead": ["~/"],
             "denyWrite": ["~/"],
-            "allowRead": ["~/.elan/settings.toml"],
+            "allowRead": ["~/.elan/settings.toml", "~/.elan/toolchains/", "~/.gitconfig"],
             "allowWrite": []
         }
     },

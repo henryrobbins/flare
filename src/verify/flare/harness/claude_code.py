@@ -40,10 +40,19 @@ def _settings_for(wd: Path, repo_root: Path) -> dict:
     settings = copy.deepcopy(_SETTINGS_TEMPLATE)
     wd_abs = str(wd.resolve())
     repo_abs = str(repo_root.resolve())
+    # `wd/.lake/packages` is symlinked to `repo_root/.lake/packages` so the
+    # wd shares prebuilt mathlib oleans. The symlink resolves outside wd to
+    # a path under repo_abs, so without an explicit allow lake's URL-check
+    # reads (e.g. mathlib's `.git/config`) fail under denyRead and lake
+    # then tries to reclone, which then fails on denyWrite — neither path
+    # finishes a build. Allowing the resolved package path lets
+    # `Bash(lake build:*)` actually work for the agent.
+    pkgs_abs = str((repo_root / ".lake" / "packages").resolve())
     fs = settings["sandbox"]["filesystem"]
     fs["denyRead"].append(repo_abs)
     fs["denyWrite"].append(repo_abs)
     fs["allowRead"].append(wd_abs)
+    fs["allowRead"].append(pkgs_abs)
     fs["allowWrite"].append(wd_abs)
     return settings
 
