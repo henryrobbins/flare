@@ -36,7 +36,11 @@ _HERE = Path(__file__).parent
 _CONFIG_TEMPLATE: str = (_HERE / "templates" / "codex_config.toml").read_text()
 
 
-def _render_config_toml(wd: Path, provider: str, cfg: LLMConfig) -> str:
+def _render_config_toml(wd: Path, cfg: LLMConfig) -> str:
+    # Codex disallows `model_provider` in project-local config (it warns and
+    # ignores), so we only emit `model` plus the reasoning effort; provider
+    # selection has to happen via user-level ~/.codex/config.toml or a CLI
+    # --config override.
     effort_line = (
         f'model_reasoning_effort = "{cfg.reasoning_effort}"'
         if cfg.reasoning and cfg.reasoning_effort
@@ -45,7 +49,6 @@ def _render_config_toml(wd: Path, provider: str, cfg: LLMConfig) -> str:
     return (
         _CONFIG_TEMPLATE.replace("<<WD_ABS>>", str(wd.resolve()))
         .replace("<<MODEL>>", cfg.model)
-        .replace("<<PROVIDER>>", provider)
         .replace("<<EFFORT_LINE>>", effort_line)
     )
 
@@ -81,16 +84,24 @@ class CodexHarness(Harness):
         codex_dir = wd / ".codex"
         codex_dir.mkdir(parents=True, exist_ok=True)
         (codex_dir / "config.toml").write_text(
-            _render_config_toml(wd, self.provider, self.config)
+            _render_config_toml(wd, self.config)
         )
 
     def run(self, prompt: str, wd: Path, jsonl_path: Path) -> HarnessRunResult:
+        # Don't pass --ignore-user-config: despite the name, Codex applies it
+        # to ALL config.toml files including the project-local one we just
+        # wrote into wd/.codex/, so MCP servers + sandbox_mode get dropped.
+        # User-level ~/.codex/config.toml leaking in is fine — our project
+        # config overrides model and the auth env-strip handles the rest.
+        # `--sandbox workspace-write` is repeated on the CLI as
+        # belt-and-suspenders against the agent perceiving a read-only env.
         cmd = [
             "codex",
             "exec",
             "--json",
             "--skip-git-repo-check",
-            "--ignore-user-config",
+            "--sandbox",
+            "workspace-write",
             prompt,
         ]
 

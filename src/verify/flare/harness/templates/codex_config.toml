@@ -1,5 +1,4 @@
 model = "<<MODEL>>"
-model_provider = "<<PROVIDER>>"
 <<EFFORT_LINE>>
 approval_policy = "never"
 sandbox_mode = "workspace-write"
