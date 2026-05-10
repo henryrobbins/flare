@@ -11,7 +11,10 @@ Models are configured via the same `LLMConfig` used by other verifiers (see
 `src/llm_client/base.py`). The harness translates the LLMConfig into the
 nested `provider.<id>.models.<id>.options` block that OpenCode expects:
 
-  - Anthropic (claude-*): `thinking: { type: enabled, budgetTokens: N }`
+  - Anthropic (claude-*): `thinking: {type: adaptive}` plus
+                          `output_config: {effort: <effort>}` (newer Claude
+                          models reject the legacy `type: enabled` +
+                          `budgetTokens` form)
   - OpenAI (gpt-*):       `reasoningEffort: <low|medium|high|xhigh>`
   - DeepSeek (deepseek-*): `reasoningEffort: <high|max>`
   - Google (gemini-*):    `reasoningEffort: <low|medium|high>`
@@ -34,18 +37,6 @@ _OPENCODE_TEMPLATE: dict = json.loads(
     (_HERE / "templates" / "opencode.json").read_text()
 )
 
-# Effort -> budgetTokens mapping for Anthropic adaptive thinking. OpenCode
-# expects a concrete token budget rather than a symbolic effort, so we
-# translate using the same buckets the rest of the codebase already exposes.
-_ANTHROPIC_BUDGET_TOKENS = {
-    "low": 4000,
-    "medium": 8000,
-    "high": 16000,
-    "xhigh": 32000,
-    "max": 64000,
-}
-
-
 def _infer_provider(model: str) -> str:
     if model.startswith("claude"):
         return "anthropic"
@@ -66,13 +57,13 @@ def _model_options(provider: str, cfg: LLMConfig) -> dict:
 
     if cfg.reasoning:
         if provider == "anthropic":
-            budget = _ANTHROPIC_BUDGET_TOKENS.get(cfg.reasoning_effort or "medium")
-            if budget is None:
-                raise ValueError(
-                    f"unknown anthropic reasoning_effort {cfg.reasoning_effort!r};"
-                    f" expected one of {sorted(_ANTHROPIC_BUDGET_TOKENS)}"
-                )
-            options["thinking"] = {"type": "enabled", "budgetTokens": budget}
+            # Newer Claude models (Opus 4.7, etc.) reject the legacy
+            # `thinking.type: enabled` + `budgetTokens` form; they require
+            # adaptive thinking with `output_config.effort` instead. See
+            # https://github.com/anomalyco/opencode/issues/22863.
+            options["thinking"] = {"type": "adaptive"}
+            if cfg.reasoning_effort:
+                options["output_config"] = {"effort": cfg.reasoning_effort}
         else:
             # OpenAI / DeepSeek / Google all accept `reasoningEffort` per the
             # OpenCode docs. Pass the user's symbolic effort straight through.
