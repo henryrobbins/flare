@@ -32,8 +32,17 @@ formulation-bench = { workspace = true }
 [dependency-groups]
 dev = [
     "mypy>=1.0",
+    "pytest>=8.0",
     "ruff>=0.4",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "packages/formulation_bench/tests"]
+markers = [
+    "harness: harness integration tests that make real model/CLI calls (opt-in: -m harness)",
+    "lean: tests that require the Lean toolchain (skip with -m 'not lean')",
+]
+addopts = "-m 'not harness'"
 
 [tool.ruff]
 line-length = 88

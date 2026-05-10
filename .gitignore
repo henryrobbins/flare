@@ -225,3 +225,6 @@ __marimo__/
 # Experiment runs and results
 runs/
 results/
+
+# Integration test artifacts (per-case wd + stream.jsonl)
+tests/.runs/

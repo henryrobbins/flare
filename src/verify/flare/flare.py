@@ -17,6 +17,52 @@ _HERE = Path(__file__).parent
 _LAKEFILE: str = (_HERE / "lakefile.toml").read_text()
 
 
+def setup_lean_project(wd: Path, repo_root: Path) -> None:
+    """Provision `wd` with the FLARE Lean project skeleton.
+
+    Drops `lean-toolchain`, `Common.lean`, `lake-manifest.json`, the FLARE
+    `lakefile.toml`, and a symlinked `.lake/packages` (sharing the repo's
+    pre-downloaded mathlib). Pre-builds `Common.olean` host-side so that
+    `.lake/build/` exists before the sandbox starts (the sandbox forbids
+    creating it but permits writes inside) and lean-lsp diagnostics on
+    freshly-written files come back populated.
+
+    Extracted from `FLAREVerifier._setup_wd` so integration tests can reuse
+    the real provisioning logic.
+    """
+    wd.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy2(repo_root / "lean-toolchain", wd / "lean-toolchain")
+    shutil.copy2(repo_root / "Common.lean", wd / "Common.lean")
+    shutil.copy2(repo_root / "lake-manifest.json", wd / "lake-manifest.json")
+    (wd / "lakefile.toml").write_text(_LAKEFILE)
+
+    # Share the repo's pre-built Mathlib oleans instead of downloading a
+    # fresh copy per pair. Each wd still gets its own .lake/build/ for
+    # A/B/Reformulation modules, so parallel runs don't conflict.
+    wd_lake = wd / ".lake"
+    wd_lake.mkdir(parents=True, exist_ok=True)
+    (wd_lake / "packages").symlink_to(
+        (repo_root / ".lake" / "packages").resolve()
+    )
+
+    # Pre-build Common host-side. This must happen here (not later, e.g.
+    # delegated to the agent) because the harness sandbox forbids *creating*
+    # `.lake/build/` but permits writes *inside* it. If the directory does
+    # not exist before the sandbox starts, the agent's first `lake build`
+    # fails with "operation not permitted" on `.lake/build`. Pre-building
+    # also means lean-lsp diagnostics on freshly-written files (which
+    # `import Common`) return real results on the first call.
+    subprocess.run(
+        ["lake", "build", "Common"],
+        cwd=wd,
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=180,
+    )
+
+
 class FLAREVerifier(ReformulationVerifier):
     def __init__(self, repo_root: Path, harness: Harness | None = None) -> None:
         # `harness` is optional so that callers that only need ._evaluate
@@ -80,12 +126,7 @@ class FLAREVerifier(ReformulationVerifier):
         )
 
     def _setup_wd(self, wd: Path, a: Formulation, b: Formulation) -> None:
-        wd.mkdir(parents=True, exist_ok=True)
-
-        shutil.copy2(self.repo_root / "lean-toolchain", wd / "lean-toolchain")
-        shutil.copy2(self.repo_root / "Common.lean", wd / "Common.lean")
-        shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
-        (wd / "lakefile.toml").write_text(_LAKEFILE)
+        setup_lean_project(wd, self.repo_root)
 
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
@@ -97,27 +138,6 @@ class FLAREVerifier(ReformulationVerifier):
             (form_dir / "Formulation.lean").write_text("")
 
         (wd / "Reformulation.lean").write_text("")
-
-        # Share the repo's pre-built Mathlib oleans instead of downloading a
-        # fresh copy per pair. Each wd still gets its own .lake/build/ for
-        # A/B/Reformulation modules, so parallel runs don't conflict.
-        wd_lake = wd / ".lake"
-        wd_lake.mkdir(parents=True, exist_ok=True)
-        (wd_lake / "packages").symlink_to(
-            (self.repo_root / ".lake" / "packages").resolve()
-        )
-
-        # Pre-build Common.olean so the agent's first lean-lsp diagnostic call
-        # on a freshly-written Formulation.lean (which imports Common) returns
-        # real diagnostics instead of an opaque `success:false`.
-        subprocess.run(
-            ["lake", "build", "Common"],
-            cwd=wd,
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=180,
-        )
 
     def _evaluate(self, wd: Path) -> dict:
         form_a_lean = wd / "A" / "Formulation.lean"
