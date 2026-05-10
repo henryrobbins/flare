@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run gen_params + solve for every formulation in the dataset."""
+"""Regenerate solve.py for every formulation, then gen_params + solve and check objectives."""
 
 import argparse
 import json
@@ -49,6 +49,9 @@ def main() -> None:
         formulations, desc="validating", unit="formulation"
     ):
         label = f"problem {pid} / formulation {fid}"
+
+        (formulation.path / "solve.py").write_text(formulation.gurobipy_code)
+
         try:
             formulation.gen_params()
         except subprocess.CalledProcessError:

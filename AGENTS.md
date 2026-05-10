@@ -58,8 +58,7 @@ that import from `src` and `formulation_bench`.
 
 Standalone utility scripts that use `formulation_bench`:
 
-- `scripts/gen_solve.py` — generate instance data and solve.
-- `scripts/validate.py` — validate dataset integrity.
+- `scripts/dataset/validate_solve.py` — regenerate `solve.py` for every formulation, then gen_params + solve and verify objectives.
 
 ## Common Workflows
 
