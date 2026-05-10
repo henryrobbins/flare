@@ -8,6 +8,7 @@ import subprocess
 import time
 from pathlib import Path
 
+from src.llm_client import LLMConfig
 from src.verify.flare.harness.base import Harness, HarnessRunResult
 
 _HERE = Path(__file__).parent
@@ -48,9 +49,10 @@ def _settings_for(wd: Path, repo_root: Path) -> dict:
 
 
 class ClaudeCodeHarness(Harness):
-    def __init__(self, model: str, effort: str) -> None:
-        self.model = model
-        self.effort = effort
+    def __init__(self, config: LLMConfig) -> None:
+        self.config = config
+        self.model = config.model
+        self.effort = config.reasoning_effort or "medium"
 
     @property
     def name(self) -> str:

@@ -22,8 +22,8 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
     Spec shape (by `type`):
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
-      - {type: flare, harness: claude_code, model: <str>,
-         effort: <low|medium|high|xhigh|max>}
+      - {type: flare, harness: claude_code,
+         client: {<LLMConfig fields>}}
       - {type: flare, harness: opencode,
          client: {<LLMConfig fields, optional provider>}}
       - {type: flare, harness: codex,
@@ -66,7 +66,9 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
 def _build_harness(spec: dict) -> Harness:
     htype = spec.pop("harness", "claude_code")
     if htype == "claude_code":
-        return ClaudeCodeHarness(model=spec.pop("model"), effort=spec.pop("effort"))
+        client_spec = dict(spec.pop("client"))
+        config = LLMConfig.from_dict(client_spec)
+        return ClaudeCodeHarness(config=config)
     if htype == "opencode":
         client_spec = dict(spec.pop("client"))
         provider = client_spec.pop("provider", None)
