@@ -2,27 +2,29 @@
   "$schema": "https://opencode.ai/config.json",
   "permission": {
     "external_directory": "deny",
-    "webfetch": "deny",
-    "websearch": "deny",
-    "task": "deny",
-    "doom_loop": "deny",
     "read": {
       "*": "deny",
+      "<<WD_ABS>>": "allow",
       "<<WD_ABS>>/**": "allow",
       "~/.elan/settings.toml": "allow"
     },
     "edit": {
-      "*": "deny",
-      "<<WD_ABS>>/**": "allow"
+      "**": "allow"
     },
     "glob": {
       "*": "deny",
+      "<<WD_ABS>>": "allow",
       "<<WD_ABS>>/**": "allow"
     },
     "grep": {
       "*": "deny",
+      "<<WD_ABS>>": "allow",
       "<<WD_ABS>>/**": "allow"
     },
+    "webfetch": "deny",
+    "websearch": "deny",
+    "task": "deny",
+    "doom_loop": "deny",
     "skill": {
       "*": "deny",
       "lean-milp-formulation": "allow",

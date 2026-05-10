@@ -2,10 +2,31 @@
 
 Permissions in OpenCode subsume the filesystem-sandbox role of Claude Code's
 sandbox config: setting `external_directory: deny` plus path-pattern allow
-lists on `read`/`edit`/`glob`/`grep` confines the agent to the working
-directory without an OS-level sandbox. We mirror the Claude Code behavior of
-denying everything by default and explicitly allowlisting the commands FLARE
-needs (`lake env lean`, `lake build`, basic file viewers).
+lists on `read`/`glob`/`grep` confines the agent to the working directory
+without an OS-level sandbox. We mirror the Claude Code behavior of denying
+everything by default and explicitly allowlisting the commands FLARE needs
+(`lake env lean`, `lake build`, basic file viewers).
+
+Pin: OpenCode 1.14.24. The path-pattern allowlists (`{ "*": "deny",
+"<wd>/**": "allow" }`) regress on later versions:
+  - On `edit`, the `<wd>/**: allow` rule never matches, so the agent
+    can't write its own working files. Reproduces from at least 1.2.27
+    through 1.14.45. Likely related to upstream issues
+    https://github.com/anomalyco/opencode/issues/13872 and
+    https://github.com/anomalyco/opencode/issues/26524 (edit/write/patch
+    are matched against worktree-relative paths, but our patterns are
+    absolute). Until that's fixed we set `edit: { "**": "allow" }`,
+    which leaves outside-wd writes unconfined at the permission layer
+    (the `bash` allowlist still blocks shell-redirect writes, and the
+    agent stays inside the wd as cwd via `--dir <wd>`).
+  - On `read`, the same allow rule regresses around 1.14.45 (works on
+    1.14.24, broken on 1.14.45) — outside-wd reads stop being blocked.
+    1.14.24 is the latest version where read confinement still works.
+
+`tests/harness/test_opencode.py` covers both behaviors. The
+`test_write_repo_root_blocked` test is marked `xfail` because we have
+intentionally given up edit confinement; the rest of the suite passes
+on 1.14.24.
 
 Models are configured via the same `LLMConfig` used by other verifiers (see
 `src/llm_client/base.py`). The harness translates the LLMConfig into the
@@ -94,11 +115,16 @@ def _config_for(wd: Path, provider: str, cfg: LLMConfig) -> dict:
 
     out = substitute(out)
 
+    # Always declare the model under `provider.<id>.models.<id>`, even when
+    # there are no options. OpenCode resolves `--model anthropic/<id>` against
+    # its built-in registry first; for ids the registry doesn't know (e.g.
+    # `claude-haiku-4-5-20251001`) the run fails with `Model not found` unless
+    # the config declares it explicitly. Declaring it unconditionally lets the
+    # caller use any model id the underlying provider accepts.
     options = _model_options(provider, cfg)
-    if options:
-        out.setdefault("provider", {}).setdefault(provider, {}).setdefault(
-            "models", {}
-        )[cfg.model] = {"options": options}
+    out.setdefault("provider", {}).setdefault(provider, {}).setdefault(
+        "models", {}
+    )[cfg.model] = {"options": options}
 
     return out
 
