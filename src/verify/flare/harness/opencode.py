@@ -6,6 +6,8 @@ from pathlib import Path
 
 from src.verify.flare.harness.base import Harness
 
+_TEMPLATE: str = (Path(__file__).parent / "templates" / "opencode_agent.sh").read_text()
+
 
 class OpenCodeHarness(Harness):
     cli = "opencode"
@@ -49,7 +51,7 @@ class OpenCodeHarness(Harness):
             },
         }
 
-    def _credential_args(self) -> list[str]:
+    def _docker_args(self, wd: Path) -> list[str]:
         # Pass through provider API keys that OpenCode reads from env.
         args = []
         for key in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY",
@@ -57,6 +59,11 @@ class OpenCodeHarness(Harness):
             if key in os.environ:
                 args += ["-e", key]
         return args
+
+    def _agent_script(self) -> str:
+        return (_TEMPLATE
+                .replace("<<PROVIDER>>", self.provider)
+                .replace("<<MODEL>>", self.model))
 
     def _parse_lines(self, lines: list[str]) -> dict:
         """Parse `opencode run --format json` output: per-step deltas on step_finish.

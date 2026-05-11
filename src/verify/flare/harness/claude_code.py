@@ -1,16 +1,24 @@
 """Harness for the `claude` CLI inside the Docker image."""
 
 import json
+from pathlib import Path
 
 from src.verify.flare.harness.base import Harness
+
+_TEMPLATE: str = (Path(__file__).parent / "templates" / "claude_code_agent.sh").read_text()
 
 
 class ClaudeCodeHarness(Harness):
     cli = "claude_code"
 
-    def _credential_args(self) -> list[str]:
+    def _docker_args(self, wd: Path) -> list[str]:
         # OAuth token from `claude setup-token`, exported in .env.
         return ["-e", "CLAUDE_CODE_OAUTH_TOKEN"]
+
+    def _agent_script(self) -> str:
+        return (_TEMPLATE
+                .replace("<<MODEL>>", self.model)
+                .replace("<<EFFORT>>", self.effort))
 
     def _parse_lines(self, lines: list[str]) -> dict:
         """Parse `claude -p --output-format stream-json` output.

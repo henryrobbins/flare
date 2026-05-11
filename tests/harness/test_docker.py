@@ -56,7 +56,9 @@ def _model_for(cli: str) -> str:
     if cli == "claude_code":
         return "claude-haiku-4-5"
     if cli == "codex":
-        return "gpt-5-mini"
+        # ChatGPT-subscription auth (the path the tests use) only accepts the
+        # codex defaults; gpt-5-mini is API-key-only and 400s on first turn.
+        return "gpt-5.5"
     if cli == "opencode":
         # deepseek-chat keeps test cost low and exercises the non-anthropic
         # branch of OpenCode's model-options translation.

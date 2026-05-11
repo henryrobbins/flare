@@ -5,11 +5,13 @@ from pathlib import Path
 
 from src.verify.flare.harness.base import Harness
 
+_TEMPLATE: str = (Path(__file__).parent / "templates" / "codex_agent.sh").read_text()
+
 
 class CodexHarness(Harness):
     cli = "codex"
 
-    def _credential_args(self) -> list[str]:
+    def _docker_args(self, wd: Path) -> list[str]:
         # Bill against the ChatGPT subscription by mounting the host's cached
         # OAuth login (~/.codex/auth.json). Mount rw because codex refreshes
         # its access token mid-session; :ro breaks startup with "failed to
@@ -22,6 +24,11 @@ class CodexHarness(Harness):
                 "codex harness requires ~/.codex from `codex login`"
             )
         return ["-v", f"{codex_dir}:/home/agent/.codex"]
+
+    def _agent_script(self) -> str:
+        return (_TEMPLATE
+                .replace("<<MODEL>>", self.model)
+                .replace("<<EFFORT>>", self.effort))
 
     def _parse_lines(self, lines: list[str]) -> dict:
         """Parse `codex exec --json` output: per-turn usage on `turn.completed`."""

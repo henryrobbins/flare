@@ -92,13 +92,16 @@ class Harness(ABC):
         if skills_src.exists():
             shutil.copytree(skills_src, claude_dir / "skills", dirs_exist_ok=True)
         (claude_dir / "settings.json").write_text(_SETTINGS_TEMPLATE)
+        # The CLI-specific agent invocation lives in agent.sh; the entrypoint
+        # in the image just sources it, then runs the post-hoc compile.
+        (pair_dir / "agent.sh").write_text(self._agent_script())
 
     def run(self, prompt: str, wd: Path, jsonl_path: Path) -> HarnessRunResult:
-        # The entrypoint reads prompt.txt and writes outputs (jsonl, result.json,
-        # compile_log) into /workspace/out. The verifier has already written
-        # prompt.txt to pair_dir, so we just bind-mount pair_dir and dispatch.
-        # A/, B/, Reformulation.lean are bind-mounted directly so the agent
-        # sees them as real files (claude_code's Write tool refuses symlinks).
+        # The entrypoint sources /workspace/out/agent.sh (which the harness
+        # rendered in configure_wd) and writes outputs (jsonl, result.json,
+        # compile_log) into /workspace/out. A/, B/, Reformulation.lean are
+        # bind-mounted directly so the agent sees them as real files
+        # (claude_code's Write tool refuses symlinks).
         pair_dir = wd.parent
         cmd = [
             "docker", "run", "--rm",
@@ -107,14 +110,8 @@ class Harness(ABC):
             "-v", f"{(wd / 'B').resolve()}:/workspace/B",
             "-v", f"{(wd / 'Reformulation.lean').resolve()}:/workspace/Reformulation.lean",
         ]
-        cmd += self._credential_args()
-        cmd += [
-            self.image,
-            "--cli", self.cli,
-            "--model", self.model,
-            "--effort", self.effort,
-            "--provider", self.provider,
-        ]
+        cmd += self._docker_args(wd)
+        cmd += [self.image]
 
         start = time.time()
         # The entrypoint streams agent stdout to /workspace/out/agent_output.jsonl,
@@ -135,7 +132,16 @@ class Harness(ABC):
         return HarnessRunResult(duration_s=round(duration, 1), **parsed)
 
     @abstractmethod
-    def _credential_args(self) -> list[str]: ...
+    def _docker_args(self, wd: Path) -> list[str]:
+        """CLI-specific `docker run` args (env passthroughs + bind mounts)."""
+        ...
+
+    @abstractmethod
+    def _agent_script(self) -> str:
+        """Bash script that invokes the agent CLI and streams its JSONL output
+        to /workspace/out/agent_output.jsonl. Rendered into pair_dir/agent.sh
+        and sourced by the container entrypoint."""
+        ...
 
     def _parse_stream(self, jsonl_path: Path) -> dict:
         if not jsonl_path.exists():
