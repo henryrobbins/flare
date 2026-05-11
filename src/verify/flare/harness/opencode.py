@@ -7,7 +7,9 @@ from pathlib import Path
 
 from src.verify.flare.harness.base import Harness
 
-_TEMPLATE: str = (Path(__file__).parent / "templates" / "opencode_agent.sh").read_text()
+_TEMPLATE: str = (
+    Path(__file__).parent / "agent_commands" / "opencode_agent.sh"
+).read_text()
 
 
 class OpenCodeHarness(Harness):
@@ -40,16 +42,12 @@ class OpenCodeHarness(Harness):
             if self.provider == "anthropic":
                 options["thinking"] = {"type": "adaptive"}
                 if self.config.reasoning_effort:
-                    options["output_config"] = {
-                        "effort": self.config.reasoning_effort
-                    }
+                    options["output_config"] = {"effort": self.config.reasoning_effort}
             elif self.config.reasoning_effort:
                 options["reasoningEffort"] = self.config.reasoning_effort
         return {
             "$schema": "https://opencode.ai/config.json",
-            "provider": {
-                self.provider: {"models": {self.model: {"options": options}}}
-            },
+            "provider": {self.provider: {"models": {self.model: {"options": options}}}},
             "mcp": {
                 "lean-lsp": {
                     "type": "local",
@@ -62,16 +60,20 @@ class OpenCodeHarness(Harness):
     def _docker_args(self, wd: Path) -> list[str]:
         # Pass through provider API keys that OpenCode reads from env.
         args = []
-        for key in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY",
-                    "DEEPSEEK_API_KEY"):
+        for key in (
+            "ANTHROPIC_API_KEY",
+            "OPENAI_API_KEY",
+            "GOOGLE_API_KEY",
+            "DEEPSEEK_API_KEY",
+        ):
             if key in os.environ:
                 args += ["-e", key]
         return args
 
-    def _agent_script(self) -> str:
-        return (_TEMPLATE
-                .replace("<<PROVIDER>>", self.provider)
-                .replace("<<MODEL>>", self.model))
+    def _agent_command(self) -> str:
+        return _TEMPLATE.replace("<<PROVIDER>>", self.provider).replace(
+            "<<MODEL>>", self.model
+        )
 
     def _parse_lines(self, lines: list[str]) -> dict:
         """Parse `opencode run --format json` output: per-step deltas on step_finish.
@@ -100,9 +102,11 @@ class OpenCodeHarness(Harness):
             part = event.get("part") or {}
             tokens = part.get("tokens") or {}
             cache = tokens.get("cache") or {}
-            input_tokens += (_as_int(tokens.get("input"))
-                             + _as_int(cache.get("write"))
-                             + _as_int(cache.get("read")))
+            input_tokens += (
+                _as_int(tokens.get("input"))
+                + _as_int(cache.get("write"))
+                + _as_int(cache.get("read"))
+            )
             output_tokens += _as_int(tokens.get("output"))
             c = part.get("cost")
             if isinstance(c, (int, float)):
@@ -111,5 +115,9 @@ class OpenCodeHarness(Harness):
             if isinstance(r, str):
                 stop_reason = r
 
-        return {"stop_reason": stop_reason, "input_tokens": input_tokens,
-                "output_tokens": output_tokens, "cost_usd": cost_usd}
+        return {
+            "stop_reason": stop_reason,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": cost_usd,
+        }

@@ -6,7 +6,9 @@ from pathlib import Path
 
 from src.verify.flare.harness.base import Harness
 
-_TEMPLATE: str = (Path(__file__).parent / "templates" / "codex_agent.sh").read_text()
+_TEMPLATE: str = (
+    Path(__file__).parent / "agent_commands" / "codex_agent.sh"
+).read_text()
 
 
 class CodexHarness(Harness):
@@ -30,15 +32,13 @@ class CodexHarness(Harness):
         # fall through to API-key auth and bill against credits.
         codex_dir = Path.home() / ".codex"
         if not codex_dir.exists():
-            raise RuntimeError(
-                "codex harness requires ~/.codex from `codex login`"
-            )
+            raise RuntimeError("codex harness requires ~/.codex from `codex login`")
         return ["-v", f"{codex_dir}:/home/agent/.codex"]
 
-    def _agent_script(self) -> str:
-        return (_TEMPLATE
-                .replace("<<MODEL>>", self.model)
-                .replace("<<EFFORT>>", self.effort))
+    def _agent_command(self) -> str:
+        return _TEMPLATE.replace("<<MODEL>>", self.model).replace(
+            "<<EFFORT>>", self.effort
+        )
 
     def _parse_lines(self, lines: list[str]) -> dict:
         """Parse `codex exec --json` output: per-turn usage on `turn.completed`."""
@@ -57,10 +57,18 @@ class CodexHarness(Harness):
             if event.get("type") != "turn.completed":
                 continue
             usage = event.get("usage") or {}
-            it = (usage.get("input_tokens") or usage.get("inputTokens")
-                  or usage.get("prompt_tokens") or 0)
-            ot = (usage.get("output_tokens") or usage.get("outputTokens")
-                  or usage.get("completion_tokens") or 0)
+            it = (
+                usage.get("input_tokens")
+                or usage.get("inputTokens")
+                or usage.get("prompt_tokens")
+                or 0
+            )
+            ot = (
+                usage.get("output_tokens")
+                or usage.get("outputTokens")
+                or usage.get("completion_tokens")
+                or 0
+            )
             if isinstance(it, int):
                 input_tokens += it
             if isinstance(ot, int):
@@ -69,5 +77,9 @@ class CodexHarness(Harness):
             if isinstance(sr, str):
                 stop_reason = sr
 
-        return {"stop_reason": stop_reason, "input_tokens": input_tokens,
-                "output_tokens": output_tokens, "cost_usd": None}
+        return {
+            "stop_reason": stop_reason,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": None,
+        }

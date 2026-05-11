@@ -82,7 +82,7 @@ class Harness(ABC):
         pair_dir = wd.parent
         pair_dir.mkdir(parents=True, exist_ok=True)
         wd.mkdir(parents=True, exist_ok=True)
-        (pair_dir / "agent.sh").write_text(self._agent_script())
+        (pair_dir / "agent.sh").write_text(self._agent_command())
 
     def run(self, wd: Path, jsonl_path: Path) -> HarnessRunResult:
         # The entrypoint sources /workspace/out/agent.sh (which the harness
@@ -92,11 +92,17 @@ class Harness(ABC):
         # (claude_code's Write tool refuses symlinks).
         pair_dir = wd.parent
         cmd = [
-            "docker", "run", "--rm",
-            "-v", f"{pair_dir.resolve()}:/workspace/out",
-            "-v", f"{(wd / 'A').resolve()}:/workspace/A",
-            "-v", f"{(wd / 'B').resolve()}:/workspace/B",
-            "-v", f"{(wd / 'Reformulation.lean').resolve()}:/workspace/Reformulation.lean",
+            "docker",
+            "run",
+            "--rm",
+            "-v",
+            f"{pair_dir.resolve()}:/workspace/out",
+            "-v",
+            f"{(wd / 'A').resolve()}:/workspace/A",
+            "-v",
+            f"{(wd / 'B').resolve()}:/workspace/B",
+            "-v",
+            f"{(wd / 'Reformulation.lean').resolve()}:/workspace/Reformulation.lean",
         ]
         cmd += self._docker_args(wd)
         cmd += [self.image]
@@ -125,7 +131,7 @@ class Harness(ABC):
         ...
 
     @abstractmethod
-    def _agent_script(self) -> str:
+    def _agent_command(self) -> str:
         """Bash script that invokes the agent CLI and streams its JSONL output
         to /workspace/out/agent_output.jsonl. Rendered into pair_dir/agent.sh
         and sourced by the container entrypoint."""
@@ -133,8 +139,12 @@ class Harness(ABC):
 
     def _parse_stream(self, jsonl_path: Path) -> dict:
         if not jsonl_path.exists():
-            return {"stop_reason": None, "input_tokens": 0, "output_tokens": 0,
-                    "cost_usd": None}
+            return {
+                "stop_reason": None,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cost_usd": None,
+            }
         return self._parse_lines(jsonl_path.read_text().splitlines())
 
     @abstractmethod
