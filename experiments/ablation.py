@@ -11,7 +11,7 @@ experiments/configs/ablation.yaml). CLI flags override YAML values.
 """
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from threading import Lock
 
@@ -24,6 +24,7 @@ from formulation_bench import Dataset, Pair
 
 from experiments.utils import (
     add_common_args,
+    drain_with_interrupt,
     filter_pairs,
     make_run_dir,
     pair_id,
@@ -106,26 +107,32 @@ def main() -> None:
         for run_idx in range(1, runs + 1)
     ]
 
-    with ThreadPoolExecutor(max_workers=workers) as executor:
-        futures = {
-            executor.submit(
-                process_pair_verifier,
-                pair,
-                verifier,
-                model,
-                mode,
-                run_idx,
-                results_path,
-                write_lock,
-            ): (pair, verifier, run_idx)
-            for pair, verifier, model, mode, run_idx in tasks
-        }
-        for future in as_completed(futures):
-            exc = future.exception()
-            if exc:
-                pair, verifier, run_idx = futures[future]
-                pid = pair_id(pair.a, pair.b)
-                print(f"  FATAL [{verifier.name}#{run_idx}] [{pid}]: {exc}")
+    executor = ThreadPoolExecutor(max_workers=workers)
+    futures = {
+        executor.submit(
+            process_pair_verifier,
+            pair,
+            verifier,
+            model,
+            mode,
+            run_idx,
+            results_path,
+            write_lock,
+        ): (pair, verifier, run_idx)
+        for pair, verifier, model, mode, run_idx in tasks
+    }
+
+    def on_result(future):
+        exc = future.exception()
+        if exc:
+            pair, verifier, run_idx = futures[future]
+            pid = pair_id(pair.a, pair.b)
+            print(f"  FATAL [{verifier.name}#{run_idx}] [{pid}]: {exc}")
+
+    try:
+        drain_with_interrupt(executor, futures, run_dir.name, on_result)
+    finally:
+        executor.shutdown(wait=True)
 
 
 if __name__ == "__main__":

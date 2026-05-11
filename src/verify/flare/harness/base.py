@@ -14,6 +14,7 @@ A/B oleans can't bleed between concurrent pairs.
 Image is built from the repo root Dockerfile. See AGENTS.md for setup.
 """
 
+import os
 import subprocess
 import time
 from abc import ABC, abstractmethod
@@ -96,6 +97,11 @@ class Harness(ABC):
             "-v",
             f"{wd.resolve()}:/workspace/wd",
         ]
+        # Label every container with the current run id so the experiment
+        # driver can `docker kill` them all on Ctrl+C.
+        run_id = os.environ.get("FLARE_RUN_ID")
+        if run_id:
+            cmd += ["--label", f"flare-run={run_id}"]
         cmd += self._docker_args(wd)
         cmd += [self.image]
 
@@ -103,8 +109,13 @@ class Harness(ABC):
         # The entrypoint streams agent stdout to
         # /workspace/wd/agent_output.jsonl, which is jsonl_path on the host
         # (via the bind mount). We just need to wait for the container and
-        # capture stderr for debugging.
-        proc = subprocess.run(cmd, capture_output=True, text=True)
+        # capture stderr for debugging. start_new_session=True detaches the
+        # docker subprocess from the terminal's process group so a Ctrl+C
+        # in the shell doesn't double-signal it; the driver kills containers
+        # explicitly by label on shutdown.
+        proc = subprocess.run(
+            cmd, capture_output=True, text=True, start_new_session=True
+        )
         duration = time.time() - start
 
         if proc.stderr:
