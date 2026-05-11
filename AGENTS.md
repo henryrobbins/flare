@@ -85,15 +85,16 @@ The repo provides a set of skills and agents for working with this dataset. This
 
 FLARE runs each agent + post-hoc Lean compile inside a Linux container.
 The image bakes the lake project skeleton plus mathlib oleans at
-`/workspace/`. The harness bind-mounts the per-pair `wd` at `/workspace`
-(so the agent's cwd, the lake project root, and the output paths all
-coincide) and shadows `/workspace/.lake` with the named volume
-`flare-lake` (seeded from the image's pre-built mathlib on first use, so
-the multi-GB build tree never lands on the host). The four small
-skeleton files (`lakefile.toml`, `lean-toolchain`, `lake-manifest.json`,
-`Common.lean`) are *also* copied into each `wd` from the repo at setup
-time, because Docker volumes can only shadow directories — without that,
-the bind mount would hide the image-side copies.
+`/workspace/`, **outside** the bind mount. At runtime the harness
+bind-mounts the per-pair `wd` at `/workspace/wd` (the agent's cwd and
+lake project root), and the entrypoint creates a
+`/workspace/wd/.lake -> /workspace/.lake` symlink so the agent's lake
+invocations find the image-baked mathlib + Common.olean. The `.lake`
+build tree itself stays in the container's writable layer (CoW from the
+image), so the multi-GB oleans never land on the host and each pair
+gets its own isolated build cache — no cross-pair contamination. The
+symlink shows up on host as a dangling pointer to `/workspace/.lake`;
+that's expected.
 
 Setup:
 
@@ -103,7 +104,5 @@ Setup:
 2. `docker build -t flare-agent:latest .` from the repo root (~5 min cold,
    ~1 s when only the entrypoint changed).
 3. Run experiments normally; the harness uses the image automatically.
-4. When `lean-toolchain` bumps (or you otherwise rebuild mathlib), run
-   `docker volume rm flare-lake` after rebuilding the image. Named
-   volumes only seed from the image when empty, so without this the
-   stale mathlib oleans persist across image rebuilds.
+4. When `lean-toolchain` bumps, rebuild the image (no volume cleanup
+   needed — each container reads `.lake/` from the image layer).

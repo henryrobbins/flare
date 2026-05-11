@@ -2,12 +2,14 @@
 
 Spins up a container per pair and dispatches one of claude_code | codex |
 opencode via the image's entrypoint. The container is the isolation
-boundary: the host pair_dir/wd is bind-mounted at /workspace, so the
-agent's cwd, the lake project root, and the locations the entrypoint
-writes outputs to (agent_output.jsonl, result.json, compile_log.txt)
-all coincide at that single path. The heavy /workspace/.lake/ build tree
-is shadowed by a named volume seeded from the image so mathlib oleans
-never land on the host.
+boundary: host pair_dir/wd is bind-mounted at /workspace/wd (the agent's
+cwd and lake project root). The image bakes the lake skeleton + mathlib
+oleans at /workspace/, *outside* the bind mount; at startup the
+entrypoint creates a /workspace/wd/.lake -> /workspace/.lake symlink so
+the agent's lake invocations resolve build artifacts to the
+container-fs copy. That keeps the multi-GB .lake tree off the host and
+gives every pair its own writable copy (via the image layer's CoW), so
+A/B oleans can't bleed between concurrent pairs.
 
 Image is built from the repo root Dockerfile. See AGENTS.md for setup.
 """
@@ -20,8 +22,6 @@ from pathlib import Path
 from typing import ClassVar
 
 from src.llm_client import LLMConfig, compute_cost_usd
-
-LAKE_VOLUME = "flare-lake"
 
 
 @dataclass
@@ -77,7 +77,7 @@ class Harness(ABC):
         }
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
-        # wd is bind-mounted directly to /workspace inside the container,
+        # wd is bind-mounted at /workspace/wd inside the container,
         # so anything written here is the agent's cwd at runtime.
         # Subclasses override and call super() to add their own settings
         # / skills / config files alongside agent.sh.
@@ -85,27 +85,25 @@ class Harness(ABC):
         (wd / "agent.sh").write_text(self._agent_command())
 
     def run(self, wd: Path, jsonl_path: Path) -> HarnessRunResult:
-        # Bind: pair_dir/wd -> /workspace (agent cwd + lake project root +
-        # where entrypoint writes outputs).
-        # Named volume: flare-lake -> /workspace/.lake (shadows the bind
-        # mount; seeded from the image's pre-built mathlib oleans on
-        # first use, so .lake/ never touches the host filesystem).
-        cmd = [
+        # Single bind mount: pair_dir/wd -> /workspace/wd. The image's
+        # /workspace/.lake (mathlib + Common.olean) stays outside the
+        # bind mount, in the container's writable layer; the entrypoint
+        # links it into /workspace/wd/.lake at startup.
+        cmd: list[str] = [
             "docker",
             "run",
             "--rm",
             "-v",
-            f"{wd.resolve()}:/workspace",
-            "-v",
-            f"{LAKE_VOLUME}:/workspace/.lake",
+            f"{wd.resolve()}:/workspace/wd",
         ]
         cmd += self._docker_args(wd)
         cmd += [self.image]
 
         start = time.time()
-        # The entrypoint streams agent stdout to /workspace/agent_output.jsonl,
-        # which is jsonl_path on the host (via the bind mount). We just need to
-        # wait for the container and capture stderr for debugging.
+        # The entrypoint streams agent stdout to
+        # /workspace/wd/agent_output.jsonl, which is jsonl_path on the host
+        # (via the bind mount). We just need to wait for the container and
+        # capture stderr for debugging.
         proc = subprocess.run(cmd, capture_output=True, text=True)
         duration = time.time() - start
 
@@ -128,7 +126,7 @@ class Harness(ABC):
     @abstractmethod
     def _agent_command(self) -> str:
         """Bash script that invokes the agent CLI and streams its JSONL output
-        to /workspace/agent_output.jsonl. Rendered into wd/agent.sh and
+        to /workspace/wd/agent_output.jsonl. Rendered into wd/agent.sh and
         sourced by the container entrypoint."""
         ...
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-opencode run --dir /workspace --format json \
+opencode run --dir /workspace/wd --format json \
     --model '<<PROVIDER>>/<<MODEL>>' \
     "$PROMPT" \
-    > /workspace/agent_output.jsonl
+    > /workspace/wd/agent_output.jsonl

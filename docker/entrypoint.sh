@@ -1,15 +1,21 @@
 #!/usr/bin/env bash
 # Runs the harness-rendered agent.sh + post-hoc compile check inside the
-# container. The harness bind-mounts pair_dir/wd at /workspace, so
+# container. The harness bind-mounts pair_dir/wd at /workspace/wd, so
 # everything the agent needs (agent.sh, prompt.txt, configs, A/, B/,
 # Reformulation.lean, lake skeleton) and everything we write back
 # (agent_output.jsonl, result.json, compile_log.txt) lives at that one
-# path. The .lake/ subdir is shadowed by a named volume seeded from the
-# image, so mathlib oleans never touch the host.
+# path.
+#
+# /workspace/.lake is image-baked (mathlib + Common.olean) and lives
+# outside the bind mount. We symlink it into /workspace/wd/.lake so the
+# agent's lake project (rooted at /workspace/wd) finds the build tree.
+# The symlink itself appears on host as a dangling pointer to
+# /workspace/.lake — that's intentional; the multi-GB build artifacts
+# stay in the container's writable layer and get discarded with --rm.
 
 set -uo pipefail
 
-WD=/workspace
+WD=/workspace/wd
 AGENT_SH=$WD/agent.sh
 COMPILE_LOG=$WD/compile_log.txt
 RESULT=$WD/result.json
@@ -22,6 +28,8 @@ if [[ ! -f $WD/prompt.txt ]]; then
     echo "entrypoint: missing $WD/prompt.txt" >&2
     exit 2
 fi
+
+ln -sfn /workspace/.lake "$WD/.lake"
 
 cd "$WD"
 export PROMPT="$(cat "$WD/prompt.txt")"
