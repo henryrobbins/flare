@@ -34,6 +34,25 @@ class HarnessRunResult:
     stop_reason: str | None
 
 
+def _check_image(image: str) -> None:
+    """Fail fast if the docker image isn't built locally.
+
+    Without this, `docker run` would try to pull from Docker Hub, fail
+    silently (subprocess.run doesn't check returncode), and every pair
+    would record zero-token "runs" with a confusing post-hoc Lean failure.
+    """
+    proc = subprocess.run(
+        ["docker", "image", "inspect", image],
+        capture_output=True,
+        text=True,
+    )
+    if proc.returncode != 0:
+        raise RuntimeError(
+            f"docker image {image!r} not found locally. Build it with "
+            f"`docker build -t {image} .` from the repo root (see AGENTS.md)."
+        )
+
+
 class Harness(ABC):
     cli: ClassVar[str]
 
@@ -46,6 +65,7 @@ class Harness(ABC):
         self.model = config.model
         self.effort = config.reasoning_effort or "medium"
         self.image = image
+        _check_image(image)
 
     @property
     def name(self) -> str:
