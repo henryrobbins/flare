@@ -1,13 +1,6 @@
 {
     "sandbox": {
-        "enabled": true,
-        "allowUnsandboxedCommands": false,
-        "filesystem": {
-            "denyRead": ["~/"],
-            "denyWrite": ["~/"],
-            "allowRead": ["~/.elan/settings.toml", "~/.elan/toolchains/", "~/.gitconfig"],
-            "allowWrite": []
-        }
+        "enabled": false
     },
     "permissions": {
         "allow": [

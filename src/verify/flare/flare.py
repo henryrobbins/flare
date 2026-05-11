@@ -2,8 +2,6 @@ import dataclasses
 import json
 import re
 import shutil
-import subprocess
-import time
 from pathlib import Path
 
 from formulation_bench import Formulation
@@ -13,61 +11,12 @@ from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.verify.flare.harness import Harness
 from src.verify.flare.prompts import render_agent_prompt
 
-_HERE = Path(__file__).parent
-_LAKEFILE: str = (_HERE / "lakefile.toml").read_text()
-
-
-def setup_lean_project(wd: Path, repo_root: Path) -> None:
-    """Provision `wd` with the FLARE Lean project skeleton.
-
-    Drops `lean-toolchain`, `Common.lean`, `lake-manifest.json`, the FLARE
-    `lakefile.toml`, and a symlinked `.lake/packages` (sharing the repo's
-    pre-downloaded mathlib). Pre-builds `Common.olean` host-side so that
-    `.lake/build/` exists before the sandbox starts (the sandbox forbids
-    creating it but permits writes inside) and lean-lsp diagnostics on
-    freshly-written files come back populated.
-
-    Extracted from `FLAREVerifier._setup_wd` so integration tests can reuse
-    the real provisioning logic.
-    """
-    wd.mkdir(parents=True, exist_ok=True)
-
-    shutil.copy2(repo_root / "lean-toolchain", wd / "lean-toolchain")
-    shutil.copy2(repo_root / "Common.lean", wd / "Common.lean")
-    shutil.copy2(repo_root / "lake-manifest.json", wd / "lake-manifest.json")
-    (wd / "lakefile.toml").write_text(_LAKEFILE)
-
-    # Share the repo's pre-built Mathlib oleans instead of downloading a
-    # fresh copy per pair. Each wd still gets its own .lake/build/ for
-    # A/B/Reformulation modules, so parallel runs don't conflict.
-    wd_lake = wd / ".lake"
-    wd_lake.mkdir(parents=True, exist_ok=True)
-    (wd_lake / "packages").symlink_to(
-        (repo_root / ".lake" / "packages").resolve()
-    )
-
-    # Pre-build Common host-side. This must happen here (not later, e.g.
-    # delegated to the agent) because the harness sandbox forbids *creating*
-    # `.lake/build/` but permits writes *inside* it. If the directory does
-    # not exist before the sandbox starts, the agent's first `lake build`
-    # fails with "operation not permitted" on `.lake/build`. Pre-building
-    # also means lean-lsp diagnostics on freshly-written files (which
-    # `import Common`) return real results on the first call.
-    subprocess.run(
-        ["lake", "build", "Common"],
-        cwd=wd,
-        check=True,
-        capture_output=True,
-        text=True,
-        timeout=180,
-    )
-
 
 class FLAREVerifier(ReformulationVerifier):
     def __init__(self, repo_root: Path, harness: Harness | None = None) -> None:
         # `harness` is optional so that callers that only need ._evaluate
         # (e.g., scripts/reeval_flare.py) can construct a verifier without
-        # configuring a CLI harness.
+        # configuring a Docker harness.
         self.repo_root = repo_root
         self.harness = harness
 
@@ -109,13 +58,6 @@ class FLAREVerifier(ReformulationVerifier):
 
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
-        # Copy generated Lean outputs alongside other artifacts for inspection.
-        for rel in ["A/Formulation.lean", "B/Formulation.lean", "Reformulation.lean"]:
-            src = wd / rel
-            if src.exists() and src.stat().st_size > 0:
-                dst = artifacts_dir / Path(rel).name
-                shutil.copy2(src, dst)
-
         return ReformulationResult(
             is_reformulation=meta["is_reformulation"],
             method=self.name,
@@ -126,8 +68,10 @@ class FLAREVerifier(ReformulationVerifier):
         )
 
     def _setup_wd(self, wd: Path, a: Formulation, b: Formulation) -> None:
-        setup_lean_project(wd, self.repo_root)
-
+        # The container has the lake skeleton + Common pre-built at /workspace/,
+        # so we only need to drop per-pair inputs into wd. The harness adds
+        # .claude/ and .mcp.json afterward via configure_wd.
+        wd.mkdir(parents=True, exist_ok=True)
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
@@ -136,10 +80,12 @@ class FLAREVerifier(ReformulationVerifier):
             if solve_src.exists():
                 shutil.copy2(solve_src, form_dir / "solve.py")
             (form_dir / "Formulation.lean").write_text("")
-
         (wd / "Reformulation.lean").write_text("")
 
     def _evaluate(self, wd: Path) -> dict:
+        # The container entrypoint writes result.json + compile_log.txt next
+        # to wd (i.e. into the bind-mounted pair_dir).
+        artifacts_dir = wd.parent
         form_a_lean = wd / "A" / "Formulation.lean"
         form_b_lean = wd / "B" / "Formulation.lean"
         reform_file = wd / "Reformulation.lean"
@@ -183,38 +129,39 @@ class FLAREVerifier(ReformulationVerifier):
         form_b_written = base["form_b_written"]
         proof_written = bool(reform_content)
 
-        compile_log_path = wd.parent / "compile_log.txt"
-        with compile_log_path.open("w") as log:
-            form_a_compiled = (
-                _lean_compiles(wd, form_a_lean, log, "A/Formulation.lean")
-                if form_a_written
-                else False
-            )
-            form_b_compiled = (
-                _lean_compiles(wd, form_b_lean, log, "B/Formulation.lean")
-                if form_b_written
-                else False
-            )
-            proof_compiled, proof_output = (
-                _lean_compiles_with_output(wd, reform_file, log, "Reformulation.lean")
-                if proof_written
-                else (False, "")
-            )
-            # MILPReformulation presence: require a 'def _ : MILPReformulation' in the file.
-            milp_reform_found = bool(
-                re.search(r"\bdef\s+\w+\s*:\s*MILPReformulation\b", reform_content)
-            )
-            # Lean emits "warning: 'X' uses sorry" when sorry is present.
-            # Only meaningful when the file compiled and the def was found.
-            sorry_free = (
-                "uses `sorry`" not in proof_output
-                if (proof_compiled and milp_reform_found)
-                else False
-            )
-            log.write(
-                f"=== sorry check ===\nmilp_reform_found: {milp_reform_found}\n"
-                f"sorry_free: {sorry_free}\n\n"
-            )
+        # Compile signals come from the container entrypoint: it ran
+        # `lake env lean` on A/B/Reformulation and wrote result.json +
+        # compile_log.txt back through the bind mount.
+        result_path = artifacts_dir / "result.json"
+        compile_log_path = artifacts_dir / "compile_log.txt"
+        entry_result: dict = {}
+        if result_path.exists():
+            try:
+                entry_result = json.loads(result_path.read_text())
+            except json.JSONDecodeError:
+                entry_result = {}
+        compile_log = compile_log_path.read_text() if compile_log_path.exists() else ""
+
+        form_a_compiled = (
+            form_a_written and entry_result.get("form_a_compile_exit") == 0
+        )
+        form_b_compiled = (
+            form_b_written and entry_result.get("form_b_compile_exit") == 0
+        )
+        proof_compiled = (
+            proof_written and entry_result.get("compile_exit") == 0
+        )
+
+        milp_reform_found = bool(
+            re.search(r"\bdef\s+\w+\s*:\s*MILPReformulation\b", reform_content)
+        )
+        # Lean emits "warning: 'X' uses sorry" when sorry is present.
+        # Only meaningful when the proof compiled and the def was found.
+        sorry_free = (
+            "uses `sorry`" not in compile_log
+            if (proof_compiled and milp_reform_found)
+            else False
+        )
 
         is_reformulation = (
             form_a_compiled
@@ -235,65 +182,3 @@ class FLAREVerifier(ReformulationVerifier):
             "milp_reform_found": milp_reform_found,
             "sorry_free": sorry_free,
         }
-
-
-def _lean_compiles(cwd: Path, lean_file: Path, log, label: str) -> bool:
-    compiled, _ = _lean_compiles_with_output(cwd, lean_file, log, label)
-    return compiled
-
-
-def _lean_compiles_with_output(
-    cwd: Path, lean_file: Path, log, label: str
-) -> tuple[bool, str]:
-    start = time.time()
-    cwd_abs = cwd.resolve()
-    lean_file_abs = lean_file.resolve()
-    log.write(f"=== {label} ===\n")
-    log.write(f"cmd: lake env lean {lean_file_abs}\n")
-    log.write(f"cwd: {cwd_abs}\n")
-    try:
-        result = subprocess.run(
-            ["lake", "env", "lean", str(lean_file_abs)],
-            cwd=cwd_abs,
-            capture_output=True,
-            text=True,
-            timeout=300,
-        )
-        duration = time.time() - start
-        log.write(f"returncode: {result.returncode}\n")
-        log.write(f"duration_s: {duration:.1f}\n")
-        if result.stdout:
-            log.write(f"--- stdout ---\n{result.stdout}\n")
-        if result.stderr:
-            log.write(f"--- stderr ---\n{result.stderr}\n")
-        combined = result.stdout + result.stderr
-        log.write("\n")
-        log.flush()
-        return result.returncode == 0, combined
-    except subprocess.TimeoutExpired as e:
-        duration = time.time() - start
-        log.write(f"TIMEOUT after {duration:.1f}s (limit 300s)\n")
-        partial = ""
-        if e.stdout:
-            s = (
-                e.stdout.decode(errors="replace")
-                if isinstance(e.stdout, bytes)
-                else e.stdout
-            )
-            log.write(f"--- partial stdout ---\n{s}\n")
-            partial += s
-        if e.stderr:
-            s = (
-                e.stderr.decode(errors="replace")
-                if isinstance(e.stderr, bytes)
-                else e.stderr
-            )
-            log.write(f"--- partial stderr ---\n{s}\n")
-            partial += s
-        log.write("\n")
-        log.flush()
-        return False, partial
-    except FileNotFoundError as e:
-        log.write(f"FileNotFoundError: {e}\n\n")
-        log.flush()
-        return False, ""

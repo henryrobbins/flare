@@ -1,0 +1,12 @@
+**/.lake
+**/.git
+runs
+results
+testproj
+paper
+**/__pycache__
+**/*.pyc
+.venv
+uv.lock
+DOCKER_EXPERIMENT.md
+texput.log

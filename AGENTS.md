@@ -80,3 +80,20 @@ The repo provides a set of skills and agents for working with this dataset. This
 
 1. Identify the relevant file(s) to read. This includes relevant problem files, formulation files, MILP formulation `Formulation.lean` and reformulation proofs `dataset/reformulations/pX/a_b.lean`.
 2. Invoke the `milp-reviewer` agent pointing to the relevant file locations. If generating multiple formulations, invoke multiple agents in parallel.
+
+## Docker harness
+
+FLARE runs each agent + post-hoc Lean compile inside a Linux container. The
+image bakes the lake project skeleton plus mathlib oleans at `/workspace/`,
+bind-mounts the per-pair output directory at `/workspace/out`, and dispatches
+one of `claude_code | codex | opencode` via the entrypoint.
+
+Setup:
+
+1. One-time: `claude setup-token`, save the printed token to `.env` as
+   `CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...` (this is how claude_code bills
+   against the Claude.ai plan inside the container).
+2. `docker build -t flare-agent:latest .` from the repo root (~5 min cold,
+   ~1 s when only the entrypoint changed).
+3. Run experiments normally; the harness uses the image automatically.
+4. When `lean-toolchain` bumps, rebuild the image.
