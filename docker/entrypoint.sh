@@ -55,7 +55,16 @@ case "$CLI" in
         AGENT_EXIT=$?
         ;;
     codex)
-        codex exec --json --skip-git-repo-check --sandbox workspace-write "$PROMPT" \
+        # The Docker container is the isolation boundary; drop codex's own
+        # sandbox (which blocks lake from finding its toolchain via some
+        # restriction even in workspace-write mode). Register the lean-lsp
+        # MCP server inline since codex does not auto-discover .mcp.json.
+        codex exec --json --skip-git-repo-check \
+            --sandbox danger-full-access \
+            -c 'mcp_servers.lean-lsp.command="uvx"' \
+            -c 'mcp_servers.lean-lsp.args=["lean-lsp-mcp"]' \
+            -c 'model_reasoning_effort="'"$EFFORT"'"' \
+            "$PROMPT" \
             > "$JSONL"
         AGENT_EXIT=$?
         ;;
