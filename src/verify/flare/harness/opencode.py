@@ -5,6 +5,7 @@ import os
 import shutil
 from pathlib import Path
 
+from src.llm_client import LLMConfig
 from src.verify.flare.harness.base import Harness
 
 _TEMPLATE: str = (
@@ -12,8 +13,30 @@ _TEMPLATE: str = (
 ).read_text()
 
 
+def _infer_provider(model: str) -> str:
+    if model.startswith("claude"):
+        return "anthropic"
+    if model.startswith("deepseek"):
+        return "deepseek"
+    if model.startswith("gemini"):
+        return "google"
+    return "openai"
+
+
 class OpenCodeHarness(Harness):
     cli = "opencode"
+
+    def __init__(
+        self,
+        config: LLMConfig,
+        provider: str | None = None,
+        image: str = "flare-agent:latest",
+    ) -> None:
+        super().__init__(config, image=image)
+        self.provider = provider or _infer_provider(config.model)
+
+    def method_config(self) -> dict:
+        return {**super().method_config(), "provider": self.provider}
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
         super().configure_wd(wd, repo_root)

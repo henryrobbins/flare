@@ -34,29 +34,17 @@ class HarnessRunResult:
     stop_reason: str | None
 
 
-def _infer_provider(model: str) -> str:
-    if model.startswith("claude"):
-        return "anthropic"
-    if model.startswith("deepseek"):
-        return "deepseek"
-    if model.startswith("gemini"):
-        return "google"
-    return "openai"
-
-
 class Harness(ABC):
     cli: ClassVar[str]
 
     def __init__(
         self,
         config: LLMConfig,
-        provider: str | None = None,
         image: str = "flare-agent:latest",
     ) -> None:
         self.config = config
         self.model = config.model
         self.effort = config.reasoning_effort or "medium"
-        self.provider = provider or _infer_provider(config.model)
         self.image = image
 
     @property
@@ -68,7 +56,6 @@ class Harness(ABC):
             "harness": self.name,
             "cli": self.cli,
             "image": self.image,
-            "provider": self.provider,
             "model": self.model,
             "effort": self.effort,
             "max_tokens": self.config.max_tokens,

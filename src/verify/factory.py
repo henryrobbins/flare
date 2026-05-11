@@ -64,4 +64,5 @@ def _build_harness(spec: dict) -> Harness:
     client_spec = dict(spec.pop("client"))
     provider = client_spec.pop("provider", None)
     config = LLMConfig.from_dict(client_spec)
-    return cls(config=config, provider=provider, image=image)
+    kwargs = {"provider": provider} if provider is not None else {}
+    return cls(config=config, image=image, **kwargs)
