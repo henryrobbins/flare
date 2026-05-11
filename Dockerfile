@@ -68,22 +68,14 @@ RUN lake exe cache get
 # Pre-build Common so its olean is warm in /workspace/.lake/build/.
 RUN lake build Common
 
-# Image-side symlinks bridge the agent's cwd (/workspace) to per-pair config
-# that arrives via the bind mount at /workspace/out. Targets are dangling at
-# image build time and resolve at runtime once the bind mount is present.
-# A/, B/, Reformulation.lean are NOT symlinked: claude_code refuses to write
-# through symlinks, so the harness instead bind-mounts those paths directly
-# at run time. `.agents/skills` is symlinked into `.claude/skills` so codex
-# (which walks .agents/skills/) finds the same skill tree as claude_code.
-RUN mkdir -p /workspace/.agents \
- && ln -s ../.claude/skills      /workspace/.agents/skills \
- && ln -s out/.claude            /workspace/.claude \
- && ln -s out/.mcp.json          /workspace/.mcp.json \
- && ln -s out/opencode.json      /workspace/opencode.json \
- && ln -s out/prompt.txt         /workspace/prompt.txt
+# The entrypoint dynamically symlinks per-pair files from /workspace/out
+# into /workspace at runtime (everything the active harness wrote into
+# pair_dir gets surfaced at the agent's cwd). A/, B/, Reformulation.lean
+# are bind-mounted directly at /workspace/{A,B,Reformulation.lean} by the
+# harness because claude_code refuses to write through symlinks.
 
-# Entrypoint dispatches based on --cli {claude_code|codex|opencode},
-# runs the agent, runs the post-hoc lake compile check, writes result.json.
+# Entrypoint sources the harness-rendered agent.sh, then runs the post-hoc
+# lake compile check and writes result.json.
 COPY --chown=agent:agent docker/entrypoint.sh /usr/local/bin/run-agent
 USER root
 RUN chmod +x /usr/local/bin/run-agent

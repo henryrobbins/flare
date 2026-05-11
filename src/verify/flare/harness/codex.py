@@ -1,6 +1,7 @@
 """Harness for the `codex` CLI inside the Docker image."""
 
 import json
+import shutil
 from pathlib import Path
 
 from src.verify.flare.harness.base import Harness
@@ -10,6 +11,15 @@ _TEMPLATE: str = (Path(__file__).parent / "templates" / "codex_agent.sh").read_t
 
 class CodexHarness(Harness):
     cli = "codex"
+
+    def configure_wd(self, wd: Path, repo_root: Path) -> None:
+        super().configure_wd(wd, repo_root)
+        # Codex discovers skills under .agents/skills/<name>/SKILL.md.
+        skills_src = repo_root / ".claude" / "skills"
+        if skills_src.exists():
+            agents_skills = wd.parent / ".agents" / "skills"
+            agents_skills.parent.mkdir(exist_ok=True)
+            shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
 
     def _docker_args(self, wd: Path) -> list[str]:
         # Bill against the ChatGPT subscription by mounting the host's cached

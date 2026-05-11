@@ -11,7 +11,6 @@ through the bind mount.
 Image is built from the repo root Dockerfile. See AGENTS.md for setup.
 """
 
-import shutil
 import subprocess
 import time
 from abc import ABC, abstractmethod
@@ -20,9 +19,6 @@ from pathlib import Path
 from typing import ClassVar
 
 from src.llm_client import LLMConfig, compute_cost_usd
-
-_HERE = Path(__file__).parent
-_SETTINGS_TEMPLATE: str = (_HERE / "templates" / "claude_settings.json").read_text()
 
 
 @dataclass
@@ -78,22 +74,14 @@ class Harness(ABC):
         }
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
-        # Agent configuration (.claude/, .mcp.json) lives at pair_dir, one
-        # level above `wd`, so the host's pair_dir/wd contains ONLY the agent's
-        # source files (A/, B/, Reformulation.lean). Image-side symlinks at
-        # /workspace/{.claude,.mcp.json} bring them into the agent's cwd.
+        # Per-pair files live at pair_dir = wd.parent; the entrypoint symlinks
+        # everything in pair_dir into /workspace/ at runtime, so the agent's
+        # cwd sees whatever each subclass writes here. The base only writes
+        # agent.sh (the rendered CLI invocation); subclasses override and call
+        # super() to add their own settings / skills / config files.
         pair_dir = wd.parent
         pair_dir.mkdir(parents=True, exist_ok=True)
         wd.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(repo_root / ".mcp.json", pair_dir / ".mcp.json")
-        claude_dir = pair_dir / ".claude"
-        claude_dir.mkdir(exist_ok=True)
-        skills_src = repo_root / ".claude" / "skills"
-        if skills_src.exists():
-            shutil.copytree(skills_src, claude_dir / "skills", dirs_exist_ok=True)
-        (claude_dir / "settings.json").write_text(_SETTINGS_TEMPLATE)
-        # The CLI-specific agent invocation lives in agent.sh; the entrypoint
-        # in the image just sources it, then runs the post-hoc compile.
         (pair_dir / "agent.sh").write_text(self._agent_script())
 
     def run(self, wd: Path, jsonl_path: Path) -> HarnessRunResult:

@@ -1,15 +1,29 @@
 """Harness for the `claude` CLI inside the Docker image."""
 
 import json
+import shutil
 from pathlib import Path
 
 from src.verify.flare.harness.base import Harness
 
-_TEMPLATE: str = (Path(__file__).parent / "templates" / "claude_code_agent.sh").read_text()
+_HERE = Path(__file__).parent
+_TEMPLATE: str = (_HERE / "templates" / "claude_code_agent.sh").read_text()
+_SETTINGS: str = (_HERE / "templates" / "claude_settings.json").read_text()
 
 
 class ClaudeCodeHarness(Harness):
     cli = "claude_code"
+
+    def configure_wd(self, wd: Path, repo_root: Path) -> None:
+        super().configure_wd(wd, repo_root)
+        pair_dir = wd.parent
+        shutil.copy2(repo_root / ".mcp.json", pair_dir / ".mcp.json")
+        claude_dir = pair_dir / ".claude"
+        claude_dir.mkdir(exist_ok=True)
+        (claude_dir / "settings.json").write_text(_SETTINGS)
+        skills_src = repo_root / ".claude" / "skills"
+        if skills_src.exists():
+            shutil.copytree(skills_src, claude_dir / "skills", dirs_exist_ok=True)
 
     def _docker_args(self, wd: Path) -> list[str]:
         # OAuth token from `claude setup-token`, exported in .env.

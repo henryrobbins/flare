@@ -22,12 +22,22 @@ if [[ ! -f $OUT/prompt.txt ]]; then
 fi
 
 # The agent runs at /workspace, which is image-baked (lakefile, Common,
-# .lake/mathlib, lean-toolchain). Per-pair source files (A/, B/,
-# Reformulation.lean) and agent config (.claude/, .mcp.json) are reached
-# via image-side symlinks at /workspace/{A,B,Reformulation.lean,.claude,
-# .mcp.json} that resolve into the bind-mounted host pair_dir. So the lake
-# skeleton never appears on the host, and the host's pair_dir/wd contains
-# only the agent's source files. The cwd and PROMPT carry over to agent.sh.
+# .lake/mathlib, lean-toolchain). Per-pair files (.claude/, .agents/,
+# opencode.json, .mcp.json, prompt.txt, …) arrive via the bind mount at
+# /workspace/out — each harness writes only what its CLI needs. Below we
+# symlink everything that landed in /workspace/out into /workspace/ so the
+# agent's cwd sees those files at their conventional names. A/, B/, and
+# Reformulation.lean are NOT bridged this way: they're bind-mounted
+# directly at /workspace/{A,B,Reformulation.lean} because claude_code's
+# Write tool refuses to follow symlinks.
+shopt -s dotglob nullglob
+for path in "$OUT"/*; do
+    name=$(basename "$path")
+    [[ -e /workspace/$name && ! -L /workspace/$name ]] && continue
+    ln -sfn "out/$name" "/workspace/$name"
+done
+shopt -u dotglob nullglob
+
 cd /workspace
 export PROMPT="$(cat "$OUT/prompt.txt")"
 bash "$AGENT_SH"

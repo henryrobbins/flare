@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 from pathlib import Path
 
 from src.verify.flare.harness.base import Harness
@@ -18,6 +19,13 @@ class OpenCodeHarness(Harness):
         (pair_dir / "opencode.json").write_text(
             json.dumps(self._opencode_config(), indent=2)
         )
+        # OpenCode reads skills from any of .opencode/skills, .claude/skills,
+        # or .agents/skills. Use the agent-neutral AGENTS.md spec path.
+        skills_src = repo_root / ".claude" / "skills"
+        if skills_src.exists():
+            agents_skills = pair_dir / ".agents" / "skills"
+            agents_skills.parent.mkdir(exist_ok=True)
+            shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
 
     def _opencode_config(self) -> dict:
         """Minimal opencode.json: register the model + lean-lsp MCP server.
