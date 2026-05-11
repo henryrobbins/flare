@@ -1,7 +1,6 @@
 import dataclasses
 import json
 import re
-import shutil
 from pathlib import Path
 
 from formulation_bench import Formulation
@@ -76,9 +75,7 @@ class FLAREVerifier(ReformulationVerifier):
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
             (form_dir / "formulation.md").write_text(render_formulation(form))
-            solve_src = form.path / "solve.py"
-            if solve_src.exists():
-                shutil.copy2(solve_src, form_dir / "solve.py")
+            (form_dir / "solve.py").write_text(form.gurobipy_code)
             (form_dir / "Formulation.lean").write_text("")
         (wd / "Reformulation.lean").write_text("")
 
