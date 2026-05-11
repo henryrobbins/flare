@@ -73,8 +73,11 @@ RUN lake build Common
 # image build time and resolve at runtime once the bind mount is present.
 # A/, B/, Reformulation.lean are NOT symlinked: claude_code refuses to write
 # through symlinks, so the harness instead bind-mounts those paths directly
-# at run time.
-RUN ln -s out/.claude            /workspace/.claude \
+# at run time. `.agents/skills` is symlinked into `.claude/skills` so codex
+# (which walks .agents/skills/) finds the same skill tree as claude_code.
+RUN mkdir -p /workspace/.agents \
+ && ln -s ../.claude/skills      /workspace/.agents/skills \
+ && ln -s out/.claude            /workspace/.claude \
  && ln -s out/.mcp.json          /workspace/.mcp.json \
  && ln -s out/opencode.json      /workspace/opencode.json \
  && ln -s out/prompt.txt         /workspace/prompt.txt
