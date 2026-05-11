@@ -256,9 +256,48 @@ def _build_skill_check(cli: str, skill_name: str):
                 inp.get("skill") or inp.get("name") or inp
             ),
         )
-    # Codex doesn't surface skills as a distinct event type; opencode 1.14.24
-    # ships a `skill` tool but its event shape varies by version.
-    return None
+    if cli == "opencode":
+        return (
+            f"Use the skill tool to invoke the `{skill_name}` skill.",
+            _opencode_classify,
+            "skill",
+            lambda inp: skill_name in str(
+                inp.get("name") or inp.get("skill") or inp
+            ),
+        )
+    if cli == "codex":
+        # Codex does not expose a distinct "Skill" tool — skills are markdown
+        # files at .agents/skills/<name>/SKILL.md that the agent reads on its
+        # own. We use a negative behavioral check: the agent must not report
+        # the skill missing. If `.agents/skills/<skill>/SKILL.md` is not
+        # discoverable, codex emits an agent_message like "skills are not
+        # installed" / "not available in this session".
+        return (
+            f"Look up the `{skill_name}` skill and use it.",
+            _codex_skill_classify,
+            None,
+            None,
+        )
+    raise AssertionError(cli)
+
+
+def _codex_skill_classify(
+    events: list[dict], _tool: str | None, _matches,
+) -> tuple[str, str]:
+    """Pass iff no agent_message reports the skill as missing/unavailable."""
+    NEG = ("not installed", "not available", "no skill", "skills are not",
+           "couldn't find", "could not find", "cannot find")
+    for ev in events:
+        if ev.get("type") != "item.completed":
+            continue
+        item = ev.get("item") or {}
+        if item.get("type") != "agent_message":
+            continue
+        text = (item.get("text") or "").lower()
+        for needle in NEG:
+            if needle in text:
+                return "error", f"agent reported skill missing: {needle!r}"
+    return "success", "no skill-missing report in agent_message"
 
 
 def _build_lean_lsp_check(cli: str, file_rel: str):
