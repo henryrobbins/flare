@@ -27,7 +27,9 @@ fi
 # via image-side symlinks at /workspace/{A,B,Reformulation.lean,.claude,
 # .mcp.json} that resolve into the bind-mounted host pair_dir. So the lake
 # skeleton never appears on the host, and the host's pair_dir/wd contains
-# only the agent's source files.
+# only the agent's source files. The cwd and PROMPT carry over to agent.sh.
+cd /workspace
+export PROMPT="$(cat "$OUT/prompt.txt")"
 bash "$AGENT_SH"
 AGENT_EXIT=$?
 

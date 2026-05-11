@@ -3,9 +3,6 @@
 # codex's own sandbox (which blocks lake from finding its toolchain). Codex
 # doesn't auto-discover .mcp.json, so the lean-lsp MCP server is declared
 # inline via -c overrides.
-set -uo pipefail
-cd /workspace
-PROMPT="$(cat /workspace/out/prompt.txt)"
 codex exec --json --skip-git-repo-check \
     --sandbox danger-full-access \
     --model '<<MODEL>>' \
