@@ -68,16 +68,13 @@ RUN lake exe cache get
 # Pre-build Common so its olean is warm in /workspace/.lake/build/.
 RUN lake build Common
 
-# Image-side symlinks bridge the agent's cwd (/workspace) to per-pair files
-# that arrive via the bind mount at /workspace/out. Targets are dangling at
+# Image-side symlinks bridge the agent's cwd (/workspace) to per-pair config
+# that arrives via the bind mount at /workspace/out. Targets are dangling at
 # image build time and resolve at runtime once the bind mount is present.
-# Lake commands run from /workspace and resolve A/B/Reformulation through
-# the symlinks; the host's pair_dir/wd therefore contains only the agent's
-# source files (no lake skeleton clutter).
-RUN ln -s out/wd/A               /workspace/A \
- && ln -s out/wd/B               /workspace/B \
- && ln -s out/wd/Reformulation.lean /workspace/Reformulation.lean \
- && ln -s out/.claude            /workspace/.claude \
+# A/, B/, Reformulation.lean are NOT symlinked: claude_code refuses to write
+# through symlinks, so the harness instead bind-mounts those paths directly
+# at run time.
+RUN ln -s out/.claude            /workspace/.claude \
  && ln -s out/.mcp.json          /workspace/.mcp.json \
  && ln -s out/opencode.json      /workspace/opencode.json \
  && ln -s out/prompt.txt         /workspace/prompt.txt

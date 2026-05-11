@@ -129,10 +129,15 @@ class DockerHarness(Harness):
         # The entrypoint reads prompt.txt and writes outputs (jsonl, result.json,
         # compile_log) into /workspace/out. The verifier has already written
         # prompt.txt to pair_dir, so we just bind-mount pair_dir and dispatch.
+        # A/, B/, Reformulation.lean are bind-mounted directly so the agent
+        # sees them as real files (claude_code's Write tool refuses symlinks).
         pair_dir = wd.parent
         cmd = [
             "docker", "run", "--rm",
             "-v", f"{pair_dir.resolve()}:/workspace/out",
+            "-v", f"{(wd / 'A').resolve()}:/workspace/A",
+            "-v", f"{(wd / 'B').resolve()}:/workspace/B",
+            "-v", f"{(wd / 'Reformulation.lean').resolve()}:/workspace/Reformulation.lean",
         ]
         cmd += self._credential_args()
         cmd += [
