@@ -98,7 +98,7 @@ def _run(cli: str, repo_root: Path, pair_dir: Path, action: str) -> Path:
     harness.configure_wd(wd, repo_root)
     (pair_dir / "prompt.txt").write_text(ONE_CALL_PROMPT.format(action=action))
     jsonl_path = pair_dir / "agent_output.jsonl"
-    harness.run("", wd, jsonl_path)
+    harness.run(wd, jsonl_path)
     return jsonl_path
 
 
@@ -380,7 +380,7 @@ def test_post_hoc_compile_in_container(repo_root: Path) -> None:
     (pair_dir / "prompt.txt").write_text(
         "Do not call any tool. Reply with exactly the word: done."
     )
-    harness.run("", wd, pair_dir / "agent_output.jsonl")
+    harness.run(wd, pair_dir / "agent_output.jsonl")
 
     result_path = pair_dir / "result.json"
     assert result_path.exists(), "entrypoint did not write result.json"

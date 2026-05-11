@@ -96,7 +96,7 @@ class Harness(ABC):
         # in the image just sources it, then runs the post-hoc compile.
         (pair_dir / "agent.sh").write_text(self._agent_script())
 
-    def run(self, prompt: str, wd: Path, jsonl_path: Path) -> HarnessRunResult:
+    def run(self, wd: Path, jsonl_path: Path) -> HarnessRunResult:
         # The entrypoint sources /workspace/out/agent.sh (which the harness
         # rendered in configure_wd) and writes outputs (jsonl, result.json,
         # compile_log) into /workspace/out. A/, B/, Reformulation.lean are

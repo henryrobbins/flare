@@ -50,7 +50,7 @@ class FLAREVerifier(ReformulationVerifier):
         jsonl_path = artifacts_dir / "agent_output.jsonl"
         print(f"  [flare] monitor: tail -f {jsonl_path}")
 
-        run_result = self.harness.run(prompt, wd, jsonl_path)
+        run_result = self.harness.run(wd, jsonl_path)
 
         meta = self._evaluate(wd)
         meta.update(dataclasses.asdict(run_result))
