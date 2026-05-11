@@ -31,7 +31,7 @@ import subprocess
 import time
 from pathlib import Path
 
-from src.llm_client import LLMConfig
+from src.llm_client import LLMConfig, compute_cost_usd
 from src.verify.flare.harness.base import Harness, HarnessRunResult
 
 _HERE = Path(__file__).parent
@@ -143,6 +143,9 @@ class CodexHarness(Harness):
             jsonl_path.with_name("codex_stderr.txt").write_text(stderr)
 
         parsed = _parse_stream(stdout_lines)
+        parsed["cost_usd"] = compute_cost_usd(
+            self.config.model, parsed["input_tokens"], parsed["output_tokens"]
+        )
         return HarnessRunResult(duration_s=round(duration, 1), **parsed)
 
 
@@ -152,8 +155,9 @@ def _parse_stream(lines: list[str]) -> dict:
     Codex emits JSON Lines events including `thread.started`,
     `turn.completed`, and `item.completed`. Token usage and stop reason
     live on `turn.completed`. We sum per-turn token counts and take the
-    last turn's stop reason. Codex doesn't surface a USD spend per turn,
-    so `cost_usd` stays None.
+    last turn's stop reason. Codex doesn't surface a USD spend per turn;
+    `cost_usd` is left None here and filled in by the caller from the
+    token totals via the `compute_cost_usd` pricing table.
 
     Field names are picked defensively because the exact schema isn't
     fully nailed down in the public docs — we try `usage.input_tokens` /
