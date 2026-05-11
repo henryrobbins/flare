@@ -7,7 +7,7 @@ from src.verify.base import ReformulationVerifier
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.execution.execution import ExecutionVerifier
 from src.verify.flare.flare import FLAREVerifier
-from src.verify.flare.harness import DockerHarness, Harness
+from src.verify.flare.harness import HARNESSES, Harness
 from src.verify.llm.llm import LLMVerifier
 
 
@@ -56,9 +56,12 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
 
 
 def _build_harness(spec: dict) -> Harness:
-    cli = spec.pop("harness", "claude_code")
+    htype = spec.pop("harness", "claude_code")
+    cls = HARNESSES.get(htype)
+    if cls is None:
+        raise ValueError(f"unknown flare harness: {htype!r}")
     image = spec.pop("image", "flare-agent:latest")
     client_spec = dict(spec.pop("client"))
     provider = client_spec.pop("provider", None)
     config = LLMConfig.from_dict(client_spec)
-    return DockerHarness(cli=cli, config=config, provider=provider, image=image)
+    return cls(config=config, provider=provider, image=image)

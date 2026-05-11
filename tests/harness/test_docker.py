@@ -1,4 +1,4 @@
-"""Integration tests for DockerHarness across all three CLIs.
+"""Integration tests for the docker Harness across all three CLIs.
 
 These tests make real model calls inside the Docker image. They are marked
 `harness` and skipped unless `pytest -m harness` is passed.
@@ -23,7 +23,7 @@ from pathlib import Path
 import pytest
 
 from src.llm_client import LLMConfig
-from src.verify.flare.harness.docker import DockerHarness
+from src.verify.flare.harness import HARNESSES, Harness
 
 pytestmark = pytest.mark.harness
 
@@ -64,14 +64,14 @@ def _model_for(cli: str) -> str:
     raise AssertionError(cli)
 
 
-def _harness(cli: str) -> DockerHarness:
+def _harness(cli: str) -> Harness:
     cfg = LLMConfig(
         model=_model_for(cli),
         max_tokens=4096,
         reasoning=False,
         reasoning_effort="low",
     )
-    return DockerHarness(cli=cli, config=cfg)
+    return HARNESSES[cli](config=cfg)
 
 
 def _make_pair_dir(repo_root: Path, case_id: str) -> Path:

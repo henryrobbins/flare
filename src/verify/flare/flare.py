@@ -68,8 +68,7 @@ class FLAREVerifier(ReformulationVerifier):
 
     def _setup_wd(self, wd: Path, a: Formulation, b: Formulation) -> None:
         # The container has the lake skeleton + Common pre-built at /workspace/,
-        # so we only need to drop per-pair inputs into wd. The harness adds
-        # .claude/ and .mcp.json afterward via configure_wd.
+        # so we only need to drop per-pair inputs into wd.
         wd.mkdir(parents=True, exist_ok=True)
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
@@ -145,9 +144,7 @@ class FLAREVerifier(ReformulationVerifier):
         form_b_compiled = (
             form_b_written and entry_result.get("form_b_compile_exit") == 0
         )
-        proof_compiled = (
-            proof_written and entry_result.get("compile_exit") == 0
-        )
+        proof_compiled = proof_written and entry_result.get("compile_exit") == 0
 
         milp_reform_found = bool(
             re.search(r"\bdef\s+\w+\s*:\s*MILPReformulation\b", reform_content)

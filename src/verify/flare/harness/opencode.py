@@ -1,0 +1,100 @@
+"""Harness for the `opencode` CLI inside the Docker image."""
+
+import json
+import os
+from pathlib import Path
+
+from src.verify.flare.harness.base import Harness
+
+
+class OpenCodeHarness(Harness):
+    cli = "opencode"
+
+    def configure_wd(self, wd: Path, repo_root: Path) -> None:
+        super().configure_wd(wd, repo_root)
+        pair_dir = wd.parent
+        (pair_dir / "opencode.json").write_text(
+            json.dumps(self._opencode_config(), indent=2)
+        )
+
+    def _opencode_config(self) -> dict:
+        """Minimal opencode.json: register the model + lean-lsp MCP server.
+
+        Permissions are intentionally absent — the container is the sandbox
+        boundary.
+        """
+        options: dict = {}
+        if self.config.temperature is not None:
+            options["temperature"] = self.config.temperature
+        if self.config.reasoning:
+            if self.provider == "anthropic":
+                options["thinking"] = {"type": "adaptive"}
+                if self.config.reasoning_effort:
+                    options["output_config"] = {
+                        "effort": self.config.reasoning_effort
+                    }
+            elif self.config.reasoning_effort:
+                options["reasoningEffort"] = self.config.reasoning_effort
+        return {
+            "$schema": "https://opencode.ai/config.json",
+            "provider": {
+                self.provider: {"models": {self.model: {"options": options}}}
+            },
+            "mcp": {
+                "lean-lsp": {
+                    "type": "local",
+                    "command": ["uvx", "lean-lsp-mcp"],
+                    "enabled": True,
+                }
+            },
+        }
+
+    def _credential_args(self) -> list[str]:
+        # Pass through provider API keys that OpenCode reads from env.
+        args = []
+        for key in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "GOOGLE_API_KEY",
+                    "DEEPSEEK_API_KEY"):
+            if key in os.environ:
+                args += ["-e", key]
+        return args
+
+    def _parse_lines(self, lines: list[str]) -> dict:
+        """Parse `opencode run --format json` output: per-step deltas on step_finish.
+
+        `tokens.input` is uncached input; cached prompt tokens appear in
+        `tokens.cache.{write,read}` and are folded into input_tokens.
+        """
+        input_tokens = 0
+        output_tokens = 0
+        cost_usd: float | None = None
+        stop_reason: str | None = None
+
+        def _as_int(x) -> int:
+            return x if isinstance(x, int) else 0
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") != "step_finish":
+                continue
+            part = event.get("part") or {}
+            tokens = part.get("tokens") or {}
+            cache = tokens.get("cache") or {}
+            input_tokens += (_as_int(tokens.get("input"))
+                             + _as_int(cache.get("write"))
+                             + _as_int(cache.get("read")))
+            output_tokens += _as_int(tokens.get("output"))
+            c = part.get("cost")
+            if isinstance(c, (int, float)):
+                cost_usd = (cost_usd or 0.0) + float(c)
+            r = part.get("reason")
+            if isinstance(r, str):
+                stop_reason = r
+
+        return {"stop_reason": stop_reason, "input_tokens": input_tokens,
+                "output_tokens": output_tokens, "cost_usd": cost_usd}
