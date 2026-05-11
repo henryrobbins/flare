@@ -16,14 +16,13 @@ class ClaudeCodeHarness(Harness):
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
         super().configure_wd(wd, repo_root)
-        pair_dir = wd.parent
         # MCP server list is passed via --mcp-config in agent.sh, so no
         # .claude/settings.json is needed; skills are auto-discovered from
         # .claude/skills/.
-        shutil.copy2(repo_root / ".mcp.json", pair_dir / ".mcp.json")
+        shutil.copy2(repo_root / ".mcp.json", wd / ".mcp.json")
         skills_src = repo_root / ".claude" / "skills"
         if skills_src.exists():
-            claude_skills = pair_dir / ".claude" / "skills"
+            claude_skills = wd / ".claude" / "skills"
             claude_skills.parent.mkdir(exist_ok=True)
             shutil.copytree(skills_src, claude_skills, dirs_exist_ok=True)
 

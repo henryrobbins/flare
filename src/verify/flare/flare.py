@@ -1,6 +1,7 @@
 import dataclasses
 import json
 import re
+import shutil
 from pathlib import Path
 
 from formulation_bench import Formulation
@@ -9,6 +10,21 @@ from src.prompts import render_formulation
 from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.verify.flare.harness import Harness
 from src.verify.flare.prompts import render_agent_prompt
+
+# Lake project skeleton files that the harness copies from the repo into
+# each pair's wd. The Docker image bakes its own copies of these (so
+# `lake exe cache get` and `lake build Common` can run during build),
+# but the runtime bind mount of pair_dir/wd onto /workspace would hide
+# the image-side files. Volumes/tmpfs only shadow directories, not
+# individual files, so we materialize the four skeleton files on the
+# host instead. The big .lake/ build tree is shadowed via a named
+# volume in Harness.run, so mathlib oleans never touch the host.
+_LAKE_SKELETON: tuple[tuple[str, str], ...] = (
+    ("lean-toolchain", "lean-toolchain"),
+    ("lake-manifest.json", "lake-manifest.json"),
+    ("Common.lean", "Common.lean"),
+    ("docker/lakefile.toml", "lakefile.toml"),
+)
 
 
 class FLAREVerifier(ReformulationVerifier):
@@ -45,9 +61,9 @@ class FLAREVerifier(ReformulationVerifier):
         self.harness.configure_wd(wd, self.repo_root)
 
         prompt = render_agent_prompt()
-        (artifacts_dir / "prompt.txt").write_text(prompt)
+        (wd / "prompt.txt").write_text(prompt)
 
-        jsonl_path = artifacts_dir / "agent_output.jsonl"
+        jsonl_path = wd / "agent_output.jsonl"
         print(f"  [flare] monitor: tail -f {jsonl_path}")
 
         run_result = self.harness.run(wd, jsonl_path)
@@ -67,9 +83,15 @@ class FLAREVerifier(ReformulationVerifier):
         )
 
     def _setup_wd(self, wd: Path, a: Formulation, b: Formulation) -> None:
-        # The container has the lake skeleton + Common pre-built at /workspace/,
-        # so we only need to drop per-pair inputs into wd.
+        # The image bakes the lake skeleton + Common's olean at /workspace/,
+        # but the bind mount of wd onto /workspace would shadow the four
+        # small skeleton files (lakefile.toml, lean-toolchain, etc.) since
+        # only the .lake/ directory is shadowed back via the named volume.
+        # Materialize them from the repo so they show through the bind
+        # mount; see _LAKE_SKELETON for the full rationale.
         wd.mkdir(parents=True, exist_ok=True)
+        for src_rel, dst_name in _LAKE_SKELETON:
+            shutil.copy2(self.repo_root / src_rel, wd / dst_name)
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
@@ -79,9 +101,9 @@ class FLAREVerifier(ReformulationVerifier):
         (wd / "Reformulation.lean").write_text("")
 
     def _evaluate(self, wd: Path) -> dict:
-        # The container entrypoint writes result.json + compile_log.txt next
-        # to wd (i.e. into the bind-mounted pair_dir).
-        artifacts_dir = wd.parent
+        # The container entrypoint writes result.json + compile_log.txt
+        # into the bind-mounted wd; FLAREVerifier.verify later overwrites
+        # wd.parent / "result.json" with the merged final summary.
         form_a_lean = wd / "A" / "Formulation.lean"
         form_b_lean = wd / "B" / "Formulation.lean"
         reform_file = wd / "Reformulation.lean"
@@ -128,8 +150,8 @@ class FLAREVerifier(ReformulationVerifier):
         # Compile signals come from the container entrypoint: it ran
         # `lake env lean` on A/B/Reformulation and wrote result.json +
         # compile_log.txt back through the bind mount.
-        result_path = artifacts_dir / "result.json"
-        compile_log_path = artifacts_dir / "compile_log.txt"
+        result_path = wd / "result.json"
+        compile_log_path = wd / "compile_log.txt"
         entry_result: dict = {}
         if result_path.exists():
             try:

@@ -76,6 +76,19 @@ def _harness(cli: str) -> Harness:
     return HARNESSES[cli](config=cfg)
 
 
+# Lake skeleton files copied into each wd by FLAREVerifier._setup_wd at
+# runtime (see src/verify/flare/flare.py). The tests bypass FLAREVerifier
+# and drive Harness directly, so they have to materialize the same files
+# here — otherwise the bind mount of wd onto /workspace would hide the
+# image-side skeleton and lake invocations would fail.
+_LAKE_SKELETON = (
+    ("lean-toolchain", "lean-toolchain"),
+    ("lake-manifest.json", "lake-manifest.json"),
+    ("Common.lean", "Common.lean"),
+    ("docker/lakefile.toml", "lakefile.toml"),
+)
+
+
 def _make_pair_dir(repo_root: Path, case_id: str) -> Path:
     pair_dir = repo_root / "tests" / ".runs" / "docker" / case_id
     if pair_dir.exists():
@@ -83,6 +96,8 @@ def _make_pair_dir(repo_root: Path, case_id: str) -> Path:
     pair_dir.mkdir(parents=True)
     wd = pair_dir / "wd"
     wd.mkdir()
+    for src_rel, dst_name in _LAKE_SKELETON:
+        shutil.copy2(repo_root / src_rel, wd / dst_name)
     for label in ("A", "B"):
         (wd / label).mkdir()
         (wd / label / "Formulation.lean").write_text("")
@@ -96,8 +111,8 @@ def _run(cli: str, repo_root: Path, pair_dir: Path, action: str) -> Path:
     harness = _harness(cli)
     wd = pair_dir / "wd"
     harness.configure_wd(wd, repo_root)
-    (pair_dir / "prompt.txt").write_text(ONE_CALL_PROMPT.format(action=action))
-    jsonl_path = pair_dir / "agent_output.jsonl"
+    (wd / "prompt.txt").write_text(ONE_CALL_PROMPT.format(action=action))
+    jsonl_path = wd / "agent_output.jsonl"
     harness.run(wd, jsonl_path)
     return jsonl_path
 
@@ -377,15 +392,15 @@ def test_post_hoc_compile_in_container(repo_root: Path) -> None:
     (wd / "Reformulation.lean").write_text("import Common\n")
     harness = _harness("claude_code")
     harness.configure_wd(wd, repo_root)
-    (pair_dir / "prompt.txt").write_text(
+    (wd / "prompt.txt").write_text(
         "Do not call any tool. Reply with exactly the word: done."
     )
-    harness.run(wd, pair_dir / "agent_output.jsonl")
+    harness.run(wd, wd / "agent_output.jsonl")
 
-    result_path = pair_dir / "result.json"
+    result_path = wd / "result.json"
     assert result_path.exists(), "entrypoint did not write result.json"
     result = json.loads(result_path.read_text())
     assert result["compile_exit"] == 0, (
         f"Reformulation.lean compile failed: {result} "
-        f"log={(pair_dir / 'compile_log.txt').read_text()}"
+        f"log={(wd / 'compile_log.txt').read_text()}"
     )

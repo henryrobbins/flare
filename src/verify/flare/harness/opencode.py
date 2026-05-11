@@ -17,15 +17,14 @@ class OpenCodeHarness(Harness):
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
         super().configure_wd(wd, repo_root)
-        pair_dir = wd.parent
-        (pair_dir / "opencode.json").write_text(
+        (wd / "opencode.json").write_text(
             json.dumps(self._opencode_config(), indent=2)
         )
         # OpenCode reads skills from any of .opencode/skills, .claude/skills,
         # or .agents/skills. Use the agent-neutral AGENTS.md spec path.
         skills_src = repo_root / ".claude" / "skills"
         if skills_src.exists():
-            agents_skills = pair_dir / ".agents" / "skills"
+            agents_skills = wd / ".agents" / "skills"
             agents_skills.parent.mkdir(exist_ok=True)
             shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
 

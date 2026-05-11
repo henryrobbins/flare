@@ -2,4 +2,4 @@
 opencode run --dir /workspace --format json \
     --model '<<PROVIDER>>/<<MODEL>>' \
     "$PROMPT" \
-    > /workspace/out/agent_output.jsonl
+    > /workspace/agent_output.jsonl

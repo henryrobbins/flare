@@ -83,10 +83,17 @@ The repo provides a set of skills and agents for working with this dataset. This
 
 ## Docker harness
 
-FLARE runs each agent + post-hoc Lean compile inside a Linux container. The
-image bakes the lake project skeleton plus mathlib oleans at `/workspace/`,
-bind-mounts the per-pair output directory at `/workspace/out`, and dispatches
-one of `claude_code | codex | opencode` via the entrypoint.
+FLARE runs each agent + post-hoc Lean compile inside a Linux container.
+The image bakes the lake project skeleton plus mathlib oleans at
+`/workspace/`. The harness bind-mounts the per-pair `wd` at `/workspace`
+(so the agent's cwd, the lake project root, and the output paths all
+coincide) and shadows `/workspace/.lake` with the named volume
+`flare-lake` (seeded from the image's pre-built mathlib on first use, so
+the multi-GB build tree never lands on the host). The four small
+skeleton files (`lakefile.toml`, `lean-toolchain`, `lake-manifest.json`,
+`Common.lean`) are *also* copied into each `wd` from the repo at setup
+time, because Docker volumes can only shadow directories — without that,
+the bind mount would hide the image-side copies.
 
 Setup:
 
@@ -96,4 +103,7 @@ Setup:
 2. `docker build -t flare-agent:latest .` from the repo root (~5 min cold,
    ~1 s when only the entrypoint changed).
 3. Run experiments normally; the harness uses the image automatically.
-4. When `lean-toolchain` bumps, rebuild the image.
+4. When `lean-toolchain` bumps (or you otherwise rebuild mathlib), run
+   `docker volume rm flare-lake` after rebuilding the image. Named
+   volumes only seed from the image when empty, so without this the
+   stale mathlib oleans persist across image rebuilds.

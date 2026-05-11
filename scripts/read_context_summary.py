@@ -97,7 +97,7 @@ def parse_trace(jsonl_path: Path) -> tuple[list[dict], list[dict], list[dict], d
     outside_entries: same shape but for paths outside the wd (successful reads)
     attempted_outside_entries: [{file_path, attempt_count}] — denied tool calls that targeted outside-wd paths
     """
-    wd = (jsonl_path.parent / "wd").resolve()
+    wd = jsonl_path.parent.resolve()
 
     tool_calls: dict[str, dict] = {}
     tool_results: dict[str, str] = {}

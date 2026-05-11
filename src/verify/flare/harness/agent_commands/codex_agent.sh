@@ -10,4 +10,4 @@ codex exec --json --skip-git-repo-check \
     -c 'mcp_servers.lean-lsp.args=["lean-lsp-mcp"]' \
     -c 'model_reasoning_effort="<<EFFORT>>"' \
     "$PROMPT" \
-    > /workspace/out/agent_output.jsonl
+    > /workspace/agent_output.jsonl

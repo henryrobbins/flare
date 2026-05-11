@@ -19,7 +19,7 @@ class CodexHarness(Harness):
         # Codex discovers skills under .agents/skills/<name>/SKILL.md.
         skills_src = repo_root / ".claude" / "skills"
         if skills_src.exists():
-            agents_skills = wd.parent / ".agents" / "skills"
+            agents_skills = wd / ".agents" / "skills"
             agents_skills.parent.mkdir(exist_ok=True)
             shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
 
