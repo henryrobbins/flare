@@ -11,21 +11,6 @@ from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.verify.flare.harness import Harness
 from src.verify.flare.prompts import render_agent_prompt
 
-# Lake project skeleton files that the harness copies from the repo into
-# each pair's wd. The Docker image bakes its own copies of these (so
-# `lake exe cache get` and `lake build Common` can run during build),
-# but the runtime bind mount of pair_dir/wd onto /workspace would hide
-# the image-side files. Volumes/tmpfs only shadow directories, not
-# individual files, so we materialize the four skeleton files on the
-# host instead. The big .lake/ build tree is shadowed via a named
-# volume in Harness.run, so mathlib oleans never touch the host.
-_LAKE_SKELETON: tuple[tuple[str, str], ...] = (
-    ("lean-toolchain", "lean-toolchain"),
-    ("lake-manifest.json", "lake-manifest.json"),
-    ("Common.lean", "Common.lean"),
-    ("docker/lakefile.toml", "lakefile.toml"),
-)
-
 
 class FLAREVerifier(ReformulationVerifier):
     def __init__(self, repo_root: Path, harness: Harness | None = None) -> None:
@@ -50,27 +35,23 @@ class FLAREVerifier(ReformulationVerifier):
         if self.harness is None:
             raise RuntimeError("FLAREVerifier.verify requires a Harness")
 
+        # Create the artifacts directory at the output path and write config
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(
             json.dumps(self.method_config(), indent=2)
         )
 
+        # Setup the agent's working directory
         wd = artifacts_dir / "wd"
         self._setup_wd(wd, a, b)
-        self.harness.configure_wd(wd, self.repo_root)
 
-        prompt = render_agent_prompt()
-        (wd / "prompt.txt").write_text(prompt)
+        # Run the agent harness
+        run_result = self.harness.run(wd)
 
-        jsonl_path = wd / "agent_output.jsonl"
-        print(f"  [flare] monitor: tail -f {jsonl_path}")
-
-        run_result = self.harness.run(wd, jsonl_path)
-
+        # Evaluate the agent's output to obtain final result and write metadata
         meta = self._evaluate(wd)
         meta.update(dataclasses.asdict(run_result))
-
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
         return ReformulationResult(
@@ -83,73 +64,73 @@ class FLAREVerifier(ReformulationVerifier):
         )
 
     def _setup_wd(self, wd: Path, a: Formulation, b: Formulation) -> None:
-        # The image bakes the lake skeleton + Common's olean at /workspace/,
-        # but the bind mount of wd onto /workspace would shadow the four
-        # small skeleton files (lakefile.toml, lean-toolchain, etc.) since
-        # only the .lake/ directory is shadowed back via the named volume.
-        # Materialize them from the repo so they show through the bind
-        # mount; see _LAKE_SKELETON for the full rationale.
+        """Populate the agent working directory with all necessary files."""
+
+        if self.harness is None:
+            raise RuntimeError("FLAREVerifier._setup_wd requires a Harness")
+
         wd.mkdir(parents=True, exist_ok=True)
-        for src_rel, dst_name in _LAKE_SKELETON:
-            shutil.copy2(self.repo_root / src_rel, wd / dst_name)
+
+        # Setup Lean environment configuration
+        self._setup_lake(wd)
+
+        # Populate problem files for Formulation A and B
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
             (form_dir / "formulation.md").write_text(render_formulation(form))
             (form_dir / "solve.py").write_text(form.gurobipy_code)
             (form_dir / "Formulation.lean").write_text("")
+
+        # Create empty Reformulation.lean
         (wd / "Reformulation.lean").write_text("")
 
+        # Write the agent prompt
+        # For Docker harnesses, this allows agent scripts to access the prompt
+        # in the container (see src/verify/flare/harness/agent_commands/*.sh).
+        (wd / "prompt.txt").write_text(render_agent_prompt())
+
+        # Do any harness-specific configuration (e.g., agent.sh, MCP config, skills).
+        self.harness.configure_wd(wd, self.repo_root)
+
+    def _setup_lake(self, wd: Path) -> None:
+        """Setup minimal Lake environment so the agent can compile Lean files."""
+        shutil.copy2(self.repo_root / "docker" / "lakefile.toml", wd / "lakefile.toml")
+        shutil.copy2(self.repo_root / "lean-toolchain", wd / "lean-toolchain")
+        shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
+        shutil.copy2(self.repo_root / "Common.lean", wd / "Common.lean")
+
     def _evaluate(self, wd: Path) -> dict:
-        # The container entrypoint writes result.json + compile_log.txt
-        # into the bind-mounted wd; FLAREVerifier.verify later overwrites
-        # wd.parent / "result.json" with the merged final summary.
+        """Evaluate the agent's output to determine if the reformulation is correct."""
+
+        # Expected agent output files
         form_a_lean = wd / "A" / "Formulation.lean"
         form_b_lean = wd / "B" / "Formulation.lean"
         reform_file = wd / "Reformulation.lean"
 
+        # Check if the agent wrote the expected files
+        form_a_written = form_a_lean.exists() and form_a_lean.stat().st_size > 0
+        form_b_written = form_b_lean.exists() and form_b_lean.stat().st_size > 0
         reform_content = reform_file.read_text().strip() if reform_file.exists() else ""
-
-        # Normalize the first meaningful line: strip Lean comment markers so
-        # "-- NOT REFORMULATION: ..." is detected the same as "NOT REFORMULATION: ...".
-        first_line = next(
-            (l.strip() for l in reform_content.splitlines() if l.strip()), ""
-        )
-        normalized = re.sub(r"^-+\s*", "", first_line).upper()
-
-        base = {
-            "form_a_written": form_a_lean.exists() and form_a_lean.stat().st_size > 0,
-            "form_b_written": form_b_lean.exists() and form_b_lean.stat().st_size > 0,
-            "form_a_compiled": None,
-            "form_b_compiled": None,
-            "proof_compiled": None,
-            "milp_reform_found": None,
-            "sorry_free": None,
-        }
-
-        if normalized.startswith("NOT REFORMULATION"):
-            return {
-                "is_reformulation": False,
-                "agent_decision": "not_reformulation",
-                "agent_reason": reform_content,
-                **base,
-            }
-
-        if normalized.startswith("MCP_UNAVAILABLE"):
-            return {
-                "is_reformulation": False,
-                "agent_decision": "mcp_unavailable",
-                "agent_reason": reform_content,
-                **base,
-            }
-
-        form_a_written = base["form_a_written"]
-        form_b_written = base["form_b_written"]
         proof_written = bool(reform_content)
 
-        # Compile signals come from the container entrypoint: it ran
-        # `lake env lean` on A/B/Reformulation and wrote result.json +
-        # compile_log.txt back through the bind mount.
+        # Check for agent self-reported non-reformulation decisions
+        decision = self._check_agent_decision(reform_content)
+        if decision is not None:
+            return {
+                "is_reformulation": False,
+                "agent_decision": decision,
+                "agent_reason": reform_content,
+                "form_a_written": form_a_written,
+                "form_b_written": form_b_written,
+                "form_a_compiled": None,
+                "form_b_compiled": None,
+                "proof_compiled": None,
+                "milp_reform_found": None,
+                "sorry_free": None,
+            }
+
+        # Load the agent's compile results and log
         result_path = wd / "result.json"
         compile_log_path = wd / "compile_log.txt"
         entry_result: dict = {}
@@ -160,6 +141,7 @@ class FLAREVerifier(ReformulationVerifier):
                 entry_result = {}
         compile_log = compile_log_path.read_text() if compile_log_path.exists() else ""
 
+        # Generate compilation status for each file
         form_a_compiled = (
             form_a_written and entry_result.get("form_a_compile_exit") == 0
         )
@@ -168,11 +150,12 @@ class FLAREVerifier(ReformulationVerifier):
         )
         proof_compiled = proof_written and entry_result.get("compile_exit") == 0
 
+        # Check if Reformulation.lean contains a MILPReformulation def
         milp_reform_found = bool(
             re.search(r"\bdef\s+\w+\s*:\s*MILPReformulation\b", reform_content)
         )
-        # Lean emits "warning: 'X' uses sorry" when sorry is present.
-        # Only meaningful when the proof compiled and the def was found.
+
+        # Check if `sorry` is used in the reformulation proof
         sorry_free = (
             "uses `sorry`" not in compile_log
             if (proof_compiled and milp_reform_found)
@@ -198,3 +181,15 @@ class FLAREVerifier(ReformulationVerifier):
             "milp_reform_found": milp_reform_found,
             "sorry_free": sorry_free,
         }
+
+    def _check_agent_decision(self, reform_content: str) -> str | None:
+        """Check for agent self-reported non-reformulation decisions"""
+        first_line = next(
+            (l.strip() for l in reform_content.splitlines() if l.strip()), ""
+        )
+        normalized = re.sub(r"^-+\s*", "", first_line).upper()
+        if normalized.startswith("NOT REFORMULATION"):
+            return "not_reformulation"
+        if normalized.startswith("MCP_UNAVAILABLE"):
+            return "mcp_unavailable"
+        return None

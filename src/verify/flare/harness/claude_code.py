@@ -1,6 +1,5 @@
-"""Harness for the `claude` CLI inside the Docker image."""
-
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -12,34 +11,39 @@ _TEMPLATE: str = (
 
 
 class ClaudeCodeHarness(Harness):
-    cli = "claude_code"
+    name = "claude_code"
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
         super().configure_wd(wd, repo_root)
-        # MCP server list is passed via --mcp-config in agent.sh, so no
-        # .claude/settings.json is needed; skills are auto-discovered from
-        # .claude/skills/.
+        # Copy MCP server configuration (passed to --mcp-config)
+        # https://code.claude.com/docs/en/mcp#project-scope
         shutil.copy2(repo_root / ".mcp.json", wd / ".mcp.json")
+        # Copy skills to .claude/skills
+        # https://code.claude.com/docs/en/skills#where-skills-live
         skills_src = repo_root / ".claude" / "skills"
         if skills_src.exists():
             claude_skills = wd / ".claude" / "skills"
             claude_skills.parent.mkdir(exist_ok=True)
             shutil.copytree(skills_src, claude_skills, dirs_exist_ok=True)
 
-    def _docker_args(self, wd: Path) -> list[str]:
-        # OAuth token from `claude setup-token`, exported in .env.
+    def _agent_docker_args(self) -> list[str]:
+        # We use a long-lived token here instead of an API key to avoid the
+        # higher API costs compared a Claude Code subscription
+        # https://code.claude.com/docs/en/authentication#generate-a-long-lived-token
+        if "CLAUDE_CODE_OAUTH_TOKEN" not in os.environ:
+            raise RuntimeError(
+                "claude_code harness requires CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token`"
+            )
         return ["-e", "CLAUDE_CODE_OAUTH_TOKEN"]
 
     def _agent_command(self) -> str:
+        # Pass model and effort to the agent command template
         return _TEMPLATE.replace("<<MODEL>>", self.model).replace(
             "<<EFFORT>>", self.effort
         )
 
     def _parse_lines(self, lines: list[str]) -> dict:
-        """Parse `claude -p --output-format stream-json` output.
-
-        Tokens, stop_reason, and total_cost_usd live on the final `result` event.
-        """
+        """Parse `claude -p --output-format stream-json` output."""
         input_tokens = 0
         output_tokens = 0
         stop_reason: str | None = None

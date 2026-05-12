@@ -1,5 +1,3 @@
-"""Harness for the `codex` CLI inside the Docker image."""
-
 import json
 import shutil
 from pathlib import Path
@@ -12,36 +10,38 @@ _TEMPLATE: str = (
 
 
 class CodexHarness(Harness):
-    cli = "codex"
+    name = "codex"
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
         super().configure_wd(wd, repo_root)
-        # Codex discovers skills under .agents/skills/<name>/SKILL.md.
+        # MCP server configuration is handled in the agent command:
+        #   src/verify/flare/harness/agent_commands/codex_agent.sh
+        # Copy skills to .agents/skills
+        # https://developers.openai.com/codex/skills#where-to-save-skills
         skills_src = repo_root / ".claude" / "skills"
         if skills_src.exists():
             agents_skills = wd / ".agents" / "skills"
             agents_skills.parent.mkdir(exist_ok=True)
             shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
 
-    def _docker_args(self, wd: Path) -> list[str]:
-        # Bill against the ChatGPT subscription by mounting the host's cached
-        # OAuth login (~/.codex/auth.json). Mount rw because codex refreshes
-        # its access token mid-session; :ro breaks startup with "failed to
-        # initialize in-process app-server client". OPENAI_API_KEY /
-        # CODEX_API_KEY are deliberately NOT passed through so codex can't
-        # fall through to API-key auth and bill against credits.
+    def _agent_docker_args(self) -> list[str]:
+        # We use this authentication strategy instead of an API key to avoid the
+        # higher API costs compared a ChatGPT subscription
+        # Mount rw because codex refreshes its access token mid-session
+        # https://developers.openai.com/codex/auth/ci-cd-auth
         codex_dir = Path.home() / ".codex"
         if not codex_dir.exists():
             raise RuntimeError("codex harness requires ~/.codex from `codex login`")
         return ["-v", f"{codex_dir}:/home/agent/.codex"]
 
     def _agent_command(self) -> str:
+        # Pass model and effort to the agent command template
         return _TEMPLATE.replace("<<MODEL>>", self.model).replace(
             "<<EFFORT>>", self.effort
         )
 
     def _parse_lines(self, lines: list[str]) -> dict:
-        """Parse `codex exec --json` output: per-turn usage on `turn.completed`."""
+        """Parse `codex exec --json` output."""
         input_tokens = 0
         output_tokens = 0
         stop_reason: str | None = None

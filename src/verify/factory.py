@@ -18,7 +18,6 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
       - {type: flare, harness: claude_code|codex|opencode,
-         image?: <docker image tag>,
          client: {<LLMConfig fields, optional provider>}}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
@@ -60,9 +59,8 @@ def _build_harness(spec: dict) -> Harness:
     cls = HARNESSES.get(htype)
     if cls is None:
         raise ValueError(f"unknown flare harness: {htype!r}")
-    image = spec.pop("image", "flare-agent:latest")
     client_spec = dict(spec.pop("client"))
     provider = client_spec.pop("provider", None)
     config = LLMConfig.from_dict(client_spec)
     kwargs = {"provider": provider} if provider is not None else {}
-    return cls(config=config, image=image, **kwargs)
+    return cls(config=config, **kwargs)

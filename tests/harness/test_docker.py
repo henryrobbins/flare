@@ -5,7 +5,8 @@ These tests make real model calls inside the Docker image. They are marked
 
 Prerequisites:
   - docker daemon running
-  - `docker build -t flare-agent:latest .` has been run from repo root
+  - `docker build -f docker/Dockerfile -t flare-agent:latest .` has been run
+    from repo root
   - CLAUDE_CODE_OAUTH_TOKEN in env for claude_code
   - OPENAI_API_KEY in env (or ~/.codex/auth.json on host) for codex
   - DEEPSEEK_API_KEY in env for opencode (tests use deepseek-chat to
@@ -112,9 +113,8 @@ def _run(cli: str, repo_root: Path, pair_dir: Path, action: str) -> Path:
     wd = pair_dir / "wd"
     harness.configure_wd(wd, repo_root)
     (wd / "prompt.txt").write_text(ONE_CALL_PROMPT.format(action=action))
-    jsonl_path = wd / "agent_output.jsonl"
-    harness.run(wd, jsonl_path)
-    return jsonl_path
+    harness.run(wd)
+    return wd / "agent_output.jsonl"
 
 
 def _load_events(jsonl_path: Path) -> list[dict]:
@@ -395,7 +395,7 @@ def test_post_hoc_compile_in_container(repo_root: Path) -> None:
     (wd / "prompt.txt").write_text(
         "Do not call any tool. Reply with exactly the word: done."
     )
-    harness.run(wd, wd / "agent_output.jsonl")
+    harness.run(wd)
 
     result_path = wd / "result.json"
     assert result_path.exists(), "entrypoint did not write result.json"

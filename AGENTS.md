@@ -86,7 +86,7 @@ The repo provides a set of skills and agents for working with this dataset. This
 FLARE runs each agent + post-hoc Lean compile inside a Linux container.
 The image bakes the lake project skeleton plus mathlib oleans at
 `/workspace/`, **outside** the bind mount. At runtime the harness
-bind-mounts the per-pair `wd` at `/workspace/wd` (the agent's cwd and
+bind-mounts the agent `wd` at `/workspace/wd` (the agent's cwd and
 lake project root), and the entrypoint creates a
 `/workspace/wd/.lake -> /workspace/.lake` symlink so the agent's lake
 invocations find the image-baked mathlib + Common.olean. The `.lake`
@@ -101,7 +101,7 @@ Setup:
 1. One-time: `claude setup-token`, save the printed token to `.env` as
    `CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...` (this is how claude_code bills
    against the Claude.ai plan inside the container).
-2. `docker build -t flare-agent:latest .` from the repo root (~5 min cold,
+2. `docker build -f docker/Dockerfile -t flare-agent:latest .` from the repo root (~5 min cold,
    ~1 s when only the entrypoint changed).
 3. Run experiments normally; the harness uses the image automatically.
 4. When `lean-toolchain` bumps, rebuild the image (no volume cleanup
