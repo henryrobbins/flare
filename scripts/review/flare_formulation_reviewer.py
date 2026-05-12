@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
+"""Side-by-side / diff viewer for extracted FLARE results.
+
+Walks results/<run_id>/<problem>/<a_b>/<artifact>/ and serves a browser UI
+that lets you pick (problem, pair, artifact, side) and compare the
+extracted Formulation against the ground-truth dataset formulation.
+
+Usage:
+    python scripts/review/flare_formulation_reviewer.py -r <run_id> [--port 8080]
 """
-Usage: python scripts/viewer.py results/20260428T153758Z [--port 8080]
-"""
+
 import argparse
 import json
-import os
 import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-REPO_ROOT = Path(__file__).parent.parent
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _problem_sort_key(p: Path):
@@ -18,12 +24,13 @@ def _problem_sort_key(p: Path):
     return int(m.group(1)) if m else float("inf")
 
 
-def find_pairs(results_dir: Path):
-    pairs = []
+def find_entries(results_dir: Path) -> list[dict]:
+    """One dict per (problem, pair, artifact) under results_dir."""
+    entries: list[dict] = []
     for problem_dir in sorted(results_dir.iterdir(), key=_problem_sort_key):
         if not problem_dir.is_dir():
             continue
-        problem = problem_dir.name  # e.g. p1
+        problem = problem_dir.name
         for pair_dir in sorted(problem_dir.iterdir()):
             if not pair_dir.is_dir():
                 continue
@@ -31,8 +38,23 @@ def find_pairs(results_dir: Path):
             if not m:
                 continue
             fa, fb = m.group(1), m.group(2)
-            pairs.append({"problem": problem, "pair": pair_dir.name, "fa": fa, "fb": fb})
-    return pairs
+            for artifact_dir in sorted(pair_dir.iterdir()):
+                if not artifact_dir.is_dir():
+                    continue
+                # Artifact dirs always contain A/ and B/; legacy directly-under
+                # a_b/ extractions don't.
+                if not (artifact_dir / "A").is_dir():
+                    continue
+                entries.append(
+                    {
+                        "problem": problem,
+                        "pair": pair_dir.name,
+                        "artifact": artifact_dir.name,
+                        "fa": fa,
+                        "fb": fb,
+                    }
+                )
+    return entries
 
 
 def read_file(path: Path) -> str:
@@ -53,14 +75,14 @@ HTML = r"""<!DOCTYPE html>
 body { font-family: system-ui, sans-serif; display: flex; height: 100vh; overflow: hidden; background: #1e1e1e; color: #d4d4d4; }
 
 /* Sidebar */
-#sidebar { width: 220px; min-width: 160px; background: #252526; border-right: 1px solid #3c3c3c; display: flex; flex-direction: column; overflow: hidden; }
+#sidebar { width: 280px; min-width: 200px; background: #252526; border-right: 1px solid #3c3c3c; display: flex; flex-direction: column; overflow: hidden; }
 #sidebar-header { padding: 10px 12px; font-size: 12px; font-weight: 600; color: #ccc; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #3c3c3c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #pair-list { overflow-y: auto; flex: 1; }
-.pair-group-header { padding: 8px 12px 2px; font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
-.pair-group { }
-.pair-row { display: flex; align-items: stretch; }
-.pair-label { padding: 4px 0 4px 16px; font-size: 12px; color: #888; flex: 1; white-space: nowrap; }
-.page-btn { flex: 1; padding: 4px 8px; cursor: pointer; font-size: 12px; color: #bbb; white-space: nowrap; border: none; background: none; text-align: left; }
+.problem-header { padding: 8px 12px 2px; font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+.pair-header { padding: 4px 12px 2px 20px; font-size: 11px; color: #aaa; font-weight: 600; }
+.artifact-row { display: flex; align-items: stretch; }
+.artifact-label { padding: 4px 0 4px 28px; font-size: 11px; color: #888; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.page-btn { width: 40px; padding: 4px 6px; cursor: pointer; font-size: 11px; color: #bbb; white-space: nowrap; border: none; background: none; text-align: center; }
 .page-btn:hover { background: #2a2d2e; color: #fff; }
 .page-btn.active { background: #094771; color: #fff; }
 .page-btn + .page-btn { border-left: 1px solid #3c3c3c; }
@@ -134,15 +156,19 @@ mark.ci-remove { background: #f8514926; color: inherit; border-radius: 2px; outl
 </div>
 
 <script>
-let pairs = [];
+let entries = [];
 let mode = 'sidebyside';
-let files = {};   // cached per pair
-let currentKey = null;  // "problem/pair/which"
+let files = {};   // cache keyed by `${problem}/${pair}/${artifact}`
+let currentKey = null;
 
 async function init() {
-  const res = await fetch('/api/pairs');
-  pairs = await res.json();
+  const res = await fetch('/api/entries');
+  entries = await res.json();
   renderSidebar();
+}
+
+function btnId(problem, pair, artifact, which) {
+  return `btn-${problem}--${pair}--${artifact}--${which}`;
 }
 
 function renderSidebar() {
@@ -150,20 +176,25 @@ function renderSidebar() {
   document.getElementById('sidebar-header').textContent = window._resultsName || 'Results';
   let html = '';
   let lastProblem = null;
-  for (const p of pairs) {
-    if (p.problem !== lastProblem) {
-      if (lastProblem !== null) html += '</div>';
-      html += `<div class="pair-group"><div class="pair-group-header">${p.problem}</div>`;
-      lastProblem = p.problem;
+  let lastPair = null;
+  for (const e of entries) {
+    if (e.problem !== lastProblem) {
+      html += `<div class="problem-header">${e.problem}</div>`;
+      lastProblem = e.problem;
+      lastPair = null;
     }
-    const key = `${p.problem}/${p.pair}`;
-    html += `<div class="pair-row">
-      <div class="pair-label">${p.pair}</div>
-      <button class="page-btn" id="btn-${key}-A" onclick="selectPage('${p.problem}','${p.pair}','${p.fa}','${p.fb}','A')">${p.fa}</button>
-      <button class="page-btn" id="btn-${key}-B" onclick="selectPage('${p.problem}','${p.pair}','${p.fa}','${p.fb}','B')">${p.fb}</button>
+    if (e.pair !== lastPair) {
+      html += `<div class="pair-header">${e.pair}</div>`;
+      lastPair = e.pair;
+    }
+    html += `<div class="artifact-row">
+      <div class="artifact-label" title="${e.artifact}">${e.artifact}</div>
+      <button class="page-btn" id="${btnId(e.problem, e.pair, e.artifact, 'A')}"
+              onclick="selectPage('${e.problem}','${e.pair}','${e.artifact}','${e.fa}','${e.fb}','A')">${e.fa}</button>
+      <button class="page-btn" id="${btnId(e.problem, e.pair, e.artifact, 'B')}"
+              onclick="selectPage('${e.problem}','${e.pair}','${e.artifact}','${e.fa}','${e.fb}','B')">${e.fb}</button>
     </div>`;
   }
-  if (lastProblem !== null) html += '</div>';
   el.innerHTML = html;
 }
 
@@ -171,20 +202,21 @@ function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
-async function selectPage(problem, pair, fa, fb, which) {
-  const pageKey = `${problem}/${pair}/${which}`;
+async function selectPage(problem, pair, artifact, fa, fb, which) {
+  const pageKey = `${problem}/${pair}/${artifact}/${which}`;
   if (currentKey === pageKey) return;
   currentKey = pageKey;
 
   document.querySelectorAll('.page-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById(`btn-${problem}/${pair}-${which}`).classList.add('active');
+  document.getElementById(btnId(problem, pair, artifact, which)).classList.add('active');
 
   const fLabel = which === 'A' ? fa : fb;
-  document.getElementById('title').textContent = `${problem} / ${pair} · ${fLabel}`;
+  document.getElementById('title').textContent = `${problem} / ${pair} / ${artifact} · ${fLabel}`;
 
-  const cacheKey = `${problem}/${pair}`;
+  const cacheKey = `${problem}/${pair}/${artifact}`;
   if (!files[cacheKey]) {
-    const res = await fetch(`/api/files?problem=${problem}&pair=${pair}&fa=${fa}&fb=${fb}`);
+    const qs = new URLSearchParams({problem, pair, artifact, fa, fb});
+    const res = await fetch('/api/files?' + qs.toString());
     files[cacheKey] = await res.json();
   }
   const f = files[cacheKey];
@@ -205,9 +237,9 @@ function setMode(m) {
   mode = m;
   ['sidebyside','diff'].forEach(k => document.getElementById('btn-' + k).classList.toggle('active', k === m));
   if (!currentKey) return;
-  const f = files[currentKey.split('/').slice(0,2).join('/')];
+  const [problem, pair, artifact, which] = currentKey.split('/');
+  const f = files[`${problem}/${pair}/${artifact}`];
   if (!f) return;
-  const which = currentKey.split('/')[2];
   const gt   = which === 'A' ? f.gt_a   : f.gt_b;
   const res  = which === 'A' ? f.res_a  : f.res_b;
   const pGt  = which === 'A' ? f.path_gt_a  : f.path_gt_b;
@@ -256,9 +288,6 @@ function renderUnifiedDiff(oldText, newText, oldPath, newPath) {
     }
   }
 
-  // Pair up adjacent remove+add runs and annotate with intra-line diffs.
-  // A remove block followed immediately by an add block of the same length
-  // gets character-level highlighting; unmatched lines stay plain.
   for (let i = 0; i < lines.length; ) {
     if (lines[i].type !== 'remove') { i++; continue; }
     let rEnd = i;
@@ -328,18 +357,18 @@ class Handler(BaseHTTPRequestHandler):
             html = HTML.replace("__RESULTS_NAME__", self.results_dir.name)
             self.wfile.write(html.encode())
 
-        elif path == "/api/pairs":
-            pairs = find_pairs(self.results_dir)
-            self._json(pairs)
+        elif path == "/api/entries":
+            self._json(find_entries(self.results_dir))
 
         elif path == "/api/files":
             problem = qs.get("problem", [""])[0]
             pair = qs.get("pair", [""])[0]
+            artifact = qs.get("artifact", [""])[0]
             fa = qs.get("fa", [""])[0]
             fb = qs.get("fb", [""])[0]
 
-            res_a = self.results_dir / problem / pair / "A" / "Formulation.lean"
-            res_b = self.results_dir / problem / pair / "B" / "Formulation.lean"
+            res_a = self.results_dir / problem / pair / artifact / "A" / "Formulation.lean"
+            res_b = self.results_dir / problem / pair / artifact / "B" / "Formulation.lean"
             gt_a = REPO_ROOT / "dataset" / "problems" / problem / "formulations" / fa / "Formulation.lean"
             gt_b = REPO_ROOT / "dataset" / "problems" / problem / "formulations" / fb / "Formulation.lean"
 
@@ -368,12 +397,12 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("results_dir", help="Path to results run directory")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("-r", "--run-id", required=True, help="Run ID under results/")
     parser.add_argument("--port", type=int, default=8080)
     args = parser.parse_args()
 
-    results_dir = Path(args.results_dir).resolve()
+    results_dir = (REPO_ROOT / "results" / args.run_id).resolve()
     if not results_dir.is_dir():
         print(f"Error: {results_dir} is not a directory")
         return
