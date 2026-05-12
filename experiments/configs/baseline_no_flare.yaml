@@ -10,6 +10,6 @@ verifiers:
     multi_run: true
     client:
       model: claude-opus-4-7
-      max_tokens: 8192
+      max_tokens: 16384
       reasoning: true
-      effort: medium
+      reasoning_effort: high

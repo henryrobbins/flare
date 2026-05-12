@@ -5,5 +5,25 @@ runs: 1
 
 verifiers:
   - type: flare
-    model: claude-opus-4-7
-    effort: medium
+    name: flare-claude-code-opus-4-7
+    harness: claude_code
+    client:
+      model: claude-opus-4-7
+      reasoning: true
+      reasoning_effort: medium
+
+  - type: flare
+    name: flare-codex-gpt-5.5
+    harness: codex
+    client:
+      model: gpt-5.5
+      reasoning: true
+      reasoning_effort: medium
+
+  - type: flare
+    name: flare-opencode-deepseek-pro
+    harness: opencode
+    client:
+      model: deepseek-v4-pro
+      reasoning: true
+      reasoning_effort: high

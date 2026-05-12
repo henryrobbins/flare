@@ -10,10 +10,14 @@ verifiers:
     multi_run: true
     client:
       model: claude-opus-4-7
-      max_tokens: 8192
+      max_tokens: 16384
       reasoning: true
-      effort: medium
+      reasoning_effort: high
 
   - type: flare
-    model: claude-opus-4-7
-    effort: medium
+    harness: opencode
+    client:
+      model: claude-opus-4-7
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: medium
