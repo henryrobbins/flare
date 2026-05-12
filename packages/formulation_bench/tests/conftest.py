@@ -4,7 +4,7 @@ import pytest
 
 from formulation_bench import Dataset, Problem
 
-DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset"
+DATASET_ROOT = Path(__file__).resolve().parents[3] / "dataset"
 
 
 @pytest.fixture

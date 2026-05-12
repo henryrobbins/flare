@@ -42,10 +42,10 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests", "packages/formulation_bench/tests"]
 markers = [
-    "harness: harness integration tests that make real model/CLI calls (opt-in: -m harness)",
-    "lean: tests that require the Lean toolchain (skip with -m 'not lean')",
+    "docker: tests that require Docker (opt-out: -m 'not docker')",
+    "gurobi: tests that require Gurobi (opt-out: -m 'not gurobi')",
 ]
-addopts = "-m 'not harness'"
+addopts = "-m 'not docker' -n 5"
 
 [tool.ruff]
 line-length = 88

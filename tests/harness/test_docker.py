@@ -1,7 +1,7 @@
 """Integration tests for the docker Harness across all three CLIs.
 
 These tests make real model calls inside the Docker image. They are marked
-`harness` and skipped unless `pytest -m harness` is passed.
+`docker` and excluded by `pytest -m 'not docker'`.
 
 Prerequisites:
   - docker daemon running
@@ -26,7 +26,7 @@ import pytest
 from src.llm_client import LLMConfig
 from src.verify.flare.harness import HARNESSES, Harness
 
-pytestmark = pytest.mark.harness
+pytestmark = pytest.mark.docker
 
 ONE_CALL_PROMPT = """\
 You are testing a harness. Make exactly one tool call and then stop.
@@ -367,7 +367,6 @@ def test_skill_invocable(cli: str, repo_root: Path) -> None:
     assert outcome == "success", f"{outcome}: {evidence}. jsonl={jsonl}"
 
 
-@pytest.mark.lean
 @pytest.mark.parametrize("cli", CLIS)
 def test_lake_build_fresh_module(cli: str, repo_root: Path) -> None:
     """Regression for the macOS seatbelt EPERM bug: agent builds a fresh
@@ -383,7 +382,6 @@ def test_lake_build_fresh_module(cli: str, repo_root: Path) -> None:
     assert outcome == "success", f"{outcome}: {evidence}. jsonl={jsonl}"
 
 
-@pytest.mark.lean
 @pytest.mark.parametrize("cli", CLIS)
 def test_lean_lsp_mcp(cli: str, repo_root: Path) -> None:
     """Agent calls a lean-lsp MCP tool inside the container."""
@@ -394,7 +392,6 @@ def test_lean_lsp_mcp(cli: str, repo_root: Path) -> None:
     assert outcome == "success", f"{outcome}: {evidence}. jsonl={jsonl}"
 
 
-@pytest.mark.lean
 def test_post_hoc_compile_in_container(repo_root: Path) -> None:
     """Entrypoint's `lake env lean` for A/B/Reformulation succeeds when each
     file compiles. Verifies result.json + compile_log.txt flow back to host."""

@@ -375,6 +375,7 @@ EXEC_SKIP: set[tuple[str, str, str]] = {("p12", "a", "d")}
 EQUIVAMAP_SKIP: set[tuple[str, str, str]] = {("p12", "a", "d")}
 
 
+@pytest.mark.gurobi
 def test_execution_verifier(
     pair_with_key: tuple[Formulation, Formulation, bool, tuple[str, str, str]],
     tmp_path: Path,
@@ -401,6 +402,7 @@ def test_llm_verifier(
     assert result.is_reformulation is expected
 
 
+@pytest.mark.gurobi
 def test_equivamap_verifier(
     pair_with_key: tuple[Formulation, Formulation, bool, tuple[str, str, str]],
     tmp_path: Path,
@@ -426,8 +428,7 @@ def test_flare_verifier(
     assert result.is_reformulation is expected
 
 
-@pytest.mark.harness
-@pytest.mark.lean
+@pytest.mark.docker
 def test_flare_verifier_docker(
     pair: tuple[Formulation, Formulation, bool],
     repo_root: Path,
