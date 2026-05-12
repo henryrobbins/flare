@@ -1,62 +1,15 @@
-"""OpenCode (https://opencode.ai/) agent harness.
-
-Permissions in OpenCode subsume the filesystem-sandbox role of Claude Code's
-sandbox config: setting `external_directory: deny` plus path-pattern allow
-lists on `read`/`glob`/`grep` confines the agent to the working directory
-without an OS-level sandbox. We mirror the Claude Code behavior of denying
-everything by default and explicitly allowlisting the commands FLARE needs
-(`lake env lean`, `lake build`, basic file viewers).
-
-Pin: OpenCode 1.14.24. The path-pattern allowlists (`{ "*": "deny",
-"<wd>/**": "allow" }`) regress on later versions:
-  - On `edit`, the `<wd>/**: allow` rule never matches, so the agent
-    can't write its own working files. Reproduces from at least 1.2.27
-    through 1.14.45. Likely related to upstream issues
-    https://github.com/anomalyco/opencode/issues/13872 and
-    https://github.com/anomalyco/opencode/issues/26524 (edit/write/patch
-    are matched against worktree-relative paths, but our patterns are
-    absolute). Until that's fixed we set `edit: { "**": "allow" }`,
-    which leaves outside-wd writes unconfined at the permission layer
-    (the `bash` allowlist still blocks shell-redirect writes, and the
-    agent stays inside the wd as cwd via `--dir <wd>`).
-  - On `read`, the same allow rule regresses around 1.14.45 (works on
-    1.14.24, broken on 1.14.45) — outside-wd reads stop being blocked.
-    1.14.24 is the latest version where read confinement still works.
-
-`tests/harness/test_opencode.py` covers both behaviors. The
-`test_write_repo_root_blocked` test is marked `xfail` because we have
-intentionally given up edit confinement; the rest of the suite passes
-on 1.14.24.
-
-Models are configured via the same `LLMConfig` used by other verifiers (see
-`src/llm_client/base.py`). The harness translates the LLMConfig into the
-nested `provider.<id>.models.<id>.options` block that OpenCode expects:
-
-  - Anthropic (claude-*): `thinking: {type: adaptive}` plus
-                          `output_config: {effort: <effort>}` (newer Claude
-                          models reject the legacy `type: enabled` +
-                          `budgetTokens` form)
-  - OpenAI (gpt-*):       `reasoningEffort: <low|medium|high|xhigh>`
-  - DeepSeek (deepseek-*): `reasoningEffort: <high|max>`
-  - Google (gemini-*):    `reasoningEffort: <low|medium|high>`
-
-See https://opencode.ai/docs/models/ for the exact schema.
-"""
-
-import copy
 import json
+import os
 import shutil
-import subprocess
-import time
 from pathlib import Path
 
 from src.llm_client import LLMConfig
-from src.verify.flare.harness.base import Harness, HarnessRunResult
+from src.verify.flare.harness.base import Harness
 
-_HERE = Path(__file__).parent
-_OPENCODE_TEMPLATE: dict = json.loads(
-    (_HERE / "templates" / "opencode.json").read_text()
-)
+_TEMPLATE: str = (
+    Path(__file__).parent / "agent_commands" / "opencode_agent.sh"
+).read_text()
+
 
 def _infer_provider(model: str) -> str:
     if model.startswith("claude"):
@@ -68,205 +21,117 @@ def _infer_provider(model: str) -> str:
     return "openai"
 
 
-def _model_options(provider: str, cfg: LLMConfig) -> dict:
-    """Translate an LLMConfig into the OpenCode `options` block for a model."""
-    options: dict = {}
-    if cfg.temperature is not None:
-        options["temperature"] = cfg.temperature
-    # Intentionally NOT forwarding cfg.max_tokens. LLMConfig.max_tokens is a
-    # per-response cap aimed at single-shot LLM clients; under an agent
-    # harness, the same cap throttles every turn, and with reasoning on a
-    # small value (e.g. the LLMConfig default 2048) gets eaten by thinking
-    # tokens before the model emits its tool call — the response truncates
-    # mid-stream, no step_finish lands, and the run stalls. Let OpenCode
-    # apply the model's native output limit instead.
-
-    if cfg.reasoning:
-        if provider == "anthropic":
-            # Newer Claude models (Opus 4.7, etc.) reject the legacy
-            # `thinking.type: enabled` + `budgetTokens` form; they require
-            # adaptive thinking with `output_config.effort` instead. See
-            # https://github.com/anomalyco/opencode/issues/22863.
-            options["thinking"] = {"type": "adaptive"}
-            if cfg.reasoning_effort:
-                options["output_config"] = {"effort": cfg.reasoning_effort}
-        else:
-            # OpenAI / DeepSeek / Google all accept `reasoningEffort` per the
-            # OpenCode docs. Pass the user's symbolic effort straight through.
-            if cfg.reasoning_effort:
-                options["reasoningEffort"] = cfg.reasoning_effort
-
-    return options
-
-
-def _config_for(wd: Path, provider: str, cfg: LLMConfig) -> dict:
-    """Render the opencode.json template for a specific working directory."""
-    out = copy.deepcopy(_OPENCODE_TEMPLATE)
-    wd_abs = str(wd.resolve())
-
-    def substitute(node):
-        if isinstance(node, dict):
-            return {substitute(k): substitute(v) for k, v in node.items()}
-        if isinstance(node, list):
-            return [substitute(x) for x in node]
-        if isinstance(node, str):
-            return node.replace("<<WD_ABS>>", wd_abs)
-        return node
-
-    out = substitute(out)
-
-    # Always declare the model under `provider.<id>.models.<id>`, even when
-    # there are no options. OpenCode resolves `--model anthropic/<id>` against
-    # its built-in registry first; for ids the registry doesn't know (e.g.
-    # `claude-haiku-4-5-20251001`) the run fails with `Model not found` unless
-    # the config declares it explicitly. Declaring it unconditionally lets the
-    # caller use any model id the underlying provider accepts.
-    options = _model_options(provider, cfg)
-    out.setdefault("provider", {}).setdefault(provider, {}).setdefault(
-        "models", {}
-    )[cfg.model] = {"options": options}
-
-    return out
-
-
 class OpenCodeHarness(Harness):
-    def __init__(self, config: LLMConfig, provider: str | None = None) -> None:
-        self.config = config
-        self.provider = provider or _infer_provider(config.model)
-        # `provider/model_id` is what OpenCode's --model flag expects.
-        self.model_id = f"{self.provider}/{config.model}"
+    name = "opencode"
 
-    @property
-    def name(self) -> str:
-        return "opencode"
+    def __init__(
+        self,
+        config: LLMConfig,
+        provider: str | None = None,
+    ) -> None:
+        super().__init__(config)
+        self.provider = provider or _infer_provider(config.model)
 
     def method_config(self) -> dict:
-        return {
-            "harness": self.name,
-            "provider": self.provider,
-            "model": self.config.model,
-            "max_tokens": self.config.max_tokens,
-            "temperature": self.config.temperature,
-            "reasoning": self.config.reasoning,
-            "reasoning_effort": self.config.reasoning_effort,
-        }
+        return {**super().method_config(), "provider": self.provider}
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
-        # OpenCode discovers skills directly from .claude/skills/ — no rename
-        # needed. We reuse the same skill tree the Claude Code harness uses.
-        claude_dst = wd / ".claude"
-        claude_dst.mkdir(exist_ok=True)
+        super().configure_wd(wd, repo_root)
+        # Use an `opencode.json` file to configure the model provider and MCP server
+        # https://opencode.ai/docs/config/
+        (wd / "opencode.json").write_text(json.dumps(self._opencode_config(), indent=2))
+        # Copy skills to .agents/skills
+        # https://opencode.ai/docs/skills/#place-files
         skills_src = repo_root / ".claude" / "skills"
         if skills_src.exists():
-            shutil.copytree(skills_src, claude_dst / "skills", dirs_exist_ok=True)
+            agents_skills = wd / ".agents" / "skills"
+            agents_skills.parent.mkdir(exist_ok=True)
+            shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
 
-        cfg = _config_for(wd, self.provider, self.config)
-        (wd / "opencode.json").write_text(json.dumps(cfg, indent=2))
+    def _opencode_config(self) -> dict:
+        """Minimal opencode.json to register the model and lean-lsp MCP server."""
+        options: dict = {}
+        if self.config.temperature is not None:
+            options["temperature"] = self.config.temperature
+        if self.config.reasoning:
+            if self.provider == "anthropic":
+                options["thinking"] = {"type": "adaptive"}
+                if self.config.reasoning_effort:
+                    options["output_config"] = {"effort": self.config.reasoning_effort}
+            elif self.config.reasoning_effort:
+                options["reasoningEffort"] = self.config.reasoning_effort
+        return {
+            "$schema": "https://opencode.ai/config.json",
+            # https://opencode.ai/docs/providers/
+            "provider": {self.provider: {"models": {self.model: {"options": options}}}},
+            # https://opencode.ai/docs/mcp-servers
+            "mcp": {
+                "lean-lsp": {
+                    "type": "local",
+                    "command": ["uvx", "lean-lsp-mcp"],
+                    "enabled": True,
+                }
+            },
+        }
 
-    def run(self, prompt: str, wd: Path, jsonl_path: Path) -> HarnessRunResult:
-        # `--dir` pins OpenCode to the isolated wd. Without it OpenCode walks
-        # upward from cwd to the enclosing git worktree root and operates
-        # there, so the agent ends up looking at the FLARE monorepo instead
-        # of the per-pair wd.
-        cmd = [
-            "opencode",
-            "run",
-            "--dir",
-            str(wd.resolve()),
-            "--format",
-            "json",
-            "--model",
-            self.model_id,
-            prompt,
-        ]
+    def _agent_docker_args(self) -> list[str]:
+        # Pass through any available provider API key
+        args = []
+        for key in (
+            "ANTHROPIC_API_KEY",
+            "OPENAI_API_KEY",
+            "GOOGLE_API_KEY",
+            "DEEPSEEK_API_KEY",
+        ):
+            if key in os.environ:
+                args += ["-e", key]
+        return args
 
-        start = time.time()
-        stdout_lines: list[str] = []
-
-        with jsonl_path.open("w") as jsonl_f:
-            with subprocess.Popen(
-                cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                cwd=wd,
-            ) as proc:
-                assert proc.stdout is not None
-                for line in proc.stdout:
-                    jsonl_f.write(line)
-                    jsonl_f.flush()
-                    stdout_lines.append(line)
-                stderr = proc.stderr.read() if proc.stderr else ""
-                proc.wait()
-
-        duration = time.time() - start
-
-        if stderr:
-            jsonl_path.with_name("opencode_stderr.txt").write_text(stderr)
-
-        parsed = _parse_stream(stdout_lines)
-        return HarnessRunResult(duration_s=round(duration, 1), **parsed)
-
-
-def _parse_stream(lines: list[str]) -> dict:
-    """Parse `opencode run --format json` stream output.
-
-    OpenCode emits one JSON event per line. The events that carry usage
-    metrics are `step_finish` parts with the shape::
-
-        {"type": "step_finish",
-         "part": {"reason": "...",
-                  "tokens": {"input": N, "output": M, "reasoning": R,
-                             "total": T, "cache": {"read": ..., "write": ...}},
-                  "cost": <usd>}}
-
-    `tokens.input` / `tokens.output` are per-step deltas and `cost` is the
-    per-step spend. Note that `tokens.input` is *uncached* input only;
-    cached prompt tokens appear under `tokens.cache.{write,read}`. We fold
-    all three into `input_tokens` so the total matches what Anthropic
-    actually billed for prompt tokens. We take the last step's `reason` as
-    the run-level stop_reason. Missing fields fall back to 0 / None.
-    """
-    input_tokens = 0
-    output_tokens = 0
-    cost_usd: float | None = None
-    stop_reason: str | None = None
-
-    def _as_int(x) -> int:
-        return x if isinstance(x, int) else 0
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-        try:
-            event = json.loads(line)
-        except json.JSONDecodeError:
-            continue
-        if event.get("type") != "step_finish":
-            continue
-
-        part = event.get("part") or {}
-        tokens = part.get("tokens") or {}
-        cache = tokens.get("cache") or {}
-        input_tokens += (
-            _as_int(tokens.get("input"))
-            + _as_int(cache.get("write"))
-            + _as_int(cache.get("read"))
+    def _agent_command(self) -> str:
+        # Pass model and provider to the agent command template
+        return _TEMPLATE.replace("<<PROVIDER>>", self.provider).replace(
+            "<<MODEL>>", self.model
         )
-        output_tokens += _as_int(tokens.get("output"))
 
-        c = part.get("cost")
-        if isinstance(c, (int, float)):
-            cost_usd = (cost_usd or 0.0) + float(c)
+    def _parse_lines(self, lines: list[str]) -> dict:
+        """Parse `opencode run --format json` output."""
+        input_tokens = 0
+        output_tokens = 0
+        cost_usd: float | None = None
+        stop_reason: str | None = None
 
-        r = part.get("reason")
-        if isinstance(r, str):
-            stop_reason = r
+        def _as_int(x) -> int:
+            return x if isinstance(x, int) else 0
 
-    return {
-        "stop_reason": stop_reason,
-        "input_tokens": input_tokens,
-        "output_tokens": output_tokens,
-        "cost_usd": cost_usd,
-    }
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if event.get("type") != "step_finish":
+                continue
+            part = event.get("part") or {}
+            tokens = part.get("tokens") or {}
+            cache = tokens.get("cache") or {}
+            input_tokens += (
+                _as_int(tokens.get("input"))
+                + _as_int(cache.get("write"))
+                + _as_int(cache.get("read"))
+            )
+            output_tokens += _as_int(tokens.get("output"))
+            c = part.get("cost")
+            if isinstance(c, (int, float)):
+                cost_usd = (cost_usd or 0.0) + float(c)
+            r = part.get("reason")
+            if isinstance(r, str):
+                stop_reason = r
+
+        return {
+            "stop_reason": stop_reason,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost_usd": cost_usd,
+        }

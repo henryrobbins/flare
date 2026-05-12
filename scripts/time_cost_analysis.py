@@ -60,7 +60,7 @@ def per_tool_time_ms(events: list[dict]) -> dict[str, int]:
 
 
 def load_pair(path: Path) -> dict | None:
-    """Parse one claude_output.jsonl; return summary dict or None."""
+    """Parse one agent_output.jsonl; return summary dict or None."""
     try:
         events = [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
     except Exception as e:
@@ -77,7 +77,7 @@ def load_pair(path: Path) -> dict | None:
                     tool_calls[c["name"]] += 1
 
     return {
-        "pair_id": path.parts[-3],
+        "pair_id": path.parts[-4],
         "finished": result is not None,
         "duration_ms": result.get("duration_ms", 0) if result else 0,
         "duration_api_ms": result.get("duration_api_ms", 0) if result else 0,
@@ -113,10 +113,10 @@ def main():
     args = parser.parse_args()
 
     run_root = Path("runs") / args.run_id
-    files = sorted(run_root.glob("pairs/*/flare/claude_output.jsonl"))
+    files = sorted(run_root.glob("pairs/*/flare*/wd/agent_output.jsonl"))
 
     if not files:
-        print(f"No claude_output.jsonl files found under {run_root}")
+        print(f"No agent_output.jsonl files found under {run_root}")
         sys.exit(1)
 
     pairs = [p for p in (load_pair(f) for f in files) if p is not None]

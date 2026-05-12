@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Summarize context read (Read tool, Bash file reads, skill loads) in claude_output.jsonl traces.
+"""Summarize context read (Read tool, Bash file reads, skill loads) in agent_output.jsonl traces.
 
 Usage:
-  Single file:  read_context_summary.py path/to/claude_output.jsonl
+  Single file:  read_context_summary.py path/to/agent_output.jsonl
   Run summary:  read_context_summary.py -r runs/20260426T154132Z
 """
 
@@ -97,7 +97,9 @@ def parse_trace(jsonl_path: Path) -> tuple[list[dict], list[dict], list[dict], d
     outside_entries: same shape but for paths outside the wd (successful reads)
     attempted_outside_entries: [{file_path, attempt_count}] — denied tool calls that targeted outside-wd paths
     """
-    wd = (jsonl_path.parent / "wd").resolve()
+    # The agent runs inside the Docker container where wd is bind-mounted at
+    # /workspace/wd, so all absolute paths in the trace are rooted there.
+    wd = Path("/workspace/wd")
 
     tool_calls: dict[str, dict] = {}
     tool_results: dict[str, str] = {}
@@ -208,7 +210,7 @@ def aggregate_run(
     Returns (file_entries, outside_entries, attempted_outside_rows, session_summaries, num_pairs).
     file_entries are keyed by relative file path within each pair's wd.
     """
-    jsonl_files = sorted(run_dir.glob("pairs/*/flare/claude_output.jsonl"))
+    jsonl_files = sorted(run_dir.glob("pairs/*/flare*/wd/agent_output.jsonl"))
     if not jsonl_files:
         return [], [], [], [], 0
 
@@ -218,7 +220,7 @@ def aggregate_run(
     session_summaries: list[dict] = []
 
     for jf in jsonl_files:
-        pair = jf.parts[-3]  # pairs/<pair>/flare/claude_output.jsonl
+        pair = jf.parts[-4]  # pairs/<pair>/flare/wd/agent_output.jsonl
         inside, outside, attempted_outside, summary = parse_trace(jf)
         for e in inside:
             inside_accum[e["file_path"]].extend(
@@ -466,7 +468,7 @@ def main() -> None:
         nargs="*",
         type=Path,
         metavar="JSONL",
-        help="claude_output.jsonl file(s)",
+        help="agent_output.jsonl file(s)",
     )
     parser.add_argument(
         "-r", "--run", type=Path, metavar="RUN_DIR", help="Run directory to aggregate"

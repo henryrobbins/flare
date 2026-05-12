@@ -80,3 +80,29 @@ The repo provides a set of skills and agents for working with this dataset. This
 
 1. Identify the relevant file(s) to read. This includes relevant problem files, formulation files, MILP formulation `Formulation.lean` and reformulation proofs `dataset/reformulations/pX/a_b.lean`.
 2. Invoke the `milp-reviewer` agent pointing to the relevant file locations. If generating multiple formulations, invoke multiple agents in parallel.
+
+## Docker harness
+
+FLARE runs each agent + post-hoc Lean compile inside a Linux container.
+The image bakes the lake project skeleton plus mathlib oleans at
+`/workspace/`, **outside** the bind mount. At runtime the harness
+bind-mounts the agent `wd` at `/workspace/wd` (the agent's cwd and
+lake project root), and the entrypoint creates a
+`/workspace/wd/.lake -> /workspace/.lake` symlink so the agent's lake
+invocations find the image-baked mathlib + Common.olean. The `.lake`
+build tree itself stays in the container's writable layer (CoW from the
+image), so the multi-GB oleans never land on the host and each pair
+gets its own isolated build cache — no cross-pair contamination. The
+symlink shows up on host as a dangling pointer to `/workspace/.lake`;
+that's expected.
+
+Setup:
+
+1. One-time: `claude setup-token`, save the printed token to `.env` as
+   `CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...` (this is how claude_code bills
+   against the Claude.ai plan inside the container).
+2. `docker build -f docker/Dockerfile -t flare-agent:latest .` from the repo root (~5 min cold,
+   ~1 s when only the entrypoint changed).
+3. Run experiments normally; the harness uses the image automatically.
+4. When `lean-toolchain` bumps, rebuild the image (no volume cleanup
+   needed — each container reads `.lake/` from the image layer).

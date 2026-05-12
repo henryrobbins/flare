@@ -2,7 +2,11 @@
 
 import argparse
 import json
+import os
+import subprocess
 import traceback
+from collections.abc import Iterable
+from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
@@ -57,7 +61,53 @@ def make_run_dir() -> Path:
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = Path("runs") / timestamp
     run_dir.mkdir(parents=True, exist_ok=True)
+    # Tag every container spawned during this run so we can kill them on
+    # Ctrl+C (see kill_run_containers / run_with_interrupt).
+    os.environ["FLARE_RUN_ID"] = timestamp
     return run_dir
+
+
+def kill_run_containers(run_id: str) -> None:
+    """`docker kill` every container labeled flare-run=<run_id>."""
+    try:
+        out = subprocess.run(
+            ["docker", "ps", "-q", "--filter", f"label=flare-run={run_id}"],
+            capture_output=True, text=True, check=False,
+        )
+    except FileNotFoundError:
+        return
+    ids = out.stdout.split()
+    if not ids:
+        return
+    print(f"  Stopping {len(ids)} container(s)...")
+    subprocess.run(["docker", "kill", *ids], check=False,
+                   capture_output=True)
+
+
+def drain_with_interrupt(
+    executor: ThreadPoolExecutor,
+    futures: Iterable[Future],
+    run_id: str,
+    on_result,
+) -> None:
+    """Iterate `as_completed(futures)` calling `on_result(future)` for each;
+    on KeyboardInterrupt, kill all run containers, cancel pending futures,
+    and shut down the executor without waiting for the (now-dying) workers
+    to drain naturally."""
+    futures = list(futures)
+    try:
+        for future in as_completed(futures):
+            on_result(future)
+    except KeyboardInterrupt:
+        print("\n  Interrupted. Killing containers and shutting down...")
+        kill_run_containers(run_id)
+        for f in futures:
+            f.cancel()
+        # Workers are blocked in subprocess.run waiting for docker; once
+        # docker kill lands, those calls return and threads exit. wait=True
+        # is still safe (and quick) after the kill.
+        executor.shutdown(wait=True, cancel_futures=True)
+        raise SystemExit(130)
 
 
 def add_common_args(parser: argparse.ArgumentParser, default_config: Path) -> None:

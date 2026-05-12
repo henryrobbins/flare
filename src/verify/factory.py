@@ -7,12 +7,7 @@ from src.verify.base import ReformulationVerifier
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.execution.execution import ExecutionVerifier
 from src.verify.flare.flare import FLAREVerifier
-from src.verify.flare.harness import (
-    ClaudeCodeHarness,
-    CodexHarness,
-    Harness,
-    OpenCodeHarness,
-)
+from src.verify.flare.harness import HARNESSES, Harness
 from src.verify.llm.llm import LLMVerifier
 
 
@@ -22,17 +17,13 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
     Spec shape (by `type`):
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
-      - {type: flare, harness: claude_code,
-         client: {<LLMConfig fields>}}
-      - {type: flare, harness: opencode,
-         client: {<LLMConfig fields, optional provider>}}
-      - {type: flare, harness: codex,
+      - {type: flare, harness: claude_code|codex|opencode,
          client: {<LLMConfig fields, optional provider>}}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
 
     The `flare` spec accepts a legacy form without an explicit `harness` key,
-    in which case it defaults to `claude_code` for backwards compatibility.
+    in which case it defaults to `claude_code`.
     """
     spec = dict(spec)
     vtype = spec.pop("type")
@@ -65,18 +56,11 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
 
 def _build_harness(spec: dict) -> Harness:
     htype = spec.pop("harness", "claude_code")
-    if htype == "claude_code":
-        client_spec = dict(spec.pop("client"))
-        config = LLMConfig.from_dict(client_spec)
-        return ClaudeCodeHarness(config=config)
-    if htype == "opencode":
-        client_spec = dict(spec.pop("client"))
-        provider = client_spec.pop("provider", None)
-        config = LLMConfig.from_dict(client_spec)
-        return OpenCodeHarness(config=config, provider=provider)
-    if htype == "codex":
-        client_spec = dict(spec.pop("client"))
-        provider = client_spec.pop("provider", None)
-        config = LLMConfig.from_dict(client_spec)
-        return CodexHarness(config=config, provider=provider)
-    raise ValueError(f"unknown flare harness: {htype!r}")
+    cls = HARNESSES.get(htype)
+    if cls is None:
+        raise ValueError(f"unknown flare harness: {htype!r}")
+    client_spec = dict(spec.pop("client"))
+    provider = client_spec.pop("provider", None)
+    config = LLMConfig.from_dict(client_spec)
+    kwargs = {"provider": provider} if provider is not None else {}
+    return cls(config=config, **kwargs)
