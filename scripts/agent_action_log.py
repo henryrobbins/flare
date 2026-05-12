@@ -382,10 +382,10 @@ def main():
     args = parser.parse_args()
 
     run_root = Path("runs") / args.run_id
-    files = sorted(run_root.glob("pairs/*/flare/claude_output.jsonl"))
+    files = sorted(run_root.glob("pairs/*/flare*/wd/agent_output.jsonl"))
 
     if not files:
-        print(f"No claude_output.jsonl files found under {run_root}")
+        print(f"No agent_output.jsonl files found under {run_root}")
         sys.exit(1)
 
     out_dir = run_root / "analysis" / "agent_time"
@@ -403,7 +403,7 @@ def main():
     agg: dict[tuple, dict] = defaultdict(lambda: {c: 0.0 for c in SUM_COLS})
 
     for f in files:
-        pair_id = f.parts[-3]
+        pair_id = f.parts[-4]
         rows = parse_action_log(f)
 
         out_path = out_dir / f"{pair_id}.csv"
