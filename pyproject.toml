@@ -33,6 +33,7 @@ formulation-bench = { workspace = true }
 dev = [
     "mypy>=1.0",
     "pytest>=8.0",
+    "pytest-xdist>=3.5",
     "ruff>=0.4",
 ]
 
