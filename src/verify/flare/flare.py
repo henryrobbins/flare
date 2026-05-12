@@ -13,10 +13,7 @@ from src.verify.flare.prompts import render_agent_prompt
 
 
 class FLAREVerifier(ReformulationVerifier):
-    def __init__(self, repo_root: Path, harness: Harness | None = None) -> None:
-        # `harness` is optional so that callers that only need ._evaluate
-        # (e.g., scripts/reeval_flare.py) can construct a verifier without
-        # configuring a Docker harness.
+    def __init__(self, repo_root: Path, harness: Harness) -> None:
         self.repo_root = repo_root
         self.harness = harness
 
@@ -25,16 +22,11 @@ class FLAREVerifier(ReformulationVerifier):
         return "flare"
 
     def method_config(self) -> dict:
-        if self.harness is None:
-            return {}
         return self.harness.method_config()
 
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path
     ) -> ReformulationResult:
-        if self.harness is None:
-            raise RuntimeError("FLAREVerifier.verify requires a Harness")
-
         # Create the artifacts directory at the output path and write config
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
@@ -65,9 +57,6 @@ class FLAREVerifier(ReformulationVerifier):
 
     def _setup_wd(self, wd: Path, a: Formulation, b: Formulation) -> None:
         """Populate the agent working directory with all necessary files."""
-
-        if self.harness is None:
-            raise RuntimeError("FLAREVerifier._setup_wd requires a Harness")
 
         wd.mkdir(parents=True, exist_ok=True)
 
