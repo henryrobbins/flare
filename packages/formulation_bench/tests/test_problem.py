@@ -105,12 +105,12 @@ def test_solution_values(problem1: Problem) -> None:
 
 
 def test_solution_none_when_missing(tmp_path: "Path") -> None:
-    from pathlib import Path
 
     problem_dir = tmp_path / "prob"
     problem_dir.mkdir()
     (problem_dir / "problem.json").write_text(
-        '{"name": "Test Problem", "description": "test", "parameters": {}, "metadata": {}}'
+        '{"name": "Test Problem", "description": "test",'
+        ' "parameters": {}, "metadata": {}}'
     )
     (problem_dir / "description.md").write_text("test")
     p = Problem(problem_dir)

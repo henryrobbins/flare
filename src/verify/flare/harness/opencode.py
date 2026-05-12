@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from pathlib import Path
+from typing import Any
 
 from src.llm_client import LLMConfig
 from src.verify.flare.harness.base import Harness
@@ -32,7 +33,7 @@ class OpenCodeHarness(Harness):
         super().__init__(config)
         self.provider = provider or _infer_provider(config.model)
 
-    def method_config(self) -> dict:
+    def method_config(self) -> dict[str, Any]:
         return {**super().method_config(), "provider": self.provider}
 
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
@@ -48,9 +49,9 @@ class OpenCodeHarness(Harness):
             agents_skills.parent.mkdir(exist_ok=True)
             shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
 
-    def _opencode_config(self) -> dict:
+    def _opencode_config(self) -> dict[str, Any]:
         """Minimal opencode.json to register the model and lean-lsp MCP server."""
-        options: dict = {}
+        options: dict[str, Any] = {}
         if self.config.temperature is not None:
             options["temperature"] = self.config.temperature
         if self.config.reasoning:
@@ -76,7 +77,7 @@ class OpenCodeHarness(Harness):
 
     def _agent_docker_args(self) -> list[str]:
         # Pass through any available provider API key
-        args = []
+        args: list[str] = []
         for key in (
             "ANTHROPIC_API_KEY",
             "OPENAI_API_KEY",
@@ -93,14 +94,14 @@ class OpenCodeHarness(Harness):
             "<<MODEL>>", self.model
         )
 
-    def _parse_lines(self, lines: list[str]) -> dict:
+    def _parse_lines(self, lines: list[str]) -> dict[str, Any]:
         """Parse `opencode run --format json` output."""
         input_tokens = 0
         output_tokens = 0
         cost_usd: float | None = None
         stop_reason: str | None = None
 
-        def _as_int(x) -> int:
+        def _as_int(x: Any) -> int:
             return x if isinstance(x, int) else 0
 
         for line in lines:

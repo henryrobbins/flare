@@ -3,36 +3,43 @@ import json
 import subprocess
 import time
 from pathlib import Path
+from typing import Any
 
 from formulation_bench import Formulation
 from formulation_bench.models import Constraint
 
-from src.verify.base import ReformulationResult, ReformulationVerifier
+from src.llm_client import LLMClient, compute_cost_usd
 from src.prompts import problem_info
+from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.verify.equivamap.prompts import (
     VARIABLE_MAPPING_SCHEMA,
     render_variable_mapping,
 )
-from src.llm_client import LLMClient, compute_cost_usd
 
 TOLERANCE = 1e-6
 
 
-def _scale_nested(data: list | float, c: float) -> list | float:
+Nested = float | list[Any]
+
+
+def _scale_nested(data: Nested, c: float) -> Nested:
     if isinstance(data, list):
         return [_scale_nested(v, c) for v in data]
     return c * float(data)
 
 
-def _add_nested(a: list | float, b: list | float) -> list | float:
-    if isinstance(a, list):
+def _add_nested(a: Nested, b: Nested) -> Nested:
+    if isinstance(a, list) and isinstance(b, list):
         return [_add_nested(x, y) for x, y in zip(a, b)]
+    assert not isinstance(a, list) and not isinstance(b, list)
     return float(a) + float(b)
 
 
-def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | None:
-    """Compute RHS value(s) by evaluating the linear combination against B's solution."""
-    result: float | list | dict | None = None
+def _compute_rhs(
+    terms: list[dict[str, Any]], sol_b_vars: dict[str, Any]
+) -> float | list[Any] | dict[Any, Any] | None:
+    """Compute RHS value(s) by evaluating the linear combination against B's sol."""
+    result: float | list[Any] | dict[Any, Any] | None = None
     for term in terms:
         entry = sol_b_vars.get(term["variable"])
         if entry is None:
@@ -56,13 +63,15 @@ def _compute_rhs(terms: list[dict], sol_b_vars: dict) -> float | list | dict | N
     return result
 
 
-def _list_depth(data: list) -> int:
+def _list_depth(data: list[Any]) -> int:
     if data and isinstance(data[0], list):
         return 1 + _list_depth(data[0])
     return 1
 
 
-def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:
+def _pinning_constraint(
+    var_name: str, rhs: float | list[Any] | dict[Any, Any]
+) -> Constraint:
     """Build a single Constraint that pins var_name to the given RHS value(s)."""
     if isinstance(rhs, (int, float)):
         code = f"model.addConstr({var_name} == {rhs!r})"
@@ -92,19 +101,21 @@ def _pinning_constraint(var_name: str, rhs: float | list | dict) -> Constraint:
     )
 
 
-def _validate_mapping(parsed: dict, b_variables: dict) -> list[dict] | None:
+def _validate_mapping(
+    parsed: dict[str, Any], b_variables: dict[str, Any]
+) -> list[dict[str, Any]] | None:
     """Validate structured mapping dict. Returns [] for no-mapping, None on invalid."""
     terms = parsed.get("terms")
     if not isinstance(terms, list) or not terms:
         return None
     if terms[0].get("constant") == "none":
         return []
-    valid: list[dict] = []
+    valid: list[dict[str, Any]] = []
     for term in terms:
         raw = term.get("constant")
         variable = term.get("variable")
         try:
-            constant = float(raw)  # type: ignore[arg-type]
+            constant = float(raw)
         except (TypeError, ValueError):
             return None
         if variable not in b_variables:
@@ -113,7 +124,7 @@ def _validate_mapping(parsed: dict, b_variables: dict) -> list[dict] | None:
     return valid
 
 
-def _solve(formulation: Formulation, fdir: Path) -> dict:
+def _solve(formulation: Formulation, fdir: Path) -> dict[str, Any]:
     """gen_params → write solve.py → run → return solution dict."""
     fdir.mkdir(parents=True, exist_ok=True)
     params_path = fdir / "parameters.json"
@@ -126,7 +137,8 @@ def _solve(formulation: Formulation, fdir: Path) -> dict:
         check=True,
         capture_output=True,
     )
-    return json.loads(solution_path.read_text())
+    result: dict[str, Any] = json.loads(solution_path.read_text())
+    return result
 
 
 class EquivaMapVerifier(ReformulationVerifier):
@@ -137,7 +149,7 @@ class EquivaMapVerifier(ReformulationVerifier):
     def name(self) -> str:
         return "equivamap"
 
-    def method_config(self) -> dict:
+    def method_config(self) -> dict[str, Any]:
         return {"tolerance": TOLERANCE, "llm": dataclasses.asdict(self.client.config)}
 
     def verify(
@@ -167,7 +179,7 @@ class EquivaMapVerifier(ReformulationVerifier):
         # Step 3: LLM variable mapping discovery
         prompts_dir = artifacts_dir / "mapping_prompts"
         prompts_dir.mkdir(exist_ok=True)
-        variable_mappings: dict[str, list[dict] | None] = {}
+        variable_mappings: dict[str, list[dict[str, Any]] | None] = {}
         total_input_tokens = 0
         total_output_tokens = 0
 

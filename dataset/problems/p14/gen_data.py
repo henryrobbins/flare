@@ -17,17 +17,18 @@ Output keys match problem.json:
 import json
 import random
 from itertools import combinations
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 SCRIPT_DIR = Path(__file__).parent
 OUTPUT_PATH = SCRIPT_DIR / "data.json"
 
 SEED = 42
-NUM_HOSPITALS = 20       # nH
-NUM_CANDIDATES = 6       # nS
-NUM_DCS = 3              # n
-TRAVEL_TIME_LIMIT = 60   # T_limit (minutes)
+NUM_HOSPITALS = 20  # nH
+NUM_CANDIDATES = 6  # nS
+NUM_DCS = 3  # n
+TRAVEL_TIME_LIMIT = 60  # T_limit (minutes)
 
 
 def generate_data(

@@ -5,11 +5,12 @@ import json
 import os
 import subprocess
 import traceback
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from concurrent.futures import Future, ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 from threading import Lock
+from typing import Any
 
 from formulation_bench import Formulation, Pair
 
@@ -34,7 +35,7 @@ def parse_problem_ids(s: str | None) -> set[int] | None:
 
 
 def resolve_problem_filter(
-    cli_problems: str | None, cfg: dict
+    cli_problems: str | None, cfg: dict[str, Any]
 ) -> set[int] | None:
     """CLI --problems wins; falls back to YAML `problems:`; else no filter."""
     if cli_problems is not None:
@@ -72,7 +73,9 @@ def kill_run_containers(run_id: str) -> None:
     try:
         out = subprocess.run(
             ["docker", "ps", "-q", "--filter", f"label=flare-run={run_id}"],
-            capture_output=True, text=True, check=False,
+            capture_output=True,
+            text=True,
+            check=False,
         )
     except FileNotFoundError:
         return
@@ -80,15 +83,14 @@ def kill_run_containers(run_id: str) -> None:
     if not ids:
         return
     print(f"  Stopping {len(ids)} container(s)...")
-    subprocess.run(["docker", "kill", *ids], check=False,
-                   capture_output=True)
+    subprocess.run(["docker", "kill", *ids], check=False, capture_output=True)
 
 
 def drain_with_interrupt(
     executor: ThreadPoolExecutor,
-    futures: Iterable[Future],
+    futures: Iterable[Future[Any]],
     run_id: str,
-    on_result,
+    on_result: Callable[[Future[Any]], None],
 ) -> None:
     """Iterate `as_completed(futures)` calling `on_result(future)` for each;
     on KeyboardInterrupt, kill all run containers, cancel pending futures,
@@ -149,13 +151,13 @@ def run_verification(
     run_idx: int | None,
     model: str | None = None,
     mode: str | None = None,
-) -> dict:
-    """Verify one pair, returning a result row dict (errors captured into row['error'])."""
+) -> dict[str, Any]:
+    """Verify one pair, returning a row dict (errors captured in row['error'])."""
     pid = pair_id(pair.a, pair.b)
     pa, fa = pid.split("__")[0].split("_", 1)
     pb, fb = pid.split("__")[1].split("_", 1)
 
-    row: dict = {
+    row: dict[str, Any] = {
         "pair_id": pid,
         "problem_a": pa,
         "formulation_a": fa,
@@ -190,7 +192,7 @@ def run_verification(
 
 
 def write_and_log(
-    row: dict,
+    row: dict[str, Any],
     results_path: Path,
     write_lock: Lock,
     name: str,

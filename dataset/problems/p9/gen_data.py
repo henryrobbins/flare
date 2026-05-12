@@ -18,7 +18,9 @@ SCRIPT_DIR = Path(__file__).parent
 DATA_SOURCE_DIR = SCRIPT_DIR / "data_source"
 TGZ_URL = "https://commalab.di.unipi.it/files/Data/MMCF/R.tgz"
 TGZ_PATH = DATA_SOURCE_DIR / "R.tgz"
-EXTRACT_DIR = DATA_SOURCE_DIR  # archive extracts .dow files directly (no R/ subdirectory)
+EXTRACT_DIR = (
+    DATA_SOURCE_DIR  # archive extracts .dow files directly (no R/ subdirectory)
+)
 OUTPUT_PATH = SCRIPT_DIR / "data.json"
 
 INSTANCE_FILE = "r04.2.dow"

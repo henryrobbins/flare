@@ -2,6 +2,7 @@ import json
 import os
 import shutil
 from pathlib import Path
+from typing import Any
 
 from src.verify.flare.harness.base import Harness
 
@@ -32,7 +33,8 @@ class ClaudeCodeHarness(Harness):
         # https://code.claude.com/docs/en/authentication#generate-a-long-lived-token
         if "CLAUDE_CODE_OAUTH_TOKEN" not in os.environ:
             raise RuntimeError(
-                "claude_code harness requires CLAUDE_CODE_OAUTH_TOKEN from `claude setup-token`"
+                "claude_code harness requires CLAUDE_CODE_OAUTH_TOKEN"
+                " from `claude setup-token`"
             )
         return ["-e", "CLAUDE_CODE_OAUTH_TOKEN"]
 
@@ -42,7 +44,7 @@ class ClaudeCodeHarness(Harness):
             "<<EFFORT>>", self.effort
         )
 
-    def _parse_lines(self, lines: list[str]) -> dict:
+    def _parse_lines(self, lines: list[str]) -> dict[str, Any]:
         """Parse `claude -p --output-format stream-json` output."""
         input_tokens = 0
         output_tokens = 0

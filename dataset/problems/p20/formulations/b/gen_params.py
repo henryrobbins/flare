@@ -1,5 +1,5 @@
-import json
 import argparse
+import json
 
 
 def main(data_path: str, output_path: str) -> None:
@@ -35,10 +35,7 @@ def main(data_path: str, output_path: str) -> None:
 
     # E[i][j] = 1 if edge (i -> j) exists
     edges = data["edges"]
-    E = [
-        [edges[all_nodes[i]][all_nodes[j]] for j in range(nN)]
-        for i in range(nN)
-    ]
+    E = [[edges[all_nodes[i]][all_nodes[j]] for j in range(nN)] for i in range(nN)]
 
     # pE[p][i][j] = 1 if edge (i -> j) is part of path p
     # pRank[p][v] = position of node v in path p (0 for source, increasing along edges;
@@ -57,10 +54,7 @@ def main(data_path: str, output_path: str) -> None:
 
     # c[p][k] = shipping cost per kg of commodity k along path p
     path_costs = data["path_costs"]
-    c = [
-        [path_costs[paths[p]][foods[k]] for k in range(nK)]
-        for p in range(nP)
-    ]
+    c = [[path_costs[paths[p]][foods[k]] for k in range(nK)] for p in range(nP)]
 
     # q[k] = procurement cost per kg of commodity k
     procurement_costs = data["procurement_costs"]

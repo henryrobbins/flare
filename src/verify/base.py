@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 from formulation_bench import Formulation
 
@@ -12,7 +13,7 @@ class ReformulationResult:
     artifacts_dir: Path
     duration_s: float | None = None
     cost_usd: float | None = None
-    metadata: dict = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 class ReformulationVerifier(ABC):
@@ -21,7 +22,7 @@ class ReformulationVerifier(ABC):
     def name(self) -> str: ...
 
     @abstractmethod
-    def method_config(self) -> dict: ...
+    def method_config(self) -> dict[str, Any]: ...
 
     @abstractmethod
     def verify(

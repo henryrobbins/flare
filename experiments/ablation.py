@@ -11,18 +11,19 @@ experiments/configs/ablation.yaml). CLI flags override YAML values.
 """
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 from threading import Lock
+from typing import Any
 
 import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from formulation_bench import Dataset, Pair
+from formulation_bench import Dataset, Pair  # noqa: E402
 
-from experiments.utils import (
+from experiments.utils import (  # noqa: E402
     add_common_args,
     drain_with_interrupt,
     filter_pairs,
@@ -32,8 +33,8 @@ from experiments.utils import (
     run_verification,
     write_and_log,
 )
-from src.verify.base import ReformulationVerifier
-from src.verify.factory import build_verifier
+from src.verify.base import ReformulationVerifier  # noqa: E402
+from src.verify.factory import build_verifier  # noqa: E402
 
 DEFAULT_CONFIG = Path(__file__).parent / "configs" / "ablation.yaml"
 
@@ -48,12 +49,15 @@ def process_pair_verifier(
     write_lock: Lock,
 ) -> None:
     pid = pair_id(pair.a, pair.b)
-    artifacts_dir = (
-        results_path.parent / "pairs" / pid / verifier.name / str(run_idx)
-    )
+    artifacts_dir = results_path.parent / "pairs" / pid / verifier.name / str(run_idx)
     row = run_verification(
-        verifier, pair, artifacts_dir, verifier.name, run_idx,
-        model=model, mode=mode,
+        verifier,
+        pair,
+        artifacts_dir,
+        verifier.name,
+        run_idx,
+        model=model,
+        mode=mode,
     )
     write_and_log(
         row, results_path, write_lock, verifier.name, run_idx, pair.reformulation
@@ -86,7 +90,11 @@ def main() -> None:
                 "include_implicit": mode["include_implicit"],
             }
             verifiers.append(
-                (build_verifier(spec, repo_root=repo_root), model["label"], mode["label"])
+                (
+                    build_verifier(spec, repo_root=repo_root),
+                    model["label"],
+                    mode["label"],
+                )
             )
 
     pairs = filter_pairs(dataset.pairs, problem_filter)
@@ -122,7 +130,7 @@ def main() -> None:
         for pair, verifier, model, mode, run_idx in tasks
     }
 
-    def on_result(future):
+    def on_result(future: Future[Any]) -> None:
         exc = future.exception()
         if exc:
             pair, verifier, run_idx = futures[future]

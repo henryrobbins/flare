@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Combine multiple runs into a new run by symlinking artifact dirs and merging results.jsonl.
+"""Combine multiple runs into a new run by symlinking artifact dirs and merging results.
 
-When duplicate (pair_id, method) entries exist across runs, later runs (by run ID sort order)
-take precedence.
+When duplicate (pair_id, method) entries exist across runs, later runs (by run ID
+sort order) take precedence.
 
 Usage:
     python scripts/combine_runs.py <run_id1> <run_id2> ...
@@ -15,13 +15,20 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("run_ids", nargs="*", metavar="RUN_ID", default=[], help="Run IDs to combine")
-    group.add_argument("--last", type=int, metavar="N", help="Combine the N most recent runs")
+    group.add_argument(
+        "run_ids", nargs="*", metavar="RUN_ID", default=[], help="Run IDs to combine"
+    )
+    group.add_argument(
+        "--last", type=int, metavar="N", help="Combine the N most recent runs"
+    )
     args = parser.parse_args()
 
     repo_root = Path(__file__).resolve().parent.parent
@@ -53,13 +60,16 @@ def main():
     print(f"New run ID:     {new_run_id}")
 
     # Process runs in order; later runs overwrite earlier on collision
-    merged: dict[tuple[str, str], dict] = {}
+    merged: dict[tuple[str, str], tuple[str, dict[str, Any]]] = {}
 
     for run_id in selected:
         run_path = runs_dir / run_id
         results_file = run_path / "results.jsonl"
         if not results_file.exists():
-            print(f"  warning: {run_id}/results.jsonl not found, skipping", file=sys.stderr)
+            print(
+                f"  warning: {run_id}/results.jsonl not found, skipping",
+                file=sys.stderr,
+            )
             continue
 
         with results_file.open() as f:
@@ -100,7 +110,10 @@ def main():
         for _, record in merged.values():
             f.write(json.dumps(record) + "\n")
 
-    print(f"Done: {len(merged)} results, {symlinked} symlinks, {skipped} missing artifacts")
+    print(
+        f"Done: {len(merged)} results, {symlinked} symlinks,"
+        f" {skipped} missing artifacts"
+    )
     print(f"Output: {new_run_dir}")
 
 

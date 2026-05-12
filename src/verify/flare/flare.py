@@ -3,6 +3,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from typing import Any
 
 from formulation_bench import Formulation
 
@@ -21,7 +22,7 @@ class FLAREVerifier(ReformulationVerifier):
     def name(self) -> str:
         return "flare"
 
-    def method_config(self) -> dict:
+    def method_config(self) -> dict[str, Any]:
         return self.harness.method_config()
 
     def verify(
@@ -89,7 +90,7 @@ class FLAREVerifier(ReformulationVerifier):
         shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
         shutil.copy2(self.repo_root / "Common.lean", wd / "Common.lean")
 
-    def _evaluate(self, wd: Path) -> dict:
+    def _evaluate(self, wd: Path) -> dict[str, Any]:
         """Evaluate the agent's output to determine if the reformulation is correct."""
 
         # Expected agent output files
@@ -122,7 +123,7 @@ class FLAREVerifier(ReformulationVerifier):
         # Load the agent's compile results and log
         result_path = wd / "result.json"
         compile_log_path = wd / "compile_log.txt"
-        entry_result: dict = {}
+        entry_result: dict[str, Any] = {}
         if result_path.exists():
             try:
                 entry_result = json.loads(result_path.read_text())
@@ -174,7 +175,8 @@ class FLAREVerifier(ReformulationVerifier):
     def _check_agent_decision(self, reform_content: str) -> str | None:
         """Check for agent self-reported non-reformulation decisions"""
         first_line = next(
-            (l.strip() for l in reform_content.splitlines() if l.strip()), ""
+            (line.strip() for line in reform_content.splitlines() if line.strip()),
+            "",
         )
         normalized = re.sub(r"^-+\s*", "", first_line).upper()
         if normalized.startswith("NOT REFORMULATION"):

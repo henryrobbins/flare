@@ -35,6 +35,8 @@ dev = [
     "pytest>=8.0",
     "pytest-xdist>=3.5",
     "ruff>=0.4",
+    "types-PyYAML",
+    "types-tqdm",
 ]
 
 [tool.pytest.ini_options]
@@ -50,6 +52,11 @@ line-length = 88
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/review/flare_formulation_reviewer.py" = ["E501"]
+"dataset/**/gen_params.py" = ["E741"]  # single letter names for math notation
+"dataset/**/gen_data.py" = ["E741"]  # single letter names for math notation
 
 [tool.mypy]
 strict = true

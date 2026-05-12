@@ -9,15 +9,18 @@ Produces two files in the output directory:
 import argparse
 import json
 from pathlib import Path
+from typing import Any
 
-from formulation_bench import Dataset
+from formulation_bench import Dataset, Formulation, Problem
 
 
 def _read_text(path: Path) -> str | None:
     return path.read_text() if path.exists() else None
 
 
-def build_formulation_record(pid: int, fid: str, problem, formulation) -> dict:
+def build_formulation_record(
+    pid: int, fid: str, problem: Problem, formulation: Formulation
+) -> dict[str, Any]:
     lean_code = _read_text(formulation.path / "Formulation.lean")
     gen_params_code = _read_text(formulation.path / "gen_params.py")
     solve_code = _read_text(formulation.path / "solve.py")
@@ -69,7 +72,7 @@ def build_formulation_record(pid: int, fid: str, problem, formulation) -> dict:
     }
 
 
-def build_pair_record(pair: dict, dataset_root: Path) -> dict:
+def build_pair_record(pair: dict[str, Any], dataset_root: Path) -> dict[str, Any]:
     a, b = pair["a"], pair["b"]
     reformulation = pair["reformulation"]
 

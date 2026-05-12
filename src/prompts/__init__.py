@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
-
-from jinja2 import Environment, FileSystemLoader
+from typing import Any
 
 from formulation_bench import Formulation
+from jinja2 import Environment, FileSystemLoader
 
 _env = Environment(
     loader=FileSystemLoader(Path(__file__).parent),
@@ -19,7 +19,7 @@ class RenderedPrompt:
     user: str
 
 
-def problem_info(f: Formulation) -> dict:
+def problem_info(f: Formulation) -> dict[str, Any]:
     return {
         "variables": {
             name: {"description": var.description, "type": var.type.value}

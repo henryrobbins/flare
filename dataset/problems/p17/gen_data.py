@@ -25,7 +25,7 @@ def generate_data(seed: int = SEED) -> dict:
     np.random.seed(seed)
     random.seed(seed)
 
-    blocks = list(range(1, NUM_BLOCKS + 1))   # 1-based
+    blocks = list(range(1, NUM_BLOCKS + 1))  # 1-based
     periods = list(range(1, NUM_PERIODS + 1))  # 1-based
 
     # Per-block grade (float in [0.5, 3.0])
@@ -52,9 +52,7 @@ def generate_data(seed: int = SEED) -> dict:
     precedence: dict = {i: {j: 0 for j in blocks} for i in blocks}
     for j in blocks:
         possible_predecessors = [i for i in blocks if i < j]
-        num_predecessors = np.random.randint(
-            0, min(3, len(possible_predecessors) + 1)
-        )
+        num_predecessors = np.random.randint(0, min(3, len(possible_predecessors) + 1))
         preds = (
             random.sample(possible_predecessors, num_predecessors)
             if num_predecessors > 0
@@ -68,18 +66,10 @@ def generate_data(seed: int = SEED) -> dict:
     grade_max = float(np.round(np.random.uniform(2.0, 2.5), 2))
     total_ore = sum(ore_tonnage[i] for i in blocks)
     total_material = sum(ore_tonnage[i] + waste_tonnage[i] for i in blocks)
-    processing_capacity_min = float(
-        np.round(0.7 * total_ore / NUM_PERIODS, 0)
-    )
-    processing_capacity_max = float(
-        np.round(1.2 * total_ore / NUM_PERIODS, 0)
-    )
-    mining_capacity_min = float(
-        np.round(0.7 * total_material / NUM_PERIODS, 0)
-    )
-    mining_capacity_max = float(
-        np.round(1.2 * total_material / NUM_PERIODS, 0)
-    )
+    processing_capacity_min = float(np.round(0.7 * total_ore / NUM_PERIODS, 0))
+    processing_capacity_max = float(np.round(1.2 * total_ore / NUM_PERIODS, 0))
+    mining_capacity_min = float(np.round(0.7 * total_material / NUM_PERIODS, 0))
+    mining_capacity_max = float(np.round(1.2 * total_material / NUM_PERIODS, 0))
 
     return {
         "blocks": blocks,

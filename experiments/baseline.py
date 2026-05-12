@@ -12,19 +12,20 @@ under pairs/{pair_id}/{verifier_name}[/{run}]/ alongside it.
 """
 
 import argparse
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 from threading import Lock
+from typing import Any
 
 import yaml
 from dotenv import load_dotenv
 
 load_dotenv()
 
-from formulation_bench import Dataset, Pair
+from formulation_bench import Dataset, Pair  # noqa: E402
 
-from experiments.utils import (
+from experiments.utils import (  # noqa: E402
     add_common_args,
     drain_with_interrupt,
     filter_pairs,
@@ -34,8 +35,8 @@ from experiments.utils import (
     run_verification,
     write_and_log,
 )
-from src.verify.base import ReformulationVerifier
-from src.verify.factory import build_verifier
+from src.verify.base import ReformulationVerifier  # noqa: E402
+from src.verify.factory import build_verifier  # noqa: E402
 
 DEFAULT_CONFIG = Path(__file__).parent / "configs" / "baseline.yaml"
 
@@ -60,7 +61,9 @@ def process_task(
         artifacts_base / str(run_idx) if run_idx is not None else artifacts_base
     )
     row = run_verification(entry.verifier, pair, artifacts_dir, entry.name, run_idx)
-    write_and_log(row, results_path, write_lock, entry.name, run_idx, pair.reformulation)
+    write_and_log(
+        row, results_path, write_lock, entry.name, run_idx, pair.reformulation
+    )
 
 
 def main() -> None:
@@ -116,13 +119,15 @@ def main() -> None:
 
     executor = ThreadPoolExecutor(max_workers=workers)
     futures = {
-        executor.submit(
-            process_task, pair, entry, run_idx, results_path, write_lock
-        ): (pair, entry, run_idx)
+        executor.submit(process_task, pair, entry, run_idx, results_path, write_lock): (
+            pair,
+            entry,
+            run_idx,
+        )
         for pair, entry, run_idx in tasks
     }
 
-    def on_result(future):
+    def on_result(future: Future[Any]) -> None:
         exc = future.exception()
         if exc:
             pair, entry, run_idx = futures[future]

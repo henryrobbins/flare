@@ -2,6 +2,7 @@ import json
 import subprocess
 import time
 from pathlib import Path
+from typing import Any
 
 from formulation_bench import Formulation
 
@@ -15,7 +16,7 @@ class ExecutionVerifier(ReformulationVerifier):
     def name(self) -> str:
         return "execution"
 
-    def method_config(self) -> dict:
+    def method_config(self) -> dict[str, Any]:
         return {"tolerance": TOLERANCE}
 
     def verify(

@@ -32,13 +32,21 @@ def generate_data(seed: int = 42) -> dict:
     demand = {s: {p: float(random.randint(20, 200)) for p in pois} for s in junctions}
 
     # Generate distances
-    distance_sp = {s: {p: round(random.uniform(1, 20), 2) for p in pois} for s in junctions}
-    distance_sh = {s: {h: round(random.uniform(1, 15), 2) for h in hubs} for s in junctions}
+    distance_sp = {
+        s: {p: round(random.uniform(1, 20), 2) for p in pois} for s in junctions
+    }
+    distance_sh = {
+        s: {h: round(random.uniform(1, 15), 2) for h in hubs} for s in junctions
+    }
     distance_hp = {h: {p: round(random.uniform(1, 10), 2) for p in pois} for h in hubs}
 
     # Generate travel times
-    car_time_sp = {s: {p: round(random.uniform(5, 30), 1) for p in pois} for s in junctions}
-    car_time_sh = {s: {h: round(random.uniform(3, 20), 1) for h in hubs} for s in junctions}
+    car_time_sp = {
+        s: {p: round(random.uniform(5, 30), 1) for p in pois} for s in junctions
+    }
+    car_time_sh = {
+        s: {h: round(random.uniform(3, 20), 1) for h in hubs} for s in junctions
+    }
     bike_time_hp = {h: {p: round(random.uniform(5, 25), 1) for p in pois} for h in hubs}
 
     # Scalar parameters

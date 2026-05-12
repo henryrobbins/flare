@@ -1,13 +1,13 @@
-import json
 import argparse
+import json
 
 
 def main(data_path: str, output_path: str) -> None:
     with open(data_path) as f:
         data = json.load(f)
 
-    households = data["households"]          # e.g. ["H1", "H2", ...]
-    all_hospitals = data["all_hospitals"]    # e.g. ["EJ1", ..., "CJ1", ...]
+    households = data["households"]  # e.g. ["H1", "H2", ...]
+    all_hospitals = data["all_hospitals"]  # e.g. ["EJ1", ..., "CJ1", ...]
     existing_hospitals = data["existing_hospitals"]
 
     nI = len(households)
@@ -17,10 +17,7 @@ def main(data_path: str, output_path: str) -> None:
     v = [data["population"][h] for h in households]
 
     distance_indicators = data["distance_indicators"]
-    a = [
-        [distance_indicators[h][hosp] for hosp in all_hospitals]
-        for h in households
-    ]
+    a = [[distance_indicators[h][hosp] for hosp in all_hospitals] for h in households]
 
     params = {
         "nI": nI,

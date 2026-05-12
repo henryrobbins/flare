@@ -15,6 +15,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -22,7 +23,6 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.analysis.agent_jsonl import discover_artifacts, read_log_csv, write_log_csv
-
 
 GROUP_COLORS = {
     "lean_lsp": "#e05c5c",
@@ -35,7 +35,7 @@ GROUP_COLORS = {
 }
 
 
-def _int(s) -> int:
+def _int(s: Any) -> int:
     try:
         return int(s)
     except (TypeError, ValueError):
@@ -54,7 +54,9 @@ def _label(artifact_dir: Path) -> str:
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("-r", "--run-id", required=True)
-    p.add_argument("-o", "--out", type=Path, help="Output PNG (default: runs/<id>/agent_time.png)")
+    p.add_argument(
+        "-o", "--out", type=Path, help="Output PNG (default: runs/<id>/agent_time.png)"
+    )
     args = p.parse_args()
 
     run_dir = Path("runs") / args.run_id
@@ -62,7 +64,7 @@ def main() -> None:
     if not artifacts:
         sys.exit(f"No artifact dirs found under {run_dir}")
 
-    rows_per: list[tuple[str, list[dict]]] = []
+    rows_per: list[tuple[str, list[dict[str, Any]]]] = []
     for d in artifacts:
         rows = read_log_csv(write_log_csv(d))
         bars = [
@@ -84,7 +86,9 @@ def main() -> None:
         for r in bars:
             start = _int(r.get("start_ms")) / 1000.0
             width = _int(r.get("duration_ms")) / 1000.0
-            color = GROUP_COLORS.get(r.get("tool_group", "other"), GROUP_COLORS["other"])
+            color = GROUP_COLORS.get(
+                r.get("tool_group", "other"), GROUP_COLORS["other"]
+            )
             ax.barh(y, width, left=start, height=0.7, color=color, linewidth=0)
 
     ax.set_yticks(range(n))

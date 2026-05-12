@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from formulation_bench import (
@@ -12,8 +14,6 @@ from formulation_bench import (
     VariableType,
 )
 from formulation_bench.formulation import Formulation
-
-from pathlib import Path
 
 DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset"
 

@@ -1,6 +1,7 @@
 """Build ReformulationVerifier instances from dict specs (loaded from YAML)."""
 
 from pathlib import Path
+from typing import Any
 
 from src.llm_client import LLMConfig, make_client
 from src.verify.base import ReformulationVerifier
@@ -11,7 +12,7 @@ from src.verify.flare.harness import HARNESSES, Harness
 from src.verify.llm.llm import LLMVerifier
 
 
-def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
+def build_verifier(spec: dict[str, Any], *, repo_root: Path) -> ReformulationVerifier:
     """Construct a verifier from a dict spec.
 
     Spec shape (by `type`):
@@ -54,7 +55,7 @@ def build_verifier(spec: dict, *, repo_root: Path) -> ReformulationVerifier:
     raise ValueError(f"unknown verifier type: {vtype!r}")
 
 
-def _build_harness(spec: dict) -> Harness:
+def _build_harness(spec: dict[str, Any]) -> Harness:
     htype = spec.pop("harness", "claude_code")
     cls = HARNESSES.get(htype)
     if cls is None:
@@ -62,5 +63,5 @@ def _build_harness(spec: dict) -> Harness:
     client_spec = dict(spec.pop("client"))
     provider = client_spec.pop("provider", None)
     config = LLMConfig.from_dict(client_spec)
-    kwargs = {"provider": provider} if provider is not None else {}
+    kwargs: dict[str, Any] = {"provider": provider} if provider is not None else {}
     return cls(config=config, **kwargs)

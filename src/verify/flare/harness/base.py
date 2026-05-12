@@ -4,7 +4,7 @@ import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from src.llm_client import LLMConfig, compute_cost_usd
 
@@ -22,7 +22,6 @@ IMAGE = "flare-agent:latest"
 
 
 class Harness(ABC):
-
     name: ClassVar[str]
 
     def __init__(self, config: LLMConfig) -> None:
@@ -30,7 +29,7 @@ class Harness(ABC):
         self.model = config.model
         self.effort = config.reasoning_effort or "medium"
 
-    def method_config(self) -> dict:
+    def method_config(self) -> dict[str, Any]:
         """Return the config dict that will be written to artifacts_dir/config.json."""
         return {
             "harness": self.name,
@@ -112,7 +111,7 @@ class Harness(ABC):
         """Command to invoke the agent and called by the container entrypoint."""
         ...
 
-    def _parse_stream(self, jsonl_path: Path) -> dict:
+    def _parse_stream(self, jsonl_path: Path) -> dict[str, Any]:
         if not jsonl_path.exists():
             return {
                 "stop_reason": None,
@@ -123,4 +122,4 @@ class Harness(ABC):
         return self._parse_lines(jsonl_path.read_text().splitlines())
 
     @abstractmethod
-    def _parse_lines(self, lines: list[str]) -> dict: ...
+    def _parse_lines(self, lines: list[str]) -> dict[str, Any]: ...

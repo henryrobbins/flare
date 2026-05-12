@@ -1,5 +1,5 @@
 """
-Generate data.json for the UN Humanitarian Disaster Response Hub Location (UNHDR) problem.
+Generate data.json for the UN Humanitarian Disaster Response Hub Location problem.
 
 Randomly generates a set of candidate hub locations, fixed hubs, disaster-prone
 regions, affected populations, transportation costs, and travel times. The output
@@ -47,11 +47,7 @@ def main() -> None:
     }
 
     # Travel time (hours) from hub to region
-    t_hc = {
-        f"('{h}', '{c}')": random.randint(24, 96)
-        for h in hubs
-        for c in regions
-    }
+    t_hc = {f"('{h}', '{c}')": random.randint(24, 96) for h in hubs for c in regions}
 
     # Maximum allowed travel time (hours)
     T = 72

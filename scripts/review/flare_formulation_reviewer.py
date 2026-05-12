@@ -14,19 +14,20 @@ import json
 import re
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
+from typing import Any, ClassVar
 from urllib.parse import parse_qs, urlparse
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
-def _problem_sort_key(p: Path):
+def _problem_sort_key(p: Path) -> float:
     m = re.match(r"^p(\d+)$", p.name)
     return int(m.group(1)) if m else float("inf")
 
 
-def find_entries(results_dir: Path) -> list[dict]:
+def find_entries(results_dir: Path) -> list[dict[str, Any]]:
     """One dict per (problem, pair, artifact) under results_dir."""
-    entries: list[dict] = []
+    entries: list[dict[str, Any]] = []
     for problem_dir in sorted(results_dir.iterdir(), key=_problem_sort_key):
         if not problem_dir.is_dir():
             continue
@@ -340,12 +341,12 @@ init();
 
 
 class Handler(BaseHTTPRequestHandler):
-    results_dir: Path = None
+    results_dir: ClassVar[Path]
 
-    def log_message(self, fmt, *args):
+    def log_message(self, fmt: str, *args: Any) -> None:
         pass  # silence access logs
 
-    def do_GET(self):
+    def do_GET(self) -> None:
         parsed = urlparse(self.path)
         path = parsed.path
         qs = parse_qs(parsed.query)
@@ -367,27 +368,49 @@ class Handler(BaseHTTPRequestHandler):
             fa = qs.get("fa", [""])[0]
             fb = qs.get("fb", [""])[0]
 
-            res_a = self.results_dir / problem / pair / artifact / "A" / "Formulation.lean"
-            res_b = self.results_dir / problem / pair / artifact / "B" / "Formulation.lean"
-            gt_a = REPO_ROOT / "dataset" / "problems" / problem / "formulations" / fa / "Formulation.lean"
-            gt_b = REPO_ROOT / "dataset" / "problems" / problem / "formulations" / fb / "Formulation.lean"
+            res_a = (
+                self.results_dir / problem / pair / artifact / "A" / "Formulation.lean"
+            )
+            res_b = (
+                self.results_dir / problem / pair / artifact / "B" / "Formulation.lean"
+            )
+            gt_a = (
+                REPO_ROOT
+                / "dataset"
+                / "problems"
+                / problem
+                / "formulations"
+                / fa
+                / "Formulation.lean"
+            )
+            gt_b = (
+                REPO_ROOT
+                / "dataset"
+                / "problems"
+                / problem
+                / "formulations"
+                / fb
+                / "Formulation.lean"
+            )
 
-            self._json({
-                "gt_a": read_file(gt_a),
-                "res_a": read_file(res_a),
-                "gt_b": read_file(gt_b),
-                "res_b": read_file(res_b),
-                "path_gt_a": str(gt_a.relative_to(REPO_ROOT)),
-                "path_res_a": str(res_a.relative_to(REPO_ROOT)),
-                "path_gt_b": str(gt_b.relative_to(REPO_ROOT)),
-                "path_res_b": str(res_b.relative_to(REPO_ROOT)),
-            })
+            self._json(
+                {
+                    "gt_a": read_file(gt_a),
+                    "res_a": read_file(res_a),
+                    "gt_b": read_file(gt_b),
+                    "res_b": read_file(res_b),
+                    "path_gt_a": str(gt_a.relative_to(REPO_ROOT)),
+                    "path_res_a": str(res_a.relative_to(REPO_ROOT)),
+                    "path_gt_b": str(gt_b.relative_to(REPO_ROOT)),
+                    "path_res_b": str(res_b.relative_to(REPO_ROOT)),
+                }
+            )
 
         else:
             self.send_response(404)
             self.end_headers()
 
-    def _json(self, data):
+    def _json(self, data: Any) -> None:
         body = json.dumps(data).encode()
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
@@ -396,7 +419,7 @@ class Handler(BaseHTTPRequestHandler):
         self.wfile.write(body)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("-r", "--run-id", required=True, help="Run ID under results/")
     parser.add_argument("--port", type=int, default=8080)

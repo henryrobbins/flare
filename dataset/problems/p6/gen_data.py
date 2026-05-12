@@ -12,8 +12,6 @@ import json
 import urllib.request
 import zipfile
 from pathlib import Path
-from typing import List
-
 
 SCRIPT_DIR = Path(__file__).parent
 DATA_SOURCE_DIR = SCRIPT_DIR / "data_source"
@@ -54,7 +52,7 @@ def parse_cap_file(fp: Path) -> dict:
             )
 
         demands = list(map(float, first_data))
-        cost_rows: List[List[float]] = [
+        cost_rows: list[list[float]] = [
             list(map(float, fh.readline().split())) for _ in range(m)
         ]
         if any(len(r) != n for r in cost_rows):

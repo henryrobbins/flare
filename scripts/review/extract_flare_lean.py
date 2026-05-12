@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Extract Lean files from a run's pairs into results/<run_id>/<problem>/<a_b>/<artifact>/.
+"""Extract Lean files from a run's pairs.
+
+Output layout: results/<run_id>/<problem>/<a_b>/<artifact>/.
 
 For every artifact dir in the run (multiple FLARE harness/model variants
-per pair are supported), copies:
+per pair are supported), copies (output prefix:
+results/<run>/<problem>/<a_b>/<artifact>):
 
-  pairs/<pair>/<artifact>/wd/A/Formulation.lean      -> results/<run>/<problem>/<a_b>/<artifact>/A/Formulation.lean
-  pairs/<pair>/<artifact>/wd/B/Formulation.lean      -> results/<run>/<problem>/<a_b>/<artifact>/B/Formulation.lean
-  pairs/<pair>/<artifact>/wd/Reformulation.lean      -> results/<run>/<problem>/<a_b>/<artifact>/Reformulation.lean
+  pairs/<pair>/<artifact>/wd/A/Formulation.lean   -> <output>/A/Formulation.lean
+  pairs/<pair>/<artifact>/wd/B/Formulation.lean   -> <output>/B/Formulation.lean
+  pairs/<pair>/<artifact>/wd/Reformulation.lean   -> <output>/Reformulation.lean
 
 Reformulation imports are rewritten to point at the new namespace.
 
@@ -35,9 +38,7 @@ def _quote(seg: str) -> str:
 def rewrite_equivalence_imports(
     path: Path, run_id: str, problem: str, form_pair: str, artifact: str
 ) -> None:
-    base = ".".join(
-        ["results", _quote(run_id), problem, form_pair, _quote(artifact)]
-    )
+    base = ".".join(["results", _quote(run_id), problem, form_pair, _quote(artifact)])
     text = path.read_text()
     text = text.replace("import A.Formulation", f"import {base}.A.Formulation")
     text = text.replace("import B.Formulation", f"import {base}.B.Formulation")

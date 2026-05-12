@@ -1,13 +1,15 @@
-import json
 import argparse
+import json
 
 
 def main(data_path: str, output_path: str) -> None:
     with open(data_path) as f:
         data = json.load(f)
 
-    hubs = data["H"]       # list of hub name strings, e.g. ["hub_1", "hub_2", ...]
-    regions = data["C"]    # list of region name strings, e.g. ["region_1", "region_2", ...]
+    hubs = data["H"]  # list of hub name strings, e.g. ["hub_1", "hub_2", ...]
+    regions = data[
+        "C"
+    ]  # list of region name strings, e.g. ["region_1", "region_2", ...]
     nH = len(hubs)
     nC = len(regions)
 
@@ -28,8 +30,7 @@ def main(data_path: str, output_path: str) -> None:
     # t: travel time from hub h to region c, shape [nH][nC]
     t_raw = data["t"]
     t = [
-        [t_raw[f"('{hubs[h]}', '{regions[c]}')"] for c in range(nC)]
-        for h in range(nH)
+        [t_raw[f"('{hubs[h]}', '{regions[c]}')"] for c in range(nC)] for h in range(nH)
     ]
 
     # Hf: fixed-hub binary indicator, shape [nH]

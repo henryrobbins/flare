@@ -17,16 +17,17 @@ Output keys match problem.json:
 
 import json
 import random
-import numpy as np
 from pathlib import Path
+
+import numpy as np
 
 SCRIPT_DIR = Path(__file__).parent
 OUTPUT_PATH = SCRIPT_DIR / "data.json"
 
 SEED = 42
-NUM_FLIGHTS = 5       # nP
-NUM_LOCATIONS = 6     # nA
-NUM_TIME_PERIODS = 10 # nT
+NUM_FLIGHTS = 5  # nP
+NUM_LOCATIONS = 6  # nA
+NUM_TIME_PERIODS = 10  # nT
 
 
 def generate_data(
@@ -44,10 +45,7 @@ def generate_data(
 
     # Adjacency: 1 on diagonal (self-adjacency), random 0/1 off-diagonal
     adj = [
-        [
-            1 if a == a2 else int(np.random.randint(0, 2))
-            for a2 in range(nA)
-        ]
+        [1 if a == a2 else int(np.random.randint(0, 2)) for a2 in range(nA)]
         for a in range(nA)
     ]
 
@@ -58,10 +56,7 @@ def generate_data(
     ]
 
     # Capacities: small positive integers
-    cap = [
-        [int(np.random.randint(1, nP + 1)) for t in range(nT)]
-        for a in range(nA)
-    ]
+    cap = [[int(np.random.randint(1, nP + 1)) for t in range(nT)] for a in range(nA)]
 
     return {
         "nP": nP,

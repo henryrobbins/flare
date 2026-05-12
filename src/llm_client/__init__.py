@@ -1,3 +1,5 @@
+from typing import Any
+
 from .anthropic import AnthropicClient
 from .base import LLMClient, LLMConfig, compute_cost_usd
 from .deepseek import DeepSeekClient
@@ -14,7 +16,7 @@ __all__ = [
 ]
 
 
-def make_client(spec: dict) -> LLMClient:
+def make_client(spec: dict[str, Any]) -> LLMClient:
     """Build an LLMClient from a dict spec.
 
     `provider` (one of "anthropic", "openai", "deepseek") may be set

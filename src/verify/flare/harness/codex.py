@@ -1,6 +1,7 @@
 import json
 import shutil
 from pathlib import Path
+from typing import Any
 
 from src.verify.flare.harness.base import Harness
 
@@ -40,7 +41,7 @@ class CodexHarness(Harness):
             "<<EFFORT>>", self.effort
         )
 
-    def _parse_lines(self, lines: list[str]) -> dict:
+    def _parse_lines(self, lines: list[str]) -> dict[str, Any]:
         """Parse `codex exec --json` output."""
         input_tokens = 0
         output_tokens = 0

@@ -1,30 +1,27 @@
-import json
 import argparse
+import json
 
 
 def main(data_path: str, output_path: str) -> None:
     with open(data_path) as f:
         data = json.load(f)
 
-    junctions = data["junctions"]   # e.g. ["s1", "s2", ...]
-    hubs = data["hubs"]             # e.g. ["h1", "h2", ...]
-    pois = data["pois"]             # e.g. ["p1", "p2", ...]
+    junctions = data["junctions"]  # e.g. ["s1", "s2", ...]
+    hubs = data["hubs"]  # e.g. ["h1", "h2", ...]
+    pois = data["pois"]  # e.g. ["p1", "p2", ...]
 
     nS = len(junctions)
     M = len(hubs)
     nP = len(pois)
-    N = data["num_existing_hubs"]   # first N hubs are existing
+    N = data["num_existing_hubs"]  # first N hubs are existing
     U = data["max_new_hubs"]
 
     # Demand: v[s][p]  (nS x nP)
-    v = [
-        [data["demand"][junctions[s]][pois[p]] for p in range(nP)]
-        for s in range(nS)
-    ]
+    v = [[data["demand"][junctions[s]][pois[p]] for p in range(nP)] for s in range(nS)]
 
     # Feasibility: F[s][h][p]  (nS x M x nP)
     # F_{shp} = 1 iff all four conditions hold:
-    #   (1) car_time_sh[s][h] + bike_time_hp[h][p] - car_time_sp[s][p] <= max_additional_time
+    #   (1) car_time_sh[s][h] + bike_time_hp[h][p] - car_time_sp[s][p] <= Delta
     #   (2) bike_time_hp[h][p] <= max_bike_time
     #   (3) distance_hp[h][p] >= min_hub_poi_distance
     #   (4) distance_sp[s][p] - distance_sh[s][h] >= min_distance_diff

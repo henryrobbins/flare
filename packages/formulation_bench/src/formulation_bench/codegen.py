@@ -3,6 +3,7 @@
 import re
 import subprocess
 import tempfile
+from typing import Any
 
 TYPE_MAP = {
     "continuous": "CONTINUOUS",
@@ -11,7 +12,7 @@ TYPE_MAP = {
 }
 
 
-def _gurobi_type(var: dict[str, object]) -> str:
+def _gurobi_type(var: dict[str, Any]) -> str:
     raw_type = str(var.get("type", "continuous"))
     return f"GRB.{TYPE_MAP.get(raw_type, 'CONTINUOUS')}"
 
@@ -24,17 +25,19 @@ def _detect_imports(codes: list[str]) -> tuple[bool, bool]:
     return use_gp, bare_quicksum
 
 
-def _has_ragged(shape: list) -> bool:
+def _has_ragged(shape: list[Any]) -> bool:
     return any(re.match(r"^\w+\[\w+\]$", str(d)) for d in shape)
 
 
-def _build_loops(shape: list) -> list[tuple[str, str]]:
+def _build_loops(shape: list[Any]) -> list[tuple[str, str]]:
     """Return [(index_var, range_expr)] for each shape dimension."""
-    parsed = []
+    parsed: list[dict[str, Any]] = []
     for d in shape:
         m = re.match(r"^(\w+)\[(\w+)\]$", str(d))
         if m:
-            parsed.append({"ragged": True, "array": m.group(1), "indexed_by": m.group(2)})
+            parsed.append(
+                {"ragged": True, "array": m.group(1), "indexed_by": m.group(2)}
+            )
         else:
             parsed.append({"ragged": False, "param": str(d)})
 
@@ -46,7 +49,7 @@ def _build_loops(shape: list) -> list[tuple[str, str]]:
     used: set[str] = set()
     idx_vars: list[str] = []
     for p in parsed:
-        base = p["array"] if p["ragged"] else p["param"]
+        base: str = p["array"] if p["ragged"] else p["param"]
         cand = _suggest_idx(base)
         if cand in used:
             for fb in "ijklmn":
@@ -60,7 +63,7 @@ def _build_loops(shape: list) -> list[tuple[str, str]]:
         p["param"]: idx for p, idx in zip(parsed, idx_vars) if not p["ragged"]
     }
 
-    loops = []
+    loops: list[tuple[str, str]] = []
     for p, idx in zip(parsed, idx_vars):
         if p["ragged"]:
             outer = param_to_idx[p["indexed_by"]]
@@ -70,30 +73,37 @@ def _build_loops(shape: list) -> list[tuple[str, str]]:
     return loops
 
 
-def _var_decl(name: str, var: dict[str, object]) -> str:
+def _var_decl(name: str, var: dict[str, Any]) -> str:
     vtype = _gurobi_type(var)
     indices = var.get("indices")
     if indices is not None:
         return f'{name} = model.addVars([{indices}], vtype={vtype}, name="{name}")'
-    shape = list(var.get("shape", []))  # type: ignore[arg-type]
+    shape = list(var.get("shape", []))
     if not shape:
         return f'{name} = model.addVar(vtype={vtype}, name="{name}")'
     if _has_ragged(shape):
         loops = _build_loops(shape)
-        key = "({})".format(", ".join(idx for idx, _ in loops)) if len(loops) > 1 else loops[0][0]
+        key = (
+            "({})".format(", ".join(idx for idx, _ in loops))
+            if len(loops) > 1
+            else loops[0][0]
+        )
         name_fmt = "_".join(f"{{{idx}}}" for idx, _ in loops)
         loop_str = " ".join(f"for {idx} in {rng}" for idx, rng in loops)
-        return f'{name} = {{{key}: model.addVar(vtype={vtype}, name=f"{name}_{name_fmt}") {loop_str}}}'
+        return (
+            f"{name} = {{{key}: model.addVar("
+            f'vtype={vtype}, name=f"{name}_{name_fmt}") {loop_str}}}'
+        )
     dims = ", ".join(str(d) for d in shape)
     return f'{name} = model.addVars({dims}, vtype={vtype}, name="{name}")'
 
 
-def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
+def _solution_extraction(name: str, var: dict[str, Any]) -> list[str]:
     if var.get("indices") is not None:
         return [
-            f'variables["{name}"] = {{"kind": "indexed", "data": {{json.dumps(list(k)): {name}[k].x for k in {name}}}}}'
+            f'variables["{name}"] = {{"kind": "indexed", "data": {{json.dumps(list(k)): {name}[k].x for k in {name}}}}}'  # noqa: E501
         ]
-    shape = list(var.get("shape", []))  # type: ignore[arg-type]
+    shape = list(var.get("shape", []))
     if not shape:
         return [f'variables["{name}"] = {{"kind": "scalar", "data": {name}.x}}']
     if _has_ragged(shape):
@@ -106,7 +116,7 @@ def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
     if len(shape) == 1:
         d = shape[0]
         return [
-            f'variables["{name}"] = {{"kind": "array", "shape": [{d}], "data": [{name}[i].x for i in range({d})]}}'
+            f'variables["{name}"] = {{"kind": "array", "shape": [{d}], "data": [{name}[i].x for i in range({d})]}}'  # noqa: E501
         ]
     if len(shape) == 2:
         d1, d2 = shape
@@ -120,25 +130,27 @@ def _solution_extraction(name: str, var: dict[str, object]) -> list[str]:
     for iter_var, dim in reversed(list(zip(iters, shape))):
         result = f"[{result} for {iter_var} in range({dim})]"
     shape_str = ", ".join(str(d) for d in shape)
-    return [f'variables["{name}"] = {{"kind": "array", "shape": [{shape_str}], "data": {result}}}']
+    return [
+        f'variables["{name}"] = {{"kind": "array", "shape": [{shape_str}], "data": {result}}}'  # noqa: E501
+    ]
 
 
-def generate(formulation_json: dict[str, object]) -> str:
+def generate(formulation_json: dict[str, Any]) -> str:
     """Return complete gurobipy solve.py source for the given formulation.json dict."""
-    params = dict(formulation_json.get("parameters", {}))  # type: ignore[arg-type]
-    assumptions = list(formulation_json.get("assumptions", []))  # type: ignore[arg-type]
-    definitions = dict(formulation_json.get("definitions", {}))  # type: ignore[arg-type]
-    variables = dict(formulation_json.get("variables", {}))  # type: ignore[arg-type]
-    constraints = list(formulation_json.get("constraints", []))  # type: ignore[arg-type]
-    objective = dict(formulation_json.get("objective", {}))  # type: ignore[arg-type]
-    extra_imports = list(formulation_json.get("imports", []))  # type: ignore[arg-type]
+    params = dict(formulation_json.get("parameters", {}))
+    assumptions = list(formulation_json.get("assumptions", []))
+    definitions = dict(formulation_json.get("definitions", {}))
+    variables = dict(formulation_json.get("variables", {}))
+    constraints = list(formulation_json.get("constraints", []))
+    objective = dict(formulation_json.get("objective", {}))
+    extra_imports = list(formulation_json.get("imports", []))
 
-    explicit_constraints = [c for c in constraints if c.get("explicit", True)]  # type: ignore[union-attr]
-    implicit_constraints = [c for c in constraints if not c.get("explicit", True)]  # type: ignore[union-attr]
+    explicit_constraints = [c for c in constraints if c.get("explicit", True)]
+    implicit_constraints = [c for c in constraints if not c.get("explicit", True)]
 
-    all_codes = [
-        str(c.get("code", {}).get("gurobipy", "")) for c in constraints  # type: ignore[union-attr]
-    ] + [str(objective.get("code", {}).get("gurobipy", ""))]  # type: ignore[union-attr]
+    all_codes = [str(c.get("code", {}).get("gurobipy", "")) for c in constraints] + [
+        str(objective.get("code", {}).get("gurobipy", ""))
+    ]
     use_gp, bare_quicksum = _detect_imports(all_codes)
 
     L: list[str] = []
@@ -180,8 +192,8 @@ def generate(formulation_json: dict[str, object]) -> str:
     if assumptions:
         L.append("    # Parameter Validation")
         for a in assumptions:
-            a = dict(a)  # type: ignore[arg-type]
-            code = str(a.get("code", {}).get("python", "")).strip()  # type: ignore[union-attr]
+            a = dict(a)
+            code = str(a.get("code", {}).get("python", "")).strip()
             if code:
                 for line in code.split("\n"):
                     L.append(f"    {line}")
@@ -191,8 +203,8 @@ def generate(formulation_json: dict[str, object]) -> str:
     if definitions:
         L.append("    # Definitions")
         for name, d in definitions.items():
-            d = dict(d)  # type: ignore[arg-type]
-            code = str(d.get("code", {}).get("python", "")).strip()  # type: ignore[union-attr]
+            d = dict(d)
+            code = str(d.get("code", {}).get("python", "")).strip()
             if code:
                 for line in code.split("\n"):
                     L.append(f"    {line}")
@@ -202,15 +214,15 @@ def generate(formulation_json: dict[str, object]) -> str:
     if variables:
         L.append("    # Variables")
         for name, v in variables.items():
-            v = dict(v)  # type: ignore[arg-type]
+            v = dict(v)
             L.append(f"    {_var_decl(name, v)}")
         L.append("")
 
     # Constraints
     L.append("    # Constraints")
     for c in explicit_constraints:
-        c = dict(c)  # type: ignore[arg-type]
-        code = str(c.get("code", {}).get("gurobipy", "")).strip()  # type: ignore[union-attr]
+        c = dict(c)
+        code = str(c.get("code", {}).get("gurobipy", "")).strip()
         if code:
             for line in code.split("\n"):
                 L.append(f"    {line}")
@@ -220,15 +232,15 @@ def generate(formulation_json: dict[str, object]) -> str:
     if implicit_constraints:
         L.append("    # Implicit Constraints")
         for c in implicit_constraints:
-            c = dict(c)  # type: ignore[arg-type]
-            code = str(c.get("code", {}).get("gurobipy", "")).strip()  # type: ignore[union-attr]
+            c = dict(c)
+            code = str(c.get("code", {}).get("gurobipy", "")).strip()
             if code:
                 for line in code.split("\n"):
                     L.append(f"    {line}")
         L.append("")
 
     # Objective
-    obj_code = str(objective.get("code", {}).get("gurobipy", "")).strip()  # type: ignore[union-attr]
+    obj_code = str(objective.get("code", {}).get("gurobipy", "")).strip()
     L.append("    # Objective")
     if obj_code:
         for line in obj_code.split("\n"):
@@ -245,13 +257,13 @@ def generate(formulation_json: dict[str, object]) -> str:
     L.append("    solution = {}")
     L.append("    variables = {}")
     for name, v in variables.items():
-        v = dict(v)  # type: ignore[arg-type]
+        v = dict(v)
         for line in _solution_extraction(name, v):
             L.append(f"    {line}")
     L.append('    solution["variables"] = variables')
     L.append('    solution["objective"] = model.objVal')
     L.append('    with open(solution_path, "w") as f:')
-    L.append('        json.dump(solution, f, indent=4)')
+    L.append("        json.dump(solution, f, indent=4)")
     L.append("")
     L.append("")
 

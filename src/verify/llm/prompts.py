@@ -1,19 +1,18 @@
 import json
 from pathlib import Path
-
-from jinja2 import Environment, FileSystemLoader
+from typing import Any
 
 from formulation_bench import Formulation
+from jinja2 import Environment, FileSystemLoader
 
-from src.prompts import RenderedPrompt
-from src.verify.flare.flare import render_formulation
+from src.prompts import RenderedPrompt, render_formulation
 
 SYSTEM = (
     "You are an expert in mathematical optimization problems. "
     "You decide if one given MILP formulation is a reformulation of another."
 )
 
-REFORMULATION_SCHEMA: dict = json.loads(
+REFORMULATION_SCHEMA: dict[str, Any] = json.loads(
     (Path(__file__).parent / "reformulation_schema.json").read_text()
 )
 

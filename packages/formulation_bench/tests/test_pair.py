@@ -1,5 +1,3 @@
-import json
-
 import pytest
 
 from formulation_bench import Dataset, Pair

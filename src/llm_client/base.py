@@ -1,8 +1,9 @@
 import random
 import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, TypeVar
+from typing import Any, TypeVar
 
 T = TypeVar("T")
 
@@ -81,7 +82,7 @@ class LLMConfig:
     reasoning_effort: str | None = None
 
     @classmethod
-    def from_dict(cls, d: dict) -> "LLMConfig":
+    def from_dict(cls, d: dict[str, Any]) -> "LLMConfig":
         return cls(**d)
 
 
@@ -97,11 +98,13 @@ class LLMClient(ABC):
 
     @abstractmethod
     def complete_json_with_usage(
-        self, system: str, user: str, schema: dict
-    ) -> tuple[dict, dict]:
-        """Returns (parsed_json, usage) where usage has input_tokens and output_tokens."""
+        self, system: str, user: str, schema: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Return (parsed_json, usage); usage has input_tokens and output_tokens."""
         pass
 
-    def complete_json(self, system: str, user: str, schema: dict) -> dict:
+    def complete_json(
+        self, system: str, user: str, schema: dict[str, Any]
+    ) -> dict[str, Any]:
         result, _ = self.complete_json_with_usage(system, user, schema)
         return result

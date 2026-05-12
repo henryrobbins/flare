@@ -52,7 +52,7 @@ def generate_data(seed: int = SEED, total_floors: int = TOTAL_FLOORS) -> dict:
     # For each floor configuration, enumerate apartments (A_v) and their areas
     apartments_in_config = {}
     apartment_area = {}
-    # apartments_by_area_config[str(area)][config]: count of apts with that area in config
+    # apartments_by_area_config[str(area)][config]: count of apts with area in config
     apartments_by_area_config = {}
 
     for v in floor_configurations:

@@ -143,9 +143,11 @@ def _claude_classify(
         if ev.get("type") != "assistant":
             continue
         for c in ev.get("message", {}).get("content", []) or []:
-            if (c.get("type") == "tool_use"
-                    and c.get("name") == tool_name
-                    and matches(c.get("input") or {})):
+            if (
+                c.get("type") == "tool_use"
+                and c.get("name") == tool_name
+                and matches(c.get("input") or {})
+            ):
                 target_id = c.get("id")
                 break
         if target_id is not None:
@@ -186,9 +188,13 @@ def _codex_classify(
         return "missing", f"no matching `{item_type}` in stream"
     if item_type == "command_execution":
         ok = target.get("status") == "completed" and target.get("exit_code") == 0
-        return ("success", "exit 0") if ok else (
-            "error",
-            f"status={target.get('status')!r} exit={target.get('exit_code')!r}",
+        return (
+            ("success", "exit 0")
+            if ok
+            else (
+                "error",
+                f"status={target.get('status')!r} exit={target.get('exit_code')!r}",
+            )
         )
     if item_type == "mcp_tool_call":
         result = target.get("result") or {}
@@ -269,18 +275,14 @@ def _build_skill_check(cli: str, skill_name: str):
             f"Use the Skill tool to invoke the `{skill_name}` skill.",
             _claude_classify,
             "Skill",
-            lambda inp: skill_name in str(
-                inp.get("skill") or inp.get("name") or inp
-            ),
+            lambda inp: skill_name in str(inp.get("skill") or inp.get("name") or inp),
         )
     if cli == "opencode":
         return (
             f"Use the skill tool to invoke the `{skill_name}` skill.",
             _opencode_classify,
             "skill",
-            lambda inp: skill_name in str(
-                inp.get("name") or inp.get("skill") or inp
-            ),
+            lambda inp: skill_name in str(inp.get("name") or inp.get("skill") or inp),
         )
     if cli == "codex":
         # Codex does not expose a distinct "Skill" tool — skills are markdown
@@ -299,11 +301,20 @@ def _build_skill_check(cli: str, skill_name: str):
 
 
 def _codex_skill_classify(
-    events: list[dict], _tool: str | None, _matches,
+    events: list[dict],
+    _tool: str | None,
+    _matches,
 ) -> tuple[str, str]:
     """Pass iff no agent_message reports the skill as missing/unavailable."""
-    NEG = ("not installed", "not available", "no skill", "skills are not",
-           "couldn't find", "could not find", "cannot find")
+    NEG = (
+        "not installed",
+        "not available",
+        "no skill",
+        "skills are not",
+        "couldn't find",
+        "could not find",
+        "cannot find",
+    )
     for ev in events:
         if ev.get("type") != "item.completed":
             continue
@@ -319,20 +330,22 @@ def _codex_skill_classify(
 
 def _build_lean_lsp_check(cli: str, file_rel: str):
     tool = "mcp__lean-lsp__lean_diagnostic_messages"
-    prompt = (
-        f"Call the MCP tool `{tool}` on the file `{file_rel}`."
-    )
+    prompt = f"Call the MCP tool `{tool}` on the file `{file_rel}`."
     if cli == "claude_code":
         return prompt, _claude_classify, tool, lambda _: True
     if cli == "codex":
         return (
-            prompt, _codex_classify, "mcp_tool_call",
+            prompt,
+            _codex_classify,
+            "mcp_tool_call",
             lambda item: "lean_diagnostic_messages" in (item.get("tool") or ""),
         )
     if cli == "opencode":
         # OpenCode flattens MCP tool names: server_toolname.
         return (
-            prompt, _opencode_classify, "lean-lsp_lean_diagnostic_messages",
+            prompt,
+            _opencode_classify,
+            "lean-lsp_lean_diagnostic_messages",
             lambda _: True,
         )
     raise AssertionError(cli)

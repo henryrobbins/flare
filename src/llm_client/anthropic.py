@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from .base import LLMClient, LLMConfig, with_retry
 
@@ -14,11 +15,11 @@ class AnthropicClient(LLMClient):
     def config(self) -> LLMConfig:
         return self._config
 
-    def _build_kwargs(self) -> dict:
+    def _build_kwargs(self) -> dict[str, Any]:
         # Anthropic requires `max_tokens` on the wire. When the config leaves
         # it unset, pass the Claude 4.x family output cap so we don't impose
         # a low artificial limit.
-        kwargs: dict = {
+        kwargs: dict[str, Any] = {
             "model": self._config.model,
             "max_tokens": self._config.max_tokens or 64000,
         }
@@ -42,11 +43,12 @@ class AnthropicClient(LLMClient):
                 messages=[{"role": "user", "content": user}],
             )
         )
-        return next(b.text for b in message.content if b.type == "text")
+        text: str = next(b.text for b in message.content if b.type == "text")
+        return text
 
     def complete_json_with_usage(
-        self, system: str, user: str, schema: dict
-    ) -> tuple[dict, dict]:
+        self, system: str, user: str, schema: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         kwargs = self._build_kwargs()
         # Merge with any output_config set by _build_kwargs (e.g. adaptive
         # thinking effort) — both share the same field on the API.
@@ -76,9 +78,7 @@ class AnthropicClient(LLMClient):
                 for b in message.content
                 if b.type == "text"
             )
-            reasoning_tokens = max(
-                message.usage.output_tokens - visible_chars // 4, 0
-            )
+            reasoning_tokens = max(message.usage.output_tokens - visible_chars // 4, 0)
         else:
             reasoning_tokens = 0
         usage = {

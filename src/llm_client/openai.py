@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from .base import LLMClient, LLMConfig, with_retry
 
@@ -16,8 +17,8 @@ class OpenAIClient(LLMClient):
     def config(self) -> LLMConfig:
         return self._config
 
-    def _build_kwargs(self) -> dict:
-        kwargs: dict = {"model": self._config.model}
+    def _build_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {"model": self._config.model}
         if self._config.max_tokens is not None:
             kwargs["max_output_tokens"] = self._config.max_tokens
         if self._config.reasoning:
@@ -40,11 +41,12 @@ class OpenAIClient(LLMClient):
                 input=user,
             )
         )
-        return response.output_text
+        text: str = response.output_text
+        return text
 
     def complete_json_with_usage(
-        self, system: str, user: str, schema: dict
-    ) -> tuple[dict, dict]:
+        self, system: str, user: str, schema: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         response = with_retry(
             lambda: self._client.responses.create(
                 **self._build_kwargs(),

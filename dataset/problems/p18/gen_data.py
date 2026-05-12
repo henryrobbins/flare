@@ -18,11 +18,11 @@ from pathlib import Path
 OUTPUT_PATH = Path(__file__).parent / "data.json"
 
 # Instance size parameters
-N = 10          # Number of households
-M_EX = 3        # Number of existing hospitals
-NUM_NEW = 5     # Number of candidate hospital sites
-S = 40.0        # Max allowed travel distance (km, generous for small grid)
-P = 3           # Max new hospitals to open
+N = 10  # Number of households
+M_EX = 3  # Number of existing hospitals
+NUM_NEW = 5  # Number of candidate hospital sites
+S = 40.0  # Max allowed travel distance (km, generous for small grid)
+P = 3  # Max new hospitals to open
 
 
 def _rand_coords(rng: random.Random, n: int) -> list[tuple[float, float]]:

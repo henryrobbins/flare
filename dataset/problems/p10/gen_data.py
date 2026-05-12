@@ -28,8 +28,8 @@ SCRIPT_DIR = Path(__file__).parent
 OUTPUT_PATH = SCRIPT_DIR / "data.json"
 
 # ── problem size ──────────────────────────────────────────────────────────────
-K = 40         # trucks
-N = 65         # jobs
+K = 40  # trucks
+N = 65  # jobs
 SEED = 42
 GRID_SIZE = 100.0
 
@@ -51,8 +51,12 @@ def main() -> None:
     rng = random.Random(SEED)
 
     # Random depot and job locations
-    depot_locs = [(rng.uniform(0, GRID_SIZE), rng.uniform(0, GRID_SIZE)) for _ in range(K)]
-    job_locs = [(rng.uniform(0, GRID_SIZE), rng.uniform(0, GRID_SIZE)) for _ in range(N)]
+    depot_locs = [
+        (rng.uniform(0, GRID_SIZE), rng.uniform(0, GRID_SIZE)) for _ in range(K)
+    ]
+    job_locs = [
+        (rng.uniform(0, GRID_SIZE), rng.uniform(0, GRID_SIZE)) for _ in range(N)
+    ]
 
     # ── travel-time matrices ──────────────────────────────────────────────────
     # d[i][j]: off-diagonal = Euclidean distance between job locations
@@ -122,7 +126,7 @@ def _verify(K, N, d, d0, tau_min, tau_max) -> None:
             for m in range(N):
                 assert d[i][j] <= d[i][m] + d[m][j] + eps, (
                     f"d triangle violated: d[{i}][{j}]={d[i][j]:.4f} > "
-                    f"d[{i}][{m}]+d[{m}][{j}]={d[i][m]+d[m][j]:.4f}"
+                    f"d[{i}][{m}]+d[{m}][{j}]={d[i][m] + d[m][j]:.4f}"
                 )
 
     # 3. Triangle inequality: d0[k][i] <= d0[k][j] + d[j][i]
@@ -131,7 +135,7 @@ def _verify(K, N, d, d0, tau_min, tau_max) -> None:
             for j in range(N):
                 assert d0[k][i] <= d0[k][j] + d[j][i] + eps, (
                     f"d0 triangle violated: d0[{k}][{i}]={d0[k][i]:.4f} > "
-                    f"d0[{k}][{j}]+d[{j}][{i}]={d0[k][j]+d[j][i]:.4f}"
+                    f"d0[{k}][{j}]+d[{j}][{i}]={d0[k][j] + d[j][i]:.4f}"
                 )
 
     # 4–5. Non-negative time windows

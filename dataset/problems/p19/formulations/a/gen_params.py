@@ -1,13 +1,15 @@
-import json
 import argparse
+import json
 
 
 def main(data_path: str, output_path: str) -> None:
     with open(data_path) as f:
         data = json.load(f)
 
-    hubs = data["H"]       # list of hub name strings, e.g. ["hub_1", "hub_2", ...]
-    regions = data["C"]    # list of region name strings, e.g. ["region_1", "region_2", ...]
+    hubs = data["H"]  # list of hub name strings, e.g. ["hub_1", "hub_2", ...]
+    regions = data[
+        "C"
+    ]  # list of region name strings, e.g. ["region_1", "region_2", ...]
     nH = len(hubs)
     nC = len(regions)
 

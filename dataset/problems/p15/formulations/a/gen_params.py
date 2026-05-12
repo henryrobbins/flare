@@ -1,14 +1,14 @@
-import json
 import argparse
+import json
 
 
 def main(data_path: str, output_path: str) -> None:
     with open(data_path) as f:
         data = json.load(f)
 
-    sectors = data["sectors"]           # list of sector names, length nI
-    areas = data["areas"]               # list of area values, length nJ
-    owners = data["owners"]             # list of owner names, length nH
+    sectors = data["sectors"]  # list of sector names, length nI
+    areas = data["areas"]  # list of area values, length nJ
+    owners = data["owners"]  # list of owner names, length nH
     configs = data["floor_configurations"]  # list of config names, length nV
 
     nI = len(sectors)
@@ -20,10 +20,7 @@ def main(data_path: str, output_path: str) -> None:
     # R[j][v]: number of apartments with area areas[j] in configuration configs[v]
     # apartments_by_area_config is keyed by area value then config name
     abyc = data["apartments_by_area_config"]
-    R = [
-        [abyc[str(areas[j])].get(configs[v], 0) for v in range(nV)]
-        for j in range(nJ)
-    ]
+    R = [[abyc[str(areas[j])].get(configs[v], 0) for v in range(nV)] for j in range(nJ)]
 
     # O[i][j][h]: profit for sector i, area j, owner h
     ppa = data["profit_per_apartment"]
@@ -40,10 +37,7 @@ def main(data_path: str, output_path: str) -> None:
 
     # m[i][h]: minimum area for sector i, owner h
     mar = data["min_area_requirement"]
-    m = [
-        [mar[sectors[i]][owners[h]] for h in range(nH)]
-        for i in range(nI)
-    ]
+    m = [[mar[sectors[i]][owners[h]] for h in range(nH)] for i in range(nI)]
 
     # a[i]: minimum fraction of apartments in sector i
     msp = data["min_sector_percentage"]

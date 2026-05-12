@@ -15,9 +15,12 @@ import argparse
 import json
 import math
 from collections import defaultdict
+from typing import Any
 
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument("-r", "--run-id", required=True, help="Run ID (e.g. 20260425T200341Z)")
+parser.add_argument(
+    "-r", "--run-id", required=True, help="Run ID (e.g. 20260425T200341Z)"
+)
 parser.add_argument("-m", "--methods", nargs="+", help="Filter to specific methods")
 parser.add_argument(
     "-p",
@@ -32,7 +35,10 @@ parser.add_argument(
 parser.add_argument(
     "--modes",
     nargs="+",
-    help="Filter to specific modes (e.g. regular naive). Applies only to rows with a non-null mode.",
+    help=(
+        "Filter to specific modes (e.g. regular naive). "
+        "Applies only to rows with a non-null mode."
+    ),
 )
 parser.add_argument(
     "--models",
@@ -79,20 +85,21 @@ with open(path) as f:
         rows.append(r)
 
 
-def group_key(r: dict) -> str | None:
+def group_key(r: dict[str, Any]) -> str | None:
     if args.group_by == "none":
-        return r["method"]
-    val = r.get(args.group_by)
+        key: str = r["method"]
+        return key
+    val: str | None = r.get(args.group_by)
     return val  # None → row excluded from grouped summary
 
 
-def fmt_duration(s) -> str:
+def fmt_duration(s: float | None) -> str:
     if s is None:
         return "-"
     return f"{s:.1f}s"
 
 
-def fmt_cost(c) -> str:
+def fmt_cost(c: float | None) -> str:
     if c is None:
         return "-"
     if c < 0.001:
@@ -100,7 +107,7 @@ def fmt_cost(c) -> str:
     return f"${c:.3f}"
 
 
-def fmt_tokens(t) -> str:
+def fmt_tokens(t: float | None) -> str:
     if t is None:
         return "-"
     return f"{t:,.0f}"
@@ -112,7 +119,10 @@ if args.instance:
     pw = max(
         (
             len(
-                f"{r['problem_a']}.{r['formulation_a']} / {r['problem_b']}.{r['formulation_b']}"
+                (
+                    f"{r['problem_a']}.{r['formulation_a']} / "
+                    f"{r['problem_b']}.{r['formulation_b']}"
+                )
             )
             for r in rows
         ),
@@ -139,7 +149,10 @@ if args.instance:
         method = r["method"]
         run_idx = r.get("run")
         run_str = "-" if run_idx is None else str(run_idx)
-        pair = f"{r['problem_a']}.{r['formulation_a']} / {r['problem_b']}.{r['formulation_b']}"
+        pair = (
+            f"{r['problem_a']}.{r['formulation_a']} / "
+            f"{r['problem_b']}.{r['formulation_b']}"
+        )
         gt = r["ground_truth"]
         pred = r.get("is_reformulation")
         err = r.get("error")
@@ -171,10 +184,10 @@ def mean_std(xs: list[float]) -> tuple[float, float]:
 
 # Group by (key, run): per-run TP/FP/TN/FN. For rows where run is null, we
 # bucket under run_idx=None (treated as a single virtual run).
-per_run: dict[tuple[str, int | None], dict] = defaultdict(
+per_run: dict[tuple[str, int | None], dict[str, Any]] = defaultdict(
     lambda: {"tp": 0, "fp": 0, "tn": 0, "fn": 0}
 )
-totals: dict[str, dict] = defaultdict(
+totals: dict[str, dict[str, Any]] = defaultdict(
     lambda: {
         "tp": 0,
         "fp": 0,
@@ -241,7 +254,7 @@ for r in rows:
     totals[key][bucket] += 1
 
 
-def metrics(s: dict) -> tuple[float, float, float]:
+def metrics(s: dict[str, Any]) -> tuple[float, float, float]:
     tp, fp, tn, fn = s["tp"], s["fp"], s["tn"], s["fn"]
     prec = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     rec = tp / (tp + fn) if (tp + fn) > 0 else 0.0

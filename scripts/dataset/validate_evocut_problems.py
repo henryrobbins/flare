@@ -27,7 +27,7 @@ def check_formulation(
     other: dict[str, object],
     verbose: bool,
 ) -> bool:
-    """Return True if other is a superset of base (base's content is preserved in other)."""
+    """Return True if other is a superset of base (base content preserved in other)."""
     mismatches: list[str] = []
 
     # Parameters, assumptions, and objective must be identical.
@@ -59,7 +59,9 @@ def check_formulation(
     else:
         for i, (bc, oc) in enumerate(zip(base_constraints, other_constraints)):
             if bc != oc:
-                mismatches.append(f"  constraints[{i}] differs from a's constraint[{i}]")
+                mismatches.append(
+                    f"  constraints[{i}] differs from a's constraint[{i}]"
+                )
 
     label = f"{problem_id}.{formulation_id}"
     if mismatches:
@@ -95,7 +97,10 @@ def main() -> None:
     parser.add_argument(
         "--problems",
         "-p",
-        help="comma-separated problem numbers to check (e.g. 6,7,8; default: all EvoCut problems 6-12)",
+        help=(
+            "comma-separated problem numbers to check"
+            " (e.g. 6,7,8; default: all EvoCut problems 6-12)"
+        ),
     )
     parser.add_argument(
         "-v",
@@ -148,7 +153,9 @@ def main() -> None:
         len(
             [
                 d
-                for d in (dataset_root / "problems" / f"p{num}" / "formulations").iterdir()
+                for d in (
+                    dataset_root / "problems" / f"p{num}" / "formulations"
+                ).iterdir()
                 if d.is_dir() and d.name != "a"
             ]
         )

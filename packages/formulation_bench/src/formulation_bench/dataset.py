@@ -11,8 +11,7 @@ class Dataset:
         self.root = Path(root).resolve()
         raw = json.loads((self.root / "dataset.json").read_text())
         self.problems: dict[int, Problem] = {
-            pid: Problem(self.root / "problems" / f"p{pid}")
-            for pid in raw["problems"]
+            pid: Problem(self.root / "problems" / f"p{pid}") for pid in raw["problems"]
         }
 
     @cached_property
@@ -26,8 +25,12 @@ class Dataset:
         raw = json.loads(pairs_file.read_text())
         return [
             Pair(
-                a=self.problems[entry["a"]["problem"]].formulations[entry["a"]["formulation"]],
-                b=self.problems[entry["b"]["problem"]].formulations[entry["b"]["formulation"]],
+                a=self.problems[entry["a"]["problem"]].formulations[
+                    entry["a"]["formulation"]
+                ],
+                b=self.problems[entry["b"]["problem"]].formulations[
+                    entry["b"]["formulation"]
+                ],
                 reformulation=entry["reformulation"],
             )
             for entry in raw

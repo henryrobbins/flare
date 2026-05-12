@@ -1,4 +1,5 @@
 import json
+from typing import Any
 
 from .base import LLMClient, LLMConfig, with_retry
 
@@ -25,8 +26,8 @@ class DeepSeekClient(LLMClient):
     def config(self) -> LLMConfig:
         return self._config
 
-    def _build_kwargs(self) -> dict:
-        kwargs: dict = {"model": self._config.model}
+    def _build_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {"model": self._config.model}
         if self._config.max_tokens is not None:
             kwargs["max_tokens"] = self._config.max_tokens
         if self._config.reasoning:
@@ -53,8 +54,8 @@ class DeepSeekClient(LLMClient):
         return response.choices[0].message.content or ""
 
     def complete_json_with_usage(
-        self, system: str, user: str, schema: dict
-    ) -> tuple[dict, dict]:
+        self, system: str, user: str, schema: dict[str, Any]
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
         # json_object mode requires the word "json" in the prompt and benefits
         # from a schema example to guide output shape.
         system_with_schema = (

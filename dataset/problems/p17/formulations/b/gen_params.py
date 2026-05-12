@@ -1,13 +1,13 @@
-import json
 import argparse
+import json
 
 
 def main(data_path: str, output_path: str) -> None:
     with open(data_path) as f:
         data = json.load(f)
 
-    blocks = data["blocks"]   # 1-based list, e.g. [1, 2, ..., n]
-    periods = data["periods"] # 1-based list, e.g. [1, 2, ..., t]
+    blocks = data["blocks"]  # 1-based list, e.g. [1, 2, ..., n]
+    periods = data["periods"]  # 1-based list, e.g. [1, 2, ..., t]
     n = len(blocks)
     t = len(periods)
 
@@ -17,16 +17,10 @@ def main(data_path: str, output_path: str) -> None:
     W = [data["waste_tonnage"][str(i)] for i in blocks]
 
     # c[i][tau]: 0-based, shape [n][t]
-    c = [
-        [data["npv"][str(i)][str(tau)] for tau in periods]
-        for i in blocks
-    ]
+    c = [[data["npv"][str(i)][str(tau)] for tau in periods] for i in blocks]
 
     # P[i][j]: 0-based, shape [n][n]
-    P = [
-        [data["precedence"][str(i)][str(j)] for j in blocks]
-        for i in blocks
-    ]
+    P = [[data["precedence"][str(i)][str(j)] for j in blocks] for i in blocks]
 
     params = {
         "n": n,

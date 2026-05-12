@@ -38,10 +38,10 @@ def generate_data(seed: int = SEED) -> dict:
     edges = {i: {j: 0 for j in nodes} for i in nodes}
 
     edge_configs = [
-        (supplier_nodes, transshipment_nodes, 1.0, 0.0),   # S->T: keep all
+        (supplier_nodes, transshipment_nodes, 1.0, 0.0),  # S->T: keep all
         (transshipment_nodes, transshipment_nodes, 1.0, 0.3),  # T->T: remove 30 %
         (transshipment_nodes, beneficiary_nodes, 1.0, 0.0),  # T->B: keep all
-        (supplier_nodes, beneficiary_nodes, 1.0, 0.5),   # S->B: remove 50 %
+        (supplier_nodes, beneficiary_nodes, 1.0, 0.5),  # S->B: remove 50 %
     ]
 
     for source_list, target_list, _create, remove_prob in edge_configs:
@@ -70,7 +70,11 @@ def generate_data(seed: int = SEED) -> dict:
             for t2 in transshipment_nodes:
                 if t1 != t2:
                     for b in beneficiary_nodes:
-                        if edges[s][t1] == 1 and edges[t1][t2] == 1 and edges[t2][b] == 1:
+                        if (
+                            edges[s][t1] == 1
+                            and edges[t1][t2] == 1
+                            and edges[t2][b] == 1
+                        ):
                             paths.append(f"{s}-{t1}-{t2}-{b}")
 
     # ------------------------------------------------------------------
@@ -86,15 +90,13 @@ def generate_data(seed: int = SEED) -> dict:
 
     # Nutritional values per kg of each food (per nutrient)
     food_profiles = {
-        "food_001": {"calories": 3400, "protein": 80, "iron": 5.0},   # grain
+        "food_001": {"calories": 3400, "protein": 80, "iron": 5.0},  # grain
         "food_002": {"calories": 3200, "protein": 150, "iron": 12.0},  # legume
-        "food_003": {"calories": 4000, "protein": 70, "iron": 8.0},   # dairy
+        "food_003": {"calories": 4000, "protein": 70, "iron": 8.0},  # dairy
     }
     nutritional_values = {
         k: {
-            l: round(
-                food_profiles[k][l] * random.uniform(0.95, 1.05), 4
-            )
+            l: round(food_profiles[k][l] * random.uniform(0.95, 1.05), 4)
             for l in nutrients
         }
         for k in foods
@@ -109,9 +111,7 @@ def generate_data(seed: int = SEED) -> dict:
 
     # Edge costs per kg: (node_i, node_j, food_k) -> cost
     # 999999.99 for non-existent edges (mirrors source convention)
-    edge_costs = {
-        i: {j: {k: 999999.99 for k in foods} for j in nodes} for i in nodes
-    }
+    edge_costs = {i: {j: {k: 999999.99 for k in foods} for j in nodes} for i in nodes}
     for i in nodes:
         for j in nodes:
             if i == j or edges[i][j] == 0:
@@ -143,8 +143,7 @@ def generate_data(seed: int = SEED) -> dict:
 
     # Path-end indicators: e[j][p] = 1 if path p terminates at beneficiary j
     path_end_indicators = {
-        j: {p: int(p.split("-")[-1] == j) for p in paths}
-        for j in beneficiary_nodes
+        j: {p: int(p.split("-")[-1] == j) for p in paths} for j in beneficiary_nodes
     }
 
     # ------------------------------------------------------------------

@@ -4,7 +4,7 @@ import copy
 import json
 import subprocess
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from .codegen import generate
 from .models import (
@@ -34,7 +34,7 @@ class Formulation:
     def problem(self) -> Problem:
         return self._problem
 
-    def _load_from_raw(self, raw: dict) -> None:
+    def _load_from_raw(self, raw: dict[str, Any]) -> None:
         self.valid: bool = raw["valid"]
         self.parameters: dict[str, Parameter] = {
             k: Parameter(
@@ -85,11 +85,11 @@ class Formulation:
             code=raw["objective"]["code"],
         )
         self.imports: list[str] = list(raw.get("imports", []))
-        self.metadata: dict[str, object] = raw.get("metadata", {})
+        self.metadata: dict[str, Any] = raw.get("metadata", {})
 
     @classmethod
-    def from_raw(cls, raw: dict, path: Path, problem: Problem) -> Formulation:
-        """Construct a Formulation directly from a raw dict without reading from disk."""
+    def from_raw(cls, raw: dict[str, Any], path: Path, problem: Problem) -> Formulation:
+        """Construct a Formulation from a raw dict without reading from disk."""
         obj = cls.__new__(cls)
         obj.path = Path(path)
         obj._problem = problem
@@ -100,12 +100,14 @@ class Formulation:
     def with_constraint(self, constraint: Constraint) -> Formulation:
         """Return a new Formulation with one additional constraint appended."""
         new_raw = copy.deepcopy(self._raw)
-        new_raw["constraints"].append({
-            "description": constraint.description,
-            "formulation": constraint.formulation,
-            "explicit": constraint.explicit,
-            "code": constraint.code,
-        })
+        new_raw["constraints"].append(
+            {
+                "description": constraint.description,
+                "formulation": constraint.formulation,
+                "explicit": constraint.explicit,
+                "code": constraint.code,
+            }
+        )
         return Formulation.from_raw(new_raw, self.path, self._problem)
 
     @property
@@ -118,7 +120,10 @@ class Formulation:
         input_path: str | Path | None = None,
         output_path: str | Path | None = None,
     ) -> None:
-        """Run gen_params.py. Defaults: input=parent problem data.json, output=this formulation directory."""
+        """Run gen_params.py.
+
+        Defaults: input=parent problem data.json, output=this formulation directory.
+        """
         script = self.path / "gen_params.py"
         needs_data = 'add_argument("data"' in script.read_text()
         if needs_data and input_path is None:
@@ -136,7 +141,11 @@ class Formulation:
         input_path: str | Path | None = None,
         output_path: str | Path | None = None,
     ) -> None:
-        """Run solve.py. Defaults: input=parameters.json in this formulation directory, output=this formulation directory."""
+        """Run solve.py.
+
+        Defaults: input=parameters.json in this formulation directory,
+        output=this formulation directory.
+        """
         if input_path is None:
             input_path = self.path / "parameters.json"
         if output_path is None:

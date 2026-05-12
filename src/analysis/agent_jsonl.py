@@ -24,9 +24,10 @@ from __future__ import annotations
 import csv
 import json
 import re
+from collections.abc import Iterable
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable
+from typing import Any
 
 CSV_FIELDS = [
     "index",
@@ -96,8 +97,16 @@ def _truncate(s: str, n: int = 160) -> str:
 # a single unique file (avoids misattributing multi-file commands like
 # `wc -l A B C`, whose tiny output isn't meaningful for context anyway).
 _FILE_EXTS = (
-    ".lean", ".md", ".py", ".toml", ".json", ".sh",
-    ".yaml", ".yml", ".txt", ".csv",
+    ".lean",
+    ".md",
+    ".py",
+    ".toml",
+    ".json",
+    ".sh",
+    ".yaml",
+    ".yml",
+    ".txt",
+    ".csv",
 )
 _BASH_FILE_RE = re.compile(
     r"(?:^|[\s'\"<>|;&()])"
@@ -116,7 +125,7 @@ def _bash_target(cmd: str) -> str:
     return ""
 
 
-def _empty_row(index: int) -> dict:
+def _empty_row(index: int) -> dict[str, Any]:
     return {k: "" for k in CSV_FIELDS} | {"index": index}
 
 
@@ -129,7 +138,7 @@ def _canon_claude_tool(name: str) -> str:
     return name.lower()
 
 
-def _claude_tool_input(name: str, inp: dict) -> tuple[str, str]:
+def _claude_tool_input(name: str, inp: dict[str, Any]) -> tuple[str, str]:
     """Return (tool_input_summary, target_path)."""
     canon = _canon_claude_tool(name)
     if name in ("Read", "Write", "Edit"):
@@ -162,7 +171,7 @@ def _claude_tool_input(name: str, inp: dict) -> tuple[str, str]:
     return "", ""
 
 
-def _claude_content_chars(content) -> int:
+def _claude_content_chars(content: Any) -> int:
     if isinstance(content, str):
         return len(content)
     if isinstance(content, list):
@@ -172,12 +181,12 @@ def _claude_content_chars(content) -> int:
     return 0
 
 
-def _parse_claude_code(events: list[dict]) -> list[dict]:
+def _parse_claude_code(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     # Map tool_use_id -> {ts_end (datetime), is_error, output_chars}.
     # claude_code's stream-json puts timestamps only on user events (which
     # carry tool_results), not on assistant events. So tool_call rows get
     # times; model_turn rows leave them blank.
-    tool_results: dict[str, dict] = {}
+    tool_results: dict[str, dict[str, Any]] = {}
     t0: datetime | None = None
     for e in events:
         if e.get("type") != "user":
@@ -194,12 +203,12 @@ def _parse_claude_code(events: list[dict]) -> list[dict]:
                     "output_chars": _claude_content_chars(c.get("content")),
                 }
 
-    def rel_ms(dt: datetime | None) -> int | str:
+    def rel_ms(dt: datetime | None) -> int | None:
         if dt is None or t0 is None:
-            return ""
+            return None
         return round((dt - t0).total_seconds() * 1000)
 
-    rows: list[dict] = []
+    rows: list[dict[str, Any]] = []
     prev_end_dt: datetime | None = None
     for e in events:
         if e.get("type") != "assistant":
@@ -232,16 +241,16 @@ def _parse_claude_code(events: list[dict]) -> list[dict]:
             res = tool_results.get(tu.get("id", ""), {})
             end_dt = res.get("ts_end")
             start_dt = prev_end_dt
+            end_ms = rel_ms(end_dt)
+            start_ms = rel_ms(start_dt) if start_dt else 0
             tool_row = _empty_row(len(rows))
             tool_row.update(
                 {
                     "event_type": "tool_call",
-                    "start_ms": rel_ms(start_dt) if start_dt else 0,
-                    "end_ms": rel_ms(end_dt),
+                    "start_ms": start_ms if start_ms is not None else "",
+                    "end_ms": end_ms if end_ms is not None else "",
                     "duration_ms": (
-                        rel_ms(end_dt) - (rel_ms(start_dt) if start_dt else 0)
-                        if end_dt is not None
-                        else ""
+                        end_ms - (start_ms or 0) if end_ms is not None else ""
                     ),
                     "tool_name": canon,
                     "tool_group": _tool_group(canon),
@@ -272,20 +281,18 @@ def _parse_claude_code(events: list[dict]) -> list[dict]:
 # ── codex ─────────────────────────────────────────────────────────────────────
 
 
-def _codex_content_chars(item: dict) -> int:
+def _codex_content_chars(item: dict[str, Any]) -> int:
     t = item.get("type")
     if t == "command_execution":
         return len(item.get("aggregated_output", "") or "")
     if t == "mcp_tool_call":
         result = item.get("result") or {}
         parts = result.get("content") or []
-        return sum(
-            len(p.get("text", "")) if isinstance(p, dict) else 0 for p in parts
-        )
+        return sum(len(p.get("text", "")) if isinstance(p, dict) else 0 for p in parts)
     return 0
 
 
-def _codex_tool_input(item: dict) -> tuple[str, str, str, str]:
+def _codex_tool_input(item: dict[str, Any]) -> tuple[str, str, str, str]:
     """Return (tool_name, tool_group, tool_input, target_path)."""
     t = item.get("type")
     if t == "mcp_tool_call":
@@ -305,8 +312,8 @@ def _codex_tool_input(item: dict) -> tuple[str, str, str, str]:
     return "", "other", "", ""
 
 
-def _parse_codex(events: list[dict]) -> list[dict]:
-    rows: list[dict] = []
+def _parse_codex(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     # Codex traces don't carry timestamps; emit rows in sequence with empty times.
     for e in events:
         et = e.get("type")
@@ -363,7 +370,7 @@ def _canon_opencode_tool(name: str) -> str:
     return name.lower()
 
 
-def _opencode_tool_input(name: str, inp: dict) -> tuple[str, str]:
+def _opencode_tool_input(name: str, inp: dict[str, Any]) -> tuple[str, str]:
     canon = _canon_opencode_tool(name)
     if name in ("read", "write", "edit"):
         path = _strip_wd(inp.get("filePath", "") or "")
@@ -384,14 +391,14 @@ def _opencode_tool_input(name: str, inp: dict) -> tuple[str, str]:
     return "", ""
 
 
-def _parse_opencode(events: list[dict]) -> list[dict]:
-    rows: list[dict] = []
+def _parse_opencode(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     t0_ms: int | None = None
     prev_end_ms: int | None = None
 
-    def rel(ms: int | None) -> int | str:
+    def rel(ms: int | None) -> int | None:
         if ms is None or t0_ms is None:
-            return ""
+            return None
         return ms - t0_ms
 
     for e in events:
@@ -418,10 +425,10 @@ def _parse_opencode(events: list[dict]) -> list[dict]:
             row.update(
                 {
                     "event_type": "tool_call",
-                    "start_ms": rel(start_ms),
-                    "end_ms": rel(end_ms),
+                    "start_ms": rel(start_ms) if rel(start_ms) is not None else "",
+                    "end_ms": rel(end_ms) if rel(end_ms) is not None else "",
                     "duration_ms": (
-                        rel(end_ms) - rel(start_ms)
+                        (rel(end_ms) or 0) - (rel(start_ms) or 0)
                         if end_ms and start_ms and t0_ms is not None
                         else ""
                     ),
@@ -447,10 +454,10 @@ def _parse_opencode(events: list[dict]) -> list[dict]:
             row.update(
                 {
                     "event_type": "model_turn",
-                    "start_ms": rel(start_ms),
-                    "end_ms": rel(end_ms),
+                    "start_ms": rel(start_ms) if rel(start_ms) is not None else "",
+                    "end_ms": rel(end_ms) if rel(end_ms) is not None else "",
                     "duration_ms": (
-                        rel(end_ms) - rel(start_ms)
+                        (rel(end_ms) or 0) - (rel(start_ms) or 0)
                         if end_ms and start_ms and t0_ms is not None
                         else ""
                     ),
@@ -479,10 +486,10 @@ _PARSERS = {
 }
 
 
-def parse(jsonl_path: Path, harness: str) -> list[dict]:
+def parse(jsonl_path: Path, harness: str) -> list[dict[str, Any]]:
     if harness not in _PARSERS:
         raise ValueError(f"unknown harness: {harness}")
-    events: list[dict] = []
+    events: list[dict[str, Any]] = []
     with jsonl_path.open() as f:
         for line in f:
             line = line.strip()
@@ -500,7 +507,7 @@ def _read_harness(artifact_dir: Path) -> str:
     if not cfg_path.exists():
         raise FileNotFoundError(f"{cfg_path} not found")
     cfg = json.loads(cfg_path.read_text())
-    harness = cfg.get("harness")
+    harness: str | None = cfg.get("harness")
     if not harness:
         raise ValueError(f"{cfg_path} has no `harness` field")
     # Older runs prefixed harness names with `docker_` (e.g. `docker_codex`).
@@ -531,7 +538,7 @@ def ensure_log_csv(artifact_dir: Path) -> Path:
     return out
 
 
-def read_log_csv(path: Path) -> list[dict]:
+def read_log_csv(path: Path) -> list[dict[str, Any]]:
     with path.open() as fh:
         return list(csv.DictReader(fh))
 
@@ -539,12 +546,13 @@ def read_log_csv(path: Path) -> list[dict]:
 def discover_artifacts(run_dir: Path) -> list[Path]:
     """Every directory containing wd/agent_output.jsonl under run_dir/pairs/*."""
     return sorted(
-        p.parent.parent
-        for p in run_dir.glob("pairs/*/*/wd/agent_output.jsonl")
+        p.parent.parent for p in run_dir.glob("pairs/*/*/wd/agent_output.jsonl")
     )
 
 
-def iter_log_rows(artifact_dirs: Iterable[Path]) -> Iterable[tuple[Path, list[dict]]]:
+def iter_log_rows(
+    artifact_dirs: Iterable[Path],
+) -> Iterable[tuple[Path, list[dict[str, Any]]]]:
     for d in artifact_dirs:
         yield d, read_log_csv(ensure_log_csv(d))
 
@@ -556,7 +564,9 @@ def main() -> None:
     import argparse
 
     p = argparse.ArgumentParser(
-        description="(Re)generate agent_log.csv for one artifact dir or every dir in a run."
+        description=(
+            "(Re)generate agent_log.csv for one artifact dir or every dir in a run."
+        )
     )
     p.add_argument("-r", "--run-id", help="Run ID under runs/")
     p.add_argument("-d", "--artifact-dir", type=Path, help="Single artifact dir")

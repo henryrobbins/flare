@@ -24,7 +24,6 @@ import json
 import math
 import subprocess
 from pathlib import Path
-from typing import List
 
 SCRIPT_DIR = Path(__file__).parent
 DATA_SOURCE_DIR = SCRIPT_DIR / "data_source"
@@ -71,13 +70,13 @@ def taillard_generate(
     machine_seed = rand_mach
 
     # Draw processing times uniformly from [1, 99]
-    d: List[List[int]] = [[0] * num_mach for _ in range(num_jobs)]
+    d: list[list[int]] = [[0] * num_mach for _ in range(num_jobs)]
     for i in range(num_jobs):
         for j in range(num_mach):
             time_seed, d[i][j] = _taillard_unif(time_seed, 1, 99)
 
     # Initialise machine order as identity, then Fisher-Yates shuffle per job
-    M: List[List[int]] = [[j for j in range(num_mach)] for _ in range(num_jobs)]
+    M: list[list[int]] = [[j for j in range(num_mach)] for _ in range(num_jobs)]
     for i in range(num_jobs):
         for j in range(num_mach):
             machine_seed, k = _taillard_unif(machine_seed, j, num_mach - 1)
@@ -104,8 +103,8 @@ def parse_taillard_file(fp: Path) -> dict:
     lines = fp.read_text().splitlines()
     n, m = map(int, lines[0].split())
 
-    p: List[List[int]] = []
-    Om: List[List[int]] = []
+    p: list[list[int]] = []
+    Om: list[list[int]] = []
 
     for i in range(1, n + 1):
         tokens = list(map(int, lines[i].split()))

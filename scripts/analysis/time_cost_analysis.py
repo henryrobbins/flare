@@ -18,6 +18,7 @@ import json
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
@@ -25,14 +26,14 @@ from src.analysis.agent_jsonl import discover_artifacts, read_log_csv, write_log
 from src.llm_client import compute_cost_usd
 
 
-def _int(s) -> int:
+def _int(s: Any) -> int:
     try:
         return int(s)
     except (TypeError, ValueError):
         return 0
 
 
-def _float(s) -> float:
+def _float(s: Any) -> float:
     try:
         return float(s)
     except (TypeError, ValueError):
@@ -41,9 +42,9 @@ def _float(s) -> float:
 
 def _fmt_dur(ms: float) -> str:
     if ms >= 60_000:
-        return f"{ms/60_000:5.1f}m"
+        return f"{ms / 60_000:5.1f}m"
     if ms >= 1_000:
-        return f"{ms/1_000:5.1f}s"
+        return f"{ms / 1_000:5.1f}s"
     return f"{ms:>5.0f}ms"
 
 
@@ -51,15 +52,16 @@ def _model(artifact_dir: Path) -> str:
     cfg_path = artifact_dir / "config.json"
     if not cfg_path.exists():
         return ""
-    return json.loads(cfg_path.read_text()).get("model", "")
+    model: str = json.loads(cfg_path.read_text()).get("model", "")
+    return model
 
 
-def summarize(rows: list[dict], fallback_model: str) -> dict:
+def summarize(rows: list[dict[str, Any]], fallback_model: str) -> dict[str, Any]:
     """Aggregate one artifact's rows. cost_usd falls back to a token-priced
     estimate when the agent didn't report cost on any model_turn."""
     turns = 0
     tools = 0
-    tokens = defaultdict(int)
+    tokens: dict[str, int] = defaultdict(int)
     reported_cost = 0.0
     any_cost_reported = False
     wall_ms = 0
@@ -107,24 +109,32 @@ def summarize(rows: list[dict], fallback_model: str) -> dict:
     }
 
 
-def _print_summary(label: str, s: dict) -> None:
+def _print_summary(label: str, s: dict[str, Any]) -> None:
     tk = s["tokens"]
     print(f"## {label}")
     if s["model"]:
         print(f"   model:  {s['model']}")
-    print(f"   turns:  {s['turns']}    tools: {s['tools']}    wall: {_fmt_dur(s['wall_ms'])}")
     print(
-        f"   tokens: in={tk.get('input_tokens', 0):,}  out={tk.get('output_tokens', 0):,}  "
+        f"   turns:  {s['turns']}    tools: {s['tools']}    "
+        f"wall: {_fmt_dur(s['wall_ms'])}"
+    )
+    print(
+        f"   tokens: in={tk.get('input_tokens', 0):,}  "
+        f"out={tk.get('output_tokens', 0):,}  "
         f"cache_write={tk.get('cache_create_tokens', 0):,}  "
         f"cache_read={tk.get('cache_read_tokens', 0):,}"
-        + (f"  reasoning={tk['reasoning_tokens']:,}" if tk.get("reasoning_tokens") else "")
+        + (
+            f"  reasoning={tk['reasoning_tokens']:,}"
+            if tk.get("reasoning_tokens")
+            else ""
+        )
     )
     cost_str = f"${s['cost_usd']:.4f}" if s["cost_usd"] else "$0.0000"
     suffix = " (estimated)" if s["cost_estimated"] else ""
     print(f"   cost:   {cost_str}{suffix}")
 
 
-def _print_group_table(group_calls: dict, group_ms: dict) -> None:
+def _print_group_table(group_calls: dict[str, int], group_ms: dict[str, int]) -> None:
     print()
     print(f"  {'tool_group':<12} {'calls':>6}   {'time':>8}")
     for g in sorted(group_calls, key=lambda k: -group_ms[k]):

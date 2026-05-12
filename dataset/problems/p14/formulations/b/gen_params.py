@@ -1,5 +1,5 @@
-import json
 import argparse
+import json
 
 
 def main(data_path: str, output_path: str) -> None:

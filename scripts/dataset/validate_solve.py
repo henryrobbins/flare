@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate solve.py for every formulation, then gen_params + solve and check objectives."""
+"""Regenerate solve.py for every formulation, then gen_params + solve and check objs."""
 
 import argparse
 import json
@@ -7,9 +7,8 @@ import math
 import subprocess
 import sys
 
-from tqdm import tqdm
-
 from formulation_bench import Dataset
+from tqdm import tqdm
 
 OBJECTIVE_REL_TOL = 1e-6
 

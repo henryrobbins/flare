@@ -16,13 +16,14 @@ import argparse
 import sys
 from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.analysis.agent_jsonl import discover_artifacts, read_log_csv, write_log_csv
 
 
-def _int(s) -> int:
+def _int(s: Any) -> int:
     try:
         return int(s)
     except (TypeError, ValueError):
@@ -33,7 +34,9 @@ def _tokens(chars: int) -> int:
     return chars // 4
 
 
-def per_artifact(rows: list[dict]) -> tuple[dict, int]:
+def per_artifact(
+    rows: list[dict[str, Any]],
+) -> tuple[dict[str, list[int]], int]:
     """{target_path: [chars, ...]} for read-like tool calls, plus a total."""
     by_path: dict[str, list[int]] = defaultdict(list)
     total_chars = 0
@@ -52,7 +55,9 @@ def per_artifact(rows: list[dict]) -> tuple[dict, int]:
     return by_path, total_chars
 
 
-def print_artifact(label: str, by_path: dict, total_chars: int, top: int) -> None:
+def print_artifact(
+    label: str, by_path: dict[str, list[int]], total_chars: int, top: int
+) -> None:
     print(f"\n## {label}")
     print(f"   total: {total_chars:,} chars  (~{_tokens(total_chars):,} tokens)")
     rows = sorted(

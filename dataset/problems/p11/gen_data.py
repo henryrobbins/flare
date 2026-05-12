@@ -31,9 +31,9 @@ OUTPUT_PATH = SCRIPT_DIR / "data.json"
 
 # Random instance parameters
 SEED = 42
-T = 12       # sub-hour time periods
-N_G = 5      # thermal generators
-N_W = 1      # wind generators
+T = 12  # sub-hour time periods
+N_G = 5  # thermal generators
+N_W = 1  # wind generators
 
 
 # ---------------------------------------------------------------------------
@@ -67,8 +67,8 @@ def generate_instance(seed: int, T: int, n_G: int, n_W: int) -> dict:
         n_l = rng.choice([2, 3])
         p_pts = [round(x, 1) for x in _linspace(pmin, pmax, n_l)]
         # Convex increasing marginal cost ($/MWh * capacity -> $/h)
-        base_rate = rng.uniform(10, 40)       # $/MWh at P_min
-        marg_inc = rng.uniform(0.05, 0.20)    # $/MWh per MW (convexity slope)
+        base_rate = rng.uniform(10, 40)  # $/MWh at P_min
+        marg_inc = rng.uniform(0.05, 0.20)  # $/MWh per MW (convexity slope)
         c_pts = []
         for i, pp in enumerate(p_pts):
             rate = base_rate + marg_inc * (pp - pmin)
@@ -105,10 +105,7 @@ def generate_instance(seed: int, T: int, n_G: int, n_W: int) -> dict:
 
     # --- Wind generators ---
     P_wind_min = [[0.0] * T for _ in range(n_W)]
-    P_wind_max = [
-        [round(rng.uniform(0, 50), 1) for _ in range(T)]
-        for _ in range(n_W)
-    ]
+    P_wind_max = [[round(rng.uniform(0, 50), 1) for _ in range(T)] for _ in range(n_W)]
 
     # --- Demand and reserve ---
     # Target ~65% of total installed thermal capacity
@@ -210,8 +207,12 @@ def parse_instance(fp: Path) -> dict:
         D_raw.append(g["time_down_minimum"])
         MR_raw.append(g["must_run"])
 
-    P_wind_min_raw = [[w["power_output_minimum"][t] for t in range(T_raw)] for w in winds]
-    P_wind_max_raw = [[w["power_output_maximum"][t] for t in range(T_raw)] for w in winds]
+    P_wind_min_raw = [
+        [w["power_output_minimum"][t] for t in range(T_raw)] for w in winds
+    ]
+    P_wind_max_raw = [
+        [w["power_output_maximum"][t] for t in range(T_raw)] for w in winds
+    ]
 
     return {
         "T": T_raw,
