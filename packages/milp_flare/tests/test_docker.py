@@ -5,8 +5,7 @@ These tests make real model calls inside the Docker image. They are marked
 
 Prerequisites:
   - docker daemon running
-  - `docker build -f docker/Dockerfile -t flare-agent:latest .` has been run
-    from repo root
+  - `milp-flare build-image` has been run (builds `flare-agent:latest`)
   - CLAUDE_CODE_OAUTH_TOKEN in env for claude_code
   - OPENAI_API_KEY in env (or ~/.codex/auth.json on host) for codex
   - DEEPSEEK_API_KEY in env for opencode (tests use deepseek-chat to

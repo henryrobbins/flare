@@ -12,6 +12,9 @@ dependencies = [
     "jinja2",
 ]
 
+[project.scripts]
+milp-flare = "milp_flare.__main__:main"
+
 [dependency-groups]
 dev = [
     "mypy>=1.0",
@@ -34,6 +37,8 @@ milp_flare = [
     "_assets/lean/lean-toolchain",
     "_assets/lean/lake-manifest.json",
     "_assets/skills/*/*",
+    "_assets/docker/Dockerfile",
+    "_assets/docker/entrypoint.sh",
 ]
 
 [tool.ruff]
