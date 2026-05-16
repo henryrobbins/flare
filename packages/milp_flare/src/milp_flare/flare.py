@@ -7,14 +7,14 @@ from typing import Any
 
 from formulation_bench import Formulation
 
+from milp_flare._assets import LEAN_DIR
 from milp_flare._result import FLAREResult
 from milp_flare.harness import Harness
 from milp_flare.prompts import render_agent_prompt
 
 
 class FLAREVerifier:
-    def __init__(self, repo_root: Path, harness: Harness) -> None:
-        self.repo_root = repo_root
+    def __init__(self, harness: Harness) -> None:
         self.harness = harness
 
     @property
@@ -90,14 +90,12 @@ class FLAREVerifier:
         (wd / "prompt.txt").write_text(render_agent_prompt())
 
         # Do any harness-specific configuration (e.g., agent.sh, MCP config, skills).
-        self.harness.configure_wd(wd, self.repo_root)
+        self.harness.configure_wd(wd)
 
     def _setup_lake(self, wd: Path) -> None:
         """Setup minimal Lake environment so the agent can compile Lean files."""
-        shutil.copy2(self.repo_root / "docker" / "lakefile.toml", wd / "lakefile.toml")
-        shutil.copy2(self.repo_root / "lean-toolchain", wd / "lean-toolchain")
-        shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
-        shutil.copy2(self.repo_root / "Common.lean", wd / "Common.lean")
+        for src in LEAN_DIR.iterdir():
+            shutil.copy2(src, wd / src.name)
 
     def _evaluate(self, wd: Path) -> dict[str, Any]:
         """Evaluate the agent's output to determine if the reformulation is correct."""

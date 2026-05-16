@@ -24,6 +24,7 @@ from pathlib import Path
 import pytest
 
 from milp_flare import HARNESSES, Harness, LLMConfig
+from milp_flare._assets import LEAN_DIR
 
 pytestmark = pytest.mark.docker
 
@@ -76,28 +77,23 @@ def _harness(cli: str) -> Harness:
     return HARNESSES[cli](config=cfg)
 
 
-# Lake skeleton files copied into each wd by FLAREVerifier._setup_wd at
-# runtime (see milp_flare/flare.py). The tests bypass FLAREVerifier
-# and drive Harness directly, so they have to materialize the same files
-# here — otherwise the bind mount of wd onto /workspace would hide the
-# image-side skeleton and lake invocations would fail.
-_LAKE_SKELETON = (
-    ("lean-toolchain", "lean-toolchain"),
-    ("lake-manifest.json", "lake-manifest.json"),
-    ("Common.lean", "Common.lean"),
-    ("docker/lakefile.toml", "lakefile.toml"),
-)
-
-
 def _make_pair_dir(repo_root: Path, case_id: str) -> Path:
+    """Materialize a pair_dir with the Lake skeleton.
+
+    Lake skeleton files would be copied into each wd by FLAREVerifier._setup_wd
+    at runtime (see milp_flare/flare.py). These tests bypass FLAREVerifier and
+    drive Harness directly, so they have to materialize the same files here —
+    otherwise the bind mount of wd onto /workspace would hide the image-side
+    skeleton and lake invocations would fail.
+    """
     pair_dir = repo_root / "tests" / ".runs" / "docker" / case_id
     if pair_dir.exists():
         shutil.rmtree(pair_dir)
     pair_dir.mkdir(parents=True)
     wd = pair_dir / "wd"
     wd.mkdir()
-    for src_rel, dst_name in _LAKE_SKELETON:
-        shutil.copy2(repo_root / src_rel, wd / dst_name)
+    for src in LEAN_DIR.iterdir():
+        shutil.copy2(src, wd / src.name)
     for label in ("A", "B"):
         (wd / label).mkdir()
         (wd / label / "Formulation.lean").write_text("")
@@ -110,7 +106,7 @@ def _run(cli: str, repo_root: Path, pair_dir: Path, action: str) -> Path:
         pytest.skip(f"credentials for {cli} not available")
     harness = _harness(cli)
     wd = pair_dir / "wd"
-    harness.configure_wd(wd, repo_root)
+    harness.configure_wd(wd)
     (wd / "prompt.txt").write_text(ONE_CALL_PROMPT.format(action=action))
     harness.run(wd)
     return wd / "agent_output.jsonl"
@@ -400,7 +396,7 @@ def test_post_hoc_compile_in_container(repo_root: Path) -> None:
     wd = pair_dir / "wd"
     (wd / "Reformulation.lean").write_text("import Common\n")
     harness = _harness("claude_code")
-    harness.configure_wd(wd, repo_root)
+    harness.configure_wd(wd)
     (wd / "prompt.txt").write_text(
         "Do not call any tool. Reply with exactly the word: done."
     )

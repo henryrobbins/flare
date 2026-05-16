@@ -12,8 +12,8 @@ from src.verify.base import ReformulationResult, ReformulationVerifier
 class FLAREVerifier(ReformulationVerifier):
     """Adapter exposing the milp_flare verifier as a ReformulationVerifier."""
 
-    def __init__(self, repo_root: Path, harness: Harness) -> None:
-        self._inner = _FLAREVerifier(repo_root=repo_root, harness=harness)
+    def __init__(self, harness: Harness) -> None:
+        self._inner = _FLAREVerifier(harness=harness)
 
     @property
     def name(self) -> str:

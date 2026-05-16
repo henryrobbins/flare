@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from milp_flare._assets import SKILLS_DIR
 from milp_flare.harness.base import Harness
 
 _TEMPLATE: str = (
@@ -13,17 +14,15 @@ _TEMPLATE: str = (
 class CodexHarness(Harness):
     name = "codex"
 
-    def configure_wd(self, wd: Path, repo_root: Path) -> None:
-        super().configure_wd(wd, repo_root)
+    def configure_wd(self, wd: Path) -> None:
+        super().configure_wd(wd)
         # MCP server configuration is handled in the agent command:
         #   milp_flare/harness/agent_commands/codex_agent.sh
         # Copy skills to .agents/skills
         # https://developers.openai.com/codex/skills#where-to-save-skills
-        skills_src = repo_root / ".claude" / "skills"
-        if skills_src.exists():
-            agents_skills = wd / ".agents" / "skills"
-            agents_skills.parent.mkdir(exist_ok=True)
-            shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
+        agents_skills = wd / ".agents" / "skills"
+        agents_skills.parent.mkdir(exist_ok=True)
+        shutil.copytree(SKILLS_DIR, agents_skills, dirs_exist_ok=True)
 
     def _agent_docker_args(self) -> list[str]:
         # We use this authentication strategy instead of an API key to avoid the

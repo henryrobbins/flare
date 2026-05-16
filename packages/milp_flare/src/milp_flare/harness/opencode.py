@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from milp_flare._assets import SKILLS_DIR
 from milp_flare._llm import LLMConfig
 from milp_flare.harness.base import Harness
 
@@ -36,18 +37,16 @@ class OpenCodeHarness(Harness):
     def method_config(self) -> dict[str, Any]:
         return {**super().method_config(), "provider": self.provider}
 
-    def configure_wd(self, wd: Path, repo_root: Path) -> None:
-        super().configure_wd(wd, repo_root)
+    def configure_wd(self, wd: Path) -> None:
+        super().configure_wd(wd)
         # Use an `opencode.json` file to configure the model provider and MCP server
         # https://opencode.ai/docs/config/
         (wd / "opencode.json").write_text(json.dumps(self._opencode_config(), indent=2))
         # Copy skills to .agents/skills
         # https://opencode.ai/docs/skills/#place-files
-        skills_src = repo_root / ".claude" / "skills"
-        if skills_src.exists():
-            agents_skills = wd / ".agents" / "skills"
-            agents_skills.parent.mkdir(exist_ok=True)
-            shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
+        agents_skills = wd / ".agents" / "skills"
+        agents_skills.parent.mkdir(exist_ok=True)
+        shutil.copytree(SKILLS_DIR, agents_skills, dirs_exist_ok=True)
 
     def _opencode_config(self) -> dict[str, Any]:
         """Minimal opencode.json to register the model and lean-lsp MCP server."""

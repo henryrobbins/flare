@@ -28,6 +28,12 @@ milp_flare = [
     "py.typed",
     "agent_prompt.j2",
     "harness/agent_commands/*.sh",
+    "_assets/mcp.json",
+    "_assets/lean/Common.lean",
+    "_assets/lean/lakefile.toml",
+    "_assets/lean/lean-toolchain",
+    "_assets/lean/lake-manifest.json",
+    "_assets/skills/*/*",
 ]
 
 [tool.ruff]

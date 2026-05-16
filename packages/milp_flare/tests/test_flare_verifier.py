@@ -128,7 +128,7 @@ class DummyHarness(Harness):
         self.b = b
         self.expected = expected
 
-    def configure_wd(self, wd: Path, repo_root: Path) -> None:
+    def configure_wd(self, wd: Path) -> None:
         return
 
     def _agent_docker_args(self) -> list[str]:
@@ -203,10 +203,10 @@ class GroundTruthHarness(Harness):
         self.b = b
         self.expected = expected
 
-    def configure_wd(self, wd: Path, repo_root: Path) -> None:
-        super().configure_wd(wd, repo_root)
+    def configure_wd(self, wd: Path) -> None:
+        super().configure_wd(wd)
         if self.expected:
-            _copy_ground_truth(wd, repo_root, self.a, self.b)
+            _copy_ground_truth(wd, self.repo_root, self.a, self.b)
         else:
             (wd / "Reformulation.lean").write_text(
                 "-- NOT REFORMULATION\n-- ground-truth harness verdict\n"
@@ -249,7 +249,7 @@ def test_flare_verifier(
 ) -> None:
     a, b, expected = pair
     harness = DummyHarness(repo_root=repo_root, a=a, b=b, expected=expected)
-    verifier = FLAREVerifier(repo_root=repo_root, harness=harness)
+    verifier = FLAREVerifier(harness=harness)
     result = verifier.verify(a, b, _EMPTY_MD, tmp_path)
     assert result.is_reformulation is expected
 
@@ -269,6 +269,6 @@ def test_flare_verifier_docker(
     """
     a, b, expected = pair
     harness = GroundTruthHarness(repo_root=repo_root, a=a, b=b, expected=expected)
-    verifier = FLAREVerifier(repo_root=repo_root, harness=harness)
+    verifier = FLAREVerifier(harness=harness)
     result = verifier.verify(a, b, _EMPTY_MD, tmp_path)
     assert result.is_reformulation is expected

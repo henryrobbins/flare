@@ -1,6 +1,5 @@
 """Build ReformulationVerifier instances from dict specs (loaded from YAML)."""
 
-from pathlib import Path
 from typing import Any
 
 from milp_flare import HARNESSES, Harness
@@ -14,7 +13,7 @@ from src.verify.flare import FLAREVerifier
 from src.verify.llm.llm import LLMVerifier
 
 
-def build_verifier(spec: dict[str, Any], *, repo_root: Path) -> ReformulationVerifier:
+def build_verifier(spec: dict[str, Any]) -> ReformulationVerifier:
     """Construct a verifier from a dict spec.
 
     Spec shape (by `type`):
@@ -40,7 +39,7 @@ def build_verifier(spec: dict[str, Any], *, repo_root: Path) -> ReformulationVer
 
     if vtype == "flare":
         harness = _build_harness(spec)
-        return FLAREVerifier(repo_root=repo_root, harness=harness)
+        return FLAREVerifier(harness=harness)
 
     if vtype == "llm":
         client_spec = spec.pop("client")

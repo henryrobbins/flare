@@ -42,7 +42,7 @@ class Harness(ABC):
             "reasoning_effort": self.config.reasoning_effort,
         }
 
-    def configure_wd(self, wd: Path, repo_root: Path) -> None:
+    def configure_wd(self, wd: Path) -> None:
         """Write all necessary files to the agent's working directory."""
 
         if not wd.exists():

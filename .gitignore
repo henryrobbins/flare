@@ -2,7 +2,7 @@
 paper
 
 # Lake
-/.lake
+**/.lake
 .env
 
 # Byte-compiled / optimized / DLL files
