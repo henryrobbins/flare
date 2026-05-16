@@ -22,6 +22,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
+
 from milp_flare import HARNESSES, Harness, LLMConfig
 
 pytestmark = pytest.mark.docker

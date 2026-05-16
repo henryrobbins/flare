@@ -16,6 +16,7 @@ dependencies = [
 dev = [
     "mypy>=1.0",
     "pytest>=8.0",
+    "python-dotenv>=1.0",
     "ruff>=0.4",
 ]
 
@@ -41,3 +42,6 @@ files = ["src/milp_flare"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "docker: tests that require Docker (opt-out: -m 'not docker')",
+]
