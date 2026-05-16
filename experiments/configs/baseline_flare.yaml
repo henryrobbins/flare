@@ -10,7 +10,7 @@ verifiers:
     client:
       model: claude-opus-4-7
       reasoning: true
-      reasoning_effort: medium
+      reasoning_effort: high
 
   - type: flare
     name: flare-codex-gpt-5.5

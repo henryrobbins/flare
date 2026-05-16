@@ -25,7 +25,7 @@ models:
       model: claude-opus-4-7
       max_tokens: 16384
       reasoning: true
-      reasoning_effort: medium
+      reasoning_effort: high
 
   - label: sonnet-4-6
     client: { model: claude-sonnet-4-6, max_tokens: 8192 }
@@ -34,7 +34,7 @@ models:
       model: claude-sonnet-4-6
       max_tokens: 16384
       reasoning: true
-      reasoning_effort: medium
+      reasoning_effort: high
 
   # == OpenAI models ==========================================================
 
