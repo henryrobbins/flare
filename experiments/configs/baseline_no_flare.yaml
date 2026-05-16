@@ -5,6 +5,7 @@ runs: 3
 
 verifiers:
   - type: execution
+    multi_run: true
 
   - type: equivamap
     multi_run: true
