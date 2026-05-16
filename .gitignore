@@ -22,6 +22,7 @@ downloads/
 eggs/
 .eggs/
 lib/
+!site/src/lib/
 lib64/
 parts/
 sdist/
