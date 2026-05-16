@@ -6,7 +6,7 @@ import argparse
 import subprocess
 import sys
 
-from milp_flare._assets import BUILD_CONTEXT, DOCKERFILE
+from milp_flare.assets import BUILD_CONTEXT, DOCKERFILE
 from milp_flare.harness.base import IMAGE
 
 

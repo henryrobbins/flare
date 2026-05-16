@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# $PROMPT is set by the container entrypoint: milp_flare/_assets/docker/entrypoint.sh
+# $PROMPT is set by the container entrypoint: milp_flare/assets/docker/entrypoint.sh
 # Use `codex exec` to run the agent in non-interactive mode
 # danger-full-access sandbox gives broad permissions (safe in container)
 # Supply model using dedicated flag and template with src/verify/flare/harness/codex.py

@@ -27,7 +27,7 @@ ln -sfn /workspace/.lake "$WD/.lake"
 # Run the agent command
 cd "$WD"
 # Initialize $PROMPT for use in agent command scripts
-# See src/verify/flare/harness/agent_commands/*.sh for usage
+# See milp_flare/assets/scripts/*.sh for usage
 export PROMPT="$(cat "$WD/prompt.txt")"
 bash "$AGENT_SH"
 AGENT_EXIT=$?

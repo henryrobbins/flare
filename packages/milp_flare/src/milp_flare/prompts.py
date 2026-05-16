@@ -1,9 +1,9 @@
-from pathlib import Path
-
 from jinja2 import Environment, FileSystemLoader
 
+from milp_flare.assets import PROMPTS_DIR
+
 _env = Environment(
-    loader=FileSystemLoader(Path(__file__).parent),
+    loader=FileSystemLoader(PROMPTS_DIR),
     trim_blocks=True,
     lstrip_blocks=True,
     keep_trailing_newline=True,

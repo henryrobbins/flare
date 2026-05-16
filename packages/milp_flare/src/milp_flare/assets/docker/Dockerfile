@@ -41,7 +41,7 @@ RUN pipx install lean-lsp-mcp \
 WORKDIR /workspace
 
 # Configure Lake project skeleton in the image. Build context is the
-# milp_flare package's `_assets/` directory (parent of `lean/` and
+# milp_flare package's `assets/` directory (parent of `lean/` and
 # `docker/`), so the image builds purely from files bundled in the
 # installed package.
 COPY --chown=agent:agent lean/ /workspace/

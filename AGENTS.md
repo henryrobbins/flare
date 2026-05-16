@@ -111,7 +111,7 @@ Setup:
    against the Claude.ai plan inside the container).
 2. `milp-flare build-image` (~5 min cold, ~1 s when only the entrypoint
    changed). Builds the `flare-agent:latest` image from the Dockerfile
-   bundled under `packages/milp_flare/src/milp_flare/_assets/docker/`.
+   bundled under `packages/milp_flare/src/milp_flare/assets/docker/`.
 3. Run experiments normally; the harness uses the image automatically.
 4. When `lean-toolchain` bumps, rebuild the image (no volume cleanup
    needed — each container reads `.lake/` from the image layer).

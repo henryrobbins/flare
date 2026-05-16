@@ -49,7 +49,7 @@ class Harness(ABC):
             raise RuntimeError("The agent working directory hasn't been created yet.")
 
         # Add the agent command script to be called by the container entrypoint
-        # See milp_flare/_assets/docker/entrypoint.sh
+        # See milp_flare/assets/docker/entrypoint.sh
         (wd / "agent.sh").write_text(self._agent_command())
 
     def run(self, wd: Path) -> HarnessRunResult:

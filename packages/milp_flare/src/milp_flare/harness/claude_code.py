@@ -4,12 +4,10 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from milp_flare._assets import MCP_JSON, SKILLS_DIR
+from milp_flare.assets import MCP_JSON, SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
 
-_TEMPLATE: str = (
-    Path(__file__).parent / "agent_commands" / "claude_code_agent.sh"
-).read_text()
+_TEMPLATE: str = (SCRIPTS_DIR / "claude_code_agent.sh").read_text()
 
 
 class ClaudeCodeHarness(Harness):

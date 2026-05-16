@@ -7,8 +7,8 @@ from typing import Any
 
 from formulation_bench import Formulation
 
-from milp_flare._assets import LEAN_DIR
 from milp_flare._result import FLAREResult
+from milp_flare.assets import LEAN_DIR
 from milp_flare.harness import Harness
 from milp_flare.prompts import render_agent_prompt
 
@@ -86,7 +86,7 @@ class FLAREVerifier:
 
         # Write the agent prompt
         # For Docker harnesses, this allows agent scripts to access the prompt
-        # in the container (see milp_flare/harness/agent_commands/*.sh).
+        # in the container (see milp_flare/assets/scripts/*.sh).
         (wd / "prompt.txt").write_text(render_agent_prompt())
 
         # Do any harness-specific configuration (e.g., agent.sh, MCP config, skills).

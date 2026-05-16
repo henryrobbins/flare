@@ -4,13 +4,11 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from milp_flare._assets import SKILLS_DIR
 from milp_flare._llm import LLMConfig
+from milp_flare.assets import SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
 
-_TEMPLATE: str = (
-    Path(__file__).parent / "agent_commands" / "opencode_agent.sh"
-).read_text()
+_TEMPLATE: str = (SCRIPTS_DIR / "opencode_agent.sh").read_text()
 
 
 def _infer_provider(model: str) -> str:

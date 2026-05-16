@@ -23,7 +23,7 @@ from pathlib import Path
 import pytest
 
 from milp_flare import HARNESSES, Harness, LLMConfig
-from milp_flare._assets import LEAN_DIR
+from milp_flare.assets import LEAN_DIR
 
 pytestmark = pytest.mark.docker
 
