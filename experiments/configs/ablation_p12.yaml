@@ -14,9 +14,6 @@ modes:
   - label: allow_implicit
     template: reformulation.j2
     include_implicit: false
-  - label: naive
-    template: naive.j2
-    include_implicit: true
 
 models:
   # == Anthropic models =======================================================
