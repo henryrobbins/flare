@@ -7,13 +7,12 @@ from typing import Any
 
 from formulation_bench import Formulation
 
-from src.prompts import render_formulation
-from src.verify.base import ReformulationResult, ReformulationVerifier
-from src.verify.flare.harness import Harness
-from src.verify.flare.prompts import render_agent_prompt
+from milp_flare._result import FLAREResult
+from milp_flare.harness import Harness
+from milp_flare.prompts import render_agent_prompt
 
 
-class FLAREVerifier(ReformulationVerifier):
+class FLAREVerifier:
     def __init__(self, repo_root: Path, harness: Harness) -> None:
         self.repo_root = repo_root
         self.harness = harness
@@ -26,8 +25,12 @@ class FLAREVerifier(ReformulationVerifier):
         return self.harness.method_config()
 
     def verify(
-        self, a: Formulation, b: Formulation, output_path: Path
-    ) -> ReformulationResult:
+        self,
+        a: Formulation,
+        b: Formulation,
+        formulation_md: dict[str, str],
+        output_path: Path,
+    ) -> FLAREResult:
         # Create the artifacts directory at the output path and write config
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
@@ -37,7 +40,7 @@ class FLAREVerifier(ReformulationVerifier):
 
         # Setup the agent's working directory
         wd = artifacts_dir / "wd"
-        self._setup_wd(wd, a, b)
+        self._setup_wd(wd, a, b, formulation_md)
 
         # Run the agent harness
         run_result = self.harness.run(wd)
@@ -47,7 +50,7 @@ class FLAREVerifier(ReformulationVerifier):
         meta.update(dataclasses.asdict(run_result))
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
-        return ReformulationResult(
+        return FLAREResult(
             is_reformulation=meta["is_reformulation"],
             method=self.name,
             artifacts_dir=artifacts_dir,
@@ -56,7 +59,13 @@ class FLAREVerifier(ReformulationVerifier):
             metadata=meta,
         )
 
-    def _setup_wd(self, wd: Path, a: Formulation, b: Formulation) -> None:
+    def _setup_wd(
+        self,
+        wd: Path,
+        a: Formulation,
+        b: Formulation,
+        formulation_md: dict[str, str],
+    ) -> None:
         """Populate the agent working directory with all necessary files."""
 
         wd.mkdir(parents=True, exist_ok=True)
@@ -68,7 +77,7 @@ class FLAREVerifier(ReformulationVerifier):
         for label, form in [("A", a), ("B", b)]:
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
-            (form_dir / "formulation.md").write_text(render_formulation(form))
+            (form_dir / "formulation.md").write_text(formulation_md[label])
             (form_dir / "solve.py").write_text(form.gurobipy_code)
             (form_dir / "Formulation.lean").write_text("")
 
@@ -77,7 +86,7 @@ class FLAREVerifier(ReformulationVerifier):
 
         # Write the agent prompt
         # For Docker harnesses, this allows agent scripts to access the prompt
-        # in the container (see src/verify/flare/harness/agent_commands/*.sh).
+        # in the container (see milp_flare/harness/agent_commands/*.sh).
         (wd / "prompt.txt").write_text(render_agent_prompt())
 
         # Do any harness-specific configuration (e.g., agent.sh, MCP config, skills).

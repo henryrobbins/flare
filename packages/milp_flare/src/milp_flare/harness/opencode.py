@@ -4,8 +4,8 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from src.llm_client import LLMConfig
-from src.verify.flare.harness.base import Harness
+from milp_flare._llm import LLMConfig
+from milp_flare.harness.base import Harness
 
 _TEMPLATE: str = (
     Path(__file__).parent / "agent_commands" / "opencode_agent.sh"

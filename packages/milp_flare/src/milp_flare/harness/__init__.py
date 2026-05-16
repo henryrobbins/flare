@@ -1,7 +1,7 @@
-from src.verify.flare.harness.base import Harness, HarnessRunResult
-from src.verify.flare.harness.claude_code import ClaudeCodeHarness
-from src.verify.flare.harness.codex import CodexHarness
-from src.verify.flare.harness.opencode import OpenCodeHarness
+from milp_flare.harness.base import Harness, HarnessRunResult
+from milp_flare.harness.claude_code import ClaudeCodeHarness
+from milp_flare.harness.codex import CodexHarness
+from milp_flare.harness.opencode import OpenCodeHarness
 
 HARNESSES: dict[str, type[Harness]] = {
     "claude_code": ClaudeCodeHarness,

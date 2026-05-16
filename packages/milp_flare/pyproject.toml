@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "milp-flare"
+version = "0.1.0"
+description = "FLARE: agent-driven verification of MILP reformulations."
+requires-python = ">=3.10"
+dependencies = [
+    "formulation-bench",
+    "jinja2",
+]
+
+[dependency-groups]
+dev = [
+    "mypy>=1.0",
+    "pytest>=8.0",
+    "ruff>=0.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+milp_flare = [
+    "py.typed",
+    "agent_prompt.j2",
+    "harness/agent_commands/*.sh",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+strict = true
+files = ["src/milp_flare"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

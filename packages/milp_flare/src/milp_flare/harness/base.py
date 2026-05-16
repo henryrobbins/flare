@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
-from src.llm_client import LLMConfig, compute_cost_usd
+from milp_flare._llm import LLMConfig, compute_cost_usd
 
 
 @dataclass

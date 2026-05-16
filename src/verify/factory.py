@@ -3,12 +3,14 @@
 from pathlib import Path
 from typing import Any
 
-from src.llm_client import LLMConfig, make_client
+from milp_flare import HARNESSES, Harness
+from milp_flare import LLMConfig as FlareLLMConfig
+
+from src.llm_client import make_client
 from src.verify.base import ReformulationVerifier
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.execution.execution import ExecutionVerifier
-from src.verify.flare.flare import FLAREVerifier
-from src.verify.flare.harness import HARNESSES, Harness
+from src.verify.flare import FLAREVerifier
 from src.verify.llm.llm import LLMVerifier
 
 
@@ -62,6 +64,6 @@ def _build_harness(spec: dict[str, Any]) -> Harness:
         raise ValueError(f"unknown flare harness: {htype!r}")
     client_spec = dict(spec.pop("client"))
     provider = client_spec.pop("provider", None)
-    config = LLMConfig.from_dict(client_spec)
+    config = FlareLLMConfig.from_dict(client_spec)
     kwargs: dict[str, Any] = {"provider": provider} if provider is not None else {}
     return cls(config=config, **kwargs)

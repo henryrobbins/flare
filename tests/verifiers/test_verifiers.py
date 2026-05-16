@@ -23,12 +23,13 @@ from pathlib import Path
 
 import pytest
 from formulation_bench import Dataset, Formulation
+from milp_flare import Harness, HarnessRunResult
+from milp_flare import LLMConfig as HarnessLLMConfig
 
 from src.llm_client import LLMClient, LLMConfig
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.execution.execution import ExecutionVerifier
-from src.verify.flare.flare import FLAREVerifier
-from src.verify.flare.harness.base import Harness, HarnessRunResult
+from src.verify.flare import FLAREVerifier
 from src.verify.llm.llm import LLMVerifier
 
 # (problem dir name, formulation A, formulation B, expected reformulation)
@@ -203,7 +204,7 @@ class DummyHarness(Harness):
         b: Formulation,
         expected: bool,
     ) -> None:
-        super().__init__(LLMConfig(model="dummy-model"))
+        super().__init__(HarnessLLMConfig(model="dummy-model"))
         self.repo_root = repo_root
         self.a = a
         self.b = b
@@ -329,7 +330,7 @@ class GroundTruthHarness(Harness):
         b: Formulation,
         expected: bool,
     ) -> None:
-        super().__init__(LLMConfig(model="dummy-model"))
+        super().__init__(HarnessLLMConfig(model="dummy-model"))
         self.repo_root = repo_root
         self.a = a
         self.b = b

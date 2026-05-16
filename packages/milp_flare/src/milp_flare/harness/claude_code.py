@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from src.verify.flare.harness.base import Harness
+from milp_flare.harness.base import Harness
 
 _TEMPLATE: str = (
     Path(__file__).parent / "agent_commands" / "claude_code_agent.sh"

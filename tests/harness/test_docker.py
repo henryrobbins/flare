@@ -22,9 +22,7 @@ from collections.abc import Callable
 from pathlib import Path
 
 import pytest
-
-from src.llm_client import LLMConfig
-from src.verify.flare.harness import HARNESSES, Harness
+from milp_flare import HARNESSES, Harness, LLMConfig
 
 pytestmark = pytest.mark.docker
 
@@ -78,7 +76,7 @@ def _harness(cli: str) -> Harness:
 
 
 # Lake skeleton files copied into each wd by FLAREVerifier._setup_wd at
-# runtime (see src/verify/flare/flare.py). The tests bypass FLAREVerifier
+# runtime (see milp_flare/flare.py). The tests bypass FLAREVerifier
 # and drive Harness directly, so they have to materialize the same files
 # here — otherwise the bind mount of wd onto /workspace would hide the
 # image-side skeleton and lake invocations would fail.

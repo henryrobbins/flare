@@ -42,12 +42,20 @@ and manipulating the dataset: `dataset.py`, `problem.py`, `formulation.py`,
 `pair.py`, `models.py`. Tests are under `packages/formulation_bench/tests/`.
 Owns its own `pyproject.toml` and is wired into the workspace root.
 
+## `packages/milp_flare/`
+
+Workspace package `milp_flare` (src layout) holding the FLARE
+reformulation-verifier implementation: `FLAREVerifier`, the agent prompt, and
+the `claude_code` / `codex` / `opencode` harnesses under
+`milp_flare/harness/`. `src/verify/flare.py` is a thin adapter that exposes
+this verifier as a `ReformulationVerifier`.
+
 ## `src/`
 
 Experiment code (not published): `llm_client.py`, prompt templates under
 `prompts/`, and reformulation-verifier implementations under `verify/`
-(`equivamap/`, `execution/`, `flare/`, `llm/`) sharing a `verify/base.py`
-interface. Installed editable as the package `src`.
+(`equivamap/`, `execution/`, `flare.py` adapter, `llm/`) sharing a
+`verify/base.py` interface. Installed editable as the package `src`.
 
 ## `experiments/`
 

@@ -3,7 +3,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from src.verify.flare.harness.base import Harness
+from milp_flare.harness.base import Harness
 
 _TEMPLATE: str = (
     Path(__file__).parent / "agent_commands" / "codex_agent.sh"
@@ -16,7 +16,7 @@ class CodexHarness(Harness):
     def configure_wd(self, wd: Path, repo_root: Path) -> None:
         super().configure_wd(wd, repo_root)
         # MCP server configuration is handled in the agent command:
-        #   src/verify/flare/harness/agent_commands/codex_agent.sh
+        #   milp_flare/harness/agent_commands/codex_agent.sh
         # Copy skills to .agents/skills
         # https://developers.openai.com/codex/skills#where-to-save-skills
         skills_src = repo_root / ".claude" / "skills"
