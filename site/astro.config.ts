@@ -25,6 +25,7 @@ export default defineConfig({
         {
           bibliography: "bibliography.bib",
           linkCitations: true,
+          noCite: ["@*"],
         },
       ],
     ],
