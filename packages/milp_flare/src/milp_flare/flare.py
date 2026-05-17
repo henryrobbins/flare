@@ -2,17 +2,37 @@ import dataclasses
 import json
 import re
 import shutil
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from milp_flare._input import FormulationInput
-from milp_flare._result import FLAREResult
 from milp_flare.assets import LEAN_DIR
 from milp_flare.harness import Harness
 from milp_flare.prompts import render_agent_prompt
 
 
-class FLAREVerifier:
+@dataclass(frozen=True)
+class FormulationInput:
+    """Per-formulation inputs handed to the FLARE agent.
+
+    ``formulation_md`` is written to ``<label>/formulation.md`` and
+    ``solve_py`` to ``<label>/solve.py`` inside the agent working
+    directory.
+    """
+
+    formulation_md: str
+    solve_py: str
+
+
+@dataclass
+class FLAREResult:
+    is_reformulation: bool
+    duration_s: float | None = None
+    cost_usd: float | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+class FLARE:
     def __init__(self, harness: Harness) -> None:
         self.harness = harness
 

@@ -1,4 +1,4 @@
-"""End-to-end FLAREVerifier tests against a fixed subset of dataset pairs.
+"""End-to-end FLARE tests against a fixed subset of dataset pairs.
 
 Two harnesses exercise the verifier without burning model credentials:
 
@@ -21,7 +21,7 @@ import pytest
 from formulation_bench import Dataset, Formulation
 
 from milp_flare import (
-    FLAREVerifier,
+    FLARE,
     FormulationInput,
     Harness,
     HarnessConfig,
@@ -116,7 +116,7 @@ class DummyHarness(Harness):
     files and the matching ``reformulations/pX/<a>_<b>.lean`` into the
     agent working directory and writes a fake ``result.json`` reporting a
     successful compile. For False pairs, it writes a ``NOT REFORMULATION``
-    marker, which FLAREVerifier picks up via its agent-decision check.
+    marker, which FLARE picks up via its agent-decision check.
     """
 
     name = "dummy"
@@ -261,7 +261,7 @@ def test_flare_verifier(
 ) -> None:
     a, b, expected = pair
     harness = DummyHarness(repo_root=repo_root, a=a, b=b, expected=expected)
-    verifier = FLAREVerifier(harness=harness)
+    verifier = FLARE(harness=harness)
     a_in, b_in = _inputs(a, b)
     result = verifier.verify(a_in, b_in, tmp_path)
     assert result.is_reformulation is expected
@@ -273,7 +273,7 @@ def test_flare_verifier_docker(
     repo_root: Path,
     tmp_path: Path,
 ) -> None:
-    """End-to-end FLAREVerifier run against the real flare-agent Docker image.
+    """End-to-end FLARE run against the real flare-agent Docker image.
 
     The "agent" is a shell no-op; configure_wd pre-writes the ground-truth
     Lean files so the entrypoint's ``lake env lean`` invocations exercise
@@ -282,7 +282,7 @@ def test_flare_verifier_docker(
     """
     a, b, expected = pair
     harness = GroundTruthHarness(repo_root=repo_root, a=a, b=b, expected=expected)
-    verifier = FLAREVerifier(harness=harness)
+    verifier = FLARE(harness=harness)
     a_in, b_in = _inputs(a, b)
     result = verifier.verify(a_in, b_in, tmp_path)
     assert result.is_reformulation is expected

@@ -1,11 +1,9 @@
-from milp_flare._input import FormulationInput
-from milp_flare._result import FLAREResult
-from milp_flare.flare import FLAREVerifier
+from milp_flare.flare import FLARE, FLAREResult, FormulationInput
 from milp_flare.harness import HARNESSES, Harness, HarnessConfig, HarnessRunResult
 
 __all__ = [
+    "FLARE",
     "FLAREResult",
-    "FLAREVerifier",
     "FormulationInput",
     "HARNESSES",
     "Harness",

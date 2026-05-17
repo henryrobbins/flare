@@ -2,8 +2,7 @@ from pathlib import Path
 from typing import Any
 
 from formulation_bench import Formulation
-from milp_flare import FLAREVerifier as _FLAREVerifier
-from milp_flare import FormulationInput, Harness
+from milp_flare import FLARE, FormulationInput, Harness
 
 from src.prompts import render_formulation
 from src.verify.base import ReformulationResult, ReformulationVerifier
@@ -13,7 +12,7 @@ class FLAREVerifier(ReformulationVerifier):
     """Adapter exposing the milp_flare verifier as a ReformulationVerifier."""
 
     def __init__(self, harness: Harness) -> None:
-        self._inner = _FLAREVerifier(harness=harness)
+        self._inner = FLARE(harness=harness)
 
     @property
     def name(self) -> str:
