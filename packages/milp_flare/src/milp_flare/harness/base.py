@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
-from milp_flare._llm import LLMConfig, compute_cost_usd
+from milp_flare.harness.config import HarnessConfig, compute_cost_usd
 
 
 @dataclass
@@ -24,7 +24,7 @@ IMAGE = "flare-agent:latest"
 class Harness(ABC):
     name: ClassVar[str]
 
-    def __init__(self, config: LLMConfig) -> None:
+    def __init__(self, config: HarnessConfig) -> None:
         self.config = config
         self.model = config.model
         self.effort = config.reasoning_effort or "medium"
@@ -36,8 +36,6 @@ class Harness(ABC):
             "image": IMAGE,
             "model": self.model,
             "effort": self.effort,
-            "max_tokens": self.config.max_tokens,
-            "temperature": self.config.temperature,
             "reasoning": self.config.reasoning,
             "reasoning_effort": self.config.reasoning_effort,
         }

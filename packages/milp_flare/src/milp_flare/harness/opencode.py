@@ -4,9 +4,9 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from milp_flare._llm import LLMConfig
 from milp_flare.assets import SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
+from milp_flare.harness.config import HarnessConfig
 
 _TEMPLATE: str = (SCRIPTS_DIR / "opencode_agent.sh").read_text()
 
@@ -26,7 +26,7 @@ class OpenCodeHarness(Harness):
 
     def __init__(
         self,
-        config: LLMConfig,
+        config: HarnessConfig,
         provider: str | None = None,
     ) -> None:
         super().__init__(config)
@@ -49,8 +49,6 @@ class OpenCodeHarness(Harness):
     def _opencode_config(self) -> dict[str, Any]:
         """Minimal opencode.json to register the model and lean-lsp MCP server."""
         options: dict[str, Any] = {}
-        if self.config.temperature is not None:
-            options["temperature"] = self.config.temperature
         if self.config.reasoning:
             if self.provider == "anthropic":
                 options["thinking"] = {"type": "adaptive"}

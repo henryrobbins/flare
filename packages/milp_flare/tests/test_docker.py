@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from milp_flare import HARNESSES, Harness, LLMConfig
+from milp_flare import HARNESSES, Harness, HarnessConfig
 from milp_flare.assets import LEAN_DIR
 
 pytestmark = pytest.mark.docker
@@ -67,9 +67,8 @@ def _model_for(cli: str) -> str:
 
 
 def _harness(cli: str) -> Harness:
-    cfg = LLMConfig(
+    cfg = HarnessConfig(
         model=_model_for(cli),
-        max_tokens=4096,
         reasoning=False,
         reasoning_effort="low",
     )

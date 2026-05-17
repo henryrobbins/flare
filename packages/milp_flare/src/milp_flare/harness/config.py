@@ -33,13 +33,11 @@ def compute_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float
 
 
 @dataclass
-class LLMConfig:
+class HarnessConfig:
     model: str
-    max_tokens: int | None = None
-    temperature: float | None = None
     reasoning: bool = False
     reasoning_effort: str | None = None
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "LLMConfig":
+    def from_dict(cls, d: dict[str, Any]) -> "HarnessConfig":
         return cls(**d)

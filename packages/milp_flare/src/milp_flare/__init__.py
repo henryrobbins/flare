@@ -1,8 +1,13 @@
 from milp_flare._input import FormulationInput
-from milp_flare._llm import LLMConfig, compute_cost_usd
 from milp_flare._result import FLAREResult
 from milp_flare.flare import FLAREVerifier
-from milp_flare.harness import HARNESSES, Harness, HarnessRunResult
+from milp_flare.harness import (
+    HARNESSES,
+    Harness,
+    HarnessConfig,
+    HarnessRunResult,
+    compute_cost_usd,
+)
 
 __all__ = [
     "FLAREResult",
@@ -10,7 +15,7 @@ __all__ = [
     "FormulationInput",
     "HARNESSES",
     "Harness",
+    "HarnessConfig",
     "HarnessRunResult",
-    "LLMConfig",
     "compute_cost_usd",
 ]
