@@ -40,11 +40,11 @@ RUN pipx install lean-lsp-mcp \
 
 WORKDIR /workspace
 
-# Configure Lake project skeleton in the image
-COPY --chown=agent:agent lean-toolchain        /workspace/lean-toolchain
-COPY --chown=agent:agent lake-manifest.json    /workspace/lake-manifest.json
-COPY --chown=agent:agent Common.lean           /workspace/Common.lean
-COPY --chown=agent:agent docker/lakefile.toml  /workspace/lakefile.toml
+# Configure Lake project skeleton in the image. Build context is the
+# milp_flare package's `assets/` directory (parent of `lean/` and
+# `docker/`), so the image builds purely from files bundled in the
+# installed package.
+COPY --chown=agent:agent lean/ /workspace/
 
 # Pre-fetch mathlib oleans for the pinned toolchain
 RUN lake exe cache get

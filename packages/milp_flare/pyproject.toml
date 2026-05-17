@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "milp-flare"
+version = "0.1.0"
+description = "FLARE: agent-driven verification of MILP reformulations."
+requires-python = ">=3.10"
+dependencies = [
+    "jinja2",
+]
+
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7",
+    "myst-parser>=3",
+    "furo",
+    "sphinx-autodoc-typehints",
+]
+
+[project.scripts]
+milp-flare = "milp_flare.__main__:main"
+
+[dependency-groups]
+dev = [
+    "formulation-bench",
+    "mypy>=1.0",
+    "pytest>=8.0",
+    "python-dotenv>=1.0",
+    "ruff>=0.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+milp_flare = [
+    "py.typed",
+    "assets/**/*",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+strict = true
+files = ["src/milp_flare"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "docker: tests that require Docker (opt-out: -m 'not docker')",
+]

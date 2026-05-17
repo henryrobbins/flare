@@ -8,6 +8,7 @@ dependencies = [
     "jinja2",
     "matplotlib>=3.10.9",
     "formulation-bench",
+    "milp-flare",
     "openai",
     "pandas>=2.3.3",
     "python-dotenv>=1.2.2",
@@ -24,10 +25,11 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [tool.uv.workspace]
-members = ["packages/formulation_bench"]
+members = ["packages/formulation_bench", "packages/milp_flare"]
 
 [tool.uv.sources]
 formulation-bench = { workspace = true }
+milp-flare = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -40,7 +42,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "packages/formulation_bench/tests"]
+testpaths = ["tests", "packages/formulation_bench/tests", "packages/milp_flare/tests"]
 markers = [
     "docker: tests that require Docker (opt-out: -m 'not docker')",
     "gurobi: tests that require Gurobi (opt-out: -m 'not gurobi')",

@@ -4,12 +4,11 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from src.llm_client import LLMConfig
-from src.verify.flare.harness.base import Harness
+from milp_flare.assets import SCRIPTS_DIR, SKILLS_DIR
+from milp_flare.harness.base import Harness
+from milp_flare.harness.config import HarnessConfig
 
-_TEMPLATE: str = (
-    Path(__file__).parent / "agent_commands" / "opencode_agent.sh"
-).read_text()
+_TEMPLATE: str = (SCRIPTS_DIR / "opencode_agent.sh").read_text()
 
 
 def _infer_provider(model: str) -> str:
@@ -27,7 +26,7 @@ class OpenCodeHarness(Harness):
 
     def __init__(
         self,
-        config: LLMConfig,
+        config: HarnessConfig,
         provider: str | None = None,
     ) -> None:
         super().__init__(config)
@@ -36,24 +35,20 @@ class OpenCodeHarness(Harness):
     def method_config(self) -> dict[str, Any]:
         return {**super().method_config(), "provider": self.provider}
 
-    def configure_wd(self, wd: Path, repo_root: Path) -> None:
-        super().configure_wd(wd, repo_root)
+    def configure_wd(self, wd: Path) -> None:
+        super().configure_wd(wd)
         # Use an `opencode.json` file to configure the model provider and MCP server
         # https://opencode.ai/docs/config/
         (wd / "opencode.json").write_text(json.dumps(self._opencode_config(), indent=2))
         # Copy skills to .agents/skills
         # https://opencode.ai/docs/skills/#place-files
-        skills_src = repo_root / ".claude" / "skills"
-        if skills_src.exists():
-            agents_skills = wd / ".agents" / "skills"
-            agents_skills.parent.mkdir(exist_ok=True)
-            shutil.copytree(skills_src, agents_skills, dirs_exist_ok=True)
+        agents_skills = wd / ".agents" / "skills"
+        agents_skills.parent.mkdir(exist_ok=True)
+        shutil.copytree(SKILLS_DIR, agents_skills, dirs_exist_ok=True)
 
     def _opencode_config(self) -> dict[str, Any]:
         """Minimal opencode.json to register the model and lean-lsp MCP server."""
         options: dict[str, Any] = {}
-        if self.config.temperature is not None:
-            options["temperature"] = self.config.temperature
         if self.config.reasoning:
             if self.provider == "anthropic":
                 options["thinking"] = {"type": "adaptive"}

@@ -78,7 +78,6 @@ def main() -> None:
     dataset = Dataset(Path("dataset"))
 
     # Expand the (models × modes) cross product into llm verifier specs.
-    repo_root = Path(".").resolve()
     verifiers: list[tuple[ReformulationVerifier, str, str]] = []
     for model in cfg["models"]:
         for mode in cfg["modes"]:
@@ -91,7 +90,7 @@ def main() -> None:
             }
             verifiers.append(
                 (
-                    build_verifier(spec, repo_root=repo_root),
+                    build_verifier(spec),
                     model["label"],
                     mode["label"],
                 )

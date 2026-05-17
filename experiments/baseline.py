@@ -79,14 +79,13 @@ def main() -> None:
     run_dir = make_run_dir()
     dataset = Dataset(Path("dataset"))
 
-    repo_root = Path(".").resolve()
     entries: list[VerifierEntry] = []
     seen_names: set[str] = set()
     for spec in cfg["verifiers"]:
         spec = dict(spec)
         multi_run = bool(spec.pop("multi_run", False))
         name_override = spec.pop("name", None)
-        verifier = build_verifier(spec, repo_root=repo_root)
+        verifier = build_verifier(spec)
         name = name_override or verifier.name
         if name in seen_names:
             raise ValueError(

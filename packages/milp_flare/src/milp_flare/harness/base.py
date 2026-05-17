@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
-from src.llm_client import LLMConfig, compute_cost_usd
+from milp_flare.harness.config import HarnessConfig, compute_cost_usd
 
 
 @dataclass
@@ -24,7 +24,7 @@ IMAGE = "flare-agent:latest"
 class Harness(ABC):
     name: ClassVar[str]
 
-    def __init__(self, config: LLMConfig) -> None:
+    def __init__(self, config: HarnessConfig) -> None:
         self.config = config
         self.model = config.model
         self.effort = config.reasoning_effort or "medium"
@@ -36,20 +36,18 @@ class Harness(ABC):
             "image": IMAGE,
             "model": self.model,
             "effort": self.effort,
-            "max_tokens": self.config.max_tokens,
-            "temperature": self.config.temperature,
             "reasoning": self.config.reasoning,
             "reasoning_effort": self.config.reasoning_effort,
         }
 
-    def configure_wd(self, wd: Path, repo_root: Path) -> None:
+    def configure_wd(self, wd: Path) -> None:
         """Write all necessary files to the agent's working directory."""
 
         if not wd.exists():
             raise RuntimeError("The agent working directory hasn't been created yet.")
 
         # Add the agent command script to be called by the container entrypoint
-        # See docker/entrypoint.sh
+        # See milp_flare/assets/docker/entrypoint.sh
         (wd / "agent.sh").write_text(self._agent_command())
 
     def run(self, wd: Path) -> HarnessRunResult:

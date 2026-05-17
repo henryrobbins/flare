@@ -4,28 +4,25 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from src.verify.flare.harness.base import Harness
+from milp_flare.assets import MCP_JSON, SCRIPTS_DIR, SKILLS_DIR
+from milp_flare.harness.base import Harness
 
-_TEMPLATE: str = (
-    Path(__file__).parent / "agent_commands" / "claude_code_agent.sh"
-).read_text()
+_TEMPLATE: str = (SCRIPTS_DIR / "claude_code_agent.sh").read_text()
 
 
 class ClaudeCodeHarness(Harness):
     name = "claude_code"
 
-    def configure_wd(self, wd: Path, repo_root: Path) -> None:
-        super().configure_wd(wd, repo_root)
+    def configure_wd(self, wd: Path) -> None:
+        super().configure_wd(wd)
         # Copy MCP server configuration (passed to --mcp-config)
         # https://code.claude.com/docs/en/mcp#project-scope
-        shutil.copy2(repo_root / ".mcp.json", wd / ".mcp.json")
+        shutil.copy2(MCP_JSON, wd / ".mcp.json")
         # Copy skills to .claude/skills
         # https://code.claude.com/docs/en/skills#where-skills-live
-        skills_src = repo_root / ".claude" / "skills"
-        if skills_src.exists():
-            claude_skills = wd / ".claude" / "skills"
-            claude_skills.parent.mkdir(exist_ok=True)
-            shutil.copytree(skills_src, claude_skills, dirs_exist_ok=True)
+        claude_skills = wd / ".claude" / "skills"
+        claude_skills.parent.mkdir(exist_ok=True)
+        shutil.copytree(SKILLS_DIR, claude_skills, dirs_exist_ok=True)
 
     def _agent_docker_args(self) -> list[str]:
         # We use a long-lived token here instead of an API key to avoid the

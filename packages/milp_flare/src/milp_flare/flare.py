@@ -2,20 +2,38 @@ import dataclasses
 import json
 import re
 import shutil
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from formulation_bench import Formulation
-
-from src.prompts import render_formulation
-from src.verify.base import ReformulationResult, ReformulationVerifier
-from src.verify.flare.harness import Harness
-from src.verify.flare.prompts import render_agent_prompt
+from milp_flare.assets import LEAN_DIR
+from milp_flare.harness import Harness
+from milp_flare.prompts import render_flare_agent_prompt
 
 
-class FLAREVerifier(ReformulationVerifier):
-    def __init__(self, repo_root: Path, harness: Harness) -> None:
-        self.repo_root = repo_root
+@dataclass(frozen=True)
+class FormulationInput:
+    """Per-formulation inputs handed to the FLARE agent.
+
+    ``formulation_md`` is written to ``<label>/formulation.md`` and
+    ``solve_py`` to ``<label>/solve.py`` inside the agent working
+    directory.
+    """
+
+    formulation_md: str
+    solve_py: str
+
+
+@dataclass
+class FLAREResult:
+    is_reformulation: bool
+    duration_s: float | None = None
+    cost_usd: float | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+class FLARE:
+    def __init__(self, harness: Harness) -> None:
         self.harness = harness
 
     @property
@@ -26,8 +44,11 @@ class FLAREVerifier(ReformulationVerifier):
         return self.harness.method_config()
 
     def verify(
-        self, a: Formulation, b: Formulation, output_path: Path
-    ) -> ReformulationResult:
+        self,
+        a: FormulationInput,
+        b: FormulationInput,
+        output_path: Path,
+    ) -> FLAREResult:
         # Create the artifacts directory at the output path and write config
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
@@ -47,16 +68,19 @@ class FLAREVerifier(ReformulationVerifier):
         meta.update(dataclasses.asdict(run_result))
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
-        return ReformulationResult(
+        return FLAREResult(
             is_reformulation=meta["is_reformulation"],
-            method=self.name,
-            artifacts_dir=artifacts_dir,
             duration_s=meta.get("duration_s"),
             cost_usd=meta.get("cost_usd"),
             metadata=meta,
         )
 
-    def _setup_wd(self, wd: Path, a: Formulation, b: Formulation) -> None:
+    def _setup_wd(
+        self,
+        wd: Path,
+        a: FormulationInput,
+        b: FormulationInput,
+    ) -> None:
         """Populate the agent working directory with all necessary files."""
 
         wd.mkdir(parents=True, exist_ok=True)
@@ -65,11 +89,11 @@ class FLAREVerifier(ReformulationVerifier):
         self._setup_lake(wd)
 
         # Populate problem files for Formulation A and B
-        for label, form in [("A", a), ("B", b)]:
+        for label, inp in [("A", a), ("B", b)]:
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
-            (form_dir / "formulation.md").write_text(render_formulation(form))
-            (form_dir / "solve.py").write_text(form.gurobipy_code)
+            (form_dir / "formulation.md").write_text(inp.formulation_md)
+            (form_dir / "solve.py").write_text(inp.solve_py)
             (form_dir / "Formulation.lean").write_text("")
 
         # Create empty Reformulation.lean
@@ -77,18 +101,16 @@ class FLAREVerifier(ReformulationVerifier):
 
         # Write the agent prompt
         # For Docker harnesses, this allows agent scripts to access the prompt
-        # in the container (see src/verify/flare/harness/agent_commands/*.sh).
-        (wd / "prompt.txt").write_text(render_agent_prompt())
+        # in the container (see milp_flare/assets/scripts/*.sh).
+        (wd / "prompt.txt").write_text(render_flare_agent_prompt())
 
         # Do any harness-specific configuration (e.g., agent.sh, MCP config, skills).
-        self.harness.configure_wd(wd, self.repo_root)
+        self.harness.configure_wd(wd)
 
     def _setup_lake(self, wd: Path) -> None:
         """Setup minimal Lake environment so the agent can compile Lean files."""
-        shutil.copy2(self.repo_root / "docker" / "lakefile.toml", wd / "lakefile.toml")
-        shutil.copy2(self.repo_root / "lean-toolchain", wd / "lean-toolchain")
-        shutil.copy2(self.repo_root / "lake-manifest.json", wd / "lake-manifest.json")
-        shutil.copy2(self.repo_root / "Common.lean", wd / "Common.lean")
+        for src in LEAN_DIR.iterdir():
+            shutil.copy2(src, wd / src.name)
 
     def _evaluate(self, wd: Path) -> dict[str, Any]:
         """Evaluate the agent's output to determine if the reformulation is correct."""

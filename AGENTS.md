@@ -42,12 +42,20 @@ and manipulating the dataset: `dataset.py`, `problem.py`, `formulation.py`,
 `pair.py`, `models.py`. Tests are under `packages/formulation_bench/tests/`.
 Owns its own `pyproject.toml` and is wired into the workspace root.
 
+## `packages/milp_flare/`
+
+Workspace package `milp_flare` (src layout) holding the FLARE
+reformulation-verifier implementation: `FLAREVerifier`, the agent prompt, and
+the `claude_code` / `codex` / `opencode` harnesses under
+`milp_flare/harness/`. `src/verify/flare.py` is a thin adapter that exposes
+this verifier as a `ReformulationVerifier`.
+
 ## `src/`
 
 Experiment code (not published): `llm_client.py`, prompt templates under
 `prompts/`, and reformulation-verifier implementations under `verify/`
-(`equivamap/`, `execution/`, `flare/`, `llm/`) sharing a `verify/base.py`
-interface. Installed editable as the package `src`.
+(`equivamap/`, `execution/`, `flare.py` adapter, `llm/`) sharing a
+`verify/base.py` interface. Installed editable as the package `src`.
 
 ## `experiments/`
 
@@ -101,8 +109,9 @@ Setup:
 1. One-time: `claude setup-token`, save the printed token to `.env` as
    `CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...` (this is how claude_code bills
    against the Claude.ai plan inside the container).
-2. `docker build -f docker/Dockerfile -t flare-agent:latest .` from the repo root (~5 min cold,
-   ~1 s when only the entrypoint changed).
+2. `milp-flare build-image` (~5 min cold, ~1 s when only the entrypoint
+   changed). Builds the `flare-agent:latest` image from the Dockerfile
+   bundled under `packages/milp_flare/src/milp_flare/assets/docker/`.
 3. Run experiments normally; the harness uses the image automatically.
 4. When `lean-toolchain` bumps, rebuild the image (no volume cleanup
    needed — each container reads `.lake/` from the image layer).
