@@ -9,6 +9,14 @@ description = "Utilities for working with the FormulationBench dataset."
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7",
+    "myst-parser>=3",
+    "furo",
+    "sphinx-autodoc-typehints",
+]
+
 [dependency-groups]
 dev = [
     "mypy>=1.0",
