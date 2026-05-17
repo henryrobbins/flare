@@ -11,6 +11,14 @@ dependencies = [
     "jinja2",
 ]
 
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7",
+    "myst-parser>=3",
+    "furo",
+    "sphinx-autodoc-typehints",
+]
+
 [project.scripts]
 milp-flare = "milp_flare.__main__:main"
 
