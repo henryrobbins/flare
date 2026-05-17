@@ -43,7 +43,7 @@ def build_verifier(spec: dict[str, Any]) -> ReformulationVerifier:
     if vtype == "llm":
         client_spec = spec.pop("client")
         name = spec.pop("name")
-        template = spec.pop("template", "reformulation.j2")
+        template = spec.pop("template", "flare_nl")
         include_implicit = spec.pop("include_implicit", True)
         return LLMVerifier(
             make_client(client_spec),

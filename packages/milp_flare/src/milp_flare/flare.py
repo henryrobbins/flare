@@ -8,7 +8,7 @@ from typing import Any
 
 from milp_flare.assets import LEAN_DIR
 from milp_flare.harness import Harness
-from milp_flare.prompts import render_agent_prompt
+from milp_flare.prompts import render_flare_agent_prompt
 
 
 @dataclass(frozen=True)
@@ -102,7 +102,7 @@ class FLARE:
         # Write the agent prompt
         # For Docker harnesses, this allows agent scripts to access the prompt
         # in the container (see milp_flare/assets/scripts/*.sh).
-        (wd / "prompt.txt").write_text(render_agent_prompt())
+        (wd / "prompt.txt").write_text(render_flare_agent_prompt())
 
         # Do any harness-specific configuration (e.g., agent.sh, MCP config, skills).
         self.harness.configure_wd(wd)

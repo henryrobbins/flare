@@ -16,7 +16,7 @@ class LLMVerifier(ReformulationVerifier):
         self,
         client: LLMClient,
         name: str = "llm",
-        template: str = "reformulation.j2",
+        template: str = "flare_nl",
         include_implicit: bool = True,
     ) -> None:
         self.client = client

@@ -10,5 +10,12 @@ _env = Environment(
 )
 
 
-def render_agent_prompt() -> str:
-    return _env.get_template("agent_prompt.j2").render()
+def render_flare_agent_prompt() -> str:
+    return _env.get_template("flare_agent.j2").render()
+
+
+def render_flare_nl_prompt(formulation_a: str, formulation_b: str) -> str:
+    return _env.get_template("flare_nl.j2").render(
+        formulation_a=formulation_a,
+        formulation_b=formulation_b,
+    )
