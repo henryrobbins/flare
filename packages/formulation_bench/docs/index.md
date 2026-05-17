@@ -1,10 +1,15 @@
-# formulation_bench
+# FormulationBench
 
-Utilities for working with the FormulationBench dataset.
+A dataset of mixed-integer linear programming (MILP) problems, multiple
+natural-language and code formulations of each problem, and machine-checked
+Lean 4 proofs of MILP reformulations — together with a small Python package
+for loading and working with it.
 
 ```{toctree}
 :maxdepth: 2
 :caption: Contents
 
-api
+installation
+dataset/index
+api/index
 ```

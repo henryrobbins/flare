@@ -13,7 +13,13 @@ extensions = [
     "sphinx_autodoc_typehints",
 ]
 
-myst_enable_extensions = ["colon_fence", "deflist", "fieldlist"]
+myst_enable_extensions = [
+    "colon_fence",
+    "deflist",
+    "fieldlist",
+    "dollarmath",
+    "amsmath",
+]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
@@ -23,7 +29,7 @@ templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "furo"
-html_title = "formulation_bench"
+html_title = "FormulationBench"
 
 autodoc_default_options = {
     "members": True,

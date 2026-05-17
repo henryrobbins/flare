@@ -15,6 +15,7 @@ docs = [
     "myst-parser>=3",
     "furo",
     "sphinx-autodoc-typehints",
+    "sphinx-autobuild",
 ]
 
 [dependency-groups]
