@@ -4,6 +4,7 @@ import json
 from functools import cached_property
 from pathlib import Path
 
+from .download import download_dataset
 from .pair import Pair
 from .problem import Problem
 
@@ -60,6 +61,34 @@ class Dataset:
         self.problems: dict[int, Problem] = {
             pid: Problem(self.root / "problems" / f"p{pid}") for pid in raw["problems"]
         }
+
+    @classmethod
+    def load(
+        cls,
+        version: str | None = None,
+        cache_dir: str | Path | None = None,
+        *,
+        force: bool = False,
+        sha256: str | None = None,
+    ) -> "Dataset":
+        """Download a released dataset tarball and return a :class:`Dataset`.
+
+        Thin wrapper around :func:`formulation_bench.download_dataset` that
+        constructs a :class:`Dataset` from the extracted root. See that
+        function for caching and verification semantics.
+
+        Parameters
+        ----------
+        version : str, optional
+            Release tag on the FLARE GitHub repo, e.g. ``"dataset-v0.1"``.
+            Defaults to :data:`formulation_bench.DEFAULT_DATASET_VERSION`.
+        cache_dir, force, sha256
+            Passed through to :func:`download_dataset`.
+        """
+        root = download_dataset(
+            version, cache_dir=cache_dir, force=force, sha256=sha256
+        )
+        return cls(root)
 
     @cached_property
     def pairs(self) -> list[Pair]:
