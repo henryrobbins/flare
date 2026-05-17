@@ -1025,12 +1025,12 @@ name = "milp-flare"
 version = "0.1.0"
 source = { editable = "packages/milp_flare" }
 dependencies = [
-    { name = "formulation-bench" },
     { name = "jinja2" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "formulation-bench" },
     { name = "mypy" },
     { name = "pytest" },
     { name = "python-dotenv" },
@@ -1038,13 +1038,11 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [
-    { name = "formulation-bench", editable = "packages/formulation_bench" },
-    { name = "jinja2" },
-]
+requires-dist = [{ name = "jinja2" }]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "formulation-bench", editable = "packages/formulation_bench" },
     { name = "mypy", specifier = ">=1.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "python-dotenv", specifier = ">=1.0" },

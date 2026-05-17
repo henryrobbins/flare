@@ -8,7 +8,6 @@ version = "0.1.0"
 description = "FLARE: agent-driven verification of MILP reformulations."
 requires-python = ">=3.10"
 dependencies = [
-    "formulation-bench",
     "jinja2",
 ]
 
@@ -17,6 +16,7 @@ milp-flare = "milp_flare.__main__:main"
 
 [dependency-groups]
 dev = [
+    "formulation-bench",
     "mypy>=1.0",
     "pytest>=8.0",
     "python-dotenv>=1.0",

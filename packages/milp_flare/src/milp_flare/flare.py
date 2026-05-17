@@ -5,8 +5,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from formulation_bench import Formulation
-
+from milp_flare._input import FormulationInput
 from milp_flare._result import FLAREResult
 from milp_flare.assets import LEAN_DIR
 from milp_flare.harness import Harness
@@ -26,9 +25,8 @@ class FLAREVerifier:
 
     def verify(
         self,
-        a: Formulation,
-        b: Formulation,
-        formulation_md: dict[str, str],
+        a: FormulationInput,
+        b: FormulationInput,
         output_path: Path,
     ) -> FLAREResult:
         # Create the artifacts directory at the output path and write config
@@ -40,7 +38,7 @@ class FLAREVerifier:
 
         # Setup the agent's working directory
         wd = artifacts_dir / "wd"
-        self._setup_wd(wd, a, b, formulation_md)
+        self._setup_wd(wd, a, b)
 
         # Run the agent harness
         run_result = self.harness.run(wd)
@@ -62,9 +60,8 @@ class FLAREVerifier:
     def _setup_wd(
         self,
         wd: Path,
-        a: Formulation,
-        b: Formulation,
-        formulation_md: dict[str, str],
+        a: FormulationInput,
+        b: FormulationInput,
     ) -> None:
         """Populate the agent working directory with all necessary files."""
 
@@ -74,11 +71,11 @@ class FLAREVerifier:
         self._setup_lake(wd)
 
         # Populate problem files for Formulation A and B
-        for label, form in [("A", a), ("B", b)]:
+        for label, inp in [("A", a), ("B", b)]:
             form_dir = wd / label
             form_dir.mkdir(exist_ok=True)
-            (form_dir / "formulation.md").write_text(formulation_md[label])
-            (form_dir / "solve.py").write_text(form.gurobipy_code)
+            (form_dir / "formulation.md").write_text(inp.formulation_md)
+            (form_dir / "solve.py").write_text(inp.solve_py)
             (form_dir / "Formulation.lean").write_text("")
 
         # Create empty Reformulation.lean

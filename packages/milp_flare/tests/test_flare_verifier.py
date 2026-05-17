@@ -20,7 +20,13 @@ from pathlib import Path
 import pytest
 from formulation_bench import Dataset, Formulation
 
-from milp_flare import FLAREVerifier, Harness, HarnessRunResult, LLMConfig
+from milp_flare import (
+    FLAREVerifier,
+    FormulationInput,
+    Harness,
+    HarnessRunResult,
+    LLMConfig,
+)
 
 # (problem dir name, formulation A, formulation B, expected reformulation)
 PAIRS: list[tuple[str, str, str, bool]] = [
@@ -239,7 +245,13 @@ class GroundTruthHarness(Harness):
 
 # The DummyHarness / GroundTruthHarness pre-write the Lean files and never
 # read formulation.md, so any markdown is fine.
-_EMPTY_MD = {"A": "", "B": ""}
+def _inputs(
+    a: Formulation, b: Formulation
+) -> tuple[FormulationInput, FormulationInput]:
+    return (
+        FormulationInput(formulation_md="", solve_py=a.gurobipy_code),
+        FormulationInput(formulation_md="", solve_py=b.gurobipy_code),
+    )
 
 
 def test_flare_verifier(
@@ -250,7 +262,8 @@ def test_flare_verifier(
     a, b, expected = pair
     harness = DummyHarness(repo_root=repo_root, a=a, b=b, expected=expected)
     verifier = FLAREVerifier(harness=harness)
-    result = verifier.verify(a, b, _EMPTY_MD, tmp_path)
+    a_in, b_in = _inputs(a, b)
+    result = verifier.verify(a_in, b_in, tmp_path)
     assert result.is_reformulation is expected
 
 
@@ -270,5 +283,6 @@ def test_flare_verifier_docker(
     a, b, expected = pair
     harness = GroundTruthHarness(repo_root=repo_root, a=a, b=b, expected=expected)
     verifier = FLAREVerifier(harness=harness)
-    result = verifier.verify(a, b, _EMPTY_MD, tmp_path)
+    a_in, b_in = _inputs(a, b)
+    result = verifier.verify(a_in, b_in, tmp_path)
     assert result.is_reformulation is expected
