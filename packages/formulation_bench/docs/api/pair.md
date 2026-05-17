@@ -2,5 +2,8 @@
 
 ```{eval-rst}
 .. automodule:: formulation_bench.pair
-   :members:
+   :no-members:
+
+.. autoclass:: formulation_bench.pair.Pair
+   :no-members:
 ```

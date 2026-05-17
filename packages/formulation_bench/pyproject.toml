@@ -16,6 +16,7 @@ docs = [
     "furo",
     "sphinx-autodoc-typehints",
     "sphinx-autobuild",
+    "numpydoc",
 ]
 
 [dependency-groups]

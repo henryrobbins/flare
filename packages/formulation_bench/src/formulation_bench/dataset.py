@@ -1,3 +1,5 @@
+"""Top-level entry point for loading the FormulationBench dataset."""
+
 import json
 from functools import cached_property
 from pathlib import Path
@@ -7,6 +9,51 @@ from .problem import Problem
 
 
 class Dataset:
+    """An on-disk FormulationBench dataset.
+
+    A ``Dataset`` lazily loads the problems listed in ``<root>/dataset.json``
+    and the formulation pairs in ``<root>/pairs.json``. Each problem and
+    formulation is read from disk on first access (see :class:`Problem` and
+    :class:`Formulation`); construction itself does no work beyond parsing
+    ``dataset.json``.
+
+    Parameters
+    ----------
+    root : str or pathlib.Path
+        Path to the dataset root directory, i.e. the directory containing
+        ``dataset.json``, ``pairs.json``, and the ``problems/`` subtree.
+
+    Attributes
+    ----------
+    root : pathlib.Path
+        Resolved absolute path to the dataset root.
+    problems : dict[int, Problem]
+        Mapping from integer problem id (``1`` for ``p1``, ``2`` for ``p2``,
+        ...) to :class:`Problem`. Iteration order matches ``dataset.json``.
+
+    Examples
+    --------
+    Load the dataset shipped with this repository (run from the repo root)::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> sorted(ds.problems)[:5]
+        [1, 2, 3, 4, 5]
+
+    Access a specific problem and one of its formulations::
+
+        >>> p1 = ds.problems[1]
+        >>> p1.formulations["a"].valid
+        True
+
+    Iterate over labelled formulation pairs::
+
+        >>> pos = [p for p in ds.pairs if p.reformulation]
+        >>> neg = [p for p in ds.pairs if not p.reformulation]
+        >>> len(pos), len(neg)  # doctest: +SKIP
+        (..., ...)
+    """
+
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
         raw = json.loads((self.root / "dataset.json").read_text())
@@ -16,6 +63,20 @@ class Dataset:
 
     @cached_property
     def pairs(self) -> list[Pair]:
+        """List of all formulation :class:`Pair` s declared in ``pairs.json``.
+
+        Returns an empty list if ``pairs.json`` is absent. Both positive
+        examples (``reformulation=True``) and negative examples
+        (``reformulation=False``) are included; filter on
+        :attr:`Pair.reformulation` if you only want one.
+
+        Examples
+        --------
+        >>> ds = Dataset("dataset")  # doctest: +SKIP
+        >>> first = ds.pairs[0]      # doctest: +SKIP
+        >>> first.a.problem is first.b.problem  # same-problem pair  # doctest: +SKIP
+        True
+        """
         return self._load_pairs()
 
     def _load_pairs(self) -> list[Pair]:

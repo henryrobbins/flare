@@ -1,4 +1,9 @@
-"""Generate gurobipy solve.py code from a formulation.json dict."""
+"""Generate ``gurobipy`` solver code from a ``formulation.json`` dict.
+
+This module is the deterministic codegen used to produce each formulation's
+``solve.py`` from its JSON description. The single public entry point is
+:func:`generate`; everything else is an internal helper.
+"""
 
 import re
 import subprocess
@@ -136,7 +141,34 @@ def _solution_extraction(name: str, var: dict[str, Any]) -> list[str]:
 
 
 def generate(formulation_json: dict[str, Any]) -> str:
-    """Return complete gurobipy solve.py source for the given formulation.json dict."""
+    """Return the complete ``solve.py`` source for a formulation.
+
+    The output is a self-contained, ``ruff``-formatted Python script that
+    loads ``parameters.json``, builds a Gurobi model, solves it, and writes
+    ``solution.json``. The script accepts two positional CLI arguments
+    (``params`` and ``solution`` paths) so it can also be invoked directly.
+
+    Parameters
+    ----------
+    formulation_json : dict
+        Parsed ``formulation.json`` payload. The relevant keys are
+        ``parameters``, ``assumptions``, ``definitions``, ``variables``,
+        ``constraints``, ``objective``, and (optional) ``imports``.
+
+    Returns
+    -------
+    str
+        Source code of the generated ``solve.py``.
+
+    Examples
+    --------
+    >>> from formulation_bench import Dataset
+    >>> ds = Dataset("dataset")                          # doctest: +SKIP
+    >>> from formulation_bench.codegen import generate
+    >>> src = generate(ds.problems[1].formulations["a"]._raw)  # doctest: +SKIP
+    >>> "model.optimize()" in src                        # doctest: +SKIP
+    True
+    """
     params = dict(formulation_json.get("parameters", {}))
     assumptions = list(formulation_json.get("assumptions", []))
     definitions = dict(formulation_json.get("definitions", {}))
