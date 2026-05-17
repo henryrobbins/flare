@@ -34,8 +34,8 @@ class FLAREVerifier(ReformulationVerifier):
         r = self._inner.verify(a_in, b_in, output_path)
         return ReformulationResult(
             is_reformulation=r.is_reformulation,
-            method=r.method,
-            artifacts_dir=r.artifacts_dir,
+            method=self.name,
+            artifacts_dir=output_path,
             duration_s=r.duration_s,
             cost_usd=r.cost_usd,
             metadata=r.metadata,
