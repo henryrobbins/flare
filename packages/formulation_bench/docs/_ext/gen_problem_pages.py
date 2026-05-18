@@ -22,30 +22,26 @@ from formulation_bench.formulation import Formulation
 from formulation_bench.models import Objective, Parameter, Variable
 
 CITATIONS_BIBTEX = """\
-@misc{yazdani2026,
-  title={EvoCut: Strengthening Integer Programs via Evolution-Guided Language Models},
-  author={Milad Yazdani and Mahdi Mostajabdaveh and Samin Aref and Zirui Zhou},
-  year={2026},
-  eprint={2508.11850},
-  archivePrefix={arXiv},
-  primaryClass={cs.AI},
-  url={https://arxiv.org/abs/2508.11850},
+@article{yazdani2025,
+  title = {{{EvoCut}}: {{Strengthening Integer Programs}} via {{Evolution-Guided Language Models}}},
+  author = {Yazdani, Milad and Mostajabdaveh, Mahdi and Aref, Samin and Zhou, Zirui},
+  journal = {arXiv preprint arXiv:2508.11850},
+  year = 2025
 }
 
-@misc{zhai2025,
-  title = {EquivaMap: Leveraging LLMs for Automatic Equivalence Checking of Optimization Formulations},
-  author = {Zhai, Haotian and Lawless, Connor and Vitercik, Ellen and Leqi, Liu},
-  year = {2025},
-  eprint = {2502.14760},
-  publisher = {arXiv},
-  doi = {10.48550/arXiv.2502.14760},
-  archiveprefix = {arXiv}
+@inproceedings{zhai2025a,
+  title={\\textup{EquivaMap}: Leveraging \\textup{LLMs} for Automatic Equivalence Checking of Optimization Formulations},
+  author={Haotian Zhai and Connor Lawless and Ellen Vitercik and Liu Leqi},
+  booktitle={Forty-second International Conference on Machine Learning},
+  year={2025}
 }
 
-@thesis{ferchtandiker2025,
-  title = {Generating Efficient Optimization Formulations Using Large Language Models},
+@mastersthesis{ferchtandiker2025,
+  title = {Generating {{Efficient Optimization Formulations Using Large Language Models}}},
   author = {Ferchtandiker, Nathan},
   year = 2025,
+  month = jul,
+  langid = {english},
   school = {Universiteit van Amsterdam}
 }
 """
@@ -231,8 +227,6 @@ def _source_short(src: object) -> str:
     name = src.get("dataset", "?")
     url = SOURCE_LINKS.get(name)
     head = f"[{name}]({url})" if url else name
-    if "instance_id" in src:
-        return f"{head} (instance {src['instance_id']})"
     return head
 
 
