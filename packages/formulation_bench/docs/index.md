@@ -10,6 +10,7 @@ for loading and working with it.
 :caption: Contents
 
 installation
+user_guide/index
 dataset/problems/index
 dataset/index
 lean/index
