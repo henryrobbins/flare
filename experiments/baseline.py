@@ -23,7 +23,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from formulation_bench import Dataset, Pair  # noqa: E402
+from formulation_bench import Dataset, Reformulation  # noqa: E402
 
 from experiments.utils import (  # noqa: E402
     add_common_args,
@@ -49,7 +49,7 @@ class VerifierEntry:
 
 
 def process_task(
-    pair: Pair,
+    pair: Reformulation,
     entry: VerifierEntry,
     run_idx: int | None,
     results_path: Path,
@@ -62,7 +62,7 @@ def process_task(
     )
     row = run_verification(entry.verifier, pair, artifacts_dir, entry.name, run_idx)
     write_and_log(
-        row, results_path, write_lock, entry.name, run_idx, pair.reformulation
+        row, results_path, write_lock, entry.name, run_idx, pair.is_reformulation
     )
 
 
@@ -94,7 +94,7 @@ def main() -> None:
         seen_names.add(name)
         entries.append(VerifierEntry(verifier=verifier, name=name, multi_run=multi_run))
 
-    pairs = filter_pairs(dataset.pairs, problem_filter)
+    pairs = filter_pairs(dataset.reformulations, problem_filter)
     results_path = run_dir / "results.jsonl"
     write_lock = Lock()
 
@@ -107,7 +107,7 @@ def main() -> None:
         f"({n_single} single, {n_multi} multi×{runs})  Workers: {workers}\n"
     )
 
-    tasks: list[tuple[Pair, VerifierEntry, int | None]] = []
+    tasks: list[tuple[Reformulation, VerifierEntry, int | None]] = []
     for pair in pairs:
         for entry in entries:
             if entry.multi_run:

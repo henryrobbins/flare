@@ -12,15 +12,15 @@ from .models import (
     Variable,
     VariableType,
 )
-from .pair import Pair
 from .problem import Problem
+from .reformulation import Reformulation
 
 __all__ = [
     "Dataset",
     "DEFAULT_DATASET_VERSION",
     "download_dataset",
     "Formulation",
-    "Pair",
+    "Reformulation",
     "Problem",
     "Parameter",
     "ParameterType",

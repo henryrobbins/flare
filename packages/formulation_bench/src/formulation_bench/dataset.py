@@ -5,14 +5,14 @@ from functools import cached_property
 from pathlib import Path
 
 from .download import download_dataset
-from .pair import Pair
 from .problem import Problem
+from .reformulation import Reformulation
 
 
 class Dataset:
     """An on-disk FormulationBench dataset.
 
-    A ``Dataset`` lazily loads the problems and formulation pairs listed in
+    A ``Dataset`` lazily loads the problems and reformulations listed in
     ``<root>/dataset.json``. Each problem and formulation is read from disk
     on first access (see :class:`Problem` and :class:`Formulation`);
     construction itself does no work beyond parsing ``dataset.json``.
@@ -46,10 +46,10 @@ class Dataset:
         >>> p1.formulations["a"].valid
         True
 
-    Iterate over labelled formulation pairs::
+    Iterate over labelled reformulations::
 
-        >>> pos = [p for p in ds.pairs if p.reformulation]
-        >>> neg = [p for p in ds.pairs if not p.reformulation]
+        >>> pos = [r for r in ds.reformulations if r.is_reformulation]
+        >>> neg = [r for r in ds.reformulations if not r.is_reformulation]
         >>> len(pos), len(neg)  # doctest: +SKIP
         (..., ...)
     """
@@ -91,31 +91,31 @@ class Dataset:
         return cls(root)
 
     @cached_property
-    def pairs(self) -> list[Pair]:
-        """List of all formulation :class:`Pair` s declared under the
+    def reformulations(self) -> list[Reformulation]:
+        """List of all :class:`Reformulation` entries declared under the
         ``reformulations`` key of ``dataset.json``.
 
         Returns an empty list if no ``reformulations`` entry is present. Both
-        positive examples (``reformulation=True``) and negative examples
-        (``reformulation=False``) are included; filter on
-        :attr:`Pair.reformulation` if you only want one.
+        positive examples (``is_reformulation=True``) and negative examples
+        (``is_reformulation=False``) are included; filter on
+        :attr:`Reformulation.is_reformulation` if you only want one.
 
         Examples
         --------
-        >>> ds = Dataset("dataset")  # doctest: +SKIP
-        >>> first = ds.pairs[0]      # doctest: +SKIP
+        >>> ds = Dataset("dataset")           # doctest: +SKIP
+        >>> first = ds.reformulations[0]      # doctest: +SKIP
         >>> first.a.problem is first.b.problem  # same-problem pair  # doctest: +SKIP
         True
         """
         return [
-            Pair(
+            Reformulation(
                 a=self.problems[entry["a"]["problem"]].formulations[
                     entry["a"]["formulation"]
                 ],
                 b=self.problems[entry["b"]["problem"]].formulations[
                     entry["b"]["formulation"]
                 ],
-                reformulation=entry["reformulation"],
+                is_reformulation=entry["reformulation"],
             )
             for entry in self._raw.get("reformulations", [])
         ]

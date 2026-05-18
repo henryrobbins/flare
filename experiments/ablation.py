@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from formulation_bench import Dataset, Pair  # noqa: E402
+from formulation_bench import Dataset, Reformulation  # noqa: E402
 
 from experiments.utils import (  # noqa: E402
     add_common_args,
@@ -40,7 +40,7 @@ DEFAULT_CONFIG = Path(__file__).parent / "configs" / "ablation.yaml"
 
 
 def process_pair_verifier(
-    pair: Pair,
+    pair: Reformulation,
     verifier: ReformulationVerifier,
     model: str,
     mode: str,
@@ -60,7 +60,7 @@ def process_pair_verifier(
         mode=mode,
     )
     write_and_log(
-        row, results_path, write_lock, verifier.name, run_idx, pair.reformulation
+        row, results_path, write_lock, verifier.name, run_idx, pair.is_reformulation
     )
 
 
@@ -96,7 +96,7 @@ def main() -> None:
                 )
             )
 
-    pairs = filter_pairs(dataset.pairs, problem_filter)
+    pairs = filter_pairs(dataset.reformulations, problem_filter)
     results_path = run_dir / "results.jsonl"
     write_lock = Lock()
 

@@ -22,9 +22,9 @@ p1 = ds.problem("p1")
 for f in p1.formulations:
     print(f.id, f.valid)
 
-# Iterate over labelled formulation pairs
-for pair in ds.pairs:
-    print(pair.a.id, pair.b.id, pair.reformulation)
+# Iterate over labelled reformulations
+for r in ds.reformulations:
+    print(r.a.id, r.b.id, r.is_reformulation)
 ```
 
 ```{note}

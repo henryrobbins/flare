@@ -6,7 +6,7 @@
 dataset
 problem
 formulation
-pair
+reformulation
 download
 models
 ```

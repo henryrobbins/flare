@@ -57,5 +57,5 @@ numpydoc_xref_aliases = {
     "Constraint": "formulation_bench.models.Constraint",
     "Objective": "formulation_bench.models.Objective",
     "Solution": "formulation_bench.models.Solution",
-    "Pair": "formulation_bench.pair.Pair",
+    "Reformulation": "formulation_bench.reformulation.Reformulation",
 }
