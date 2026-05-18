@@ -15,9 +15,7 @@ from .models import (
     Definition,
     Objective,
     Parameter,
-    ParameterType,
     Variable,
-    VariableType,
 )
 
 if TYPE_CHECKING:
@@ -101,53 +99,21 @@ class Formulation:
     def _load_from_raw(self, raw: dict[str, Any]) -> None:
         self.valid: bool = raw["valid"]
         self.parameters: dict[str, Parameter] = {
-            k: Parameter(
-                description=v["description"],
-                type=ParameterType(v.get("type", "continuous")),
-                shape=v["shape"],
-            )
-            for k, v in raw["parameters"].items()
+            k: Parameter.from_dict(v) for k, v in raw["parameters"].items()
         }
         self.definitions: dict[str, Definition] = {
-            k: Definition(
-                description=v["description"],
-                code=v["code"],
-                formulation=v["formulation"],
-            )
-            for k, v in raw.get("definitions", {}).items()
+            k: Definition.from_dict(v) for k, v in raw.get("definitions", {}).items()
         }
         self.assumptions: list[Assumption] = [
-            Assumption(
-                description=a["description"],
-                formulation=a["formulation"],
-                explicit=a["explicit"],
-                code=a["code"],
-            )
-            for a in raw.get("assumptions", [])
+            Assumption.from_dict(a) for a in raw.get("assumptions", [])
         ]
         self.variables: dict[str, Variable] = {
-            k: Variable(
-                description=v["description"],
-                type=VariableType(v["type"]),
-                shape=v.get("shape", []),
-                indices=v.get("indices"),
-            )
-            for k, v in raw["variables"].items()
+            k: Variable.from_dict(v) for k, v in raw["variables"].items()
         }
         self.constraints: list[Constraint] = [
-            Constraint(
-                description=c["description"],
-                formulation=c["formulation"],
-                explicit=c["explicit"],
-                code=c["code"],
-            )
-            for c in raw["constraints"]
+            Constraint.from_dict(c) for c in raw["constraints"]
         ]
-        self.objective: Objective = Objective(
-            description=raw["objective"]["description"],
-            formulation=raw["objective"]["formulation"],
-            code=raw["objective"]["code"],
-        )
+        self.objective: Objective = Objective.from_dict(raw["objective"])
         self.imports: list[str] = list(raw.get("imports", []))
         self.metadata: dict[str, Any] = raw.get("metadata", {})
 

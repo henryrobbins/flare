@@ -5,7 +5,7 @@ from functools import cached_property
 from pathlib import Path
 
 from .formulation import Formulation
-from .models import Parameter, ParameterType, Solution
+from .models import Parameter, Solution
 
 
 class Problem:
@@ -53,12 +53,7 @@ class Problem:
 
         self.name: str = raw["name"]
         self.parameters: dict[str, Parameter] = {
-            k: Parameter(
-                description=v["description"],
-                type=ParameterType(v.get("type", "continuous")),
-                shape=v["shape"],
-            )
-            for k, v in raw["parameters"].items()
+            k: Parameter.from_dict(v) for k, v in raw["parameters"].items()
         }
         self.metadata: dict[str, object] = raw.get("metadata", {})
 

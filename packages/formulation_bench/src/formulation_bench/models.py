@@ -9,6 +9,7 @@ them yourself except when deriving new formulations programmatically (see
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Any
 
 
 @dataclass(frozen=True)
@@ -31,6 +32,14 @@ class Parameter:
     description: str
     type: "ParameterType"
     shape: list[int | str]
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Parameter":
+        return cls(
+            description=d["description"],
+            type=ParameterType(d.get("type", "continuous")),
+            shape=d["shape"],
+        )
 
 
 @dataclass(frozen=True)
@@ -59,6 +68,15 @@ class Variable:
     type: "VariableType"
     shape: list[int | str]
     indices: str | None = None
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Variable":
+        return cls(
+            description=d["description"],
+            type=VariableType(d["type"]),
+            shape=d.get("shape", []),
+            indices=d.get("indices"),
+        )
 
 
 class VariableType(str, Enum):
@@ -101,6 +119,14 @@ class Definition:
     code: dict[str, str]
     formulation: str
 
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Definition":
+        return cls(
+            description=d["description"],
+            code=d["code"],
+            formulation=d["formulation"],
+        )
+
 
 @dataclass(frozen=True)
 class Assumption:
@@ -125,6 +151,15 @@ class Assumption:
     formulation: str
     explicit: bool
     code: dict[str, str]
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Assumption":
+        return cls(
+            description=d["description"],
+            formulation=d["formulation"],
+            explicit=d["explicit"],
+            code=d["code"],
+        )
 
 
 @dataclass(frozen=True)
@@ -166,6 +201,15 @@ class Constraint:
     explicit: bool
     code: dict[str, str]
 
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Constraint":
+        return cls(
+            description=d["description"],
+            formulation=d["formulation"],
+            explicit=d["explicit"],
+            code=d["code"],
+        )
+
 
 @dataclass(frozen=True)
 class Objective:
@@ -185,6 +229,14 @@ class Objective:
     description: str
     formulation: str
     code: dict[str, str]
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> "Objective":
+        return cls(
+            description=d["description"],
+            formulation=d["formulation"],
+            code=d["code"],
+        )
 
 
 @dataclass(frozen=True)
