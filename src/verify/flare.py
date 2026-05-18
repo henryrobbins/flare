@@ -4,7 +4,6 @@ from typing import Any
 from formulation_bench import Formulation
 from milp_flare import FLARE, FormulationInput, Harness
 
-from src.prompts import render_formulation
 from src.verify.base import ReformulationResult, ReformulationVerifier
 
 
@@ -25,10 +24,10 @@ class FLAREVerifier(ReformulationVerifier):
         self, a: Formulation, b: Formulation, output_path: Path
     ) -> ReformulationResult:
         a_in = FormulationInput(
-            formulation_md=render_formulation(a), solve_py=a.gurobipy_code
+            formulation_md=a.render_markdown(), solve_py=a.gurobipy_code
         )
         b_in = FormulationInput(
-            formulation_md=render_formulation(b), solve_py=b.gurobipy_code
+            formulation_md=b.render_markdown(), solve_py=b.gurobipy_code
         )
         r = self._inner.verify(a_in, b_in, output_path)
         return ReformulationResult(

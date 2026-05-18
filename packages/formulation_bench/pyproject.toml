@@ -7,7 +7,7 @@ name = "formulation-bench"
 version = "0.1.0"
 description = "Utilities for working with the FormulationBench dataset."
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["jinja2>=3"]
 
 [project.optional-dependencies]
 docs = [
@@ -30,7 +30,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-formulation_bench = ["py.typed"]
+formulation_bench = ["py.typed", "templates/*.j2"]
 
 [tool.ruff]
 line-length = 88

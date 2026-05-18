@@ -6,7 +6,7 @@ from formulation_bench import Formulation
 from jinja2 import Environment, FileSystemLoader
 from milp_flare.flare_nl import FLARE_NL_SYSTEM, flare_nl_prompt
 
-from src.prompts import RenderedPrompt, render_formulation
+from src.prompts import RenderedPrompt
 
 REFORMULATION_SCHEMA: dict[str, Any] = json.loads(
     (Path(__file__).parent / "reformulation_schema.json").read_text()
@@ -26,8 +26,8 @@ def render_reformulation(
     template: str = "flare_nl",
     include_implicit: bool = True,
 ) -> RenderedPrompt:
-    formulation_a = json.dumps(render_formulation(a, include_implicit), indent=2)
-    formulation_b = json.dumps(render_formulation(b, include_implicit), indent=2)
+    formulation_a = json.dumps(a.render_markdown(include_implicit), indent=2)
+    formulation_b = json.dumps(b.render_markdown(include_implicit), indent=2)
 
     if template == "flare_nl":
         p = flare_nl_prompt(formulation_a, formulation_b)

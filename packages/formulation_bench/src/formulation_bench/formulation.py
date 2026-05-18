@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from ._codegen import generate
+from ._render import render_markdown as _render_markdown
 from .models import (
     Assumption,
     Constraint,
@@ -157,6 +158,20 @@ class Formulation:
         True
         """
         return generate(self)
+
+    def render_markdown(self, include_implicit: bool = True) -> str:
+        """Render this formulation as a Markdown document.
+
+        Parameters
+        ----------
+        include_implicit : bool, default True
+            If False, omit assumptions and constraints with ``explicit=False``.
+
+        Returns
+        -------
+        str
+        """
+        return _render_markdown(self, include_implicit=include_implicit)
 
     def gen_params(
         self,
