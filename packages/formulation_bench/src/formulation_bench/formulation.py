@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from .codegen import generate
+from ._codegen import generate
 from .models import (
     Assumption,
     Constraint,
@@ -147,8 +147,7 @@ class Formulation:
     def gurobipy_code(self) -> str:
         """The full ``solve.py`` source for this formulation, as a string.
 
-        Deterministically generated from ``formulation.json`` by
-        :func:`formulation_bench.codegen.generate`.
+        Deterministically generated from ``formulation.json``.
         Equivalent to the contents of ``solve.py`` on disk.
 
         Examples

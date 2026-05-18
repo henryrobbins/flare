@@ -1,9 +1,4 @@
-"""Generate ``gurobipy`` solver code from a :class:`Formulation`.
-
-This module is the deterministic codegen used to produce each formulation's
-``solve.py`` from its typed in-memory representation. The single public
-entry point is :func:`generate`; everything else is an internal helper.
-"""
+"""Deterministic codegen backing :attr:`Formulation.gurobipy_code`."""
 
 from __future__ import annotations
 
@@ -27,7 +22,6 @@ def _gurobi_type(var: Variable) -> str:
 
 
 def _detect_imports(codes: list[str]) -> tuple[bool, bool]:
-    """Return (use_gp_prefix, needs_bare_quicksum)."""
     joined = "\n".join(codes)
     use_gp = "gp." in joined
     bare_quicksum = bool(re.search(r"(?<![.\w])quicksum", joined))
@@ -39,7 +33,6 @@ def _has_ragged(shape: list[Any]) -> bool:
 
 
 def _build_loops(shape: list[Any]) -> list[tuple[str, str]]:
-    """Return [(index_var, range_expr)] for each shape dimension."""
     parsed: list[dict[str, Any]] = []
     for d in shape:
         m = re.match(r"^(\w+)\[(\w+)\]$", str(d))
@@ -144,34 +137,7 @@ def _solution_extraction(name: str, var: Variable) -> list[str]:
 
 
 def generate(formulation: Formulation) -> str:
-    """Return the complete ``solve.py`` source for a formulation.
-
-    The output is a self-contained Python script that loads
-    ``parameters.json``, builds a Gurobi model, solves it, and writes
-    ``solution.json``. The script accepts two positional CLI arguments
-    (``params`` and ``solution`` paths) so it can also be invoked directly.
-
-    Parameters
-    ----------
-    formulation : Formulation
-        The formulation to generate code for. Its ``parameters``,
-        ``assumptions``, ``definitions``, ``variables``, ``constraints``,
-        ``objective``, and ``imports`` attributes are consumed.
-
-    Returns
-    -------
-    str
-        Source code of the generated ``solve.py``.
-
-    Examples
-    --------
-    >>> from formulation_bench import Dataset
-    >>> ds = Dataset("dataset")                          # doctest: +SKIP
-    >>> from formulation_bench.codegen import generate
-    >>> src = generate(ds.problems[1].formulations["a"])  # doctest: +SKIP
-    >>> "model.optimize()" in src                        # doctest: +SKIP
-    True
-    """
+    """Return the complete ``solve.py`` source for a formulation."""
     explicit_constraints = [c for c in formulation.constraints if c.explicit]
     implicit_constraints = [c for c in formulation.constraints if not c.explicit]
 
