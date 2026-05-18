@@ -1,6 +1,7 @@
 """The :class:`Reformulation` class: a labelled pair of MILP formulations."""
 
 from dataclasses import dataclass
+from pathlib import Path
 
 from .formulation import Formulation
 
@@ -39,3 +40,22 @@ class Reformulation:
     a: Formulation
     b: Formulation
     is_reformulation: bool
+
+    @property
+    def lean_proof_path(self) -> Path | None:
+        """Path to the Lean reformulation proof file, or ``None``.
+
+        For positive entries (``is_reformulation=True``), resolves to
+        ``<dataset_root>/reformulations/<problem>/<a>_<b>.lean``. Returns
+        ``None`` for negative entries, since no proof exists.
+        """
+        if not self.is_reformulation:
+            return None
+        problem_dir = self.a.problem.path
+        dataset_root = problem_dir.parent.parent
+        return (
+            dataset_root
+            / "reformulations"
+            / problem_dir.name
+            / f"{self.a.path.name}_{self.b.path.name}.lean"
+        )

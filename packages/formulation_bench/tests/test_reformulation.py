@@ -49,3 +49,27 @@ def test_no_reformulations_when_file_missing(tmp_path: pytest.TempPathFactory) -
     (tmp_path / "dataset.json").write_text('{"problems": []}')
     ds = Dataset(tmp_path)
     assert ds.reformulations == []
+
+
+def test_lean_proof_path_layout_for_positive(dataset: Dataset) -> None:
+    r = next(r for r in dataset.reformulations if r.is_reformulation)
+    problem_dir = r.a.problem.path
+    expected = (
+        problem_dir.parent.parent
+        / "reformulations"
+        / problem_dir.name
+        / f"{r.a.path.name}_{r.b.path.name}.lean"
+    )
+    assert r.lean_proof_path == expected
+
+
+def test_lean_proof_path_exists_for_positive(dataset: Dataset) -> None:
+    positive = next(r for r in dataset.reformulations if r.is_reformulation)
+    path = positive.lean_proof_path
+    assert path is not None
+    assert path.is_file()
+
+
+def test_lean_proof_path_none_for_negative(dataset: Dataset) -> None:
+    negative = next(r for r in dataset.reformulations if not r.is_reformulation)
+    assert negative.lean_proof_path is None

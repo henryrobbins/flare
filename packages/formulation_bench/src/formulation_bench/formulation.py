@@ -112,6 +112,11 @@ class Formulation:
         """The parent :class:`Problem`."""
         return self._problem
 
+    @property
+    def lean_formulation_path(self) -> Path:
+        """Path to this formulation's ``Formulation.lean`` file."""
+        return self.path / "Formulation.lean"
+
     def with_constraint(self, constraint: Constraint) -> Formulation:
         """Return a new :class:`Formulation` with one extra constraint appended.
 
