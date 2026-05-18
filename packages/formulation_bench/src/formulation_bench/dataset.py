@@ -1,7 +1,6 @@
 """Top-level entry point for loading the FormulationBench dataset."""
 
 import json
-from functools import cached_property
 from pathlib import Path
 
 from .download import download_dataset
@@ -12,10 +11,9 @@ from .reformulation import Reformulation
 class Dataset:
     """An on-disk FormulationBench dataset.
 
-    A ``Dataset`` lazily loads the problems and reformulations listed in
-    ``<root>/dataset.json``. Each problem and formulation is read from disk
-    on first access (see :class:`Problem` and :class:`Formulation`);
-    construction itself does no work beyond parsing ``dataset.json``.
+    A ``Dataset`` loads the problems and reformulations listed in
+    ``<root>/dataset.json``. Individual formulations are read from disk on
+    first access (see :class:`Formulation`).
 
     Parameters
     ----------
@@ -30,6 +28,12 @@ class Dataset:
     problems : dict[int, Problem]
         Mapping from integer problem id (``1`` for ``p1``, ``2`` for ``p2``,
         ...) to :class:`Problem`. Iteration order matches ``dataset.json``.
+    reformulations : list[Reformulation]
+        All reformulation entries declared under the ``reformulations`` key
+        of ``dataset.json``. Empty if no such key is present. Includes both
+        positive (``is_reformulation=True``) and negative
+        (``is_reformulation=False``) examples; filter on
+        :attr:`Reformulation.is_reformulation` if you only want one.
 
     Examples
     --------
@@ -61,6 +65,18 @@ class Dataset:
             pid: Problem(self.root / "problems" / f"p{pid}")
             for pid in self._raw["problems"]
         }
+        self.reformulations: list[Reformulation] = [
+            Reformulation(
+                a=self.problems[entry["a"]["problem"]].formulations[
+                    entry["a"]["formulation"]
+                ],
+                b=self.problems[entry["b"]["problem"]].formulations[
+                    entry["b"]["formulation"]
+                ],
+                is_reformulation=entry["reformulation"],
+            )
+            for entry in self._raw.get("reformulations", [])
+        ]
 
     @classmethod
     def load(
@@ -89,36 +105,6 @@ class Dataset:
             version, cache_dir=cache_dir, force=force, sha256=sha256
         )
         return cls(root)
-
-    @cached_property
-    def reformulations(self) -> list[Reformulation]:
-        """List of all :class:`Reformulation` entries declared under the
-        ``reformulations`` key of ``dataset.json``.
-
-        Returns an empty list if no ``reformulations`` entry is present. Both
-        positive examples (``is_reformulation=True``) and negative examples
-        (``is_reformulation=False``) are included; filter on
-        :attr:`Reformulation.is_reformulation` if you only want one.
-
-        Examples
-        --------
-        >>> ds = Dataset("dataset")           # doctest: +SKIP
-        >>> first = ds.reformulations[0]      # doctest: +SKIP
-        >>> first.a.problem is first.b.problem  # same-problem pair  # doctest: +SKIP
-        True
-        """
-        return [
-            Reformulation(
-                a=self.problems[entry["a"]["problem"]].formulations[
-                    entry["a"]["formulation"]
-                ],
-                b=self.problems[entry["b"]["problem"]].formulations[
-                    entry["b"]["formulation"]
-                ],
-                is_reformulation=entry["reformulation"],
-            )
-            for entry in self._raw.get("reformulations", [])
-        ]
 
     def __repr__(self) -> str:
         return f"Dataset(root={self.root!r}, problems={list(self.problems.keys())})"
