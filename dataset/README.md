@@ -1,29 +1,3 @@
----
-license: mit
-task_categories:
-  - text-generation
-  - other
-tags:
-  - lean4
-  - formal-methods
-  - mixed-integer-linear-programming
-  - milp
-  - operations-research
-  - optimization
-  - autoformalization
-  - theorem-proving
-language:
-  - en
-pretty_name: FormulationBench
-size_categories:
-  - n<1K
-configs:
-  - config_name: formulations
-    data_files: data/formulations.jsonl
-  - config_name: pairs
-    data_files: data/pairs.jsonl
----
-
 # FormulationBench
 
 A dataset of mixed-integer linear programming (MILP) problems, multiple natural-language and code formulations of each problem, and machine-checked Lean 4 proofs of MILP reformulations.
