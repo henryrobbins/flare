@@ -235,7 +235,7 @@ class Formulation:
         >>> "model.optimize()" in f.gurobipy_code  # doctest: +SKIP
         True
         """
-        return generate(self._raw)
+        return generate(self)
 
     def gen_params(
         self,
@@ -267,42 +267,6 @@ class Formulation:
             cmd.append(str(input_path))
         cmd.append(str(output_path))
         subprocess.run(cmd, check=True)
-
-    def solve(
-        self,
-        input_path: str | Path | None = None,
-        output_path: str | Path | None = None,
-    ) -> None:
-        """Run this formulation's ``solve.py`` via Gurobi.
-
-        Parameters
-        ----------
-        input_path : str or pathlib.Path, optional
-            Path to ``parameters.json``. Defaults to
-            ``<formulation>/parameters.json``.
-        output_path : str or pathlib.Path, optional
-            Path to write ``solution.json``. Defaults to
-            ``<formulation>/solution.json``.
-
-        Examples
-        --------
-        Generate the parameters file, solve, and read back the objective::
-
-            >>> f = ds.problems[1].formulations["a"]   # doctest: +SKIP
-            >>> f.gen_params()                         # doctest: +SKIP
-            >>> f.solve()                              # doctest: +SKIP
-            >>> import json
-            >>> json.load(open(f.path / "solution.json"))["objective"]  # doctest: +SKIP
-            42.0
-        """
-        if input_path is None:
-            input_path = self.path / "parameters.json"
-        if output_path is None:
-            output_path = self.path / "solution.json"
-        subprocess.run(
-            ["python", str(self.path / "solve.py"), str(input_path), str(output_path)],
-            check=True,
-        )
 
     def __repr__(self) -> str:
         return f"Formulation(path={self.path!r}, valid={self.valid})"

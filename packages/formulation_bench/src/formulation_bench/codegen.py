@@ -1,12 +1,19 @@
-"""Generate ``gurobipy`` solver code from a ``formulation.json`` dict.
+"""Generate ``gurobipy`` solver code from a :class:`Formulation`.
 
 This module is the deterministic codegen used to produce each formulation's
-``solve.py`` from its JSON description. The single public entry point is
-:func:`generate`; everything else is an internal helper.
+``solve.py`` from its typed in-memory representation. The single public
+entry point is :func:`generate`; everything else is an internal helper.
 """
 
+from __future__ import annotations
+
 import re
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+from .models import Variable
+
+if TYPE_CHECKING:
+    from .formulation import Formulation
 
 TYPE_MAP = {
     "continuous": "CONTINUOUS",
@@ -15,9 +22,8 @@ TYPE_MAP = {
 }
 
 
-def _gurobi_type(var: dict[str, Any]) -> str:
-    raw_type = str(var.get("type", "continuous"))
-    return f"GRB.{TYPE_MAP.get(raw_type, 'CONTINUOUS')}"
+def _gurobi_type(var: Variable) -> str:
+    return f"GRB.{TYPE_MAP.get(var.type.value, 'CONTINUOUS')}"
 
 
 def _detect_imports(codes: list[str]) -> tuple[bool, bool]:
@@ -76,12 +82,11 @@ def _build_loops(shape: list[Any]) -> list[tuple[str, str]]:
     return loops
 
 
-def _var_decl(name: str, var: dict[str, Any]) -> str:
+def _var_decl(name: str, var: Variable) -> str:
     vtype = _gurobi_type(var)
-    indices = var.get("indices")
-    if indices is not None:
-        return f'{name} = model.addVars([{indices}], vtype={vtype}, name="{name}")'
-    shape = list(var.get("shape", []))
+    if var.indices is not None:
+        return f'{name} = model.addVars([{var.indices}], vtype={vtype}, name="{name}")'
+    shape = list(var.shape)
     if not shape:
         return f'{name} = model.addVar(vtype={vtype}, name="{name}")'
     if _has_ragged(shape):
@@ -101,12 +106,12 @@ def _var_decl(name: str, var: dict[str, Any]) -> str:
     return f'{name} = model.addVars({dims}, vtype={vtype}, name="{name}")'
 
 
-def _solution_extraction(name: str, var: dict[str, Any]) -> list[str]:
-    if var.get("indices") is not None:
+def _solution_extraction(name: str, var: Variable) -> list[str]:
+    if var.indices is not None:
         return [
             f'variables["{name}"] = {{"kind": "indexed", "data": {{json.dumps(list(k)): {name}[k].x for k in {name}}}}}'  # noqa: E501
         ]
-    shape = list(var.get("shape", []))
+    shape = list(var.shape)
     if not shape:
         return [f'variables["{name}"] = {{"kind": "scalar", "data": {name}.x}}']
     if _has_ragged(shape):
@@ -138,20 +143,20 @@ def _solution_extraction(name: str, var: dict[str, Any]) -> list[str]:
     ]
 
 
-def generate(formulation_json: dict[str, Any]) -> str:
+def generate(formulation: Formulation) -> str:
     """Return the complete ``solve.py`` source for a formulation.
 
-    The output is a self-contained Python script that
-    loads ``parameters.json``, builds a Gurobi model, solves it, and writes
+    The output is a self-contained Python script that loads
+    ``parameters.json``, builds a Gurobi model, solves it, and writes
     ``solution.json``. The script accepts two positional CLI arguments
     (``params`` and ``solution`` paths) so it can also be invoked directly.
 
     Parameters
     ----------
-    formulation_json : dict
-        Parsed ``formulation.json`` payload. The relevant keys are
-        ``parameters``, ``assumptions``, ``definitions``, ``variables``,
-        ``constraints``, ``objective``, and (optional) ``imports``.
+    formulation : Formulation
+        The formulation to generate code for. Its ``parameters``,
+        ``assumptions``, ``definitions``, ``variables``, ``constraints``,
+        ``objective``, and ``imports`` attributes are consumed.
 
     Returns
     -------
@@ -163,23 +168,15 @@ def generate(formulation_json: dict[str, Any]) -> str:
     >>> from formulation_bench import Dataset
     >>> ds = Dataset("dataset")                          # doctest: +SKIP
     >>> from formulation_bench.codegen import generate
-    >>> src = generate(ds.problems[1].formulations["a"]._raw)  # doctest: +SKIP
+    >>> src = generate(ds.problems[1].formulations["a"])  # doctest: +SKIP
     >>> "model.optimize()" in src                        # doctest: +SKIP
     True
     """
-    params = dict(formulation_json.get("parameters", {}))
-    assumptions = list(formulation_json.get("assumptions", []))
-    definitions = dict(formulation_json.get("definitions", {}))
-    variables = dict(formulation_json.get("variables", {}))
-    constraints = list(formulation_json.get("constraints", []))
-    objective = dict(formulation_json.get("objective", {}))
-    extra_imports = list(formulation_json.get("imports", []))
+    explicit_constraints = [c for c in formulation.constraints if c.explicit]
+    implicit_constraints = [c for c in formulation.constraints if not c.explicit]
 
-    explicit_constraints = [c for c in constraints if c.get("explicit", True)]
-    implicit_constraints = [c for c in constraints if not c.get("explicit", True)]
-
-    all_codes = [str(c.get("code", {}).get("gurobipy", "")) for c in constraints] + [
-        str(objective.get("code", {}).get("gurobipy", ""))
+    all_codes = [c.code.get("gurobipy", "") for c in formulation.constraints] + [
+        formulation.objective.code.get("gurobipy", "")
     ]
     use_gp, bare_quicksum = _detect_imports(all_codes)
 
@@ -195,8 +192,8 @@ def generate(formulation_json: dict[str, Any]) -> str:
         gurobi_imports = "Model, GRB, quicksum" if bare_quicksum else "Model, GRB"
         L.append(f"from gurobipy import {gurobi_imports}")
     L.append("import argparse")
-    for imp in extra_imports:
-        L.append(str(imp))
+    for imp in formulation.imports:
+        L.append(imp)
     L.append("")
     L.append("")
 
@@ -212,47 +209,43 @@ def generate(formulation_json: dict[str, Any]) -> str:
     L.append("")
 
     # Parameters
-    if params:
+    if formulation.parameters:
         L.append("    # Parameters")
-        for name in params:
+        for name in formulation.parameters:
             L.append(f'    {name} = data["{name}"]')
         L.append("")
 
     # Parameter Validation
-    if assumptions:
+    if formulation.assumptions:
         L.append("    # Parameter Validation")
-        for a in assumptions:
-            a = dict(a)
-            code = str(a.get("code", {}).get("python", "")).strip()
+        for a in formulation.assumptions:
+            code = a.code.get("python", "").strip()
             if code:
                 for line in code.split("\n"):
                     L.append(f"    {line}")
         L.append("")
 
     # Definitions
-    if definitions:
+    if formulation.definitions:
         L.append("    # Definitions")
-        for name, d in definitions.items():
-            d = dict(d)
-            code = str(d.get("code", {}).get("python", "")).strip()
+        for d in formulation.definitions.values():
+            code = d.code.get("python", "").strip()
             if code:
                 for line in code.split("\n"):
                     L.append(f"    {line}")
         L.append("")
 
     # Variables
-    if variables:
+    if formulation.variables:
         L.append("    # Variables")
-        for name, v in variables.items():
-            v = dict(v)
+        for name, v in formulation.variables.items():
             L.append(f"    {_var_decl(name, v)}")
         L.append("")
 
     # Constraints
     L.append("    # Constraints")
     for c in explicit_constraints:
-        c = dict(c)
-        code = str(c.get("code", {}).get("gurobipy", "")).strip()
+        code = c.code.get("gurobipy", "").strip()
         if code:
             for line in code.split("\n"):
                 L.append(f"    {line}")
@@ -262,15 +255,14 @@ def generate(formulation_json: dict[str, Any]) -> str:
     if implicit_constraints:
         L.append("    # Implicit Constraints")
         for c in implicit_constraints:
-            c = dict(c)
-            code = str(c.get("code", {}).get("gurobipy", "")).strip()
+            code = c.code.get("gurobipy", "").strip()
             if code:
                 for line in code.split("\n"):
                     L.append(f"    {line}")
         L.append("")
 
     # Objective
-    obj_code = str(objective.get("code", {}).get("gurobipy", "")).strip()
+    obj_code = formulation.objective.code.get("gurobipy", "").strip()
     L.append("    # Objective")
     if obj_code:
         for line in obj_code.split("\n"):
@@ -286,8 +278,7 @@ def generate(formulation_json: dict[str, Any]) -> str:
     L.append("    # Extract solution")
     L.append("    solution = {}")
     L.append("    variables = {}")
-    for name, v in variables.items():
-        v = dict(v)
+    for name, v in formulation.variables.items():
         for line in _solution_extraction(name, v):
             L.append(f"    {line}")
     L.append('    solution["variables"] = variables')

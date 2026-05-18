@@ -59,7 +59,15 @@ def main() -> None:
             continue
 
         try:
-            formulation.solve()
+            subprocess.run(
+                [
+                    "python",
+                    str(formulation.path / "solve.py"),
+                    str(formulation.path / "parameters.json"),
+                    str(formulation.path / "solution.json"),
+                ],
+                check=True,
+            )
         except subprocess.CalledProcessError:
             tqdm.write(f"FAIL  solve       {label}")
             failures.append((pid, fid, "solve"))
