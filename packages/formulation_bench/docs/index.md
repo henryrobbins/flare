@@ -12,5 +12,6 @@ for loading and working with it.
 installation
 dataset/problems/index
 dataset/index
+lean/index
 api/index
 ```
