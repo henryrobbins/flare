@@ -76,6 +76,12 @@
     "metadata": {
         "source": {
             "dataset": "EvoCut"
-        }
+        },
+        "notes": [
+            "Formulation `p9.a` is the MILP formulation given in Section F.2 of the\n[v1 arXiv paper](https://arxiv.org/abs/2508.11850v1). We make one\nnotational change: the source indexes arcs as pairs $(i,j) \\in A$; we\ninstead index arcs by a single index $a$ with separate `tail` and `head`\narrays, to match our Formulation JSON structure.",
+            "We add implicit assumptions that arc costs $c_a, f_a \\ge 0$, arc\ncapacities $u_a \\ge 0$, and commodity demands $d_k > 0$.\n*(TODO: why is $d_k > 0$ required?)*",
+            "EvoCut [v1](https://arxiv.org/abs/2508.11850v1) proposes one inequality\nused to generate formulation `p9.b`.",
+            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes two inequalities\nused to generate formulations `p9.c` and `p9.d`."
+        ]
     }
 }

@@ -147,6 +147,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC1"
-        }
+        },
+        "notes": [
+            "Corresponds to EC1 from EvoCut [v1](https://arxiv.org/abs/2508.11850v1) and is identified as an invalid inequality. *(TODO: add small counter-example.)*"
+        ]
     }
 }

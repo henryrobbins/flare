@@ -44,6 +44,12 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025"
-        }
+        },
+        "notes": [
+            "Formulation `p13.a` is the time-indexed inefficient formulation and\n`p13.b` is the event-based efficient formulation.",
+            "We add implicit assumptions that travel times $\\tau_{a,a'} \\geq 0$ and\ncapacities $\\mathrm{cap}_{a,t} \\geq 0$.",
+            "*(TODO: revisit this)* The capacity constraint in the source event-based\nformulation erroneously sums over all departure locations\n($\\sum_{p \\in P} \\sum_{a \\in A} \\sum_{a' \\in A} x_{p,a,a',t} \\leq \\mathrm{cap}_{a,t}$);\nwe correct this to sum only departures from location $a$\n($\\sum_{p \\in P} \\sum_{a' \\in A} x_{p,a,a',t} \\leq \\mathrm{cap}_{a,t}$).",
+            "```{note}\nThe `model.tex` files present in the dataset are simplifications of the\nmodels referenced in the description and data generation scripts. For\nthis reason, we include the formulation pair in the dataset, but omit it\nfrom our results.\n```"
+        ]
     }
 }

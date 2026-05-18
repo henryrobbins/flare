@@ -36,6 +36,14 @@
         "source": {
             "dataset": "EquivaFormulation",
             "instance_id": 183
-        }
+        },
+        "notes": [
+            "Replaced `\"shape\": [\"Integer\"]` with `type = \"integer\"` in `problem_info`.",
+            "Bus variables in the `_d` binary substitution formulation were only\nrepresented with a single-digit variable.",
+            "$S$ bus constraint upper bound was absent from `problem_info` (present in\nsolver code at variable declaration); made into an explicit constraint and\nextended `_g` with an additional slack variable.",
+            "Excluded instance-specific cutting plane (`183_e`).",
+            "Added missing objective scaling to `problem_info` for the `_i`\ntransformation (present in code but absent from `problem_info`).",
+            "Implicit non-negativity assumption for every problem parameter."
+        ]
     }
 }

@@ -1,4 +1,4 @@
-# Dataset Overview
+# Dataset Structure
 
 Each problem is presented in several alternative formulations that may differ
 in variable naming, parameter naming, the algebraic form of the constraints,
@@ -7,13 +7,6 @@ formulations describe the same optimization problem (a "reformulation");
 others differ in a way that changes the feasible set or the optimal value
 (not a reformulation). The Lean 4 files in `reformulations/` formalize each
 reformulation pair.
-
-```{toctree}
-:maxdepth: 2
-
-problems
-notes
-```
 
 ## Directory Structure
 

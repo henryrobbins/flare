@@ -10,6 +10,7 @@ for loading and working with it.
 :caption: Contents
 
 installation
+dataset/problems/index
 dataset/index
 api/index
 ```

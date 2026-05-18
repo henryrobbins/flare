@@ -60,6 +60,11 @@
     "metadata": {
         "source": {
             "dataset": "EvoCut"
-        }
+        },
+        "notes": [
+            "Formulation `p10.a` is the MILP formulation given in Section F.5 of the\n[v2 arXiv paper](https://arxiv.org/abs/2508.11850v2).",
+            "We add implicit assumptions that travel times\n$d^k_{0i}, d^k_{iH} \\geq 0$ and $d_{ij} > 0$, time windows\n$\\tau^-_i, \\tau^+_i \\ge 0$ with $\\tau^-_i \\geq \\tau^+_i$, and that travel\ntimes satisfy the triangle inequalities $d^k_{0i} \\le d^k_{0j} + d_{ji}$\nand $d_{ij} \\le d_{im} + d_{mj}$.",
+            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes four inequalities\nused to generate formulations `p10.b-e`."
+        ]
     }
 }

@@ -31,6 +31,11 @@
         "source": {
             "dataset": "EquivaFormulation",
             "instance_id": 217
-        }
+        },
+        "notes": [
+            "All variables in `problem_info.json` were incorrectly marked as continuous.",
+            "Excluded instance-specific cutting plane (`217_e`).",
+            "Implicit non-negativity assumption for every problem parameter."
+        ]
     }
 }

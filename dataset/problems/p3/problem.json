@@ -54,6 +54,15 @@
         "source": {
             "dataset": "EquivaFormulation",
             "instance_id": 92
-        }
+        },
+        "notes": [
+            "All variables in `problem_info.json` were incorrectly marked as continuous.",
+            "All variables in the solver code were also incorrectly marked as\ncontinuous.",
+            "Binary substitution of decision variables was missing in the `_d`\nvariation.",
+            "No slack variables were introduced in the `_g` variation.",
+            "Excluded instance-specific cutting plane (`92_e`).",
+            "Implicit non-negativity assumption for every problem parameter and\npositivity assumption on `NumBeakers`.",
+            "Remove `_i` 1/10 scaling that prevents equivalence when the number of\nbeakers becomes integer."
+        ]
     }
 }

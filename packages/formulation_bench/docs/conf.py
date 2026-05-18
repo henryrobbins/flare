@@ -1,4 +1,8 @@
+import sys
 from importlib.metadata import version as _pkg_version
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent / "_ext"))
 
 project = "formulation_bench"
 author = "Henry Robbins"
@@ -10,6 +14,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "numpydoc",
+    "gen_problem_pages",
 ]
 
 myst_enable_extensions = [

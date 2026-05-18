@@ -18,6 +18,12 @@
     "metadata": {
         "source": {
             "dataset": "EvoCut"
-        }
+        },
+        "notes": [
+            "Formulation `p12.a` is the Miller\u2013Tucker\u2013Zemlin (MTZ) MILP formulation\ngiven in Section F.1 of the\n[v1 arXiv paper](https://arxiv.org/abs/2508.11850v1).",
+            "No implicit assumptions are added (the only problem in the dataset with\nno assumptions).",
+            "EvoCut [v1](https://arxiv.org/abs/2508.11850v1) proposes three\ninequalities used to generate formulations `p12.b-d`.",
+            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes five inequalities\nused to generate formulations `p12.e-i`."
+        ]
     }
 }
