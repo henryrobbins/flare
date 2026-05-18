@@ -221,6 +221,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC1"
-        }
+        },
+        "notes": [
+            "For every non-trivial node subset $S$, the activated arcs leaving $S$ must provide enough capacity to carry the total demand $D_B$ of all commodities whose source lies in $S$ and destination outside (each arc's capacity is capped at $D_B$ to lift the inequality)."
+        ]
     }
 }

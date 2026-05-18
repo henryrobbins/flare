@@ -63,7 +63,9 @@
         },
         "notes": [
             "We add implicit assumptions that travel times $d^k_{0i}, d^k_{iH} \\geq 0$ and $d_{ij} > 0$, time windows $\\tau^-_i, \\tau^+_i \\ge 0$ with $\\tau^-_i \\geq \\tau^+_i$, and that travel times satisfy the triangle inequalities $d^k_{0i} \\le d^k_{0j} + d_{ji}$ and $d_{ij} \\le d_{im} + d_{mj}$.",
-            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes four inequalities used to generate formulations `p10.b-e`."
+            "$d_{ij} > 0$ is necessary to eliminate 2-cycles and ensure there is a strict ordering of jobs in a route.",
+            "EvoCut arXiv submission `v1` does not include this problem.",
+            "EvoCut arXiv submission `v2` proposes four inequalities used to generate formulations `p10.b-e`."
         ]
     }
 }

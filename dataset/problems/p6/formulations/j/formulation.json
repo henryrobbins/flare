@@ -130,6 +130,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC6"
-        }
+        },
+        "notes": [
+            "At most 2 customers with demand exceeding one-third of warehouse j's capacity can be assigned to warehouse j."
+        ]
     }
 }

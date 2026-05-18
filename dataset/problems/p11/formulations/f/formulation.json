@@ -590,6 +590,9 @@
         "source": {
             "dataset": "EvoCut",
             "name": "EC3a"
-        }
+        },
+        "notes": [
+            "Generator $g$'s maximum available output in period $t$ is at most its output in period $t-1$ plus its ramp-up limit $RU_g$; the bound is relaxed when the generator was offline at $t-1$."
+        ]
     }
 }

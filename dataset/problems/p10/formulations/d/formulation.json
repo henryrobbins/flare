@@ -240,6 +240,9 @@
   "metadata": {
     "source": {
       "dataset": "EvoCut"
-    }
+    },
+    "notes": [
+        "For each clique $C$ in the time-window conflict graph (pairs of jobs that cannot share any truck route), at least $|C| - |K_C|$ jobs in $C$ must be rejected, where $|K_C|$ is the number of trucks that can serve any job in $C$."
+    ]
   }
 }

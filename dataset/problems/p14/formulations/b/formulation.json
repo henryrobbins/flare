@@ -118,9 +118,6 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "formulation_id": "inefficient"
-        },
-        "notes": [
-            "This is the inefficient formulation."
-        ]
+        }
     }
 }

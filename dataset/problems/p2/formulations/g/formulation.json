@@ -117,7 +117,8 @@
             "variation_id": "i"
         },
         "notes": [
-            "Removed source `_i` 1/10 scaling that prevents equivalence when the number of beakers becomes integer."
+            "Re-scale the objective function.",
+            "Source variation scaled the variables and objective by a factor of 1/10. This makes the reformulation invalid when the decision variables are integer. We replace the source transformation by simply scaling the objective by a factor of 2."
         ]
     }
 }

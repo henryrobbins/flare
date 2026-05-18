@@ -173,7 +173,7 @@
             "name": "EC3"
         },
         "notes": [
-            "v2 EC3 (longest job bound)."
+            "The makespan is at least the total processing time of each individual job's chain of operations."
         ]
     }
 }

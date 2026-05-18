@@ -152,8 +152,8 @@
             "formulation_id": "efficient"
         },
         "notes": [
-            "This is the efficient formulation.",
-            "We add explicit assumptions on the feasibility indicator $\\delta_{ij}$ that enforce $\\delta_{ij} \\in \\{0,1\\}$ and $\\delta_{ij} = 1$ if and only if $T_{ij} \\leq T_{\\text{limit}}$. We also add implicit assumptions that sets are non-empty, travel times $T_{ij} \\geq 0$, $T_{\\text{limit}} \\geq 0$, and $n \\leq |\\mathcal{S}|$."
+            "The efficient formulation pre-computes a feasibility indicator $\\delta_{ij}$ to avoid the need for big-M constraints.",
+            "We add an assumption that the feasibility indicator $\\delta_{ij} \\in \\{0,1\\}$ and $\\delta_{ij} = 1$ if and only if $T_{ij} \\leq T_{\\text{limit}}$."
         ]
     }
 }

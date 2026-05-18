@@ -113,7 +113,8 @@
             "name": "EC2"
         },
         "notes": [
-            "Corresponds to EC2 of EvoCut [v2](https://arxiv.org/abs/2508.11850v2) and is identified as an invalid inequality (analogous to the v1 EC3 counter-example documented on formulation `d`)."
+            "Eliminate triangles involving the depot.",
+            "This cut was identified by `FLARE` to be invalid. The inequality prevents the feasible $1 \\to 2 \\to 3 \\to 1$ tour for $n=3$ TSP instances."
         ]
     }
 }

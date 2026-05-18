@@ -113,7 +113,8 @@
             "name": "EC1"
         },
         "notes": [
-            "Corresponds to EC1 of EvoCut [v2](https://arxiv.org/abs/2508.11850v2) and is identified as an invalid inequality. $x_{ij} + x_{ji} \\leq 1$ eliminates the valid $1 \\to 2 \\to 1$ tour for $n=2$ TSP instances."
+            "Eliminate two-city tours.",
+            "This cut was identified by `FLARE` to be invalid. The inequality prevents the feasible $1 \\to 2 \\to 1$ tour for $n=2$ TSP instances."
         ]
     }
 }

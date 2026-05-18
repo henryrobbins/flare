@@ -163,7 +163,7 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "This is the MILP formulation given in Section F.4 of the [v1 arXiv paper](https://arxiv.org/abs/2508.11850v1). We make one modification to better match our Formulation JSON structure. The original formulation defines $\\mathcal{P}$ as the set of distinct ordered pairs $(j_1, k_1), (j_2, k_2)$ that require the same machine. Instead, we define $Om_{j,k}$ to be the machine that the $k$-th operation of job $j$ is assigned to."
+            "This is the MILP formulation given in Section F.4 of EvoCut arXiv submissions `v1`. We make one modification to better match the FormulationBench JSON format. The original formulation defines $\\mathcal{P}$ as the set of distinct ordered pairs $(j_1, k_1), (j_2, k_2)$ that require the same machine. Instead, we define $Om_{j,k}$ to be the machine that the $k$-th operation of job $j$ is assigned to."
         ]
     }
 }

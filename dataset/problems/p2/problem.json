@@ -40,10 +40,9 @@
             "instance_id": 74
         },
         "notes": [
-            "All variables in `problem_info.json` were incorrectly marked as continuous.",
-            "All variables in the solver code were also incorrectly marked as continuous, resulting in a fractional optimal solution.",
-            "Excluded instance-specific cutting plane (source variation `74_e`).",
-            "Implicit non-negativity assumption for every problem parameter and positivity assumption on `NumResources` and `NumExperiments`."
+            "The source variable type is continuous; we correct the variable type to integer.",
+            "The cutting plane (source variation `74_e`) is excluded because it is instance-specific.",
+            "Implicit non-negativity assumptions are added for every parameter."
         ]
     }
 }

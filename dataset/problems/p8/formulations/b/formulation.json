@@ -173,7 +173,8 @@
             "name": "EC1"
         },
         "notes": [
-            "EC1 is identical in v1 and v2 and is included once as this formulation."
+            "The makespan is at least the average per-machine processing time, taken across all operations and machines.",
+            "EC1 is identical in EvoCut arXiv submissions `v1` and `v2` and is included once as this formulation."
         ]
     }
 }

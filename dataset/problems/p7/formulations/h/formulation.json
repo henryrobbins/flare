@@ -147,6 +147,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC1"
-        }
+        },
+        "notes": [
+            "If the hole vacates column $j$ between rows $i-1$ and $i$ (i.e., the hole is at column $j$ in row $i-1$ but not in row $i$), then column $j$ must be covered by a strip that begins at row $i$."
+        ]
     }
 }

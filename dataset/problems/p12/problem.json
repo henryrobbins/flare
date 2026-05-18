@@ -20,9 +20,8 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "No implicit assumptions are added (the only problem in the dataset with no assumptions).",
-            "EvoCut [v1](https://arxiv.org/abs/2508.11850v1) proposes three inequalities used to generate formulations `p12.b-d`.",
-            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes five inequalities used to generate formulations `p12.e-i`."
+            "EvoCut arXiv submission `v1` proposes three inequalities used to generate formulations `p12.b-d`.",
+            "EvoCut arXiv submission `v2` proposes five inequalities used to generate formulations `p12.e-i`."
         ]
     }
 }

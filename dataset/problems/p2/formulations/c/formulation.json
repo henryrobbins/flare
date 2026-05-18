@@ -148,7 +148,9 @@
             "variation_id": "d"
         },
         "notes": [
-            "Binary substitution of decision variables was missing in this source variation (`_d`)."
+            "Substitute integer variables with base-10 representations.",
+            "This formulation is marked invalid because it is only a reformulation at the instance-level, not the formulation-level.",
+            "Source variation was missing the substitution; we applied a 2-digit base-10 substitution."
         ]
     }
 }

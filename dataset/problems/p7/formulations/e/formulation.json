@@ -147,6 +147,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC4"
-        }
+        },
+        "notes": [
+            "A hole in the bottom row at column $j$ forces a strip covering column $j$ to terminate in row $N-2$, breaking the column at the hole vertically."
+        ]
     }
 }

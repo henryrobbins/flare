@@ -111,6 +111,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC4"
-        }
+        },
+        "notes": [
+            "City $i$'s MTZ position is at least $3 - x_{0i} + (n-3) x_{i0}$, tightening the lower bound using its depot-adjacent arcs."
+        ]
     }
 }

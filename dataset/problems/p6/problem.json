@@ -46,9 +46,10 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "We add implicit assumptions that sets $|I|, |J| > 0$ and parameters $u, f, c \\geq 0$ and $d > 0$. *(TODO: why is $d > 0$ required?)*",
-            "EvoCut [v1](https://arxiv.org/abs/2508.11850v1) proposes a hybrid inequality combining three lower bounds. We split this hybrid inequality into three separate inequalities to generate formulations `p6.b-d`.",
-            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes a family of inequalities used to generate formulations `p6.e-j`."
+            "We add implicit assumptions that $|I|, |J| > 0$, $u, f, c \\geq 0$, and $d > 0$.",
+            "$d > 0$ is necessary for arguing $x_{ij} = 0$ when $y_j = 0$.",
+            "EvoCut arXiv submission `v1` proposes a hybrid inequality combining three lower bounds. We split this hybrid inequality into three separate inequalities to generate formulations `p6.b-d`.",
+            "EvoCut arXiv submission `v2` proposes a family of inequalities used to generate formulations `p6.e-j`."
         ]
     }
 }

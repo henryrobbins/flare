@@ -590,6 +590,9 @@
         "source": {
             "dataset": "EvoCut",
             "name": "EC4"
-        }
+        },
+        "notes": [
+            "At each period $t$, the sum of generators' maximum available outputs must cover net demand (load minus renewable) plus the spinning reserve requirement."
+        ]
     }
 }

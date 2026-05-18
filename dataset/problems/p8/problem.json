@@ -33,8 +33,8 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "We add the following implicit assumptions: there is at least one job and machine, processing times $p_{j,k} \\ge 0$, and $Om$ encodes a valid JSSP instance. To be a valid JSSP instance, each job has exactly one operation assigned per machine.",
-            "v1 EC3 has an ambiguous interpretation; we exclude it from our dataset."
+            "We add the implicit assumptions: there is at least one job and machine, processing times $p_{j,k} \\ge 0$, and $Om$ encodes a valid JSSP instance. To be a valid JSSP instance, each job has exactly one operation assigned per machine.",
+            "EvoCut arXiv submissions `v1` cut EC3 has an ambiguous interpretation and is excluded."
         ]
     }
 }

@@ -149,7 +149,8 @@
             "name": "EC2"
         },
         "notes": [
-            "Corresponds to EC2 from EvoCut [v1](https://arxiv.org/abs/2508.11850v1) and is identified as an invalid inequality. *(TODO: add small counter-example.)*"
+            "A hole at $(i, j)$ forces any tile interval starting at column $j+1$ to begin on row $i$.",
+            "This cut was identified by `FLARE` to be invalid. The tile immediately to the right of a hole may span multiple rows and thus start on different row."
         ]
     }
 }

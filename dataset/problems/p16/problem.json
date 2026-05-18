@@ -109,6 +109,9 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025"
-        }
+        },
+        "notes": [
+            "We add implicit assumptions that all sets are non-empty, $U, v_{sp} \\geq 0$ and $N \\leq M$."
+        ]
     }
 }

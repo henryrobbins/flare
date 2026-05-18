@@ -38,9 +38,9 @@
             "instance_id": 183
         },
         "notes": [
-            "Replaced `\"shape\": [\"Integer\"]` with `type = \"integer\"` in `problem_info`.",
-            "Excluded instance-specific cutting plane (source variation `183_e`).",
-            "Implicit non-negativity assumption for every problem parameter."
+            "The source incorrectly encodes integer variables with `\"shape\": [\"Integer\"]`; we correct this to `\"type\": \"integer\"`.",
+            "The cutting plane (source variation `183_e`) is excluded because it is instance-specific.",
+            "Implicit non-negativity assumptions are added for every parameter."
         ]
     }
 }

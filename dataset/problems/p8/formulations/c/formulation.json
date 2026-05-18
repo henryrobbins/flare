@@ -194,7 +194,8 @@
             "name": "EC2"
         },
         "notes": [
-            "EC2 is identical in v1 and v2 and is included once as this formulation."
+            "For each machine, the makespan is at least the total processing time of operations assigned to it, plus the minimum head (earliest a machine's operation can start within its job) and minimum tail (latest a machine's operation finishes before its job ends) across those operations.",
+            "EC2 is identical in EvoCut arXiv submissions `v1` and `v2` and is included once as this formulation."
         ]
     }
 }

@@ -147,6 +147,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC2"
-        }
+        },
+        "notes": [
+            "If two columns $j$ and $k$ are jointly covered by a single tile in row $i-1$ and the hole sits at column $k$ in row $i$, then column $j$ must be covered by a new strip starting in row $i$."
+        ]
     }
 }

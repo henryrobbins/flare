@@ -318,8 +318,7 @@
             "variation_id": "inefficient"
         },
         "notes": [
-            "This is the disaggregate (inefficient) formulation.",
-            "The source uses $j_{v,a}$ directly as the area value of apartment $a$ in configuration $v$. We split this into a parameter $\\text{jApt}_{v,a}$ giving the area index and `area` giving the value, consistent with `p15.a`."
+            "This is the disaggregate (inefficient) formulation."
         ]
     }
 }

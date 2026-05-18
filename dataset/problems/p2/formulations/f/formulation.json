@@ -130,6 +130,9 @@
             "dataset": "EquivaFormulation",
             "instance_id": "74",
             "variation_id": "h"
-        }
+        },
+        "notes": [
+            "Splits variables."
+        ]
     }
 }

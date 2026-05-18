@@ -608,7 +608,7 @@
             "name": "EC1"
         },
         "notes": [
-            "The first three inequalities are a linearization defining an auxiliary variable $b_{g,t}$ as the product $v_{g,t} \\cdot w_{g,t+1}$. We combine these three inequalities to form this formulation."
+            "These three inequalities are a linearization defining an auxiliary variable $b_{g,t}$ as the product $v_{g,t} \\cdot w_{g,t+1}$."
         ]
     }
 }

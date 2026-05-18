@@ -78,11 +78,7 @@
             "dataset": "Ferchtandiker2025"
         },
         "notes": [
-            "The source uses the floor area index $j$ directly as the area value (e.g., $j \\cdot y_{ijh}$ in the average-area constraint). We introduce an explicit `area` array so that $\\text{area}_j$ is the actual floor area for index $j$.",
-            "The source aggregate uses $a_i$ for the minimum sector fraction and the disaggregate uses $b_i$ for the same quantity. We preserve these distinct names in `p15.a` ($a_i$) and `p15.b` ($b_i$) respectively.",
-            "The source uses $K$ as a scalar (floor count) in the aggregate and as a set of floors in the disaggregate. We use $K$ (scalar) in `p15.a` and rename to $nK$ (scalar) in `p15.b` so that $K = \\{0, \\dots, nK-1\\}$ is the floor index set.",
-            "`p15.a` and `p15.b` are not equivalent formulations of the same problem.",
-            "We add implicit assumptions that all sets are non-empty, $R_{jv}, \\text{area}_j, m_{ih}, a_i, s_i, o_h \\geq 0$, and that `iFree` and `hCorp` are valid indices."
+            "We add implicit assumptions that all sets are non-empty, $R_{jv}, \\text{area}_j, m_{ih}, a_i, s_i, o_h \\geq 0$, and that `iFree` and `hCorp` are valid indices in the `nI` and `nH` dimensions, respectively."
         ]
     }
 }

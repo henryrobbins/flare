@@ -139,6 +139,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC5"
-        }
+        },
+        "notes": [
+            "Every clique of customers who can not be assigned to the same warehouse introduce a lower bound on the number of warehouses that must be opened."
+        ]
     }
 }

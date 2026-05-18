@@ -142,7 +142,8 @@
             "variation_id": "i"
         },
         "notes": [
-            "Added missing objective scaling for this `_i` transformation (present in the source code but absent from the source `problem_info`)."
+            "Re-scale the objective function.",
+            "Source was missing objective re-scaling; applied arbitrary scaling factor of 2."
         ]
     }
 }

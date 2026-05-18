@@ -200,7 +200,9 @@
             "variation_id": "d"
         },
         "notes": [
-            "Bus variables in the source `_d` binary substitution formulation were only represented with a single-digit variable."
+            "Substitute integer variables with base-10 representations.",
+            "This formulation is marked invalid because it is only a reformulation at the instance-level, not the formulation-level.",
+            "Source represented bus variables with a single digit; we extended to a 2-digit substitution to match the car variables."
         ]
     }
 }

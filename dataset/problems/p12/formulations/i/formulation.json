@@ -111,6 +111,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC5"
-        }
+        },
+        "notes": [
+            "City $i$'s MTZ position is at most $(n-1) + x_{i0} - (n-3) x_{0i}$, tightening the upper bound using its depot-adjacent arcs."
+        ]
     }
 }

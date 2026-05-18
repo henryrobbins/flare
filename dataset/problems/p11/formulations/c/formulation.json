@@ -590,6 +590,9 @@
         "source": {
             "dataset": "EvoCut",
             "name": "EC2a"
-        }
+        },
+        "notes": [
+            "During a startup period, generator $g$'s maximum available output above its minimum is reduced by $\\max(P^{\\max}_g - SU_g, 0)$, reflecting the startup ramp limit."
+        ]
     }
 }

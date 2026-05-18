@@ -157,8 +157,7 @@
             "formulation_id": "efficient"
         },
         "notes": [
-            "This is the event-based (efficient) formulation.",
-            "*(TODO: revisit this)* The capacity constraint in the source event-based formulation erroneously sums over all departure locations ($\\sum_{p \\in P} \\sum_{a \\in A} \\sum_{a' \\in A} x_{p,a,a',t} \\leq \\mathrm{cap}_{a,t}$); we correct this to sum only departures from location $a$ ($\\sum_{p \\in P} \\sum_{a' \\in A} x_{p,a,a',t} \\leq \\mathrm{cap}_{a,t}$)."
+            "This is the aggregate (efficient) formulation."
         ]
     }
 }

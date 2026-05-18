@@ -188,7 +188,8 @@
             "variation_id": "g"
         },
         "notes": [
-            "No slack variables were introduced in this source variation (`_g`)."
+            "Introduce slack variables to convert inequality constraints into equality constraints.",
+            "Source variation was missing the slack variables; we introduced them."
         ]
     }
 }

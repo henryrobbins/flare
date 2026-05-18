@@ -193,6 +193,10 @@
             "dataset": "EquivaFormulation",
             "instance_id": "217",
             "variation_id": "d"
-        }
+        },
+        "notes": [
+            "Substitute integer variables with base-10 representations.",
+            "This formulation is marked invalid because it is only a reformulation at the instance-level, not the formulation-level."
+        ]
     }
 }

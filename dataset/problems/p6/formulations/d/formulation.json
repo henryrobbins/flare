@@ -167,6 +167,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC3"
-        }
+        },
+        "notes": [
+            "Small warehouses are those with capacity less than the maximum customer demand. Hard customers are those whose demand exceeds the largest small-warehouse capacity, so they can only be served by large warehouses. To cover the hard customers, we need to open at least $k_T$ large warehouses, where $k_T$ is the minimum number of large warehouses whose capacities sum to at least the total demand of hard customers."
+        ]
     }
 }

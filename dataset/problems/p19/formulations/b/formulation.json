@@ -201,6 +201,10 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "formulation_id": "inefficient"
-        }
+        },
+        "notes": [
+            "The inefficient formulation adds an assignment variable $z_{hc}$.",
+            "The original formulation was identified by `FLARE` to be invalid. It includes the constraint $\\sum_{h \\in H} z_{hc} = 1$. This constraint enforces that every disaster region $c \\in C$ is assigned to *exactly one* response hub $h \\in H$. The efficient formulation allows a disaster region to be supplied by multiple hubs simultaneously. To make this a valid reformulation, we omit this constraint."
+        ]
     }
 }

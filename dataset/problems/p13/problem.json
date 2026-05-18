@@ -46,8 +46,7 @@
             "dataset": "Ferchtandiker2025"
         },
         "notes": [
-            "We add implicit assumptions that travel times $\\tau_{a,a'} \\geq 0$ and capacities $\\mathrm{cap}_{a,t} \\geq 0$.",
-            "The `model.tex` files present in the dataset are simplifications of the models referenced in the description and data generation scripts. For this reason, we include the formulation pair in the dataset, but omit it from our results."
+            "We identify a number of modeling inconsistencies in the original pair of formulations. To address this, we propose a new pair of flow-based formulations. The efficient formulation `p13.b` is an aggregated version of `p13.a`."
         ]
     }
 }

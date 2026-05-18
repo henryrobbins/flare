@@ -237,6 +237,9 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "formulation_id": "efficient"
-        }
+        },
+        "notes": [
+            "We add all listed implicit assumptions."
+        ]
     }
 }

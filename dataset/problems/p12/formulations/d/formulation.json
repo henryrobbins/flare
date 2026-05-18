@@ -113,7 +113,8 @@
             "name": "EC3"
         },
         "notes": [
-            "Corresponds to EC3 of EvoCut [v1](https://arxiv.org/abs/2508.11850v1) and is identified as an invalid inequality. The inequality\n\n$$x_{j1} + x_{ji} + u_j - u_i - 1 \\leq (n-1)(2 - x_{1i} - x_{ij})\\quad \\forall i, j \\in V \\setminus \\{1\\},\\; i \\neq j$$\n\nprevents the feasible $1 \\to 2 \\to 3 \\to 1$ tour for $n=3$ TSP instances."
+            "Eliminate triangles involving the depot.",
+            "This cut was identified by `FLARE` to be invalid. The inequality prevents the feasible $1 \\to 2 \\to 3 \\to 1$ tour for $n=3$ TSP instances."
         ]
     }
 }

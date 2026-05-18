@@ -166,6 +166,9 @@
             "dataset": "EquivaFormulation",
             "instance_id": "92",
             "variation_id": "k"
-        }
+        },
+        "notes": [
+            "Random formulation unrelated to the original problem, with the same optimal objective value as the original problem."
+        ]
     }
 }

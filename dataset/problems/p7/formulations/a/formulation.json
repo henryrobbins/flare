@@ -139,7 +139,7 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "This is the MILP formulation given in Section F.5 of the [v1 arXiv paper](https://arxiv.org/abs/2508.11850v1)."
+            "This is the MILP formulation given in Appendix F.5 of EvoCut arXiv submission `v1`."
         ]
     }
 }

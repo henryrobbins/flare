@@ -168,7 +168,8 @@
             "variation_id": "g"
         },
         "notes": [
-            "$S$ bus constraint upper bound was absent from `problem_info` (present in the solver code at variable declaration); made into an explicit constraint and extended with an additional slack variable."
+            "Introduce slack variables to convert inequality constraints into equality constraints.",
+            "The $S$ bus constraint upper bound was absent from the source; we add an explicit constraint with slack variable."
         ]
     }
 }

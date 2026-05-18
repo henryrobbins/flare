@@ -78,9 +78,10 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "We add implicit assumptions that arc costs $c_a, f_a \\ge 0$, arc capacities $u_a \\ge 0$, and commodity demands $d_k > 0$. *(TODO: why is $d_k > 0$ required?)*",
-            "EvoCut [v1](https://arxiv.org/abs/2508.11850v1) proposes one inequality used to generate formulation `p9.b`.",
-            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes two inequalities used to generate formulations `p9.c` and `p9.d`."
+            "We add implicit assumptions that $c_a, f_a, u_a \\ge 0$ and $d_k > 0$.",
+            "$d_k > 0$ is necessary to eliminate degenerate cases and argue at least once entering arc to $D_k$ should be active.",
+            "EvoCut arXiv submissions `v1` proposes one inequality used to generate formulation `p9.b`.",
+            "EvoCut arXiv submissions `v2` proposes two inequalities used to generate formulations `p9.c` and `p9.d`."
         ]
     }
 }

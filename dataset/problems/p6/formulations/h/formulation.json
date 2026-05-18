@@ -130,6 +130,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC4"
-        }
+        },
+        "notes": [
+            "If customer $i$'s demand exceeds warehouse $j$'s capacity, customer $i$ cannot be assigned to warehouse $j$."
+        ]
     }
 }

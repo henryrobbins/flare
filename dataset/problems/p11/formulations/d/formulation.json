@@ -590,6 +590,9 @@
         "source": {
             "dataset": "EvoCut",
             "name": "EC2b"
-        }
+        },
+        "notes": [
+            "In the period immediately before a shutdown, generator $g$'s maximum available output above its minimum is reduced by $\\max(P^{\\max}_g - SD_g, 0)$, reflecting the shutdown ramp limit."
+        ]
     }
 }

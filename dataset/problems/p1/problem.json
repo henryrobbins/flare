@@ -38,9 +38,9 @@
             "instance_id": 47
         },
         "notes": [
-            "All variables in `problem_info.json` were incorrectly marked as continuous.",
-            "Excluded instance-specific cutting plane (source variation `47_e`).",
-            "Implicit non-negativity assumption for every problem parameter."
+            "The source variable type is continuous; we correct the variable type to integer.",
+            "The cutting plane (source variation `47_e`) is excluded because it is instance-specific.",
+            "Implicit non-negativity assumptions are added for every parameter."
         ]
     }
 }

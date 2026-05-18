@@ -166,8 +166,9 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "We add implicit assumptions covering non-empty sets, non-negativity of all parameters, and the ordering constraints $P^{\\max}_g \\ge P^{\\min}_g$ and $P^{w,\\max}_{w,t} \\ge P^{w,\\min}_{w,t}$.",
-            "The remaining seven inequalities are used to form formulations `p11.c-i`."
+            "We add implicit assumptions for non-empty sets, non-negativity of all parameters, and the ordering constraints $P^{\\max}_g \\ge P^{\\min}_g$ and $P^{w,\\max}_{w,t} \\ge P^{w,\\min}_{w,t}$.",
+            "EvoCut arXiv submission `v1` does not include this problem.",
+            "EvoCut arXiv submission `v2` proposes 10 inequalities; the first three are combined to generate formulation `p11.b` and the remainder are used to generate formulations `p11.c-i`."
         ]
     }
 }
