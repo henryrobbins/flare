@@ -27,9 +27,7 @@ class Formulation:
 
     A ``Formulation`` corresponds to one
     ``problems/pN/formulations/x/`` directory. It loads ``formulation.json``
-    eagerly into typed fields. The on-disk JSON is also kept in
-    :attr:`_raw` so that new formulations can be derived via
-    :meth:`with_constraint` without re-reading from disk.
+    eagerly into typed fields.
 
     Parameters
     ----------
@@ -88,15 +86,6 @@ class Formulation:
         self.path = Path(path).resolve()
         self._problem: Problem = problem
         raw = json.loads((self.path / "formulation.json").read_text())
-        self._raw = raw
-        self._load_from_raw(raw)
-
-    @property
-    def problem(self) -> Problem:
-        """The parent :class:`Problem`."""
-        return self._problem
-
-    def _load_from_raw(self, raw: dict[str, Any]) -> None:
         self.valid: bool = raw["valid"]
         self.parameters: dict[str, Parameter] = {
             k: Parameter.from_dict(v) for k, v in raw["parameters"].items()
@@ -117,36 +106,10 @@ class Formulation:
         self.imports: list[str] = list(raw.get("imports", []))
         self.metadata: dict[str, Any] = raw.get("metadata", {})
 
-    @classmethod
-    def from_raw(cls, raw: dict[str, Any], path: Path, problem: Problem) -> Formulation:
-        """Construct a :class:`Formulation` from an in-memory dict.
-
-        Useful for building a formulation programmatically (e.g. when
-        deriving a new formulation by adding a constraint) without writing
-        anything to disk.
-
-        Parameters
-        ----------
-        raw : dict
-            The ``formulation.json`` payload as a dict.
-        path : pathlib.Path
-            A path to associate with the new formulation. The path need not
-            exist on disk, but :meth:`gen_params` and :meth:`solve` require
-            it to point at a directory containing ``gen_params.py`` /
-            ``solve.py``.
-        problem : Problem
-            The parent problem.
-
-        Returns
-        -------
-        Formulation
-        """
-        obj = cls.__new__(cls)
-        obj.path = Path(path)
-        obj._problem = problem
-        obj._raw = raw
-        obj._load_from_raw(raw)
-        return obj
+    @property
+    def problem(self) -> Problem:
+        """The parent :class:`Problem`."""
+        return self._problem
 
     def with_constraint(self, constraint: Constraint) -> Formulation:
         """Return a new :class:`Formulation` with one extra constraint appended.
@@ -176,16 +139,9 @@ class Formulation:
         >>> len(f2.constraints) == len(f.constraints) + 1      # doctest: +SKIP
         True
         """
-        new_raw = copy.deepcopy(self._raw)
-        new_raw["constraints"].append(
-            {
-                "description": constraint.description,
-                "formulation": constraint.formulation,
-                "explicit": constraint.explicit,
-                "code": constraint.code,
-            }
-        )
-        return Formulation.from_raw(new_raw, self.path, self._problem)
+        new = copy.copy(self)
+        new.constraints = self.constraints + [constraint]
+        return new
 
     @property
     def gurobipy_code(self) -> str:
