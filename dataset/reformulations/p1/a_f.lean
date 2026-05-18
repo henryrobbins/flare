@@ -1,6 +1,6 @@
 import Common
-import dataset.problems.p1.formulations.a.Formulation
-import dataset.problems.p1.formulations.f.Formulation
+import problems.p1.formulations.a.Formulation
+import problems.p1.formulations.f.Formulation
 
 
 namespace P1
