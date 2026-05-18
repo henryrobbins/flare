@@ -226,7 +226,7 @@ class Formulation:
         """The full ``solve.py`` source for this formulation, as a string.
 
         Deterministically generated from ``formulation.json`` by
-        :func:`formulation_bench.codegen.generate` (and ``ruff``-formatted).
+        :func:`formulation_bench.codegen.generate`.
         Equivalent to the contents of ``solve.py`` on disk.
 
         Examples

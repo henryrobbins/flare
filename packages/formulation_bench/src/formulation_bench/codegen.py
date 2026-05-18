@@ -6,8 +6,6 @@ This module is the deterministic codegen used to produce each formulation's
 """
 
 import re
-import subprocess
-import tempfile
 from typing import Any
 
 TYPE_MAP = {
@@ -143,7 +141,7 @@ def _solution_extraction(name: str, var: dict[str, Any]) -> list[str]:
 def generate(formulation_json: dict[str, Any]) -> str:
     """Return the complete ``solve.py`` source for a formulation.
 
-    The output is a self-contained, ``ruff``-formatted Python script that
+    The output is a self-contained Python script that
     loads ``parameters.json``, builds a Gurobi model, solves it, and writes
     ``solution.json``. The script accepts two positional CLI arguments
     (``params`` and ``solution`` paths) so it can also be invoked directly.
@@ -308,13 +306,4 @@ def generate(formulation_json: dict[str, Any]) -> str:
     L.append("    main(args.params, args.solution)")
     L.append("")
 
-    return _ruff_format("\n".join(L))
-
-
-def _ruff_format(code: str) -> str:
-    with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
-        f.write(code)
-        tmp = f.name
-    subprocess.run(["ruff", "format", "--quiet", tmp], check=True)
-    with open(tmp) as f:
-        return f.read()
+    return "\n".join(L)
