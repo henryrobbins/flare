@@ -237,7 +237,13 @@
         "y": {
             "description": "1 if apartment a in configuration v on floor k (with owner h) is assigned to sector i, 0 otherwise",
             "type": "binary",
-            "shape": ["nK", "nV", "nH", "nI", "|A_v|"],
+            "shape": [
+                "nK",
+                "nV",
+                "nH",
+                "nI",
+                "|A_v|"
+            ],
             "indices": "(k, v, h, i, a) for k in range(nK) for v in range(nV) for h in range(nH) for i in range(nI) for a in range(cap[v])"
         }
     },
@@ -310,6 +316,10 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "variation_id": "inefficient"
-        }
+        },
+        "notes": [
+            "This is the disaggregate (inefficient) formulation.",
+            "The source uses $j_{v,a}$ directly as the area value of apartment $a$ in configuration $v$. We split this into a parameter $\\text{jApt}_{v,a}$ giving the area index and `area` giving the value, consistent with `p15.a`."
+        ]
     }
 }

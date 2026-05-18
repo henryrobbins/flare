@@ -166,6 +166,9 @@
             "dataset": "EquivaFormulation",
             "instance_id": "183",
             "variation_id": "g"
-        }
+        },
+        "notes": [
+            "$S$ bus constraint upper bound was absent from `problem_info` (present in the solver code at variable declaration); made into an explicit constraint and extended with an additional slack variable."
+        ]
     }
 }

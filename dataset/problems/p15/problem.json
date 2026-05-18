@@ -78,13 +78,11 @@
             "dataset": "Ferchtandiker2025"
         },
         "notes": [
-            "Formulation `p15.a` is the aggregate (efficient) formulation and `p15.b`\nis the disaggregate (inefficient) formulation.",
-            "The source uses the floor area index $j$ directly as the area value\n(e.g., $j \\cdot y_{ijh}$ in the average-area constraint). We introduce an\nexplicit `area` array so that $\\text{area}_j$ is the actual floor area\nfor index $j$.",
-            "In `p15.b`, the source uses $j_{v,a}$ directly as the area value of\napartment $a$ in configuration $v$. We split this into a parameter\n$\\text{jApt}_{v,a}$ giving the area index and `area` giving the value,\nconsistent with `p15.a`.",
-            "The source aggregate uses $a_i$ for the minimum sector fraction and the\ndisaggregate uses $b_i$ for the same quantity. We preserve these distinct\nnames in `p15.a` ($a_i$) and `p15.b` ($b_i$) respectively.",
-            "The source uses $K$ as a scalar (floor count) in the aggregate and as a\nset of floors in the disaggregate. We use $K$ (scalar) in `p15.a` and\nrename to $nK$ (scalar) in `p15.b` so that $K = \\{0, \\dots, nK-1\\}$ is\nthe floor index set.",
+            "The source uses the floor area index $j$ directly as the area value (e.g., $j \\cdot y_{ijh}$ in the average-area constraint). We introduce an explicit `area` array so that $\\text{area}_j$ is the actual floor area for index $j$.",
+            "The source aggregate uses $a_i$ for the minimum sector fraction and the disaggregate uses $b_i$ for the same quantity. We preserve these distinct names in `p15.a` ($a_i$) and `p15.b` ($b_i$) respectively.",
+            "The source uses $K$ as a scalar (floor count) in the aggregate and as a set of floors in the disaggregate. We use $K$ (scalar) in `p15.a` and rename to $nK$ (scalar) in `p15.b` so that $K = \\{0, \\dots, nK-1\\}$ is the floor index set.",
             "`p15.a` and `p15.b` are not equivalent formulations of the same problem.",
-            "We add implicit assumptions that all sets are non-empty,\n$R_{jv}, \\text{area}_j, m_{ih}, a_i, s_i, o_h \\geq 0$, and that `iFree`\nand `hCorp` are valid indices."
+            "We add implicit assumptions that all sets are non-empty, $R_{jv}, \\text{area}_j, m_{ih}, a_i, s_i, o_h \\geq 0$, and that `iFree` and `hCorp` are valid indices."
         ]
     }
 }

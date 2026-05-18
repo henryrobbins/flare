@@ -33,12 +33,8 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "Formulation `p8.a` is the MILP formulation given in Section F.4 of the\n[v1 arXiv paper](https://arxiv.org/abs/2508.11850v1). We make one\nmodification to better match our Formulation JSON structure. The original\nformulation defines $\\mathcal{P}$ as the set of distinct ordered pairs\n$(j_1, k_1), (j_2, k_2)$ that require the same machine. Instead, we\ndefine $Om_{j,k}$ to be the machine that the $k$-th operation of job $j$\nis assigned to.",
-            "We add the following implicit assumptions: there is at least one job and\nmachine, processing times $p_{j,k} \\ge 0$, and $Om$ encodes a valid JSSP\ninstance. To be a valid JSSP instance, each job has exactly one operation\nassigned per machine.",
-            "EC1 is identical in v1 and v2 and is included once as formulation `p8.b`.",
-            "EC2 is identical in v1 and v2 and is included once as formulation `p8.c`.",
-            "v1 EC3 has an ambiguous interpretation; we exclude it from our dataset.",
-            "v2 EC3 (longest job bound) is included as formulation `p8.d`."
+            "We add the following implicit assumptions: there is at least one job and machine, processing times $p_{j,k} \\ge 0$, and $Om$ encodes a valid JSSP instance. To be a valid JSSP instance, each job has exactly one operation assigned per machine.",
+            "v1 EC3 has an ambiguous interpretation; we exclude it from our dataset."
         ]
     }
 }

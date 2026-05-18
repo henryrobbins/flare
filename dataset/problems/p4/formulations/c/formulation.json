@@ -198,6 +198,9 @@
             "dataset": "EquivaFormulation",
             "instance_id": "183",
             "variation_id": "d"
-        }
+        },
+        "notes": [
+            "Bus variables in the source `_d` binary substitution formulation were only represented with a single-digit variable."
+        ]
     }
 }

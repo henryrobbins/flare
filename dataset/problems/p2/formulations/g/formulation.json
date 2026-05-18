@@ -115,6 +115,9 @@
             "dataset": "EquivaFormulation",
             "instance_id": "74",
             "variation_id": "i"
-        }
+        },
+        "notes": [
+            "Removed source `_i` 1/10 scaling that prevents equivalence when the number of beakers becomes integer."
+        ]
     }
 }

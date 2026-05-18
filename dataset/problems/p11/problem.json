@@ -166,10 +166,8 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "Formulation `p11.a` is the MILP formulation given in Section F.7 of the\n[v2 arXiv paper](https://arxiv.org/abs/2508.11850v2).",
-            "We add implicit assumptions covering non-empty sets, non-negativity of\nall parameters, and the ordering constraints $P^{\\max}_g \\ge P^{\\min}_g$\nand $P^{w,\\max}_{w,t} \\ge P^{w,\\min}_{w,t}$.",
-            "The first three inequalities are a linearization defining an auxiliary\nvariable $b_{g,t}$ as the product $v_{g,t} \\cdot w_{g,t+1}$. We combine\nthese three inequalities to form formulation `p11.b`.",
-            "The remaining seven inequalities are used to form formulations `p11.c-i`.\nNotably, the inequality used in formulation `p11.e` relies on the\nauxiliary variable $b_{g,t}$. Hence, the three inequalities that define\nit are also included."
+            "We add implicit assumptions covering non-empty sets, non-negativity of all parameters, and the ordering constraints $P^{\\max}_g \\ge P^{\\min}_g$ and $P^{w,\\max}_{w,t} \\ge P^{w,\\min}_{w,t}$.",
+            "The remaining seven inequalities are used to form formulations `p11.c-i`."
         ]
     }
 }

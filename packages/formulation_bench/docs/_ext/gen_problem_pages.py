@@ -96,13 +96,13 @@ def _math_table(items: Iterable, label: str) -> str:
     items = list(items)
     if not items:
         return f"_(no {label})_\n"
-    rows = ["| Description | Formulation | Explicit |", "|---|---|---|"]
+    rows = ["| Description | Formulation | Implicit |", "|---|---|---|"]
     for item in items:
         # Inline math in a table cell needs single $...$; pipes inside the
         # LaTeX must be escaped so they don't break the table column.
         formula = item.formulation.replace("|", r"\|")
-        explicit = "yes" if item.explicit else "no"
-        rows.append(f"| {item.description} | ${formula}$ | {explicit} |")
+        implicit = "no" if item.explicit else "yes"
+        rows.append(f"| {item.description} | ${formula}$ | {implicit} |")
     return "\n".join(rows) + "\n"
 
 
@@ -125,11 +125,16 @@ def _objective_block(obj: Objective) -> str:
 
 
 def _formulation_section(fid: str, f: Formulation) -> str:
-    badge = "valid" if f.valid else "**invalid (negative example)**"
+    badge = "valid" if f.valid else "invalid"
     parts = [f"### Formulation `{fid}` — {badge}\n"]
     src = f.metadata.get("source")
     if src:
-        parts += [_source_line(src), ""]
+        parts += [
+            "```{seealso}",
+            f"This formulation is sourced from {_source_label(src)}.",
+            "```",
+            "",
+        ]
     note_block = _notes_admonition(f.metadata.get("notes"))
     if note_block:
         parts += [note_block, ""]
@@ -161,25 +166,28 @@ def _formulation_section(fid: str, f: Formulation) -> str:
     return "\n".join(parts)
 
 
-def _source_line(src: object) -> str:
+def _source_label(src: object) -> str:
     if not isinstance(src, dict):
-        return f"**Source:** {src}\n"
+        return str(src)
     name = src.get("dataset", "?")
     url = SOURCE_LINKS.get(name)
     head = f"[{name}]({url})" if url else name
     extras = [f"{k.replace('_', ' ')}: {v}" for k, v in src.items() if k != "dataset"]
-    label = head + (f" ({', '.join(extras)})" if extras else "")
-    return f"**Source:** {label}\n"
+    return head + (f" ({', '.join(extras)})" if extras else "")
 
 
-def _notes_admonition(notes: object) -> str:
-    """Render ``metadata.notes`` (expected: list[str]) as a ``{note}``
-    admonition containing a bulleted markdown list. Returns ``""`` when
-    notes are missing or empty.
+def _source_line(src: object) -> str:
+    return f"**Source:** {_source_label(src)}\n"
+
+
+def _notes_admonition(notes: object, kind: str = "note") -> str:
+    """Render ``metadata.notes`` (expected: list[str]) as an admonition of
+    type ``kind`` (e.g. ``note``, ``seealso``) containing a bulleted
+    markdown list. Returns ``""`` when notes are missing or empty.
     """
     if not isinstance(notes, list) or not notes:
         return ""
-    lines = ["```{note}"]
+    lines = ["```{" + kind + "}"]
     for item in notes:
         text = str(item).rstrip()
         if not text:
@@ -196,16 +204,21 @@ def _notes_admonition(notes: object) -> str:
 
 def _problem_page(pid: int, problem) -> str:
     header = [f"# p{pid} — {problem.name}\n"]
+    src = problem.metadata.get("source")
+    if src:
+        label = _source_label(src)
+        header += [
+            "```{seealso}",
+            f"This problem is sourced from {label}.",
+            "```",
+            "",
+        ]
     note_block = _notes_admonition(problem.metadata.get("notes"))
     if note_block:
         header += [note_block, ""]
     header += [
-        _source_line(problem.metadata.get("source", {})),
         "## Description\n",
         problem.description.strip() + "\n",
-        "## Problem Parameters\n",
-        _params_table(problem.parameters),
-        "",
         "## Formulations\n",
     ]
     sections = [_formulation_section(fid, f) for fid, f in problem.formulations.items()]

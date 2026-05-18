@@ -208,6 +208,9 @@
     "metadata": {
         "source": {
             "dataset": "EvoCut"
-        }
+        },
+        "notes": [
+            "This is the MILP formulation given in Section F.2 of the [v1 arXiv paper](https://arxiv.org/abs/2508.11850v1). We make one notational change: the source indexes arcs as pairs $(i,j) \\in A$; we instead index arcs by a single index $a$ with separate `tail` and `head` arrays, to match our Formulation JSON structure."
+        ]
     }
 }

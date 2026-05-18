@@ -46,10 +46,9 @@
             "dataset": "EvoCut"
         },
         "notes": [
-            "Formulation `p6.a` is the MILP formulation given in Section F.3 of the\n[v1 arXiv paper](https://arxiv.org/abs/2508.11850v1).",
-            "We add implicit assumptions that sets $|I|, |J| > 0$ and parameters\n$u, f, c \\geq 0$ and $d > 0$. *(TODO: why is $d > 0$ required?)*",
-            "EvoCut [v1](https://arxiv.org/abs/2508.11850v1) proposes a hybrid\ninequality combining three lower bounds. We split this hybrid inequality\ninto three separate inequalities to generate formulations `p6.c-d`.",
-            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes a family of five\ninequalities used to generate formulations `p6.e-j`."
+            "We add implicit assumptions that sets $|I|, |J| > 0$ and parameters $u, f, c \\geq 0$ and $d > 0$. *(TODO: why is $d > 0$ required?)*",
+            "EvoCut [v1](https://arxiv.org/abs/2508.11850v1) proposes a hybrid inequality combining three lower bounds. We split this hybrid inequality into three separate inequalities to generate formulations `p6.b-d`.",
+            "EvoCut [v2](https://arxiv.org/abs/2508.11850v2) proposes a family of inequalities used to generate formulations `p6.e-j`."
         ]
     }
 }

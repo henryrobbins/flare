@@ -622,6 +622,9 @@
         "source": {
             "dataset": "EvoCut",
             "name": "EC2c"
-        }
+        },
+        "notes": [
+            "This inequality relies on the auxiliary variable $b_{g,t}$, so the three inequalities that define it (see `p11.b`) are also included."
+        ]
     }
 }

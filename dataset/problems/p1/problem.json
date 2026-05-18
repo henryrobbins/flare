@@ -39,9 +39,7 @@
         },
         "notes": [
             "All variables in `problem_info.json` were incorrectly marked as continuous.",
-            "Fixed typo in first constraint's LaTeX formulation in `47_c` and `47_d`\n(was mixing params \u00d7 vars nonlinearly; corrected to match Gurobi code:\n$A \\cdot s + K \\cdot r \\geq U$).",
-            "Excluded instance-specific cutting plane (`47_e`).",
-            "Added missing objective scaling to `problem_info` for the `_i`\ntransformation (present in code but absent from `problem_info`).",
+            "Excluded instance-specific cutting plane (source variation `47_e`).",
             "Implicit non-negativity assumption for every problem parameter."
         ]
     }

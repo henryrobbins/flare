@@ -192,6 +192,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC2"
-        }
+        },
+        "notes": [
+            "EC2 is identical in v1 and v2 and is included once as this formulation."
+        ]
     }
 }

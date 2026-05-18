@@ -206,6 +206,9 @@
             "dataset": "EquivaFormulation",
             "instance_id": "47",
             "variation_id": "d"
-        }
+        },
+        "notes": [
+            "Fixed typo in the first constraint's LaTeX formulation in the source (was mixing params \u00d7 vars nonlinearly; corrected to match the Gurobi code: $A \\cdot s + K \\cdot r \\geq U$)."
+        ]
     }
 }

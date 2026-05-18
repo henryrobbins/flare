@@ -171,6 +171,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC3"
-        }
+        },
+        "notes": [
+            "v2 EC3 (longest job bound)."
+        ]
     }
 }

@@ -41,12 +41,9 @@
         },
         "notes": [
             "All variables in `problem_info.json` were incorrectly marked as continuous.",
-            "All variables in the solver code were also incorrectly marked as\ncontinuous, resulting in a fractional optimal solution.",
-            "Binary substitution of decision variables was missing in the `_d`\nvariation.",
-            "No slack variables were introduced in the `_g` variation.",
-            "Excluded instance-specific cutting plane (`74_e`).",
-            "Implicit non-negativity assumption for every problem parameter and\npositivity assumption on `NumResources` and `NumExperiments`.",
-            "Remove `_i` 1/10 scaling that prevents equivalence when the number of\nbeakers becomes integer."
+            "All variables in the solver code were also incorrectly marked as continuous, resulting in a fractional optimal solution.",
+            "Excluded instance-specific cutting plane (source variation `74_e`).",
+            "Implicit non-negativity assumption for every problem parameter and positivity assumption on `NumResources` and `NumExperiments`."
         ]
     }
 }

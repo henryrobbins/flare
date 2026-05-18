@@ -33,10 +33,6 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025"
-        },
-        "notes": [
-            "Formulation `p14.a` is the efficient formulation and `p14.b` is the\ninefficient formulation.",
-            "In `p14.a`, we add explicit assumptions on the feasibility indicator\n$\\delta_{ij}$ that enforce $\\delta_{ij} \\in \\{0,1\\}$ and $\\delta_{ij} = 1$\nif and only if $T_{ij} \\leq T_{\\text{limit}}$. We also add implicit\nassumptions that sets are non-empty, travel times $T_{ij} \\geq 0$,\n$T_{\\text{limit}} \\geq 0$, and $n \\leq |\\mathcal{S}|$."
-        ]
+        }
     }
 }

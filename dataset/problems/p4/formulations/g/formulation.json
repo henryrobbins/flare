@@ -140,6 +140,9 @@
             "dataset": "EquivaFormulation",
             "instance_id": "183",
             "variation_id": "i"
-        }
+        },
+        "notes": [
+            "Added missing objective scaling for this `_i` transformation (present in the source code but absent from the source `problem_info`)."
+        ]
     }
 }
