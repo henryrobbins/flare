@@ -12,17 +12,16 @@ from .problem import Problem
 class Dataset:
     """An on-disk FormulationBench dataset.
 
-    A ``Dataset`` lazily loads the problems listed in ``<root>/dataset.json``
-    and the formulation pairs in ``<root>/pairs.json``. Each problem and
-    formulation is read from disk on first access (see :class:`Problem` and
-    :class:`Formulation`); construction itself does no work beyond parsing
-    ``dataset.json``.
+    A ``Dataset`` lazily loads the problems and formulation pairs listed in
+    ``<root>/dataset.json``. Each problem and formulation is read from disk
+    on first access (see :class:`Problem` and :class:`Formulation`);
+    construction itself does no work beyond parsing ``dataset.json``.
 
     Parameters
     ----------
     root : str or pathlib.Path
         Path to the dataset root directory, i.e. the directory containing
-        ``dataset.json``, ``pairs.json``, and the ``problems/`` subtree.
+        ``dataset.json`` and the ``problems/`` subtree.
 
     Attributes
     ----------
@@ -57,9 +56,10 @@ class Dataset:
 
     def __init__(self, root: str | Path) -> None:
         self.root = Path(root).resolve()
-        raw = json.loads((self.root / "dataset.json").read_text())
+        self._raw = json.loads((self.root / "dataset.json").read_text())
         self.problems: dict[int, Problem] = {
-            pid: Problem(self.root / "problems" / f"p{pid}") for pid in raw["problems"]
+            pid: Problem(self.root / "problems" / f"p{pid}")
+            for pid in self._raw["problems"]
         }
 
     @classmethod
@@ -92,10 +92,11 @@ class Dataset:
 
     @cached_property
     def pairs(self) -> list[Pair]:
-        """List of all formulation :class:`Pair` s declared in ``pairs.json``.
+        """List of all formulation :class:`Pair` s declared under the
+        ``reformulations`` key of ``dataset.json``.
 
-        Returns an empty list if ``pairs.json`` is absent. Both positive
-        examples (``reformulation=True``) and negative examples
+        Returns an empty list if no ``reformulations`` entry is present. Both
+        positive examples (``reformulation=True``) and negative examples
         (``reformulation=False``) are included; filter on
         :attr:`Pair.reformulation` if you only want one.
 
@@ -106,13 +107,6 @@ class Dataset:
         >>> first.a.problem is first.b.problem  # same-problem pair  # doctest: +SKIP
         True
         """
-        return self._load_pairs()
-
-    def _load_pairs(self) -> list[Pair]:
-        pairs_file = self.root / "pairs.json"
-        if not pairs_file.exists():
-            return []
-        raw = json.loads(pairs_file.read_text())
         return [
             Pair(
                 a=self.problems[entry["a"]["problem"]].formulations[
@@ -123,7 +117,7 @@ class Dataset:
                 ],
                 reformulation=entry["reformulation"],
             )
-            for entry in raw
+            for entry in self._raw.get("reformulations", [])
         ]
 
     def __repr__(self) -> str:

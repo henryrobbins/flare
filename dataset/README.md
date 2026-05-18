@@ -8,8 +8,7 @@ Each problem is presented in several alternative formulations that may differ in
 
 ```
 dataset/
-├── dataset.json              # List of problem IDs
-├── pairs.json                # All formulation pairs with reformulation labels
+├── dataset.json              # Problem IDs and all formulation pairs with reformulation labels
 ├── problems/                 # List of problems
 │   ├── p1/
 │   │   ├── description.md    # Natural-language problem statement
@@ -72,7 +71,7 @@ The `indices` field is an alternative to `shape` for variables indexed by an exp
 
 ## Reformulation Pairs and Proofs
 
-`pairs.json` is a flat list of formulation pairs:
+The `reformulations` key in `dataset.json` is a flat list of formulation pairs:
 
 ```json
 {

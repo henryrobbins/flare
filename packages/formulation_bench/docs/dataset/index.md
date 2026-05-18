@@ -19,8 +19,7 @@ notes
 
 ```
 dataset/
-├── dataset.json              # List of problem IDs
-├── pairs.json                # All formulation pairs with reformulation labels
+├── dataset.json              # Problem IDs and all formulation pairs with reformulation labels
 ├── problems/                 # List of problems
 │   ├── p1/
 │   │   ├── description.md    # Natural-language problem statement
@@ -133,7 +132,7 @@ mathematical formulation, but `indices` is what drives code generation.
 
 ## Reformulation Pairs and Proofs
 
-`pairs.json` is a flat list of formulation pairs:
+The `reformulations` key in `dataset.json` is a flat list of formulation pairs:
 
 ```json
 {
