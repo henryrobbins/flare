@@ -10,3 +10,11 @@ pre-commit:
     typecheck:
       glob: "*.py"
       run: uv run mypy
+    typecheck-formulation-bench:
+      glob: "*.py"
+      root: packages/formulation_bench
+      run: uv run mypy
+    typecheck-milp-flare:
+      glob: "*.py"
+      root: packages/milp_flare
+      run: uv run mypy
