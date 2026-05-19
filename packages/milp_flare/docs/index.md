@@ -20,5 +20,6 @@ for the underlying structures.
 installation
 user_guide/index
 prompts
+skills
 api/index
 ```
