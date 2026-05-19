@@ -11,8 +11,8 @@ for loading and working with it.
 
 installation
 user_guide/index
-dataset/problems/index
-dataset/index
+problems/index
+schema
 lean/index
 api/index
 ```

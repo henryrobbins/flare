@@ -1,7 +1,7 @@
 """Sphinx extension: generate one Markdown page per dataset problem.
 
 Loads the FormulationBench dataset via :mod:`formulation_bench` and writes
-``docs/dataset/problems/pN.md`` for every problem, plus an ``index.md``
+``docs/problems/pN.md`` for every problem, plus an ``index.md``
 toctree. Pages render each formulation's parameters, variables,
 assumptions, constraints, and objective from the LaTeX fields in
 ``formulation.json``, and render any ``metadata.notes`` (list of markdown
@@ -279,9 +279,9 @@ def _write_if_changed(path: Path, content: str) -> None:
 
 
 def generate(docs_dir: Path) -> None:
-    """Write generated problem pages under ``docs_dir/dataset/problems/``."""
+    """Write generated problem pages under ``docs_dir/problems/``."""
     ds = Dataset(_dataset_root(docs_dir))
-    out_dir = docs_dir / "dataset" / "problems"
+    out_dir = docs_dir / "problems"
     out_dir.mkdir(parents=True, exist_ok=True)
     for pid, problem in ds.problems.items():
         _write_if_changed(out_dir / f"p{pid}.md", _problem_page(pid, problem))

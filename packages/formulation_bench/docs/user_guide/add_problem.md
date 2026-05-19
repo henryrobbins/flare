@@ -30,7 +30,7 @@ many of each machine type minimize the total number of machines.
 
 The parameter *schema*: every parameter the problem refers to, with
 its description, type, and shape. Shapes follow the notation in
-{doc}`../dataset/index` — `[]` for a scalar, `["n"]` for a vector,
+{doc}`../schema` — `[]` for a scalar, `["n"]` for a vector,
 etc. Include a `metadata.source` block recording where the problem
 came from.
 

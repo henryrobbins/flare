@@ -13,7 +13,7 @@ and two generated files.
 
 ## 1. `formulation.json` (hand-written)
 
-The structured description of the MILP. See {doc}`../dataset/index`
+The structured description of the MILP. See {doc}`../schema`
 for the full schema; the required keys are:
 
 - `valid` — `true` if the formulation correctly captures the parent

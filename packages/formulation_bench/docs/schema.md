@@ -1,4 +1,4 @@
-# Dataset Structure
+# Dataset Schema
 
 Each problem is presented in several alternative formulations that may differ
 in variable naming, parameter naming, the algebraic form of the constraints,
