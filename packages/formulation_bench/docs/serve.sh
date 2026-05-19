@@ -10,6 +10,7 @@ repo_root="$(cd "$docs_dir/../../.." && pwd)"
 
 exec sphinx-autobuild \
     --watch "$repo_root/dataset" \
+    --watch "$docs_dir/../src" \
     "$docs_dir" \
     "$docs_dir/_build/html" \
     "$@"
