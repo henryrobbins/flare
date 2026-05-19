@@ -17,6 +17,8 @@ docs = [
     "myst-parser>=3",
     "furo",
     "sphinx-autodoc-typehints",
+    "sphinx-autobuild",
+    "numpydoc",
 ]
 
 [project.scripts]
@@ -51,7 +53,8 @@ strict = true
 files = ["src/milp_flare"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "src/milp_flare"]
+addopts = "--doctest-modules"
 markers = [
     "docker: tests that require Docker (opt-out: -m 'not docker')",
 ]

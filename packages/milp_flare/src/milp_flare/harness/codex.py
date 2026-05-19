@@ -10,6 +10,32 @@ _TEMPLATE: str = (SCRIPTS_DIR / "codex_agent.sh").read_text()
 
 
 class CodexHarness(Harness):
+    """FLARE harness backed by the Codex CLI.
+
+    Authenticates by bind-mounting ``~/.codex`` (populated via
+    ``codex login``) read-write into the container so Codex can refresh
+    its access token mid-session. Skill bundles are copied to
+    ``wd/.agents/skills/``; MCP configuration is handled inline in
+    ``codex_agent.sh``.
+
+    Parameters
+    ----------
+    config : HarnessConfig
+        Shared model and reasoning configuration. ``model`` must be an
+        OpenAI model identifier (e.g., ``"gpt-5.4"``).
+
+    Examples
+    --------
+    Drive FLARE with GPT-5.4 at high reasoning effort::
+
+        >>> from milp_flare import FLARE, HarnessConfig
+        >>> from milp_flare.harness import CodexHarness
+        >>> harness = CodexHarness(
+        ...     HarnessConfig(model="gpt-5.4", reasoning_effort="high")
+        ... )
+        >>> flare = FLARE(harness=harness)
+    """
+
     name = "codex"
 
     def configure_wd(self, wd: Path) -> None:

@@ -11,6 +11,32 @@ _TEMPLATE: str = (SCRIPTS_DIR / "claude_code_agent.sh").read_text()
 
 
 class ClaudeCodeHarness(Harness):
+    """FLARE harness backed by the Claude Code CLI.
+
+    Authenticates with a long-lived OAuth token
+    (``CLAUDE_CODE_OAUTH_TOKEN``) so runs bill against a Claude.ai
+    subscription rather than the API. MCP configuration is written to
+    ``wd/.mcp.json`` and skill bundles are copied to
+    ``wd/.claude/skills/``.
+
+    Parameters
+    ----------
+    config : HarnessConfig
+        Shared model and reasoning configuration. ``model`` must be a
+        Claude model identifier.
+
+    Examples
+    --------
+    Drive FLARE with Claude Opus 4.7 at medium reasoning effort::
+
+        >>> from milp_flare import FLARE, HarnessConfig
+        >>> from milp_flare.harness import ClaudeCodeHarness
+        >>> harness = ClaudeCodeHarness(
+        ...     HarnessConfig(model="claude-opus-4-7", reasoning_effort="medium")
+        ... )
+        >>> flare = FLARE(harness=harness)
+    """
+
     name = "claude_code"
 
     def configure_wd(self, wd: Path) -> None:

@@ -24,7 +24,29 @@ _COST_PER_MTOK: dict[str, tuple[float, float]] = {
 
 
 def compute_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float | None:
-    """Return estimated cost in USD, or None if the model isn't in the pricing table."""
+    """Estimate the USD cost of a run from token counts.
+
+    Looks up per-million-token input and output prices for ``model`` in
+    the package's pricing table and computes the total. Used as a fallback
+    when the underlying harness does not report cost directly (notably
+    Codex).
+
+    Parameters
+    ----------
+    model : str
+        Model identifier (e.g., ``"claude-opus-4-7"``). Must be a key in
+        the package's pricing table.
+    input_tokens : int
+        Total input (prompt) tokens consumed by the run.
+    output_tokens : int
+        Total output (completion) tokens produced by the run.
+
+    Returns
+    -------
+    cost_usd : float or None
+        Estimated USD cost, or ``None`` if ``model`` is not in the
+        pricing table.
+    """
     entry = _COST_PER_MTOK.get(model)
     if entry is None:
         return None
@@ -34,10 +56,52 @@ def compute_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float
 
 @dataclass
 class HarnessConfig:
+    """Common configuration for an agent harness.
+
+    Shared by all :class:`~milp_flare.harness.base.Harness` subclasses.
+    Specific harnesses may interpret ``reasoning`` / ``reasoning_effort``
+    differently depending on the underlying CLI and provider.
+
+    Attributes
+    ----------
+    model : str
+        Model identifier passed to the underlying CLI (e.g.,
+        ``"claude-opus-4-7"``, ``"gpt-5.4"``).
+    reasoning : bool, default False
+        Whether to enable extended reasoning, where supported.
+    reasoning_effort : str, optional
+        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
+        Forwarded to the harness-specific configuration.
+
+    Examples
+    --------
+    Build a config for a high-effort Claude Opus run::
+
+        >>> from milp_flare import HarnessConfig
+        >>> cfg = HarnessConfig(
+        ...     model="claude-opus-4-7", reasoning=True, reasoning_effort="high"
+        ... )
+        >>> cfg.model
+        'claude-opus-4-7'
+    """
+
     model: str
     reasoning: bool = False
     reasoning_effort: str | None = None
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "HarnessConfig":
+        """Build a :class:`HarnessConfig` from a plain dictionary.
+
+        Parameters
+        ----------
+        d : dict[str, Any]
+            Mapping of field name to value. Unknown keys raise
+            ``TypeError``.
+
+        Returns
+        -------
+        config : HarnessConfig
+            The constructed configuration.
+        """
         return cls(**d)

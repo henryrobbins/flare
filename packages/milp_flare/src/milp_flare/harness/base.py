@@ -11,6 +11,24 @@ from milp_flare.harness.config import HarnessConfig, compute_cost_usd
 
 @dataclass
 class HarnessRunResult:
+    """Per-run result returned by :meth:`Harness.run`.
+
+    Attributes
+    ----------
+    duration_s : float
+        Wall-clock duration of the agent run, in seconds.
+    cost_usd : float, optional
+        Estimated USD cost of the agent run, or ``None`` if the model is
+        unpriced and the harness cannot report cost directly.
+    input_tokens : int
+        Total input (prompt) tokens reported by the agent stream.
+    output_tokens : int
+        Total output (completion) tokens reported by the agent stream.
+    stop_reason : str, optional
+        Final stop reason reported by the agent (e.g., ``"end_turn"``,
+        ``"max_tokens"``). ``None`` if not reported.
+    """
+
     duration_s: float
     cost_usd: float | None
     input_tokens: int
@@ -22,6 +40,31 @@ IMAGE = "flare-agent:latest"
 
 
 class Harness(ABC):
+    """Base class for FLARE agent harnesses.
+
+    A harness drives a specific coding-agent CLI (Claude Code, Codex,
+    OpenCode) inside the ``flare-agent`` Docker container. Concrete
+    subclasses provide harness-specific Docker arguments, the agent
+    launch command, and a parser for the agent's JSONL output stream.
+
+    Parameters
+    ----------
+    config : HarnessConfig
+        Shared model and reasoning configuration.
+
+    Attributes
+    ----------
+    name : str
+        Class-level harness name (e.g., ``"claude_code"``).
+    config : HarnessConfig
+        The configuration this harness was constructed with.
+    model : str
+        Convenience accessor for ``config.model``.
+    effort : str
+        Convenience accessor for ``config.reasoning_effort``. Defaults to
+        ``"medium"`` when unset on the config.
+    """
+
     name: ClassVar[str]
 
     def __init__(self, config: HarnessConfig) -> None:
@@ -30,7 +73,13 @@ class Harness(ABC):
         self.effort = config.reasoning_effort or "medium"
 
     def method_config(self) -> dict[str, Any]:
-        """Return the config dict that will be written to artifacts_dir/config.json."""
+        """Return the config dict written to ``<output_path>/config.json``.
+
+        Returns
+        -------
+        config : dict[str, Any]
+            Harness name, Docker image, model, and reasoning settings.
+        """
         return {
             "harness": self.name,
             "image": IMAGE,
@@ -41,7 +90,18 @@ class Harness(ABC):
         }
 
     def configure_wd(self, wd: Path) -> None:
-        """Write all necessary files to the agent's working directory."""
+        """Write harness-specific files to the agent working directory.
+
+        Subclasses extend this to drop in MCP configuration, skill
+        bundles, and any other per-harness assets. The base
+        implementation writes the agent launch script (``agent.sh``) used
+        by the container entrypoint.
+
+        Parameters
+        ----------
+        wd : pathlib.Path
+            The agent working directory. Must already exist.
+        """
 
         if not wd.exists():
             raise RuntimeError("The agent working directory hasn't been created yet.")
@@ -51,6 +111,24 @@ class Harness(ABC):
         (wd / "agent.sh").write_text(self._agent_command())
 
     def run(self, wd: Path) -> HarnessRunResult:
+        """Run the agent in a Docker container against ``wd``.
+
+        Spawns ``docker run`` with the image-baked Lean environment,
+        bind-mounts ``wd`` into the container, and waits for the agent to
+        exit. Parses ``wd/agent_output.jsonl`` for token and cost
+        metadata.
+
+        Parameters
+        ----------
+        wd : pathlib.Path
+            The agent working directory to bind-mount at
+            ``/workspace/wd`` in the container.
+
+        Returns
+        -------
+        result : HarnessRunResult
+            Duration, cost, token counts, and stop reason.
+        """
 
         # Print the path to the agent's JSONL output for easy monitoring in real time
         jsonl_path = wd / "agent_output.jsonl"
@@ -83,7 +161,7 @@ class Harness(ABC):
         return HarnessRunResult(duration_s=round(duration, 1), **parsed)
 
     def _build_docker_cmd(self, wd: Path) -> list[str]:
-        """Assemble the full `docker run` command for this harness."""
+        """Assemble the full ``docker run`` command for this harness."""
         cmd = ["docker", "run"]
         # Automatically remove the container when it exits
         cmd += ["--rm"]
@@ -101,7 +179,7 @@ class Harness(ABC):
 
     @abstractmethod
     def _agent_docker_args(self) -> list[str]:
-        """Agent-specific `docker run` args (env vars, additional mounts, etc.)."""
+        """Agent-specific ``docker run`` args (env vars, additional mounts, etc.)."""
         ...
 
     @abstractmethod

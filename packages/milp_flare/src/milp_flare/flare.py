@@ -15,9 +15,21 @@ from milp_flare.prompts import render_flare_agent_prompt
 class FormulationInput:
     """Per-formulation inputs handed to the FLARE agent.
 
-    ``formulation_md`` is written to ``<label>/formulation.md`` and
-    ``solve_py`` to ``<label>/solve.py`` inside the agent working
-    directory.
+    Carries the two artifacts the agent needs for a single formulation:
+    a natural-language Markdown description and a runnable Gurobi script.
+    :meth:`FLARE.verify` writes them to ``<label>/formulation.md`` and
+    ``<label>/solve.py`` inside the agent working directory, where
+    ``<label>`` is ``A`` or ``B``.
+
+    Attributes
+    ----------
+    formulation_md : str
+        Markdown description of the formulation. Typically produced by
+        ``Formulation.render_markdown()`` from FormulationBench.
+    solve_py : str
+        Python source for a Gurobi script that solves the formulation.
+        Typically produced by ``Formulation.gen_solve_py()`` from
+        FormulationBench.
     """
 
     formulation_md: str
@@ -26,6 +38,29 @@ class FormulationInput:
 
 @dataclass
 class FLAREResult:
+    """Result of a FLARE verification run.
+
+    Returned by :meth:`FLARE.verify`. The same dictionary used to populate
+    this object is also serialized to ``<output_path>/result.json``.
+
+    Attributes
+    ----------
+    is_reformulation : bool
+        Final verdict. True if all sub-checks pass: both ``Formulation.lean``
+        files compile, ``Reformulation.lean`` compiles and contains a
+        ``def : MILPReformulation``, and the proof is ``sorry``-free.
+    duration_s : float, optional
+        Wall-clock duration of the agent run, in seconds.
+    cost_usd : float, optional
+        Estimated USD cost of the agent run. ``None`` when the harness
+        cannot report cost (e.g., the model is not in the pricing table).
+    metadata : dict[str, Any]
+        Per-check breakdown and harness run metadata: ``form_a_written``,
+        ``form_a_compiled``, ``form_b_written``, ``form_b_compiled``,
+        ``proof_compiled``, ``milp_reform_found``, ``sorry_free``,
+        ``agent_decision``, and token counts.
+    """
+
     is_reformulation: bool
     duration_s: float | None = None
     cost_usd: float | None = None
@@ -33,6 +68,57 @@ class FLAREResult:
 
 
 class FLARE:
+    """Agent-driven MILP reformulation verifier.
+
+    Given two MILP formulations ``A`` and ``B``, :meth:`verify` drives a
+    coding agent inside a Docker container to (1) auto-formalize each
+    formulation as a Lean 4 ``MILPFormulation`` and (2) construct a
+    ``MILPReformulation A B`` proof. After the agent exits, a post-hoc
+    inspection of the working directory decides whether the proof
+    type-checks and is ``sorry``-free.
+
+    Parameters
+    ----------
+    harness : Harness
+        The agent harness used to drive the in-container coding agent.
+        See :class:`~milp_flare.harness.claude_code.ClaudeCodeHarness`,
+        :class:`~milp_flare.harness.codex.CodexHarness`, and
+        :class:`~milp_flare.harness.opencode.OpenCodeHarness`.
+
+    Attributes
+    ----------
+    harness : Harness
+        The configured agent harness.
+    name : str
+        Verifier name (always ``"flare"``).
+
+    Examples
+    --------
+    Verify whether formulation ``b`` of problem ``p1`` is a reformulation
+    of formulation ``a`` (requires Docker and a valid harness credential
+    on the host):
+
+    .. code-block:: python
+
+        from pathlib import Path
+        from formulation_bench import Dataset
+        from milp_flare import FLARE, FormulationInput, HarnessConfig
+        from milp_flare.harness import ClaudeCodeHarness
+
+        ds = Dataset.load()
+        a = ds.problems[1].formulations["a"]
+        b = ds.problems[1].formulations["b"]
+
+        harness = ClaudeCodeHarness(HarnessConfig(model="claude-opus-4-7"))
+        flare = FLARE(harness=harness)
+        result = flare.verify(
+            FormulationInput(a.render_markdown(), a.gen_solve_py()),
+            FormulationInput(b.render_markdown(), b.gen_solve_py()),
+            output_path=Path("runs/p1_a_b"),
+        )
+        result.is_reformulation  # True
+    """
+
     def __init__(self, harness: Harness) -> None:
         self.harness = harness
 
@@ -41,6 +127,14 @@ class FLARE:
         return "flare"
 
     def method_config(self) -> dict[str, Any]:
+        """Return the method configuration dict written to ``config.json``.
+
+        Returns
+        -------
+        config : dict[str, Any]
+            Harness, image, model, and reasoning configuration. Forwarded
+            directly from :meth:`Harness.method_config`.
+        """
         return self.harness.method_config()
 
     def verify(
@@ -49,6 +143,32 @@ class FLARE:
         b: FormulationInput,
         output_path: Path,
     ) -> FLAREResult:
+        """Run FLARE on a pair of formulations and return the verdict.
+
+        Populates ``output_path`` with the agent working directory
+        (``wd/``), the rendered method config (``config.json``), and the
+        full result dictionary (``result.json``). The agent working
+        directory contains every input file written by FLARE and every
+        artifact produced by the agent.
+
+        Parameters
+        ----------
+        a : FormulationInput
+            Inputs for formulation A.
+        b : FormulationInput
+            Inputs for formulation B (the candidate reformulation of A).
+        output_path : pathlib.Path
+            Directory to populate with run artifacts. Created if missing.
+
+        Returns
+        -------
+        result : FLAREResult
+            The verdict, duration, cost, and per-check metadata.
+
+        Examples
+        --------
+        See :class:`FLARE`.
+        """
         # Create the artifacts directory at the output path and write config
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
