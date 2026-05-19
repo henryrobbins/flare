@@ -43,4 +43,5 @@ strict = true
 files = ["src/formulation_bench"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "src/formulation_bench"]
+addopts = "--doctest-modules"
