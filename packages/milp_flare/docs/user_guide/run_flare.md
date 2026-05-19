@@ -22,7 +22,7 @@ easiest way to drive FLARE end-to-end.
 from pathlib import Path
 
 from formulation_bench import Dataset
-from milp_flare import FLARE, FormulationInput, HarnessConfig
+from milp_flare import FLARE, FormulationInput
 from milp_flare.harness import ClaudeCodeHarness
 
 ds = Dataset.load()
@@ -30,9 +30,7 @@ p1 = ds.problem("p1")
 a = p1.formulation("a")
 b = p1.formulation("b")
 
-harness = ClaudeCodeHarness(
-    HarnessConfig(model="claude-opus-4-7", reasoning_effort="medium")
-)
+harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
 flare = FLARE(harness=harness)
 
 a_in = FormulationInput(

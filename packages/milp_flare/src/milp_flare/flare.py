@@ -100,14 +100,14 @@ class FLARE:
 
         from pathlib import Path
         from formulation_bench import Dataset
-        from milp_flare import FLARE, FormulationInput, HarnessConfig
+        from milp_flare import FLARE, FormulationInput
         from milp_flare.harness import ClaudeCodeHarness
 
         ds = Dataset.load()
         a = ds.problems[1].formulations["a"]
         b = ds.problems[1].formulations["b"]
 
-        harness = ClaudeCodeHarness(HarnessConfig(model="claude-opus-4-7"))
+        harness = ClaudeCodeHarness(model="claude-opus-4-7")
         flare = FLARE(harness=harness)
         result = flare.verify(
             FormulationInput(a.render_markdown(), a.gen_solve_py()),

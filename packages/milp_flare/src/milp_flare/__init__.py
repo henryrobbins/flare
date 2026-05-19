@@ -1,6 +1,6 @@
 from milp_flare.flare import FLARE, FLAREResult, FormulationInput
 from milp_flare.flare_nl import FLARENLPrompt, flare_nl_prompt
-from milp_flare.harness import HARNESSES, Harness, HarnessConfig, HarnessRunResult
+from milp_flare.harness import HARNESSES, Harness, HarnessRunResult
 
 __all__ = [
     "FLARE",
@@ -9,7 +9,6 @@ __all__ = [
     "FormulationInput",
     "HARNESSES",
     "Harness",
-    "HarnessConfig",
     "HarnessRunResult",
     "flare_nl_prompt",
 ]

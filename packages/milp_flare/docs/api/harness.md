@@ -11,8 +11,6 @@
 ## Configuration
 
 ```{eval-rst}
-.. autoclass:: milp_flare.harness.config.HarnessConfig
-
 .. autofunction:: milp_flare.harness.config.compute_cost_usd
 ```
 

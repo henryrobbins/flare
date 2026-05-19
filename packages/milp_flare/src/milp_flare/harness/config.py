@@ -1,6 +1,3 @@
-from dataclasses import dataclass
-from typing import Any
-
 # Cost per million tokens (input, output). Used to compute cost_usd for direct
 # API calls. Update when model pricing changes.
 # https://platform.claude.com/docs/en/about-claude/pricing
@@ -52,56 +49,3 @@ def compute_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float
         return None
     input_price, output_price = entry
     return (input_tokens * input_price + output_tokens * output_price) / 1_000_000
-
-
-@dataclass
-class HarnessConfig:
-    """Common configuration for an agent harness.
-
-    Shared by all :class:`~milp_flare.harness.base.Harness` subclasses.
-    Specific harnesses may interpret ``reasoning`` / ``reasoning_effort``
-    differently depending on the underlying CLI and provider.
-
-    Attributes
-    ----------
-    model : str
-        Model identifier passed to the underlying CLI (e.g.,
-        ``"claude-opus-4-7"``, ``"gpt-5.4"``).
-    reasoning : bool, default False
-        Whether to enable extended reasoning, where supported.
-    reasoning_effort : str, optional
-        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
-        Forwarded to the harness-specific configuration.
-
-    Examples
-    --------
-    Build a config for a high-effort Claude Opus run::
-
-        >>> from milp_flare import HarnessConfig
-        >>> cfg = HarnessConfig(
-        ...     model="claude-opus-4-7", reasoning=True, reasoning_effort="high"
-        ... )
-        >>> cfg.model
-        'claude-opus-4-7'
-    """
-
-    model: str
-    reasoning: bool = False
-    reasoning_effort: str | None = None
-
-    @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> "HarnessConfig":
-        """Build a :class:`HarnessConfig` from a plain dictionary.
-
-        Parameters
-        ----------
-        d : dict[str, Any]
-            Mapping of field name to value. Unknown keys raise
-            ``TypeError``.
-
-        Returns
-        -------
-        config : HarnessConfig
-            The constructed configuration.
-        """
-        return cls(**d)

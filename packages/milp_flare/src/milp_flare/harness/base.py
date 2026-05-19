@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
-from milp_flare.harness.config import HarnessConfig, compute_cost_usd
+from milp_flare.harness.config import compute_cost_usd
 
 
 @dataclass
@@ -49,28 +49,28 @@ class Harness(ABC):
 
     Parameters
     ----------
-    config : HarnessConfig
-        Shared model and reasoning configuration.
+    model : str
+        Model identifier passed to the underlying CLI (e.g.,
+        ``"claude-opus-4-7"``, ``"gpt-5.4"``).
+    effort : str, default ``"medium"``
+        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
+        Forwarded to the harness-specific configuration.
 
     Attributes
     ----------
     name : str
         Class-level harness name (e.g., ``"claude_code"``).
-    config : HarnessConfig
-        The configuration this harness was constructed with.
     model : str
-        Convenience accessor for ``config.model``.
+        The model identifier this harness was constructed with.
     effort : str
-        Convenience accessor for ``config.reasoning_effort``. Defaults to
-        ``"medium"`` when unset on the config.
+        The reasoning effort level this harness was constructed with.
     """
 
     name: ClassVar[str]
 
-    def __init__(self, config: HarnessConfig) -> None:
-        self.config = config
-        self.model = config.model
-        self.effort = config.reasoning_effort or "medium"
+    def __init__(self, model: str, effort: str = "medium") -> None:
+        self.model = model
+        self.effort = effort
 
     def method_config(self) -> dict[str, Any]:
         """Return the config dict written to ``<output_path>/config.json``.
@@ -78,15 +78,13 @@ class Harness(ABC):
         Returns
         -------
         config : dict[str, Any]
-            Harness name, Docker image, model, and reasoning settings.
+            Harness name, Docker image, model, and effort.
         """
         return {
             "harness": self.name,
             "image": IMAGE,
             "model": self.model,
             "effort": self.effort,
-            "reasoning": self.config.reasoning,
-            "reasoning_effort": self.config.reasoning_effort,
         }
 
     def configure_wd(self, wd: Path) -> None:

@@ -19,6 +19,4 @@ verifiers:
     harness: opencode
     client:
       model: claude-opus-4-7
-      max_tokens: 16384
-      reasoning: true
-      reasoning_effort: medium
+      effort: medium

@@ -6,7 +6,6 @@ from typing import Any
 
 from milp_flare.assets import SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
-from milp_flare.harness.config import HarnessConfig
 
 _TEMPLATE: str = (SCRIPTS_DIR / "opencode_agent.sh").read_text()
 
@@ -35,8 +34,10 @@ class OpenCodeHarness(Harness):
 
     Parameters
     ----------
-    config : HarnessConfig
-        Shared model and reasoning configuration.
+    model : str
+        Model identifier passed to the underlying CLI.
+    effort : str, default ``"medium"``
+        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
     provider : str, optional
         Override the inferred provider (``"anthropic"``, ``"openai"``,
         ``"google"``, ``"deepseek"``).
@@ -50,12 +51,9 @@ class OpenCodeHarness(Harness):
     --------
     Drive FLARE with OpenCode against OpenAI::
 
-        >>> from milp_flare import FLARE, HarnessConfig
+        >>> from milp_flare import FLARE
         >>> from milp_flare.harness import OpenCodeHarness
-        >>> harness = OpenCodeHarness(
-        ...     HarnessConfig(model="gpt-5.4", reasoning=True),
-        ...     provider="openai",
-        ... )
+        >>> harness = OpenCodeHarness(model="gpt-5.4", provider="openai")
         >>> flare = FLARE(harness=harness)
     """
 
@@ -63,11 +61,12 @@ class OpenCodeHarness(Harness):
 
     def __init__(
         self,
-        config: HarnessConfig,
+        model: str,
+        effort: str = "medium",
         provider: str | None = None,
     ) -> None:
-        super().__init__(config)
-        self.provider = provider or _infer_provider(config.model)
+        super().__init__(model, effort)
+        self.provider = provider or _infer_provider(model)
 
     def method_config(self) -> dict[str, Any]:
         return {**super().method_config(), "provider": self.provider}
@@ -85,14 +84,14 @@ class OpenCodeHarness(Harness):
 
     def _opencode_config(self) -> dict[str, Any]:
         """Minimal opencode.json to register the model and lean-lsp MCP server."""
-        options: dict[str, Any] = {}
-        if self.config.reasoning:
-            if self.provider == "anthropic":
-                options["thinking"] = {"type": "adaptive"}
-                if self.config.reasoning_effort:
-                    options["output_config"] = {"effort": self.config.reasoning_effort}
-            elif self.config.reasoning_effort:
-                options["reasoningEffort"] = self.config.reasoning_effort
+        options: dict[str, Any]
+        if self.provider == "anthropic":
+            options = {
+                "thinking": {"type": "adaptive"},
+                "output_config": {"effort": self.effort},
+            }
+        else:
+            options = {"reasoningEffort": self.effort}
         return {
             "$schema": "https://opencode.ai/config.json",
             # https://opencode.ai/docs/providers/

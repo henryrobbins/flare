@@ -1,7 +1,6 @@
 from milp_flare.harness.base import Harness, HarnessRunResult
 from milp_flare.harness.claude_code import ClaudeCodeHarness
 from milp_flare.harness.codex import CodexHarness
-from milp_flare.harness.config import HarnessConfig
 from milp_flare.harness.opencode import OpenCodeHarness
 
 HARNESSES: dict[str, type[Harness]] = {
@@ -15,7 +14,6 @@ __all__ = [
     "ClaudeCodeHarness",
     "CodexHarness",
     "Harness",
-    "HarnessConfig",
     "HarnessRunResult",
     "OpenCodeHarness",
 ]

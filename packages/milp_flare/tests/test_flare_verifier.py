@@ -24,7 +24,6 @@ from milp_flare import (
     FLARE,
     FormulationInput,
     Harness,
-    HarnessConfig,
     HarnessRunResult,
 )
 
@@ -128,7 +127,7 @@ class DummyHarness(Harness):
         b: Formulation,
         expected: bool,
     ) -> None:
-        super().__init__(HarnessConfig(model="dummy-model"))
+        super().__init__(model="dummy-model")
         self.repo_root = repo_root
         self.a = a
         self.b = b
@@ -203,7 +202,7 @@ class GroundTruthHarness(Harness):
         b: Formulation,
         expected: bool,
     ) -> None:
-        super().__init__(HarnessConfig(model="dummy-model"))
+        super().__init__(model="dummy-model")
         self.repo_root = repo_root
         self.a = a
         self.b = b

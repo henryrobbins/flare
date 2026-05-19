@@ -42,7 +42,6 @@ numpydoc_xref_aliases = {
     "FormulationInput": "milp_flare.flare.FormulationInput",
     "FLARENLPrompt": "milp_flare.flare_nl.FLARENLPrompt",
     "Harness": "milp_flare.harness.base.Harness",
-    "HarnessConfig": "milp_flare.harness.config.HarnessConfig",
     "HarnessRunResult": "milp_flare.harness.base.HarnessRunResult",
     "ClaudeCodeHarness": "milp_flare.harness.claude_code.ClaudeCodeHarness",
     "CodexHarness": "milp_flare.harness.codex.CodexHarness",

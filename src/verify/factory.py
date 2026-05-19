@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from milp_flare import HARNESSES, Harness, HarnessConfig
+from milp_flare import HARNESSES, Harness
 
 from src.llm_client import make_client
 from src.verify.base import ReformulationVerifier
@@ -19,7 +19,7 @@ def build_verifier(spec: dict[str, Any]) -> ReformulationVerifier:
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
       - {type: flare, harness: claude_code|codex|opencode,
-         client: {<HarnessConfig fields, optional provider>}}
+         client: {model: <str>, effort?: <str>, provider?: <str>}}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
 
@@ -60,8 +60,7 @@ def _build_harness(spec: dict[str, Any]) -> Harness:
     cls = HARNESSES.get(htype)
     if cls is None:
         raise ValueError(f"unknown flare harness: {htype!r}")
-    client_spec = dict(spec.pop("client"))
-    provider = client_spec.pop("provider", None)
-    config = HarnessConfig.from_dict(client_spec)
-    kwargs: dict[str, Any] = {"provider": provider} if provider is not None else {}
-    return cls(config=config, **kwargs)
+    kwargs = dict(spec.pop("client"))
+    if htype != "opencode":
+        kwargs.pop("provider", None)
+    return cls(**kwargs)

@@ -88,12 +88,10 @@ The matching key is forwarded into the container.
 ```python
 from pathlib import Path
 
-from milp_flare import FLARE, FormulationInput, HarnessConfig
+from milp_flare import FLARE, FormulationInput
 from milp_flare.harness import ClaudeCodeHarness
 
-harness = ClaudeCodeHarness(
-    HarnessConfig(model="claude-opus-4-7", reasoning_effort="medium")
-)
+harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
 flare = FLARE(harness=harness)
 
 a = FormulationInput(formulation_md=open("A.md").read(),

@@ -21,19 +21,18 @@ class ClaudeCodeHarness(Harness):
 
     Parameters
     ----------
-    config : HarnessConfig
-        Shared model and reasoning configuration. ``model`` must be a
-        Claude model identifier.
+    model : str
+        Claude model identifier (e.g., ``"claude-opus-4-7"``).
+    effort : str, default ``"medium"``
+        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
 
     Examples
     --------
     Drive FLARE with Claude Opus 4.7 at medium reasoning effort::
 
-        >>> from milp_flare import FLARE, HarnessConfig
+        >>> from milp_flare import FLARE
         >>> from milp_flare.harness import ClaudeCodeHarness
-        >>> harness = ClaudeCodeHarness(
-        ...     HarnessConfig(model="claude-opus-4-7", reasoning_effort="medium")
-        ... )
+        >>> harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
         >>> flare = FLARE(harness=harness)
     """
 

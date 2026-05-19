@@ -2,25 +2,15 @@
 
 FLARE ships three agent harnesses — Claude Code, Codex, and OpenCode.
 All three implement the {class}`~milp_flare.harness.base.Harness`
-interface, share the same {class}`~milp_flare.harness.config.HarnessConfig`
-fields, and are swappable in `FLARE(harness=...)`.
+interface and are swappable in `FLARE(harness=...)`.
 
 ## Common configuration
 
-```python
-from milp_flare import HarnessConfig
-
-config = HarnessConfig(
-    model="claude-opus-4-7",
-    reasoning=True,
-    reasoning_effort="high",  # "low" | "medium" | "high"
-)
-```
-
-`reasoning` toggles extended reasoning; `reasoning_effort` is forwarded
-to the underlying CLI/provider where supported. The harness's
-`method_config()` dict (written to `runs/<id>/config.json`) records
-the harness name, image tag, model, and effort.
+Every harness takes a `model` identifier and an optional reasoning
+`effort` (`"low"`, `"medium"`, or `"high"`, defaulting to `"medium"`).
+The harness's `method_config()` dict (written to
+`runs/<id>/config.json`) records the harness name, image tag, model,
+and effort.
 
 ## Claude Code
 
@@ -28,12 +18,9 @@ Uses a long-lived OAuth token instead of an API key so the run bills
 against your Claude.ai subscription.
 
 ```python
-from milp_flare import HarnessConfig
 from milp_flare.harness import ClaudeCodeHarness
 
-harness = ClaudeCodeHarness(
-    HarnessConfig(model="claude-opus-4-7", reasoning_effort="medium")
-)
+harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
 ```
 
 Requires `CLAUDE_CODE_OAUTH_TOKEN` on the host (`claude setup-token`).
@@ -43,12 +30,9 @@ are copied to `wd/.claude/skills/`.
 ## Codex
 
 ```python
-from milp_flare import HarnessConfig
 from milp_flare.harness import CodexHarness
 
-harness = CodexHarness(
-    HarnessConfig(model="gpt-5.4", reasoning_effort="high")
-)
+harness = CodexHarness(model="gpt-5.4", effort="high")
 ```
 
 Requires `~/.codex` populated via `codex login`; FLARE bind-mounts it
@@ -64,13 +48,9 @@ from the model name (`claude-*` → `anthropic`, `deepseek-*` →
 to override.
 
 ```python
-from milp_flare import HarnessConfig
 from milp_flare.harness import OpenCodeHarness
 
-harness = OpenCodeHarness(
-    HarnessConfig(model="gpt-5.4", reasoning=True, reasoning_effort="medium"),
-    provider="openai",
-)
+harness = OpenCodeHarness(model="gpt-5.4", effort="medium", provider="openai")
 ```
 
 Requires the matching provider API key in the environment
@@ -84,10 +64,10 @@ The `HARNESSES` registry maps harness names to classes, which is
 convenient for config-driven experiment scripts:
 
 ```python
-from milp_flare import HARNESSES, HarnessConfig
+from milp_flare import HARNESSES
 
 harness_cls = HARNESSES["claude_code"]
-harness = harness_cls(HarnessConfig(model="claude-opus-4-7"))
+harness = harness_cls(model="claude-opus-4-7")
 ```
 
 ## Cost tracking

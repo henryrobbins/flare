@@ -22,7 +22,7 @@ from pathlib import Path
 
 import pytest
 
-from milp_flare import HARNESSES, Harness, HarnessConfig
+from milp_flare import HARNESSES, Harness
 from milp_flare.assets import LEAN_DIR
 
 pytestmark = pytest.mark.docker
@@ -67,12 +67,7 @@ def _model_for(cli: str) -> str:
 
 
 def _harness(cli: str) -> Harness:
-    cfg = HarnessConfig(
-        model=_model_for(cli),
-        reasoning=False,
-        reasoning_effort="low",
-    )
-    return HARNESSES[cli](config=cfg)
+    return HARNESSES[cli](model=_model_for(cli), effort="low")
 
 
 def _make_pair_dir(repo_root: Path, case_id: str) -> Path:

@@ -20,19 +20,18 @@ class CodexHarness(Harness):
 
     Parameters
     ----------
-    config : HarnessConfig
-        Shared model and reasoning configuration. ``model`` must be an
+    model : str
         OpenAI model identifier (e.g., ``"gpt-5.4"``).
+    effort : str, default ``"medium"``
+        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
 
     Examples
     --------
     Drive FLARE with GPT-5.4 at high reasoning effort::
 
-        >>> from milp_flare import FLARE, HarnessConfig
+        >>> from milp_flare import FLARE
         >>> from milp_flare.harness import CodexHarness
-        >>> harness = CodexHarness(
-        ...     HarnessConfig(model="gpt-5.4", reasoning_effort="high")
-        ... )
+        >>> harness = CodexHarness(model="gpt-5.4", effort="high")
         >>> flare = FLARE(harness=harness)
     """
 
