@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
 
-from milp_flare.harness.config import compute_cost_usd
+from milp_flare.harness.cost import compute_cost_usd
 
 
 @dataclass

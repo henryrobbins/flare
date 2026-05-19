@@ -75,6 +75,6 @@ harness = harness_cls(model="claude-opus-4-7")
 Each harness returns a `cost_usd` field on the run result. Claude Code
 reports per-run USD directly; Codex computes it from token totals
 using the pricing table in
-{mod}`milp_flare.harness.config`; OpenCode sums per-step costs
+{mod}`milp_flare.harness.cost`; OpenCode sums per-step costs
 reported by the CLI. Update the pricing table when provider prices
 change.

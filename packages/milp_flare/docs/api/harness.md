@@ -11,7 +11,7 @@
 ## Configuration
 
 ```{eval-rst}
-.. autofunction:: milp_flare.harness.config.compute_cost_usd
+.. autofunction:: milp_flare.harness.cost.compute_cost_usd
 ```
 
 ## Claude Code
