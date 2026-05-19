@@ -50,10 +50,10 @@ class ExecutionVerifier(ReformulationVerifier):
         fdir.mkdir(parents=True, exist_ok=True)
 
         params_path = fdir / "parameters.json"
-        formulation.gen_params(output_path=params_path)
+        formulation.run_gen_params(output_path=params_path)
 
         solve_path = fdir / "solve.py"
-        solve_path.write_text(formulation.gurobipy_code)
+        solve_path.write_text(formulation.gen_solve_py())
 
         solution_path = fdir / "solution.json"
         subprocess.run(

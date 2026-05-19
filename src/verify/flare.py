@@ -24,10 +24,10 @@ class FLAREVerifier(ReformulationVerifier):
         self, a: Formulation, b: Formulation, output_path: Path
     ) -> ReformulationResult:
         a_in = FormulationInput(
-            formulation_md=a.render_markdown(), solve_py=a.gurobipy_code
+            formulation_md=a.render_markdown(), solve_py=a.gen_solve_py()
         )
         b_in = FormulationInput(
-            formulation_md=b.render_markdown(), solve_py=b.gurobipy_code
+            formulation_md=b.render_markdown(), solve_py=b.gen_solve_py()
         )
         r = self._inner.verify(a_in, b_in, output_path)
         return ReformulationResult(

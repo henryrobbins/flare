@@ -102,7 +102,7 @@ from formulation_bench import Dataset
 ds = Dataset.load()
 f = ds.problem("p57").formulation("g")
 
-(f.path / "solve.py").write_text(f.gurobipy_code)
+(f.path / "solve.py").write_text(f.gen_solve_py())
 ```
 
 Alternatively, run the dataset-wide regenerate-and-validate script,

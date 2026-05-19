@@ -249,8 +249,8 @@ def _inputs(
     a: Formulation, b: Formulation
 ) -> tuple[FormulationInput, FormulationInput]:
     return (
-        FormulationInput(formulation_md="", solve_py=a.gurobipy_code),
-        FormulationInput(formulation_md="", solve_py=b.gurobipy_code),
+        FormulationInput(formulation_md="", solve_py=a.gen_solve_py()),
+        FormulationInput(formulation_md="", solve_py=b.gen_solve_py()),
     )
 
 

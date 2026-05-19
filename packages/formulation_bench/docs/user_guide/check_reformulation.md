@@ -52,8 +52,8 @@ harness = ClaudeCodeHarness(
 )
 flare = FLARE(harness=harness)
 
-a_in = FormulationInput(formulation_md=a.render_markdown(), solve_py=a.gurobipy_code)
-b_in = FormulationInput(formulation_md=b.render_markdown(), solve_py=b.gurobipy_code)
+a_in = FormulationInput(formulation_md=a.render_markdown(), solve_py=a.gen_solve_py())
+b_in = FormulationInput(formulation_md=b.render_markdown(), solve_py=b.gen_solve_py())
 
 result = flare.verify(a_in, b_in, output_path=Path("runs/p1_a_b"))
 

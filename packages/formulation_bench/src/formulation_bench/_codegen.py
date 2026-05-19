@@ -1,4 +1,4 @@
-"""Deterministic codegen backing :attr:`Formulation.gurobipy_code`."""
+"""Deterministic codegen backing :meth:`Formulation.gen_solve_py`."""
 
 from __future__ import annotations
 

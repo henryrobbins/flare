@@ -76,7 +76,7 @@ class Formulation:
     True
     >>> sorted(f.variables)                    # doctest: +SKIP
     ['x', 'y']
-    >>> print(f.gurobipy_code[:80])            # doctest: +SKIP
+    >>> print(f.gen_solve_py()[:80])           # doctest: +SKIP
     import json
     import gurobipy as gp
     from gurobipy import GRB, quicksum
@@ -149,8 +149,7 @@ class Formulation:
         new.constraints = self.constraints + [constraint]
         return new
 
-    @property
-    def gurobipy_code(self) -> str:
+    def gen_solve_py(self) -> str:
         """The full ``solve.py`` source for this formulation, as a string.
 
         Deterministically generated from ``formulation.json``.
@@ -158,8 +157,8 @@ class Formulation:
 
         Examples
         --------
-        >>> f = ds.problems[1].formulations["a"]   # doctest: +SKIP
-        >>> "model.optimize()" in f.gurobipy_code  # doctest: +SKIP
+        >>> f = ds.problems[1].formulations["a"]      # doctest: +SKIP
+        >>> "model.optimize()" in f.gen_solve_py()    # doctest: +SKIP
         True
         """
         return generate(self)
@@ -178,7 +177,7 @@ class Formulation:
         """
         return _render_markdown(self, include_implicit=include_implicit)
 
-    def gen_params(
+    def run_gen_params(
         self,
         input_path: str | Path | None = None,
         output_path: str | Path | None = None,
