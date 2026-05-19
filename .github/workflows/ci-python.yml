@@ -97,5 +97,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
+      - name: Pre-warm dataset cache
+        run: uv run python -c "from formulation_bench import Dataset; Dataset.load()"
+
       - name: Run unit tests (no gurobi, no docker)
         run: uv run pytest -m 'not docker and not gurobi'
