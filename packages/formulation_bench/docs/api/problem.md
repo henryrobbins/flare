@@ -1,6 +1,6 @@
-# `problem`
+# `Problem`
 
 ```{eval-rst}
-.. automodule:: formulation_bench.problem
-   :members:
+.. autoclass:: formulation_bench.problem.Problem
+   :exclude-members: description, data, formulations, solution
 ```

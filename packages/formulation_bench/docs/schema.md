@@ -8,6 +8,7 @@ others differ in a way that changes the feasible set or the optimal value
 (not a reformulation). The Lean 4 files in `reformulations/` formalize each
 reformulation pair.
 
+(directory-structure)=
 ## Directory Structure
 
 ```
@@ -34,6 +35,7 @@ dataset/
     └── ...
 ```
 
+(problem-level-files)=
 ## Problem-Level Files
 
 For each problem `pN`:
@@ -49,6 +51,7 @@ For each problem `pN`:
 - **`solution.json`** — A reference optimal solution and objective value for
   the instance in `data.json`.
 
+(formulation-level-files)=
 ## Formulation-Level Files
 
 For each formulation `pN/formulations/x/`:
@@ -86,6 +89,7 @@ For each formulation `pN/formulations/x/`:
     include in the generated `solve.py` (e.g., `["import math"]`). These are
     emitted after the standard gurobipy imports.
 
+(variable-shape-notation)=
 ### Variable Shape Notation
 
 The `shape` field of a variable (and of parameters) encodes the index
@@ -123,6 +127,7 @@ mathematical formulation, but `indices` is what drives code generation.
 - **`Formulation.lean`** — A Lean 4 encoding of the MILP as a
   `MILPFormulation` (defined in `Common.lean`).
 
+(reformulation-pairs-and-proofs)=
 ## Reformulation Pairs and Proofs
 
 The `reformulations` key in `dataset.json` is a flat list of formulation pairs:

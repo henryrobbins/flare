@@ -1,5 +1,3 @@
-"""The :class:`Reformulation` class: a labelled pair of MILP formulations."""
-
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -8,33 +6,43 @@ from .formulation import Formulation
 
 @dataclass(frozen=True)
 class Reformulation:
-    """A labelled pair of formulations from the same problem.
+    """A pair of MILP formulations with a reformulation label.
 
-    Each entry records whether ``b`` is a *reformulation* of ``a`` — that is,
-    whether the two formulations describe the same optimization problem
-    (same feasible set up to a bijection on the decision variables, same
-    optimal value on every instance). Positive entries
-    (``is_reformulation=True``) are accompanied by a machine-checked Lean 4
-    proof in ``reformulations/pN/<a>_<b>.lean``; negative entries are kept
-    as labelled counterexamples.
+    Consists of two MILP formulations ``a`` and ``b`` and a boolean ``is_reformulation``
+    label indicating whether ``b`` is a reformulation of ``a``. The formal definition
+    of *reformulation* is given in :doc:`/lean/reformulation`. Positive entries
+    (``is_reformulation=True``) are accompanied by a Lean 4 proof whose path is
+    accessible via the ``lean_proof_path`` attribute; negative entries have no proof
+    and ``lean_proof_path`` resolves to ``None``.
 
-    Parameters
+    Attributes
     ----------
     a : Formulation
-        The first formulation in the pair.
+        The base formulation.
     b : Formulation
-        The second formulation in the pair.
+        The reformulation candidate.
     is_reformulation : bool
-        ``True`` iff ``b`` is a reformulation of ``a``.
+        ``True`` iff ``b`` is a *reformulation* of ``a``.
+    lean_proof_path : pathlib.Path or None
+        For positive entries, the path to the accompanying Lean 4 proof file. For
+        negative entries, ``None`` since no proof exists.
 
     Examples
     --------
-    >>> from formulation_bench import Dataset
-    >>> ds = Dataset("dataset")                                   # doctest: +SKIP
-    >>> refs = ds.reformulations                                  # doctest: +SKIP
-    >>> positive = [r for r in refs if r.is_reformulation][0]     # doctest: +SKIP
-    >>> positive.a.problem is positive.b.problem                  # doctest: +SKIP
-    True
+
+    Formulation ``b`` of :doc:`/problems/p12` is a reformulation of formulation ``a``::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> reform = ds.reformulations[80]  # corresponds to p12.a -> p12.b
+        >>> reform.a.problem.name
+        'Traveling Salesman Problem (TSP)'
+        >>> reform.b.problem.name
+        'Traveling Salesman Problem (TSP)'
+        >>> reform.b.constraints[-1].description  # cutting plane added by p12.b
+        'Depot-Exit Position Bound (EC1)...'
+        >>> reform.is_reformulation
+        True
     """
 
     a: Formulation
@@ -43,12 +51,6 @@ class Reformulation:
 
     @property
     def lean_proof_path(self) -> Path | None:
-        """Path to the Lean reformulation proof file, or ``None``.
-
-        For positive entries (``is_reformulation=True``), resolves to
-        ``<dataset_root>/reformulations/<problem>/<a>_<b>.lean``. Returns
-        ``None`` for negative entries, since no proof exists.
-        """
         if not self.is_reformulation:
             return None
         problem_dir = self.a.problem.path

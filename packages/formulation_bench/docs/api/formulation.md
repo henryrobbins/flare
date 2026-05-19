@@ -1,6 +1,6 @@
-# `formulation`
+# `Formulation`
 
 ```{eval-rst}
-.. automodule:: formulation_bench.formulation
-   :members:
+.. autoclass:: formulation_bench.formulation.Formulation
+   :exclude-members: problem, lean_formulation_path
 ```

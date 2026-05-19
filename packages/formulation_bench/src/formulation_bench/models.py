@@ -1,10 +1,6 @@
-"""Typed records for parameters, variables, constraints, and other formulation parts.
+"""Typed records for components of a formulation.
 
-These dataclasses mirror the JSON schema used by ``problem.json`` and
-``formulation.json``. They are populated by :class:`Problem` and
-:class:`Formulation` when reading from disk; you typically don't construct
-them yourself except when deriving new formulations programmatically (see
-:meth:`Formulation.with_constraint`).
+These dataclasses mirror the JSON schema defined in :doc:`/schema`.
 """
 
 from dataclasses import dataclass
@@ -14,19 +10,62 @@ from typing import Any
 
 @dataclass(frozen=True)
 class Parameter:
-    """Schema entry for a single parameter.
+    """MILP formulation parameter.
 
-    Parameters
+    Attributes
     ----------
     description : str
         Human-readable description of the parameter.
     type : ParameterType
-        Numeric type. Defaults to ``continuous`` when omitted from JSON.
+        Numeric type of a parameter (continuous, integer, or binary).
     shape : list[int | str]
         Index structure. ``[]`` is a scalar; a string entry names a scalar
         parameter that drives the dimension's range; a string of the form
         ``"X[Y]"`` denotes a ragged dimension. See the dataset
         documentation for the full notation.
+
+    Examples
+    --------
+
+    Examine the ``CashMachineProcessingRate`` of formulation ``a`` for problem
+    :doc:`/problems/p1`::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> p1 = ds.problems[1]
+        >>> p = p1.formulations["a"].parameters["CashMachineProcessingRate"]
+        >>> p.description
+        'Processing rate of a cash-based machine in people per hour'
+        >>> p.type
+        <ParameterType.continuous: 'continuous'>
+        >>> p.shape
+        []
+
+    Examine the shape of the cost matrix ``c`` in :doc:`/problems/p12`. The
+    ``n`` dimension is driven by the scalar parameter ``n`` (number of cities)::
+
+        >>> p12 = ds.problems[12]
+        >>> p = p12.formulations["a"].parameters["c"]
+        >>> p.description
+        'Travel cost from city i to city j'
+        >>> p.type
+        <ParameterType.continuous: 'continuous'>
+        >>> p.shape
+        ['n', 'n']
+
+    Examine the shape of the startup lag parameter in :doc:`/problems/p11`. The
+    ``n_G`` dimension is driven by the scalar parameter ``n_G`` (number of
+    generators), and the ``n_S[n_G]`` dimension is ragged, driven by the array
+    parameter ``n_S`` (number of startup categories for each generator) which is
+    indexed by the ``n_G`` dimension::
+
+        >>> p = ds.problems[11].formulations["a"].parameters["ell"]
+        >>> p.description
+        'Startup lag for each startup category of each generator'
+        >>> p.type
+        <ParameterType.integer: 'integer'>
+        >>> p.shape
+        ['n_G', 'n_S[n_G]']
     """
 
     description: str
@@ -44,9 +83,9 @@ class Parameter:
 
 @dataclass(frozen=True)
 class Variable:
-    """Schema entry for a single decision variable.
+    """MILP formulation decision variable.
 
-    Parameters
+    Attributes
     ----------
     description : str
         Human-readable description of the variable.
@@ -62,6 +101,58 @@ class Variable:
         rectangular product of dimensions. When ``indices`` is set,
         ``shape`` may still be present (typically with ``|X|`` cardinality
         notation) to document the conceptual size.
+
+    Examples
+    --------
+
+    A scalar variable (empty ``shape``) from formulation ``a`` of
+    :doc:`/problems/p1`::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> v = ds.problems[1].formulations["a"].variables["NumCashMachines"]
+        >>> v.description
+        'The number of cash-based machines'
+        >>> v.type
+        <VariableType.integer: 'integer'>
+        >>> v.shape
+        []
+        >>> v.indices is None
+        True
+
+    A one-dimensional variable in formulation ``a`` of :doc:`/problems/p2`. The
+    ``NumExperiments`` dimension is driven by the scalar parameter of the same
+    name::
+
+        >>> v = ds.problems[2].formulations["a"].variables["ConductExperiment"]
+        >>> v.type
+        <VariableType.integer: 'integer'>
+        >>> v.shape
+        ['NumExperiments']
+
+    A ragged variable in formulation ``a`` of :doc:`/problems/p11`. The middle
+    dimension ``n_S[n_G]`` is ragged: for each generator ``g`` it ranges over
+    ``n_S[g]`` startup categories::
+
+        >>> v = ds.problems[11].formulations["a"].variables["d_su"]
+        >>> v.type
+        <VariableType.binary: 'binary'>
+        >>> v.shape
+        ['n_G', 'n_S[n_G]', 'T']
+
+    A variable indexed by an irregular set in formulation ``a`` of
+    :doc:`/problems/p7`. The ``shape`` uses ``|I|`` cardinality notation to
+    document the conceptual size, while ``indices`` gives the explicit
+    expression passed to ``model.addVars``::
+
+        >>> I = ds.problems[7].formulations["a"].definitions["I"]
+        >>> I.description
+        'Set of column interval pairs (a, b) with a <= b'
+        >>> v = ds.problems[7].formulations["a"].variables["x"]
+        >>> v.shape
+        ['N', '|I|']
+        >>> v.indices
+        '(i, a, b) for i in R for (a, b) in I'
     """
 
     description: str
@@ -99,20 +190,33 @@ class ParameterType(str, Enum):
 class Definition:
     """A named derived quantity computed from parameters.
 
-    Definitions are emitted into the generated ``solve.py`` in declaration
-    order, before variables are declared. Typical uses: big-M constants,
-    pre-computed index sets, and other values referenced in variable or
-    constraint code.
+    Typically defines sets, constants, etc... that are used by multiple
+    constraints and/or the objective.
 
-    Parameters
+    Attributes
     ----------
     description : str
         Human-readable description.
-    code : dict[str, str]
-        Per-language source for the definition. Currently only the
-        ``"python"`` key is consumed by codegen.
     formulation : str
         LaTeX form of the definition.
+    code : dict[str, str]
+        Per-language source for the definition. The ``"python"`` key is used by
+        :meth:`Formulation.gen_solve_py` to generate Python code that computes the
+        definition in the solver script.
+
+    Examples
+    --------
+
+    Formulation ``a`` of :doc:`/problems/p8` defines a big-M constant ``M``::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> p8 = ds.problems[8]
+        >>> d = p8.formulations["a"].definitions["M"]
+        >>> d.description
+        'Big-M constant: sum of all processing times'
+        >>> d.code["python"]
+        'M = sum(p[j][k] for j in range(n) for k in range(m))'
     """
 
     description: str
@@ -132,19 +236,35 @@ class Definition:
 class Assumption:
     """An assumption on the problem parameters.
 
-    Parameters
+    Attributes
     ----------
     description : str
         Human-readable description.
     formulation : str
-        LaTeX form of the assumption (e.g. ``r"d \\geq 0"``).
+        LaTeX form of the assumption.
+    code : dict[str, str]
+        Per-language source for the assumption. The ``"python"`` key is used by
+        :meth:`Formulation.gen_solve_py` to generate assertions in the solver script.
     explicit : bool
         ``True`` if the assumption is stated explicitly in the source
-        problem text; ``False`` if it is implicit (e.g. non-negativity of
-        a physical rate).
-    code : dict[str, str]
-        Per-language source that asserts the assumption at runtime
-        (currently only ``"python"`` is used).
+        problem text; ``False`` if it is implicit.
+
+    Examples
+    --------
+
+    Formulation ``a`` of :doc:`/problems/p8` assumes that all processing times
+    are non-negative::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> p8 = ds.problems[8]
+        >>> a = p8.formulations["a"]
+        >>> a.assumptions[0].description
+        'Processing times are non-negative.'
+        >>> a.assumptions[0].explicit
+        False
+        >>> a.assumptions[0].code["python"]
+        'assert all(p[j][k] >= 0 for j in range(n) for k in range(m))'
     """
 
     description: str
@@ -164,36 +284,41 @@ class Assumption:
 
 @dataclass(frozen=True)
 class Constraint:
-    """A constraint on the decision variables.
+    r"""A constraint on the decision variables.
 
-    Parameters
+    Attributes
     ----------
     description : str
         Human-readable description.
     formulation : str
         LaTeX form of the constraint.
-    explicit : bool
-        ``True`` if the constraint appears in the original problem
-        statement; ``False`` for implied constraints such as non-negativity
-        bounds.
     code : dict[str, str]
-        Per-language source. The ``"gurobipy"`` key is consumed by codegen.
+        Per-language source for the constraint. The ``"gurobipy"`` key is used by
+        :meth:`Formulation.gen_solve_py` to add constraints to the model in the
+        solver script.
+    explicit : bool
+        ``True`` if the constraint is stated explicitly in the source
+        problem text; ``False`` if it is implicit.
 
     Examples
     --------
-    Build a constraint by hand for use with
-    :meth:`Formulation.with_constraint`::
 
-        >>> from formulation_bench import Constraint
-        >>> Constraint(
-        ...     description="capacity bound",
-        ...     formulation=r"\\sum_j x_j \\leq C",
-        ...     explicit=True,
-        ...     code={
-        ...         "gurobipy": "model.addConstr(quicksum(x[j] for j in range(n)) <= C)"
-        ...     },
-        ... )                                                 # doctest: +ELLIPSIS
-        Constraint(...)
+    Formulation ``a`` of :doc:`/problems/p12` includes the MTZ subtour elimination
+    constraint::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> p12 = ds.problems[12]
+        >>> a = p12.formulations["a"]
+        >>> c = a.constraints[2]
+        >>> c.description
+        'MTZ subtour elimination constraint.'
+        >>> c.explicit
+        True
+        >>> c.formulation
+        'u_i - u_j + n \\cdot x_{ij} \\leq n - 1 ...'
+        >>> c.code["gurobipy"]
+        'model.addConstrs(u[i] - u[j] + n * x[i, j] <= n - 1...)'
     """
 
     description: str
@@ -213,17 +338,34 @@ class Constraint:
 
 @dataclass(frozen=True)
 class Objective:
-    """The objective function of a formulation.
+    r"""The objective function of a formulation.
 
-    Parameters
+    Attributes
     ----------
     description : str
         Human-readable description.
     formulation : str
         LaTeX form of the objective.
     code : dict[str, str]
-        Per-language source. The ``"gurobipy"`` key is consumed by codegen
-        and is expected to call ``model.setObjective(...)``.
+        Per-language source for the objective. The ``"gurobipy"`` key is used by
+        :meth:`Formulation.gen_solve_py` to set the objective in the model in the
+        solver script.
+
+    Examples
+    --------
+
+    Formulation ``a`` of :doc:`/problems/p12` minimizes the total travel cost::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> p12 = ds.problems[12]
+        >>> a = p12.formulations["a"]
+        >>> a.objective.description
+        'Minimize the total travel cost of the Hamiltonian cycle.'
+        >>> a.objective.formulation
+        '\\min \\sum_{i \\in V} \\sum_{j \\in V,\\, j \\neq i} c_{ij} \\cdot x_{ij}'
+        >>> a.objective.code["gurobipy"]
+        'model.setObjective(gp.quicksum(c[i][j] * x[i, j] ...), GRB.MINIMIZE)'
     """
 
     description: str
@@ -243,14 +385,24 @@ class Objective:
 class Solution:
     """A reference optimal solution.
 
-    Parameters
+    Attributes
     ----------
     variables : dict[str, object]
-        Variable values keyed by name. Each entry is a JSON-decoded payload
-        of the form ``{"kind": "scalar"|"array"|"indexed", "data": ...}``
-        as written by the generated ``solve.py``.
+        Variable values keyed by name.
     objective : float
         Optimal objective value.
+
+    Examples
+    --------
+
+    :doc:`/problems/p12` has a reference solution with objective value 6859::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> p12 = ds.problems[12]
+        >>> p12.solution.objective
+        6859
+
     """
 
     variables: dict[str, object]

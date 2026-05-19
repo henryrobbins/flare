@@ -1,6 +1,7 @@
-# `dataset`
+# `Dataset`
 
 ```{eval-rst}
-.. automodule:: formulation_bench.dataset
+.. autoclass:: formulation_bench.dataset.Dataset
    :members:
+   :no-show-inheritance:
 ```

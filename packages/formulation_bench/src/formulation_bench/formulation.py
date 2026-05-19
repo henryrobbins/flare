@@ -1,5 +1,3 @@
-"""The :class:`Formulation` class: one MILP formulation of a problem."""
-
 from __future__ import annotations
 
 import copy
@@ -24,63 +22,90 @@ if TYPE_CHECKING:
 
 
 class Formulation:
-    """A single MILP formulation of a :class:`Problem`.
-
-    A ``Formulation`` corresponds to one
-    ``problems/pN/formulations/x/`` directory. It loads ``formulation.json``
-    eagerly into typed fields.
+    """A MILP formulation for an optimization problem.
 
     Parameters
     ----------
     path : str or pathlib.Path
-        Path to the formulation directory.
+        Path to the directory containing this formulation. See
+        :ref:`formulation-level-files` for the expected directory structure.
     problem : Problem
-        The parent problem this formulation belongs to.
+        The parent optimization problem this formulation belongs to.
 
     Attributes
     ----------
     path : pathlib.Path
         Resolved absolute path to the formulation directory.
+    problem : Problem
+        The parent optimization problem this formulation belongs to.
     valid : bool
-        Whether this formulation is a valid formulation of its parent
-        problem (i.e. its feasible set and objective match the intended
-        problem). Invalid formulations are kept in the dataset as labelled
-        negative examples.
+        Whether this formulation is a faithful reformulation of the parent problem.
     parameters : dict[str, Parameter]
-        Parameters consumed by this formulation. May differ from the parent
-        problem's parameters (e.g. derived constants).
+        The parametrization of this formulation. Note this may differ from the
+        parent problem's parameters which define the general problem data.
     definitions : dict[str, Definition]
         Optional named derived quantities computed from parameters before
-        variables are declared. Emitted into the generated ``solve.py`` in
-        declaration order.
+        variables are declared. Useful for defining sets, constants, etc... that
+        are referenced in multiple places in the formulation.
     assumptions : list[Assumption]
-        Parameter assumptions (explicit or implicit).
+        Assumptions on the problem parameters.
     variables : dict[str, Variable]
         Decision variables, keyed by name.
     constraints : list[Constraint]
-        Constraints on the decision variables (explicit and implicit).
+        Constraints on the decision variables.
     objective : Objective
         Objective function.
     imports : list[str]
-        Extra Python ``import`` statements emitted in the generated
-        ``solve.py``.
+        :meth:`gen_solve_py` generates a Python script with an implementation of
+        this formulation in Gurobi. By default, the import block includes ``json``,
+        ``gurobipy``, and ``argpase``. If the formulation requires additional imports
+        (e.g., ``import networkx as nx``), they are included here.
+    lean_formulation_path : pathlib.Path
+        Path to a Lean file (``Formulation.lean``) containing a formal specification
+        of this formulation. See :doc:`/lean/formulation` for details on how a
+        MILP formulation is represented in Lean.
     metadata : dict[str, Any]
-        Free-form metadata from ``formulation.json``.
+        Free-form metadata about the formulation. Typically includes a ``source``
+        field with details about the origin of the formulation and a ``notes``
+        field with additional commentary.
 
     Examples
     --------
-    >>> from formulation_bench import Dataset
-    >>> ds = Dataset("dataset")          # doctest: +SKIP
-    >>> f = ds.problems[1].formulations["a"]   # doctest: +SKIP
-    >>> f.valid                                # doctest: +SKIP
-    True
-    >>> sorted(f.variables)                    # doctest: +SKIP
-    ['x', 'y']
-    >>> print(f.gen_solve_py()[:80])           # doctest: +SKIP
-    import json
-    import gurobipy as gp
-    from gurobipy import GRB, quicksum
-    ...
+
+    Load formulation ``a`` of :doc:`/problems/p12`::
+
+        >>> from formulation_bench import Dataset
+        >>> ds = Dataset("dataset")
+        >>> f = ds.problems[12].formulations["a"]
+        >>> f.problem.name
+        'Traveling Salesman Problem (TSP)'
+
+    Check if the formulation is valid::
+
+        >>> f.valid
+        True
+
+    Get the formulation's parameters and assumptions::
+
+        >>> f.parameters
+        {'n': Parameter(...), 'c': Parameter(...)}
+        >>> f.assumptions
+        []
+
+    Get the first constraint of the formulation::
+
+        >>> f.constraints[0]
+        Constraint(description='Each city has exactly one outgoing arc ...)
+
+    Get the formulation's objective function::
+
+        >>> f.objective
+        Objective(description='Minimize the total travel cost ...)
+
+    Get the path to the Lean specification of this formulation::
+
+        >>> f.lean_formulation_path
+        PosixPath('.../dataset/problems/p12/formulations/a/Formulation.lean')
     """
 
     def __init__(self, path: str | Path, problem: Problem) -> None:
@@ -109,62 +134,96 @@ class Formulation:
 
     @property
     def problem(self) -> Problem:
-        """The parent :class:`Problem`."""
         return self._problem
 
     @property
     def lean_formulation_path(self) -> Path:
-        """Path to this formulation's ``Formulation.lean`` file."""
         return self.path / "Formulation.lean"
 
     def with_constraint(self, constraint: Constraint) -> Formulation:
-        """Return a new :class:`Formulation` with one extra constraint appended.
+        r"""Return a new :class:`Formulation` with one extra constraint appended.
 
-        The original formulation is not modified. Useful for building cutting
-        planes or hypothesis constraints on top of an existing formulation.
+        The original formulation is not modified. Useful for creating formulations
+        from cutting planes or fixing variable values.
 
         Parameters
         ----------
         constraint : Constraint
+            The constraint to be added to the formulation.
 
         Returns
         -------
-        Formulation
+        formulation : Formulation
+            A new formulation with the added constraint.
 
         Examples
         --------
-        >>> f = ds.problems[6].formulations["a"]               # doctest: +SKIP
-        >>> from formulation_bench import Constraint
-        >>> cut = Constraint(                                  # doctest: +SKIP
-        ...     description="symmetry-breaking cut",
-        ...     formulation=r"x_0 \\leq x_1",
-        ...     explicit=False,
-        ...     code={"gurobipy": "model.addConstr(x[0] <= x[1])"},
-        ... )
-        >>> f2 = f.with_constraint(cut)                        # doctest: +SKIP
-        >>> len(f2.constraints) == len(f.constraints) + 1      # doctest: +SKIP
-        True
+
+        Add a cutting plane to the MTZ TSP formulation of :doc:`/problems/p12`
+        that prevents two-city subtours::
+
+            >>> from formulation_bench import Dataset
+            >>> ds = Dataset("dataset")
+            >>> f = ds.problems[12].formulations["a"]  # MTZ formulation of TSP
+            >>> c = Constraint(
+            ...     description="No 2-city subtours",
+            ...     formulation=r"x_{1,2} + x_{2,1} \leq 1",
+            ...     explicit=False,
+            ...     code={"gurobipy": "model.addConstr(x[1,2] + x[2,1] <= 1)"}
+            ... )
+            >>> new_f = f.with_constraint(c)
+            >>> new_f.constraints[-1]
+            Constraint(description='No 2-city subtours', ...)
+
         """
         new = copy.copy(self)
         new.constraints = self.constraints + [constraint]
         return new
 
     def gen_solve_py(self) -> str:
-        """The full ``solve.py`` source for this formulation, as a string.
+        """Generate a Python script with a Gurobi implementation of this formulation.
 
-        Deterministically generated from ``formulation.json``.
-        Equivalent to the contents of ``solve.py`` on disk.
+        The script is generated from the ``gurobipy`` code snippets in the ``code``
+        attribute of every formulation component (parameters, definitions,
+        assumptions, variables, constraints, and objective). Additional :attr:`imports`
+        are also included at the top of the script.
+
+        The resulting script expects ``--params`` and ``--solution`` command-line
+        arguments for paths to the input parameters and output solution, respectively.
 
         Examples
         --------
-        >>> f = ds.problems[1].formulations["a"]      # doctest: +SKIP
-        >>> "model.optimize()" in f.gen_solve_py()    # doctest: +SKIP
-        True
+
+        Generate the solve script for :doc:`/problems/p12`::
+
+            >>> from formulation_bench import Dataset
+            >>> ds = Dataset("dataset")
+            >>> f = ds.problems[12].formulations["a"]  # MTZ formulation of TSP
+            >>> script = f.gen_solve_py()
+            >>> print(script)
+            import json
+            import gurobipy as gp
+            from gurobipy import GRB
+            import argparse
+            ...
+            if __name__ == "__main__":
+                parser = argparse.ArgumentParser()
+                parser.add_argument("params", help="Path to parameters.json")
+                parser.add_argument("solution", help="Path to write solution.json")
+                ...
+
         """
         return generate(self)
 
     def render_markdown(self, include_implicit: bool = True) -> str:
-        """Render this formulation as a Markdown document.
+        r"""Render this formulation in Markdown.
+
+        The output is produced by rendering the following Jinja template. The
+        ``assumptions`` and ``constraints`` passed to this template are filtered
+        according to ``include_implicit`` flag.
+
+        .. literalinclude:: ../../src/formulation_bench/templates/formulation.j2
+           :language: jinja
 
         Parameters
         ----------
@@ -173,8 +232,59 @@ class Formulation:
 
         Returns
         -------
-        str
-        """
+        markdown : str
+            The rendered Markdown string.
+
+        Examples
+        --------
+
+        Render a formulation of :doc:`/problems/p12` without implicit constraints::
+
+            >>> from formulation_bench import Dataset
+            >>> ds = Dataset("dataset")
+            >>> f = ds.problems[12].formulations["a"]  # MTZ formulation of TSP
+            >>> md = f.render_markdown(include_implicit=False)
+            >>> print(md)
+            # Traveling Salesman Problem (TSP)
+            <BLANKLINE>
+            ## Problem Description
+            <BLANKLINE>
+            The Traveling Salesman Problem (TSP) aims to find the shortest cycle in a graph that visits every node exactly once.
+            ...
+            ## Formulation
+            <BLANKLINE>
+            ### Parameters
+            <BLANKLINE>
+            - **n** (type: integer, shape: `[]`): Number of cities
+            - **c** (type: continuous, shape: `['n', 'n']`): Travel cost from city i to city j
+            ...
+            ### Variables
+            <BLANKLINE>
+            - **x** (type: binary, shape: `['n', 'n']`): 1 if the tour goes directly from city i to city j, 0 otherwise
+            - **u** (type: continuous, shape: `['n']`): MTZ position of city i in the tour
+            <BLANKLINE>
+            ### Constraints
+            <BLANKLINE>
+            - Each city has exactly one outgoing arc in the tour.
+            $$\sum_{j \in V,\, j \neq i} x_{ij} = 1 \quad \forall i \in V$$
+            - Each city has exactly one incoming arc in the tour.
+            $$\sum_{i \in V,\, i \neq j} x_{ij} = 1 \quad \forall j \in V$$
+            - MTZ subtour elimination constraint.
+            $$u_i - u_j + n \cdot x_{ij} \leq n - 1 \quad \forall i, j \in V \setminus \{0\},\; i \neq j$$
+            - Depot position is fixed to 1 to anchor the tour ordering.
+            $$u_0 = 1$$
+            - Lower bound on MTZ position: each non-depot city's position is at least 2.
+            $$u_i \geq 2 \quad \forall i \in V \setminus \{0\}$$
+            - Upper bound on MTZ position: each non-depot city's position is at most n.
+            $$u_i \leq n \quad \forall i \in V \setminus \{0\}$$
+            <BLANKLINE>
+            ### Objective
+            <BLANKLINE>
+            Minimize the total travel cost of the Hamiltonian cycle.
+            $$\min \sum_{i \in V} \sum_{j \in V,\, j \neq i} c_{ij} \cdot x_{ij}$$
+            <BLANKLINE>
+
+        """  # noqa: E501
         return _render_markdown(self, include_implicit=include_implicit)
 
     def run_gen_params(
@@ -184,17 +294,42 @@ class Formulation:
     ) -> None:
         """Run this formulation's ``gen_params.py`` script.
 
-        The script reads the parent problem's instance data and writes a
-        ``parameters.json`` payload that ``solve.py`` can consume.
+        Each formulation includes a ``gen_params.py`` script that transforms
+        problem-level instance data into the specific parameter values used by
+        the formulation. Note the solver script generated by :meth:`gen_solve_py`
+        expects these formulation-specific parameters.
 
         Parameters
         ----------
         input_path : str or pathlib.Path, optional
-            Path to a ``data.json`` file. Defaults to the parent problem's
-            ``data.json``.
+            Path to a ``data.json`` file containing the problem instance data.
+            Defaults to the parent problem's ``data.json``.
         output_path : str or pathlib.Path, optional
             Path to write the generated parameters. Defaults to
-            ``<formulation>/parameters.json``.
+            ``parameters.json`` in this formulation's directory.
+
+        Examples
+        --------
+
+        Run the parameter generation script for formulation ``b`` of
+        :doc:`/problems/p1`::
+
+            >>> import json
+            >>> from formulation_bench import Dataset
+            >>> ds = Dataset("dataset")
+            >>> f = ds.problems[1].formulations["b"]
+
+            >>> # Inspect the raw problem instance data
+            >>> data = json.load(open(f.problem.path / "data.json", "r"))
+            >>> data["CashMachineProcessingRate"]
+            20
+
+            >>> # Run the parameter generation script and inspect
+            >>> f.run_gen_params()
+            >>> params = json.load(open(f.path / "parameters.json", "r"))
+            >>> params["A"]  # The variable name for "CashMachineProcessingRate"
+            20
+
         """
         script = self.path / "gen_params.py"
         needs_data = 'add_argument("data"' in script.read_text()

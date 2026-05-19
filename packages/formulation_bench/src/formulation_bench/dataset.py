@@ -1,5 +1,3 @@
-"""Top-level entry point for loading the FormulationBench dataset."""
-
 import json
 from pathlib import Path
 
@@ -9,40 +7,31 @@ from .reformulation import Reformulation
 
 
 class Dataset:
-    """An on-disk FormulationBench dataset.
-
-    A ``Dataset`` loads the problems and reformulations listed in
-    ``<root>/dataset.json``. Individual formulations are read from disk on
-    first access (see :class:`Formulation`).
+    """FormulationBench dataset.
 
     Parameters
     ----------
     root : str or pathlib.Path
-        Path to the dataset root directory, i.e. the directory containing
-        ``dataset.json`` and the ``problems/`` subtree.
+        Path to the root directory containing the FormulationBench dataset. See
+        :doc:`/schema` for the expected directory structure.
 
     Attributes
     ----------
     root : pathlib.Path
         Resolved absolute path to the dataset root.
     problems : dict[int, Problem]
-        Mapping from integer problem id (``1`` for ``p1``, ``2`` for ``p2``,
-        ...) to :class:`Problem`. Iteration order matches ``dataset.json``.
+        Mapping from integer problem ID (e.g., ``1`` for ``p1``) to :class:`Problem`.
     reformulations : list[Reformulation]
-        All reformulation entries declared under the ``reformulations`` key
-        of ``dataset.json``. Empty if no such key is present. Includes both
-        positive (``is_reformulation=True``) and negative
-        (``is_reformulation=False``) examples; filter on
-        :attr:`Reformulation.is_reformulation` if you only want one.
+        List of all labelled reformulation pairs in the dataset.
 
     Examples
     --------
-    Load the dataset shipped with this repository (run from the repo root)::
+    Load the dataset from a local ``./dataset`` directory::
 
         >>> from formulation_bench import Dataset
-        >>> ds = Dataset("dataset")
-        >>> sorted(ds.problems)[:5]
-        [1, 2, 3, 4, 5]
+        >>> ds = Dataset("./dataset")
+        >>> ds
+        Dataset(root=..., n_problems=20, n_reformulations=96)
 
     Access a specific problem and one of its formulations::
 
@@ -54,8 +43,8 @@ class Dataset:
 
         >>> pos = [r for r in ds.reformulations if r.is_reformulation]
         >>> neg = [r for r in ds.reformulations if not r.is_reformulation]
-        >>> len(pos), len(neg)  # doctest: +SKIP
-        (..., ...)
+        >>> len(pos), len(neg)
+        (70, 26)
     """
 
     def __init__(self, root: str | Path) -> None:
@@ -83,28 +72,41 @@ class Dataset:
         cls,
         version: str | None = None,
         cache_dir: str | Path | None = None,
-        *,
         force: bool = False,
-        sha256: str | None = None,
     ) -> "Dataset":
-        """Download a released dataset tarball and return a :class:`Dataset`.
+        """Load the FormulationBench dataset, downloading it if necessary.
 
         Thin wrapper around :func:`formulation_bench.download_dataset` that
-        constructs a :class:`Dataset` from the extracted root. See that
-        function for caching and verification semantics.
+        downloads the dataset and constructs a :class:`Dataset`. See that
+        function for versioning and caching semantics.
 
         Parameters
         ----------
-        version : str, optional
-            Release tag on the FLARE GitHub repo, e.g. ``"dataset-v0.1"``.
-            Defaults to :data:`formulation_bench.DEFAULT_DATASET_VERSION`.
-        cache_dir, force, sha256
-            Passed through to :func:`download_dataset`.
+        version, cache_dir, force
+            Passed through to :func:`formulation_bench.download_dataset`.
+
+        Returns
+        -------
+        dataset : Dataset
+            The loaded dataset.
+
+        Examples
+        --------
+
+        Download the default version of the dataset (or load from cache)::
+
+            >>> from formulation_bench import Dataset
+            >>> ds = Dataset.load()
+            >>> sorted(ds.problems)[:5]
+            [1, 2, 3, 4, 5]
+
         """
-        root = download_dataset(
-            version, cache_dir=cache_dir, force=force, sha256=sha256
-        )
+        root = download_dataset(version, cache_dir=cache_dir, force=force)
         return cls(root)
 
     def __repr__(self) -> str:
-        return f"Dataset(root={self.root!r}, problems={list(self.problems.keys())})"
+        return (
+            f"Dataset(root={self.root!r},"
+            f" n_problems={len(self.problems)},"
+            f" n_reformulations={len(self.reformulations)})"
+        )
