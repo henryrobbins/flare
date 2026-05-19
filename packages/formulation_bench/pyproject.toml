@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "formulation-bench"
-version = "0.1.0"
+version = "0.2.0"
 description = "Utilities for working with the FormulationBench dataset."
 requires-python = ">=3.10"
 dependencies = ["jinja2>=3"]
