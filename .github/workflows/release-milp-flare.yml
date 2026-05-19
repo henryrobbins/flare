@@ -31,8 +31,10 @@ jobs:
             echo "tag=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Checkout tag
-        run: git checkout "${{ steps.tag.outputs.tag }}"
+      - name: Refetch annotated tag and checkout
+        run: |
+          git fetch --force --tags origin "refs/tags/${{ steps.tag.outputs.tag }}:refs/tags/${{ steps.tag.outputs.tag }}"
+          git checkout "${{ steps.tag.outputs.tag }}"
 
       - uses: astral-sh/setup-uv@v5
 
