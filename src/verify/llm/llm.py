@@ -28,7 +28,7 @@ class LLMVerifier(ReformulationVerifier):
     def name(self) -> str:
         return self._name
 
-    def method_config(self) -> dict[str, Any]:
+    def get_config_dict(self) -> dict[str, Any]:
         return {
             "llm": dataclasses.asdict(self.client.config),
             "template": self.template,
@@ -42,7 +42,7 @@ class LLMVerifier(ReformulationVerifier):
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
         (artifacts_dir / "config.json").write_text(
-            json.dumps(self.method_config(), indent=2)
+            json.dumps(self.get_config_dict(), indent=2)
         )
 
         rendered = render_reformulation(

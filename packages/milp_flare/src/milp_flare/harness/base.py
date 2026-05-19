@@ -72,7 +72,7 @@ class Harness(ABC):
         self.model = model
         self.effort = effort
 
-    def method_config(self) -> dict[str, Any]:
+    def get_config_dict(self) -> dict[str, Any]:
         """Return the config dict written to ``<output_path>/config.json``.
 
         Returns

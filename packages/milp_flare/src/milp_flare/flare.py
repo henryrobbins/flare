@@ -120,16 +120,16 @@ class FLARE:
     def __init__(self, harness: Harness) -> None:
         self.harness = harness
 
-    def method_config(self) -> dict[str, Any]:
+    def get_config_dict(self) -> dict[str, Any]:
         """Return the method configuration dict written to ``config.json``.
 
         Returns
         -------
         config : dict[str, Any]
             Harness, image, model, and reasoning configuration. Forwarded
-            directly from :meth:`Harness.method_config`.
+            directly from :meth:`Harness.get_config_dict`.
         """
-        return self.harness.method_config()
+        return self.harness.get_config_dict()
 
     def verify(
         self,
@@ -167,7 +167,7 @@ class FLARE:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(
-            json.dumps(self.method_config(), indent=2)
+            json.dumps(self.get_config_dict(), indent=2)
         )
 
         # Setup the agent's working directory

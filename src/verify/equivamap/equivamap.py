@@ -149,7 +149,7 @@ class EquivaMapVerifier(ReformulationVerifier):
     def name(self) -> str:
         return "equivamap"
 
-    def method_config(self) -> dict[str, Any]:
+    def get_config_dict(self) -> dict[str, Any]:
         return {"tolerance": TOLERANCE, "llm": dataclasses.asdict(self.client.config)}
 
     def verify(
@@ -158,7 +158,7 @@ class EquivaMapVerifier(ReformulationVerifier):
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(
-            json.dumps(self.method_config(), indent=2)
+            json.dumps(self.get_config_dict(), indent=2)
         )
 
         start = time.time()

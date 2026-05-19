@@ -68,8 +68,8 @@ class OpenCodeHarness(Harness):
         super().__init__(model, effort)
         self.provider = provider or _infer_provider(model)
 
-    def method_config(self) -> dict[str, Any]:
-        return {**super().method_config(), "provider": self.provider}
+    def get_config_dict(self) -> dict[str, Any]:
+        return {**super().get_config_dict(), "provider": self.provider}
 
     def configure_wd(self, wd: Path) -> None:
         super().configure_wd(wd)

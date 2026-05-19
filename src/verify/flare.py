@@ -17,8 +17,8 @@ class FLAREVerifier(ReformulationVerifier):
     def name(self) -> str:
         return "flare"
 
-    def method_config(self) -> dict[str, Any]:
-        return self._inner.method_config()
+    def get_config_dict(self) -> dict[str, Any]:
+        return self._inner.get_config_dict()
 
     def verify(
         self, a: Formulation, b: Formulation, output_path: Path

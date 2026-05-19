@@ -8,7 +8,7 @@ interface and are swappable in `FLARE(harness=...)`.
 
 Every harness takes a `model` identifier and an optional reasoning
 `effort` (`"low"`, `"medium"`, or `"high"`, defaulting to `"medium"`).
-The harness's `method_config()` dict (written to
+The harness's `get_config_dict()` dict (written to
 `runs/<id>/config.json`) records the harness name, image tag, model,
 and effort.
 
