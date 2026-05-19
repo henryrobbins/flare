@@ -59,11 +59,12 @@ def test_data_cached(problem1: Problem) -> None:
     assert problem1.data is problem1.data
 
 
-def test_formulations_lazy(problem1: Problem) -> None:
-    assert "formulations" not in problem1.__dict__
-    formulations = problem1.formulations
+def test_formulations_lazy(dataset: Dataset) -> None:
+    p = Problem(dataset.root / "problems" / "p1")
+    assert "formulations" not in p.__dict__
+    formulations = p.formulations
     assert isinstance(formulations, dict)
-    assert "formulations" in problem1.__dict__
+    assert "formulations" in p.__dict__
 
 
 def test_formulations_cached(problem1: Problem) -> None:
