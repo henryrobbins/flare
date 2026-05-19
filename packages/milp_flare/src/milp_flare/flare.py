@@ -89,8 +89,6 @@ class FLARE:
     ----------
     harness : Harness
         The configured agent harness.
-    name : str
-        Verifier name (always ``"flare"``).
 
     Examples
     --------
@@ -121,10 +119,6 @@ class FLARE:
 
     def __init__(self, harness: Harness) -> None:
         self.harness = harness
-
-    @property
-    def name(self) -> str:
-        return "flare"
 
     def method_config(self) -> dict[str, Any]:
         """Return the method configuration dict written to ``config.json``.

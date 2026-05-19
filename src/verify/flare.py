@@ -15,7 +15,7 @@ class FLAREVerifier(ReformulationVerifier):
 
     @property
     def name(self) -> str:
-        return self._inner.name
+        return "flare"
 
     def method_config(self) -> dict[str, Any]:
         return self._inner.method_config()
