@@ -13,7 +13,7 @@ ASSET_NAME = "dataset.tar.gz"
 
 #: Dataset release tag that this version of the package is built against.
 #: Bumped when the package's defaults move to a newer dataset snapshot.
-DEFAULT_DATASET_VERSION = "dataset-v0.1"
+DEFAULT_DATASET_VERSION = "dataset-v0.2.0"
 
 
 def _default_cache_dir() -> Path:

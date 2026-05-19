@@ -18,6 +18,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Resolve tag
         id: tag
@@ -41,9 +44,18 @@ jobs:
         run: |
           TAG="${{ steps.tag.outputs.tag }}"
           SHA=$(awk '{print $1}' dist/dataset.tar.gz.sha256)
+          SHORT=$(git rev-parse --short "$TAG^{commit}")
+          # Strip the leading "<tag>\n\n" subject git prepends for annotated tags,
+          # leaving just the body. Falls back to empty for lightweight tags.
+          MSG=$(git tag -l --format='%(contents:body)' "$TAG")
+          {
+            echo "$MSG"
+            echo
+            echo "Dataset snapshot at $SHORT."
+            echo
+            echo "sha256: \`$SHA\`"
+          } > dist/notes.md
           gh release create "$TAG" \
             dist/dataset.tar.gz dist/dataset.tar.gz.sha256 \
             --title "$TAG" \
-            --notes "Dataset snapshot at $(git rev-parse --short HEAD).
-
-          sha256: \`$SHA\`"
+            --notes-file dist/notes.md
