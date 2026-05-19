@@ -72,7 +72,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
-      - name: Type check (mypy)
+      - name: Type check (mypy) — root
+        run: uv run mypy
+
+      - name: Type check (mypy) — formulation_bench
+        working-directory: packages/formulation_bench
+        run: uv run mypy
+
+      - name: Type check (mypy) — milp_flare
+        working-directory: packages/milp_flare
         run: uv run mypy
 
   test:
