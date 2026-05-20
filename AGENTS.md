@@ -16,6 +16,7 @@ results.
 ├── src/                     # experiment code (LLM client, prompts, verifiers)
 ├── experiments/             # experiment scripts and configs
 ├── scripts/                 # utility scripts (analysis, dataset, review)
+├── site/                    # paper landing page (Astro, deployed to GitHub Pages)
 ├── lakefile.toml
 ├── lean-toolchain
 ├── pyproject.toml
@@ -34,6 +35,11 @@ guide for the area you are working in instead of duplicating it here:
 - **`milp-flare` package** —
   [`packages/milp_flare/AGENTS.md`](packages/milp_flare/AGENTS.md), including
   the Docker harness setup.
+- **Paper landing page** — [`site/README.md`](site/README.md). Astro project
+  built with `npm run dev` / `npm run build` from `site/`; deployed to
+  GitHub Pages (https://flare.henryrobbins.com/) on pushes to the `site`
+  branch by `.github/workflows/deploy-site.yml`. Content lives in
+  [`site/src/paper.mdx`](site/src/paper.mdx).
 
 ## Experiment code (`src/`)
 
