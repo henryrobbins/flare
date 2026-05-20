@@ -2,8 +2,9 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/formulation-bench)](https://pypi.org/project/formulation-bench/)
 [![CI](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml/badge.svg)](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml)
-[![Documentation Status](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.readthedocs.io/en/latest/?badge=latest)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation Status](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Python utilities for loading and working with the [FormulationBench](https://formulation-bench.henryrobbins.com) dataset. FormulationBench is a collection
