@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from milp_flare.assets import SCRIPTS_DIR, SKILLS_DIR
+from milp_flare._assets import SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
 
 _TEMPLATE: str = (SCRIPTS_DIR / "opencode_agent.sh").read_text()
@@ -21,40 +21,57 @@ def _infer_provider(model: str) -> str:
 
 
 class OpenCodeHarness(Harness):
-    """FLARE harness backed by the OpenCode CLI.
+    """OpenCode agent harness for FLARE.
 
-    OpenCode supports multiple model providers. The provider is inferred
-    from the model prefix (``claude-*`` → ``anthropic``, ``deepseek-*``
-    → ``deepseek``, ``gemini-*`` → ``google``, else ``openai``) and can
-    be overridden via ``provider``. The matching provider API key
-    (``ANTHROPIC_API_KEY``, ``OPENAI_API_KEY``, ``GOOGLE_API_KEY``,
-    ``DEEPSEEK_API_KEY``) must be set on the host and is forwarded into
-    the container. A generated ``opencode.json`` is written to the
-    working directory; skill bundles are copied to ``wd/.agents/skills/``.
+    Use the :opencode:`OpenCode CLI </>` as an agent harness. Authentication is
+    provided by API key. The following API keys are automatically forwarded from
+    the host into the container if they are set:
+
+    - ``ANTHROPIC_API_KEY`` for Anthropic models
+    - ``OPENAI_API_KEY`` for OpenAI models
+    - ``GOOGLE_API_KEY`` for Google models
+    - ``DEEPSEEK_API_KEY`` for DeepSeek models
+
+    See :ref:`harness-opencode` for setup instructions.
 
     Parameters
     ----------
     model : str
-        Model identifier passed to the underlying CLI.
+        Model identifier passed to the underlying CLI. See
+        :opencode:`/providers` for supported providers and models.
     effort : str, default ``"medium"``
-        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
+        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``). Supported
+        reasoning effort levels vary by provider and model.
     provider : str, optional
-        Override the inferred provider (``"anthropic"``, ``"openai"``,
-        ``"google"``, ``"deepseek"``).
+        The OpenCode model provider to use. By default, the provider is inferred
+        from the model name. See :opencode:`/providers` for supported providers.
 
     Attributes
     ----------
+    name : str
+        Name of the agent harness: ``"opencode"``.
+    model : str
+        Model identifier this harness is configured to use.
+    effort : str
+        Reasoning effort level this harness is configured to use.
     provider : str
-        The resolved provider name for this harness.
+        Resolved provider name this harness is configured to use.
 
     Examples
     --------
-    Drive FLARE with OpenCode against OpenAI::
+    Configure OpenCode agent harness with DeepSeek V4 Pro and high effort::
 
         >>> from milp_flare import FLARE
         >>> from milp_flare.harness import OpenCodeHarness
-        >>> harness = OpenCodeHarness(model="gpt-5.4", provider="openai")
-        >>> flare = FLARE(harness=harness)
+        >>> harness = OpenCodeHarness(model="deepseek-v4-pro", effort="high")
+        >>> print(json.dumps(harness.get_config_dict(), indent=2))
+        {
+          "harness": "opencode",
+          "image": "flare-agent:latest",
+          "model": "deepseek-v4-pro",
+          "effort": "high",
+          "provider": "deepseek"
+        }
     """
 
     name = "opencode"

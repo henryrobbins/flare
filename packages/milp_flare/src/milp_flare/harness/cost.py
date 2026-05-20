@@ -1,8 +1,12 @@
-# Cost per million tokens (input, output). Used to compute cost_usd for direct
-# API calls. Update when model pricing changes.
-# https://platform.claude.com/docs/en/about-claude/pricing
-# https://developers.openai.com/api/docs/pricing
-_COST_PER_MTOK: dict[str, tuple[float, float]] = {
+#: Cost per million tokens (input, output). Used to compute cost_usd when the
+#: agent harness does not report cost directly. This is a fallback and is
+#: likely to become outdated quickly. See pricing documentation for the most
+#: up-to-date pricing information:
+#:
+#: - `Claude Pricing <https://platform.claude.com/docs/en/about-claude/pricing>`_
+#: - `OpenAI Pricing <https://developers.openai.com/api/docs/pricing>`_
+#: - `DeepSeek Pricing <https://api-docs.deepseek.com/quick_start/pricing>`_
+COST_PER_MTOK: dict[str, tuple[float, float]] = {
     "claude-opus-4-7": (5.0, 25.0),
     "claude-opus-4-6": (5.0, 25.0),
     "claude-sonnet-4-6": (3.0, 15.0),
@@ -44,7 +48,7 @@ def compute_cost_usd(model: str, input_tokens: int, output_tokens: int) -> float
         Estimated USD cost, or ``None`` if ``model`` is not in the
         pricing table.
     """
-    entry = _COST_PER_MTOK.get(model)
+    entry = COST_PER_MTOK.get(model)
     if entry is None:
         return None
     input_price, output_price = entry

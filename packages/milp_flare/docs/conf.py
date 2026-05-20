@@ -7,10 +7,26 @@ release = _pkg_version("milp-flare")
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
+    "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "numpydoc",
 ]
+
+extlinks = {
+    "fb": (
+        "https://formulation-bench.henryrobbins.com/en/latest%s",
+        "FormulationBench%.0s",
+    ),
+    "paper": ("https://flare.henryrobbins.com%s", "FLARE Paper%.0s"),
+    "claude": ("https://code.claude.com/docs/en%s", "Claude Code Docs%.0s"),
+    "codex": ("https://developers.openai.com/codex%s", "Codex Docs%.0s"),
+    "opencode": ("https://opencode.ai/docs%s", "OpenCode Docs%.0s"),
+    "github": (
+        "https://github.com/henryrobbins/flare/tree/main/packages/milp_flare%s",
+        "GitHub%.0s",
+    ),
+}
 
 myst_enable_extensions = [
     "colon_fence",
@@ -18,7 +34,17 @@ myst_enable_extensions = [
     "fieldlist",
     "dollarmath",
     "amsmath",
+    "substitution",
 ]
+
+myst_substitutions = {
+    "FormulationBench": "[FormulationBench](https://formulation-bench.henryrobbins.com/en/latest)",
+    "FLARE Paper": "[FLARE Paper](https://flare.henryrobbins.com)",
+    "Claude Code Docs": "[Claude Code Docs](https://code.claude.com/docs/en)",
+    "Codex Docs": "[Codex Docs](https://developers.openai.com/codex)",
+    "OpenCode Docs": "[OpenCode Docs](https://opencode.ai/docs)",
+    "GitHub": "[GitHub](https://github.com/henryrobbins/flare/tree/main/packages/milp_flare)",
+}
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
@@ -46,4 +72,5 @@ numpydoc_xref_aliases = {
     "ClaudeCodeHarness": "milp_flare.harness.claude_code.ClaudeCodeHarness",
     "CodexHarness": "milp_flare.harness.codex.CodexHarness",
     "OpenCodeHarness": "milp_flare.harness.opencode.OpenCodeHarness",
+    "COST_PER_MTOK": "milp_flare.harness.cost.COST_PER_MTOK",
 }

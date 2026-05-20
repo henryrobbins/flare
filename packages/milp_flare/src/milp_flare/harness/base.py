@@ -8,22 +8,30 @@ from typing import Any, ClassVar
 
 from milp_flare.harness.cost import compute_cost_usd
 
+#: The name of the Docker image containing the agent environment. This image is
+#: expected to be built prior to running FLARE. See :doc:`/installation`.
+IMAGE = "flare-agent:latest"
+
 
 @dataclass
 class HarnessRunResult:
-    """Per-run result returned by :meth:`Harness.run`.
+    """Result of a harness run returned by :meth:`Harness.run`.
 
     Attributes
     ----------
     duration_s : float
         Wall-clock duration of the agent run, in seconds.
     cost_usd : float, optional
-        Estimated USD cost of the agent run, or ``None`` if the model is
-        unpriced and the harness cannot report cost directly.
+        Estimated USD cost of the agent run, or ``None`` if cost information
+        is not available (e.g., model is missing from :const:`COST_PER_MTOK`).
     input_tokens : int
-        Total input (prompt) tokens reported by the agent stream.
+        Total input (prompt) tokens reported by the agent stream. Used by
+        :const:`COST_PER_MTOK` to estimate ``cost_usd`` when not directly
+        reported by the agent.
     output_tokens : int
-        Total output (completion) tokens reported by the agent stream.
+        Total output (completion) tokens reported by the agent stream. Used by
+        :const:`COST_PER_MTOK` to estimate ``cost_usd`` when not directly
+        reported by the agent.
     stop_reason : str, optional
         Final stop reason reported by the agent (e.g., ``"end_turn"``,
         ``"max_tokens"``). ``None`` if not reported.
@@ -36,34 +44,32 @@ class HarnessRunResult:
     stop_reason: str | None
 
 
-IMAGE = "flare-agent:latest"
-
-
 class Harness(ABC):
-    """Base class for FLARE agent harnesses.
+    """Base class for FLARE agent harness.
 
-    A harness drives a specific coding-agent CLI (Claude Code, Codex,
-    OpenCode) inside the ``flare-agent`` Docker container. Concrete
-    subclasses provide harness-specific Docker arguments, the agent
-    launch command, and a parser for the agent's JSONL output stream.
+    :class:`FLARE` uses an agent harness to auto-formalize MILP formulations in
+    Lean and do automated formal proof synthesis (AFPS) of reformulation
+    certificates. This is the base class for a :class:`FLARE` agent
+    harness. It has methods to configure the agent working directory, run the
+    agent in a Docker container, and return a configuration dictionary.
 
     Parameters
     ----------
     model : str
-        Model identifier passed to the underlying CLI (e.g.,
-        ``"claude-opus-4-7"``, ``"gpt-5.4"``).
+        Model identifier (e.g., ``"claude-opus-4-7"``, ``"gpt-5.5"``). See
+        harness subclasses for supported models.
     effort : str, default ``"medium"``
-        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
-        Forwarded to the harness-specific configuration.
+        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``). See
+        harness subclasses for supported effort levels.
 
     Attributes
     ----------
     name : str
-        Class-level harness name (e.g., ``"claude_code"``).
+        Name of the agent harness (e.g., ``"claude_code"``).
     model : str
-        The model identifier this harness was constructed with.
+        Model identifier this harness is configured to use.
     effort : str
-        The reasoning effort level this harness was constructed with.
+        Reasoning effort level this harness is configured to use.
     """
 
     name: ClassVar[str]
@@ -73,7 +79,7 @@ class Harness(ABC):
         self.effort = effort
 
     def get_config_dict(self) -> dict[str, Any]:
-        """Return the config dict written to ``<output_path>/config.json``.
+        """Return a dictionary with the harness configuration.
 
         Returns
         -------
@@ -88,17 +94,27 @@ class Harness(ABC):
         }
 
     def configure_wd(self, wd: Path) -> None:
-        """Write harness-specific files to the agent working directory.
+        """Configure the agent working directory with necessary files for the harness.
 
-        Subclasses extend this to drop in MCP configuration, skill
-        bundles, and any other per-harness assets. The base
-        implementation writes the agent launch script (``agent.sh``) used
-        by the container entrypoint.
+        The agent working directory needs the following:
+
+        1. An agent command script (``agent.sh``) that is called by the Docker
+           container entrypoint to launch the agent. The script typically calls
+           an agent CLI in non-interactive mode.
+        2. Any configuration files necessary to enable the
+           `lean-lsp-mcp <https://github.com/oOo0oOo/lean-lsp-mcp>`_ MCP server.
+        3. Custom Agent Skills for auto-formalization of MILP formulations and
+           automated formal proof synthesis for reformulation (see :doc:`/skills`).
 
         Parameters
         ----------
         wd : pathlib.Path
-            The agent working directory. Must already exist.
+            The agent working directory (on the host). Must already exist.
+
+        Raises
+        ------
+        RuntimeError
+            If ``wd`` does not exist.
         """
 
         if not wd.exists():
@@ -109,12 +125,14 @@ class Harness(ABC):
         (wd / "agent.sh").write_text(self._agent_command())
 
     def run(self, wd: Path) -> HarnessRunResult:
-        """Run the agent in a Docker container against ``wd``.
+        """Run the agent in a Docker container.
 
-        Spawns ``docker run`` with the image-baked Lean environment,
-        bind-mounts ``wd`` into the container, and waits for the agent to
-        exit. Parses ``wd/agent_output.jsonl`` for token and cost
-        metadata.
+        Spawns a Docker container with the image specified by :const:`IMAGE` and
+        bind-mounts ``wd`` into the container. The container entrypoint calls
+        the agent command script which launches the agent. Agent output is written
+        to ``wd/agent_output.jsonl``.
+
+        The Docker image is expected to be built (see :doc:`/installation`).
 
         Parameters
         ----------

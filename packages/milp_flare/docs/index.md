@@ -10,7 +10,7 @@ step decides whether the proof type-checks.
 FLARE reuses the same Lean definitions (`MILPFormulation`,
 `MILPReformulation`) as
 [FormulationBench](https://formulation-bench.henryrobbins.com/) — see
-the [Lean reference there](https://formulation-bench.henryrobbins.com/en/latest/lean/index.html)
+the {fb}`Lean reference there </en/latest/lean/index.html>`
 for the underlying structures.
 
 ```{toctree}

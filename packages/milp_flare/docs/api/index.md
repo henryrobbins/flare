@@ -5,6 +5,5 @@
 
 flare
 flare_nl
-prompts
 harness
 ```

@@ -1,6 +1,6 @@
 from jinja2 import Environment, FileSystemLoader
 
-from milp_flare.assets import PROMPTS_DIR
+from milp_flare._assets import PROMPTS_DIR
 
 _env = Environment(
     loader=FileSystemLoader(PROMPTS_DIR),

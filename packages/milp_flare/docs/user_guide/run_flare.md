@@ -50,7 +50,7 @@ print("cost_usd:", result.cost_usd)
 `FormulationInput` carries the two artifacts the agent needs.
 `Formulation.render_markdown()` and `Formulation.gen_solve_py()`
 produce them directly from the dataset — see the
-[FormulationBench API reference](https://formulation-bench.henryrobbins.com/en/latest/api/formulation.html).
+{fb}`FormulationBench API reference </api/formulation.html>`.
 
 ## Lean definitions
 
@@ -58,8 +58,8 @@ FLARE writes Lean files against the same `MILPFormulation` /
 `MILPReformulation` structures used by FormulationBench. They are
 documented in the FormulationBench docs:
 
-- [`MILPFormulation`](https://formulation-bench.henryrobbins.com/en/latest/lean/formulation.html)
-- [`MILPReformulation`](https://formulation-bench.henryrobbins.com/en/latest/lean/reformulation.html)
+- {fb}`MILPFormulation </lean/formulation.html>`
+- {fb}`MILPReformulation </lean/reformulation.html>`
 
 A copy of `Common.lean` (and a minimal Lake skeleton) is bundled with
 `milp_flare` and copied into the agent working directory at runtime.
@@ -97,4 +97,4 @@ compiled, and whether it is `sorry`-free.
 two inputs yourself from any markdown + `solve.py` pair and pass them
 to `FLARE.verify`. The markdown should follow the formulation template
 documented in
-[FormulationBench](https://formulation-bench.henryrobbins.com/en/latest/schema.html).
+{fb}`/en/latest/schema.html`.

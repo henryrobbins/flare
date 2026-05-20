@@ -4,6 +4,7 @@ FLARE ships three agent harnesses — Claude Code, Codex, and OpenCode.
 All three implement the {class}`~milp_flare.harness.base.Harness`
 interface and are swappable in `FLARE(harness=...)`.
 
+(harness-common-configuration)=
 ## Common configuration
 
 Every harness takes a `model` identifier and an optional reasoning
@@ -12,6 +13,7 @@ The harness's `get_config_dict()` dict (written to
 `runs/<id>/config.json`) records the harness name, image tag, model,
 and effort.
 
+(harness-claude-code)=
 ## Claude Code
 
 Uses a long-lived OAuth token instead of an API key so the run bills
@@ -27,6 +29,7 @@ Requires `CLAUDE_CODE_OAUTH_TOKEN` on the host (`claude setup-token`).
 The MCP server configuration is copied to `wd/.mcp.json` and skills
 are copied to `wd/.claude/skills/`.
 
+(harness-codex)=
 ## Codex
 
 ```python
@@ -40,6 +43,7 @@ read-write so Codex can refresh its access token. Skills are copied
 to `wd/.agents/skills/`. The MCP server is configured inline in the
 agent launch script.
 
+(harness-opencode)=
 ## OpenCode
 
 OpenCode supports multiple providers. The harness infers the provider
@@ -58,6 +62,7 @@ Requires the matching provider API key in the environment
 `DEEPSEEK_API_KEY`). A generated `opencode.json` is written to the
 working directory; skills are copied to `wd/.agents/skills/`.
 
+(harness-selecting-by-name)=
 ## Selecting a harness by name
 
 The `HARNESSES` registry maps harness names to classes, which is
@@ -70,6 +75,7 @@ harness_cls = HARNESSES["claude_code"]
 harness = harness_cls(model="claude-opus-4-7")
 ```
 
+(harness-cost-tracking)=
 ## Cost tracking
 
 Each harness returns a `cost_usd` field on the run result. Claude Code

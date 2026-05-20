@@ -6,30 +6,53 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from milp_flare.assets import LEAN_DIR
+from milp_flare._assets import LEAN_DIR
+from milp_flare._prompts import render_flare_agent_prompt
 from milp_flare.harness import Harness
-from milp_flare.prompts import render_flare_agent_prompt
 
 
 @dataclass(frozen=True)
 class FormulationInput:
-    """Per-formulation inputs handed to the FLARE agent.
-
-    Carries the two artifacts the agent needs for a single formulation:
-    a natural-language Markdown description and a runnable Gurobi script.
-    :meth:`FLARE.verify` writes them to ``<label>/formulation.md`` and
-    ``<label>/solve.py`` inside the agent working directory, where
-    ``<label>`` is ``A`` or ``B``.
+    """Formulation input for the FLARE agent.
 
     Attributes
     ----------
     formulation_md : str
         Markdown description of the formulation. Typically produced by
-        ``Formulation.render_markdown()`` from FormulationBench.
+        ``Formulation.render_markdown()`` from :fb:`/api/formulation.html`.
     solve_py : str
-        Python source for a Gurobi script that solves the formulation.
-        Typically produced by ``Formulation.gen_solve_py()`` from
-        FormulationBench.
+        Python solver script with Gurobi implementation of the formulation.
+        :class:`FLARE` does not execute this script; it is only used as an additional
+        reference for the agent. Typically produced by ``Formulation.gen_solve_py()``
+        from :fb:`/api/formulation.html`.
+
+    Examples
+    --------
+
+    Construct a ``FormulationInput`` from formulation ``p1.a`` from
+    :fb:`/problems/p1.html`::
+
+        >>> from formulation_bench import Dataset
+        >>> from milp_flare import FormulationInput
+        >>> ds = Dataset.load()
+        >>> a = ds.problems[1].formulations["a"]
+        >>> inp = FormulationInput(a.render_markdown(), a.gen_solve_py())
+
+        >>> print(inp.formulation_md)
+        # Amusement Park Ticket Machines
+        <BLANKLINE>
+        ## Problem Description
+        <BLANKLINE>
+        An amusement park is installing cash-based machines and card-only machines...
+
+        >>> print(inp.solve_py)
+        import json
+        from gurobipy import Model, GRB
+        import argparse
+        <BLANKLINE>
+        <BLANKLINE>
+        def main(params_path: str, solution_path: str) -> None:
+        ...
     """
 
     formulation_md: str
@@ -38,10 +61,7 @@ class FormulationInput:
 
 @dataclass
 class FLAREResult:
-    """Result of a FLARE verification run.
-
-    Returned by :meth:`FLARE.verify`. The same dictionary used to populate
-    this object is also serialized to ``<output_path>/result.json``.
+    """Result from FLARE.
 
     Attributes
     ----------
@@ -53,7 +73,7 @@ class FLAREResult:
         Wall-clock duration of the agent run, in seconds.
     cost_usd : float, optional
         Estimated USD cost of the agent run. ``None`` when the harness
-        cannot report cost (e.g., the model is not in the pricing table).
+        does not report cost.
     metadata : dict[str, Any]
         Per-check breakdown and harness run metadata: ``form_a_written``,
         ``form_a_compiled``, ``form_b_written``, ``form_b_compiled``,
@@ -68,22 +88,18 @@ class FLAREResult:
 
 
 class FLARE:
-    """Agent-driven MILP reformulation verifier.
+    """Agentic MILP reformulation verifier.
 
-    Given two MILP formulations ``A`` and ``B``, :meth:`verify` drives a
-    coding agent inside a Docker container to (1) auto-formalize each
-    formulation as a Lean 4 ``MILPFormulation`` and (2) construct a
-    ``MILPReformulation A B`` proof. After the agent exits, a post-hoc
-    inspection of the working directory decides whether the proof
-    type-checks and is ``sorry``-free.
+    FLARE (Formulation-Level Automated Reformulation Evaluation) uses an LLM-based
+    agent and the Lean proof assistant to verify MILP reformulations according to
+    the :fb:`/lean/reformulation.html` definition of reformulation. See the
+    :paper:`/` for more details.
 
     Parameters
     ----------
     harness : Harness
-        The agent harness used to drive the in-container coding agent.
-        See :class:`~milp_flare.harness.claude_code.ClaudeCodeHarness`,
-        :class:`~milp_flare.harness.codex.CodexHarness`, and
-        :class:`~milp_flare.harness.opencode.OpenCodeHarness`.
+        The agent harness to use for auto-formalization and proof synthesis.
+        See :ref:`agent-harnesses` for the available harnesses.
 
     Attributes
     ----------
@@ -92,9 +108,10 @@ class FLARE:
 
     Examples
     --------
-    Verify whether formulation ``b`` of problem ``p1`` is a reformulation
-    of formulation ``a`` (requires Docker and a valid harness credential
-    on the host):
+
+    Use FLARE to verify if formulation ``b`` of problem ``p1`` from
+    :fb:`/problems/p1.html` is a reformulation of formulation ``a`` (also see
+    :doc:`/user_guide/run_flare`):
 
     .. code-block:: python
 
@@ -114,14 +131,13 @@ class FLARE:
             FormulationInput(b.render_markdown(), b.gen_solve_py()),
             output_path=Path("runs/p1_a_b"),
         )
-        result.is_reformulation  # True
     """
 
     def __init__(self, harness: Harness) -> None:
         self.harness = harness
 
     def get_config_dict(self) -> dict[str, Any]:
-        """Return the method configuration dict written to ``config.json``.
+        """Return a dictionary with the FLARE configuration.
 
         Returns
         -------
@@ -137,13 +153,39 @@ class FLARE:
         b: FormulationInput,
         output_path: Path,
     ) -> FLAREResult:
-        """Run FLARE on a pair of formulations and return the verdict.
+        """Run FLARE on a pair of MILP formulations.
 
-        Populates ``output_path`` with the agent working directory
-        (``wd/``), the rendered method config (``config.json``), and the
-        full result dictionary (``result.json``). The agent working
-        directory contains every input file written by FLARE and every
-        artifact produced by the agent.
+        Run FLARE to determine if formulation ``b`` is a reformulation of
+        formulation ``a`` according to the :fb:`/lean/reformulation.html`
+        definition of reformulation. This method creates the agent working
+        directory (see below), triggers the agent, and evaluates the
+        agent output. Finally, it populates ``output_path`` with:
+
+        - The agent working directory (``wd/``)
+        - The FLARE configuration (``config.json``)
+        - The result dictionary (``result.json``)
+
+        The agent working directory contains descriptions of each formulation,
+        the agent prompt ``prompt.txt`` (see :doc:`/prompts`), and the necessary
+        Lake environment files.
+
+        .. code-block::
+
+            wd/
+            ├── A/
+            │   ├── formulation.md
+            │   ├── solve.py
+            │   └── Formulation.lean   # written by agent
+            ├── B/
+            │   ├── formulation.md
+            │   ├── solve.py
+            │   └── Formulation.lean   # written by agent
+            ├── Reformulation.lean     # written by agent
+            ├── prompt.txt
+            ├── Common.lean
+            ├── lake-manifest.json
+            ├── lakefile.toml
+            └── lean-toolchain
 
         Parameters
         ----------
@@ -152,7 +194,7 @@ class FLARE:
         b : FormulationInput
             Inputs for formulation B (the candidate reformulation of A).
         output_path : pathlib.Path
-            Directory to populate with run artifacts. Created if missing.
+            Directory to populate with run artifacts.
 
         Returns
         -------
@@ -161,7 +203,23 @@ class FLARE:
 
         Examples
         --------
-        See :class:`FLARE`.
+
+        Run FLARE on formulations ``a`` and ``b`` and inspect the result:
+
+        .. code-block:: python
+
+            flare = FLARE(harness=harness)
+            result = flare.verify(a, b, output_path=Path("runs/a_b"))
+            result.is_reformulation
+            True
+            result.metadata["form_a_written"]
+            True
+            result.cost_usd
+            1.49
+            result.duration_s
+            322
+
+        See :doc:`/user_guide/run_flare` for more example usage.
         """
         # Create the artifacts directory at the output path and write config
         artifacts_dir = output_path

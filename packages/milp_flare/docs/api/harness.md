@@ -4,33 +4,37 @@
 
 ```{eval-rst}
 .. autoclass:: milp_flare.harness.base.Harness
+   :exclude-members: name
 
 .. autoclass:: milp_flare.harness.base.HarnessRunResult
+   :no-members:
+
+.. autodata:: milp_flare.harness.base.IMAGE
 ```
 
-## Configuration
-
-```{eval-rst}
-.. autofunction:: milp_flare.harness.cost.compute_cost_usd
-```
-
-## Claude Code
+(agent-harnesses)=
+## Agent Harnesses
 
 ```{eval-rst}
 .. autoclass:: milp_flare.harness.claude_code.ClaudeCodeHarness
-   :no-show-inheritance:
+   :show-inheritance:
+   :exclude-members: configure_wd, name
 ```
-
-## Codex
 
 ```{eval-rst}
 .. autoclass:: milp_flare.harness.codex.CodexHarness
-   :no-show-inheritance:
+   :show-inheritance:
+   :exclude-members: configure_wd, name
 ```
-
-## OpenCode
 
 ```{eval-rst}
 .. autoclass:: milp_flare.harness.opencode.OpenCodeHarness
-   :no-show-inheritance:
+   :show-inheritance:
+   :exclude-members: configure_wd, get_config_dict, name
+```
+
+## Pricing
+
+```{eval-rst}
+.. autodata:: milp_flare.harness.cost.COST_PER_MTOK
 ```

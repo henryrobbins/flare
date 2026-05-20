@@ -4,36 +4,62 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from milp_flare.assets import MCP_JSON, SCRIPTS_DIR, SKILLS_DIR
+from milp_flare._assets import MCP_JSON, SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
 
 _TEMPLATE: str = (SCRIPTS_DIR / "claude_code_agent.sh").read_text()
 
 
 class ClaudeCodeHarness(Harness):
-    """FLARE harness backed by the Claude Code CLI.
+    """Claude Code agent harness for FLARE.
 
-    Authenticates with a long-lived OAuth token
-    (``CLAUDE_CODE_OAUTH_TOKEN``) so runs bill against a Claude.ai
-    subscription rather than the API. MCP configuration is written to
-    ``wd/.mcp.json`` and skill bundles are copied to
-    ``wd/.claude/skills/``.
+    Use the :claude:`Claude Code CLI </>` as an agent harness. Authentication
+    is provided by a long-lived OAuth token (``CLAUDE_CODE_OAUTH_TOKEN``) generated
+    via ``claude setup-token`` and is billed against a Claude subscription. See
+    :ref:`harness-claude-code` for setup instructions.
+
+    .. warning::
+
+        Starting June 15, 2026, Claude Agent SDK and claude -p usage no longer
+        counts towards the Claude plan's usage limits. It will instead charge a
+        separate Agent SDK monthly credit. See
+        `this article <https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan>`_.
 
     Parameters
     ----------
     model : str
-        Claude model identifier (e.g., ``"claude-opus-4-7"``).
+        Claude model identifier. Only supports models that are supported by the
+        Claude Code CLI (e.g., ``"claude-opus-4-7"``, ``"claude-sonnet-4-6"``).
+        See :claude:`/model-config#model-aliases` for up-to-date model information.
     effort : str, default ``"medium"``
-        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
+        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``, ``"xhigh"``,
+        ``"max"``). See :claude:`/model-config#choose-an-effort-level` for
+        supported effort levels for each model.
+
+    Attributes
+    ----------
+    name : str
+        Name of the agent harness: ``"claude_code"``.
+    model : str
+        Model identifier this harness is configured to use.
+    effort : str
+        Reasoning effort level this harness is configured to use.
 
     Examples
     --------
-    Drive FLARE with Claude Opus 4.7 at medium reasoning effort::
+    Configure Claude Code agent harness with Claude Opus 4.7 and high effort::
 
         >>> from milp_flare import FLARE
         >>> from milp_flare.harness import ClaudeCodeHarness
-        >>> harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
-        >>> flare = FLARE(harness=harness)
+        >>> harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="high")
+        >>> print(json.dumps(harness.get_config_dict(), indent=2))
+        {
+          "harness": "claude_code",
+          "image": "flare-agent:latest",
+          "model": "claude-opus-4-7",
+          "effort": "high"
+        }
+
     """
 
     name = "claude_code"

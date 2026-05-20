@@ -19,7 +19,7 @@ SKILLS_DIR = _ASSETS_DIR / "skills"
 # MCP server configuration for the claude_code harness (copied to wd/.mcp.json).
 MCP_JSON = _ASSETS_DIR / "configs" / "mcp.json"
 
-# Jinja2 templates for prompts rendered by `milp_flare.prompts`.
+# Jinja2 templates for prompts rendered by `milp_flare._prompts`.
 PROMPTS_DIR = _ASSETS_DIR / "prompts"
 
 # Per-harness agent launch scripts sourced by the container entrypoint.

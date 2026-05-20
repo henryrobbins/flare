@@ -3,36 +3,54 @@ import shutil
 from pathlib import Path
 from typing import Any
 
-from milp_flare.assets import SCRIPTS_DIR, SKILLS_DIR
+from milp_flare._assets import SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
 
 _TEMPLATE: str = (SCRIPTS_DIR / "codex_agent.sh").read_text()
 
 
 class CodexHarness(Harness):
-    """FLARE harness backed by the Codex CLI.
+    """Codex agent harness for FLARE.
 
-    Authenticates by bind-mounting ``~/.codex`` (populated via
-    ``codex login``) read-write into the container so Codex can refresh
-    its access token mid-session. Skill bundles are copied to
-    ``wd/.agents/skills/``; MCP configuration is handled inline in
-    ``codex_agent.sh``.
+    Use the :codex:`Codex CLI </>` as an agent harness. Authentication is provided
+    by running ``codex login`` on the host to create a ``~/.codex`` directory with
+    the necessary credentials; this directory is bind-mounted read-write into the
+    Docker container. See :ref:`harness-codex` for setup instructions.
 
     Parameters
     ----------
     model : str
-        OpenAI model identifier (e.g., ``"gpt-5.4"``).
+        OpenAI model identifier. Only supports models that are supported by the
+        Codex CLI (e.g., ``"gpt-5.4"``, ``"gpt-5.5"``). See :codex:`/models` for
+        up-to-date model information.
     effort : str, default ``"medium"``
-        Reasoning effort level (``"low"``, ``"medium"``, ``"high"``).
+        Reasoning effort level (``"none"``, ``"low"``, ``"medium"``,
+        ``"high"``, ``"xhigh"``). See :codex:`/config-basic#reasoning-effort`
+        for supported effort levels.
+
+    Attributes
+    ----------
+    name : str
+        Name of the agent harness: ``"codex"``.
+    model : str
+        Model identifier this harness is configured to use.
+    effort : str
+        Reasoning effort level this harness is configured to use.
 
     Examples
     --------
-    Drive FLARE with GPT-5.4 at high reasoning effort::
+    Configure Codex agent harness with GPT-5.4 and high effort::
 
         >>> from milp_flare import FLARE
         >>> from milp_flare.harness import CodexHarness
         >>> harness = CodexHarness(model="gpt-5.4", effort="high")
-        >>> flare = FLARE(harness=harness)
+        >>> print(json.dumps(harness.get_config_dict(), indent=2))
+        {
+          "harness": "codex",
+          "image": "flare-agent:latest",
+          "model": "gpt-5.4",
+          "effort": "high"
+        }
     """
 
     name = "codex"
