@@ -5,9 +5,29 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "formulation-bench"
 version = "0.2.0"
-description = "Utilities for working with the FormulationBench dataset."
+description = "Utilities for loading and working with the FormulationBench dataset."
+readme = "README.md"
+authors = [{ name = "Henry Robbins", email = "hwr@stanford.edu" }]
+license = "MIT"
+license-files = ["LICENSE.md"]
+keywords = ["milp", "optimization", "lean", "dataset", "formulation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
 requires-python = ">=3.10"
 dependencies = ["jinja2>=3"]
+
+[project.urls]
+Homepage = "https://formulation-bench.henryrobbins.com"
+Documentation = "https://formulation-bench.henryrobbins.com"
+Repository = "https://github.com/henryrobbins/flare"
+Issues = "https://github.com/henryrobbins/flare/issues"
 
 [project.optional-dependencies]
 docs = [
