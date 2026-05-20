@@ -80,6 +80,17 @@ make dataset-link    # creates ./dataset -> ../../dataset if missing
 `make test` runs this automatically. The symlink is gitignored; it's a
 dev-only convenience and is not shipped in the published wheel.
 
+## Coverage
+
+```bash
+make cov        # pytest with coverage; writes htmlcov/ and coverage.xml
+make cov-open   # open the HTML report in a browser
+make cov-clean  # remove coverage artifacts
+```
+
+CI uploads `coverage.xml` to [Codecov](https://codecov.io/gh/henryrobbins/flare)
+under the `formulation_bench` flag.
+
 ## Docs
 
 Build once:

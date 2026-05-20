@@ -2,6 +2,7 @@
 
 [![PyPI version](https://img.shields.io/pypi/v/formulation-bench)](https://pypi.org/project/formulation-bench/)
 [![CI](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml/badge.svg)](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml)
+[![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=formulation_bench)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=formulation_bench)
 [![Documentation Status](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)

@@ -83,6 +83,17 @@ will pass:
 make build-image
 ```
 
+## Coverage
+
+```bash
+make cov        # pytest (excluding docker tests) with coverage; writes htmlcov/ and coverage.xml
+make cov-open   # open the HTML report in a browser
+make cov-clean  # remove coverage artifacts
+```
+
+CI uploads `coverage.xml` to [Codecov](https://codecov.io/gh/henryrobbins/flare)
+under the `milp_flare` flag.
+
 ## Docs
 
 Build once:

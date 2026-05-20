@@ -68,6 +68,22 @@ Standalone utility scripts that use `formulation_bench`:
 
 - `scripts/dataset/validate_solve.py` — regenerate `solve.py` for every formulation, then gen_params + solve and verify objectives.
 
+## Coverage
+
+Each Python source tree (`src/`, `packages/formulation_bench/`,
+`packages/milp_flare/`) has its own `make cov` target that runs pytest with
+coverage scoped to that tree and writes `htmlcov/` + `coverage.xml`.
+
+```bash
+make cov        # root: coverage for src/
+make cov-open   # open the HTML report
+make cov-clean  # remove coverage artifacts
+```
+
+CI uploads each `coverage.xml` to [Codecov](https://codecov.io/gh/henryrobbins/flare)
+under separate flags (`src`, `formulation_bench`, `milp_flare`) so the three
+trees are tracked independently.
+
 ## Common Workflows
 
 The repo provides a set of skills and agents for working with this dataset. This section outlines how these skills/agents should be utilized for different common workflows.
