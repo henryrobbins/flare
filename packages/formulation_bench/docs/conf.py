@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).parent / "_ext"))
 
 project = "formulation_bench"
 author = "Henry Robbins"
+copyright = "2026, Henry Robbins"
 release = _pkg_version("formulation-bench")
 
 extensions = [

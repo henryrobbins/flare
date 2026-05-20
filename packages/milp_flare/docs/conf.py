@@ -2,6 +2,7 @@ from importlib.metadata import version as _pkg_version
 
 project = "milp_flare"
 author = "Henry Robbins"
+copyright = "2026, Henry Robbins"
 release = _pkg_version("milp-flare")
 
 extensions = [
