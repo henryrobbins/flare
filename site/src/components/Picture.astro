@@ -1,5 +1,5 @@
 ---
-import { Picture as AstroPicture } from "astro:assets";
+import { Image, Picture as AstroPicture } from "astro:assets";
 import { renderPDF } from "../lib/render-pdf";
 
 interface Props {
@@ -18,14 +18,30 @@ if (typeof src === "string") {
 } else {
   image = src;
 }
+
+const isSvg = image.format === "svg";
+const commonClass = `rounded-lg max-h-[calc(100svh-3rem)] max-w-full w-min mx-auto ${invertInDarkMode ? "dark:invert" : ""}`;
 ---
 
-<AstroPicture
-  class={`rounded-lg max-h-[calc(100svh-3rem)] max-w-full w-min mx-auto ${invertInDarkMode ? "dark:invert" : ""}`}
-  src={image}
-  alt={alt}
-  layout="constrained"
-  formats={["avif"]}
-  priority={priority}
-  fit="contain"
-/>
+{
+  isSvg ? (
+    <Image
+      class={commonClass}
+      src={image}
+      alt={alt}
+      layout="constrained"
+      priority={priority}
+      fit="contain"
+    />
+  ) : (
+    <AstroPicture
+      class={commonClass}
+      src={image}
+      alt={alt}
+      layout="constrained"
+      formats={["avif"]}
+      priority={priority}
+      fit="contain"
+    />
+  )
+}

@@ -43,6 +43,8 @@ import Figure from "./components/Figure.astro";
 import Picture from "./components/Picture.astro";
 import Wide from "./components/Wide.astro";
 
+import workflow from "./assets/workflow.svg";
+
 <HighlightedSection>
 
 ## Abstract
@@ -55,7 +57,7 @@ Mixed-Integer Linear Programming (MILP) is a fundamental tool for combinatorial 
 
 <Wide>
   <Figure>
-    <Picture slot="figure" src="../assets/workflow.pdf" alt="The FLARE workflow." />
+    <Picture slot="figure" src={workflow} alt="The FLARE workflow." />
     <Fragment slot="caption">
       (a) An agent is given natural language and Python representations of two MILP formulations and is instructed to generate Lean formalizations of both. Combined with our formalization of MILP *reformulation*, this yields a formal claim that formulation B is a reformulation of A. (b) The agent then attempts to construct a Lean proof of that claim. The Lean LSP MCP server allows the agent to obtain detailed feedback from the Lean process as it develops the proof.
     </Fragment>
