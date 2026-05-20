@@ -1,6 +1,10 @@
 # Paper
 paper
 
+# Symlink to the monorepo dataset/, created for doctests that load
+# `Dataset("dataset")` from this package's directory. See AGENTS.md.
+/dataset
+
 # Lake
 **/.lake
 .env
