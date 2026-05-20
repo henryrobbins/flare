@@ -64,13 +64,24 @@ Mixed-Integer Linear Programming (MILP) is a fundamental tool for combinatorial 
   </Figure>
 </Wide>
 
-## BibTeX citation
+## Results
+
+Accuracy of automated reformulation checking methods on the *FormulationBench* dataset. **Bold** indicates the best method on a metric and *italics* indicates the second best. All LLM-based methods use Opus 4.7 with reasoning and high effort level. `FLARE` and `FLARE-NL` outperform existing methods, and `FLARE` is the only method that generates a machine-checkable certificate.
+
+| Method                  | Certificate | Precision    | Recall       | Accuracy     |
+| :---------------------- | :---------: | -----------: | -----------: | -----------: |
+| Execution [@ahmaditeshnizi2024] | ✗   | 81.2%        | 92.9%        | 79.2%        |
+| EquivaMap [@zhai2025a]  | ✗           | 86.7%        | 92.9%        | 84.4%        |
+| `FLARE`                 | ✓           | **100.0%**   | *95.7%*      | *96.9%*      |
+| `FLARE-NL`              | ✗           | *99.5%*      | **100.0%**   | **99.7%**    |
+
+{/* ## BibTeX citation
 
 ```bibtex
 @misc{robbins2026flare,
   TODO
 }
-```
+``` */}
 
 ## Bibliography
 
