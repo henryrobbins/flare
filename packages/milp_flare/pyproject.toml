@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "milp-flare"
-version = "0.1.0"
+version = "0.2.0"
 description = "Official implementation of FLARE and FLARE-NL."
 readme = "README.md"
 authors = [{ name = "Henry Robbins", email = "hwr@stanford.edu" }]
