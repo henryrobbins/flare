@@ -21,7 +21,6 @@ interface Frontmatter {
   links?: Link[];
   description?: string;
   favicon: string;
-  thumbnail?: string;
   theme?: "device" | "light" | "dark";
 }
 
@@ -33,7 +32,6 @@ const {
   links,
   description,
   favicon,
-  thumbnail,
   theme = "device",
 } = frontmatter as Frontmatter;
 
@@ -54,7 +52,6 @@ const prefix = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
     <meta property="og:title" content={title} />
     {description && <meta property="og:description" content={description} />}
     <meta property="og:type" content="website" />
-    {thumbnail && <meta property="og:image" content={prefix + thumbnail} />}
 
     <Font
       cssVariable="--font-noto-sans"
