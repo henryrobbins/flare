@@ -9,10 +9,10 @@ from formulation_bench import Formulation
 from formulation_bench.models import Constraint
 
 from src.llm_client import LLMClient, compute_cost_usd
-from src.prompts import problem_info
 from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.verify.equivamap.prompts import (
     VARIABLE_MAPPING_SCHEMA,
+    problem_info,
     render_variable_mapping,
 )
 

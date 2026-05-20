@@ -6,7 +6,30 @@ from typing import Any
 from formulation_bench import Formulation
 from jinja2 import Environment, FileSystemLoader
 
-from src.prompts import RenderedPrompt, problem_info
+from src.prompt import RenderedPrompt
+
+
+def problem_info(f: Formulation) -> dict[str, Any]:
+    return {
+        "variables": {
+            name: {"description": var.description, "type": var.type.value}
+            for name, var in f.variables.items()
+        },
+        "constraints": [
+            {
+                "description": c.description,
+                "formulation": c.formulation,
+                "code": c.code.get("gurobipy", ""),
+            }
+            for c in f.constraints
+            if c.explicit
+        ],
+        "objective": {
+            "description": f.objective.description,
+            "formulation": f.objective.formulation,
+            "code": f.objective.code.get("gurobipy", ""),
+        },
+    }
 
 
 def _mentions(var_name: str, code: str) -> bool:

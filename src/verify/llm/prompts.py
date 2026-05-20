@@ -6,7 +6,7 @@ from formulation_bench import Formulation
 from jinja2 import Environment, FileSystemLoader
 from milp_flare.flare_nl import FLARE_NL_SYSTEM, flare_nl_prompt
 
-from src.prompts import RenderedPrompt
+from src.prompt import RenderedPrompt
 
 REFORMULATION_SCHEMA: dict[str, Any] = json.loads(
     (Path(__file__).parent / "reformulation_schema.json").read_text()
