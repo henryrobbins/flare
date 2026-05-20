@@ -4,15 +4,46 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "formulation-bench"
-version = "0.1.0"
-description = "Utilities for working with the FormulationBench dataset."
+version = "0.3.0"
+description = "Utilities for loading and working with the FormulationBench dataset."
+readme = "README.md"
+authors = [{ name = "Henry Robbins", email = "hwr@stanford.edu" }]
+license = "MIT"
+license-files = ["LICENSE.md"]
+keywords = ["milp", "optimization", "lean", "dataset", "formulation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = ["jinja2>=3"]
+
+[project.urls]
+Homepage = "https://formulation-bench.henryrobbins.com"
+Documentation = "https://formulation-bench.henryrobbins.com"
+Repository = "https://github.com/henryrobbins/flare"
+Issues = "https://github.com/henryrobbins/flare/issues"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7",
+    "myst-parser>=3",
+    "furo",
+    "sphinx-autodoc-typehints",
+    "sphinx-autobuild",
+    "numpydoc",
+]
 
 [dependency-groups]
 dev = [
     "mypy>=1.0",
     "pytest>=8.0",
+    "pytest-cov>=5.0",
     "ruff>=0.4",
 ]
 
@@ -20,7 +51,7 @@ dev = [
 where = ["src"]
 
 [tool.setuptools.package-data]
-formulation_bench = ["py.typed"]
+formulation_bench = ["py.typed", "templates/*.j2"]
 
 [tool.ruff]
 line-length = 88
@@ -33,4 +64,5 @@ strict = true
 files = ["src/formulation_bench"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "src/formulation_bench"]
+addopts = "--doctest-modules"

@@ -16,7 +16,7 @@ class ExecutionVerifier(ReformulationVerifier):
     def name(self) -> str:
         return "execution"
 
-    def method_config(self) -> dict[str, Any]:
+    def get_config_dict(self) -> dict[str, Any]:
         return {"tolerance": TOLERANCE}
 
     def verify(
@@ -25,7 +25,7 @@ class ExecutionVerifier(ReformulationVerifier):
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(
-            json.dumps(self.method_config(), indent=2)
+            json.dumps(self.get_config_dict(), indent=2)
         )
 
         start = time.time()
@@ -50,10 +50,10 @@ class ExecutionVerifier(ReformulationVerifier):
         fdir.mkdir(parents=True, exist_ok=True)
 
         params_path = fdir / "parameters.json"
-        formulation.gen_params(output_path=params_path)
+        formulation.run_gen_params(output_path=params_path)
 
         solve_path = fdir / "solve.py"
-        solve_path.write_text(formulation.gurobipy_code)
+        solve_path.write_text(formulation.gen_solve_py())
 
         solution_path = fdir / "solution.json"
         subprocess.run(

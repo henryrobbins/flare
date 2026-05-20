@@ -146,6 +146,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC2"
-        }
+        },
+        "notes": [
+            "The total demand must be satisfied by the total capacity of opened warehouses. This gives a simple lower bound on the number of warehouses that must be opened."
+        ]
     }
 }

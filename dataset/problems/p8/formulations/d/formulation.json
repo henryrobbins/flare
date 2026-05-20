@@ -171,6 +171,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC3"
-        }
+        },
+        "notes": [
+            "The makespan is at least the total processing time of each individual job's chain of operations."
+        ]
     }
 }

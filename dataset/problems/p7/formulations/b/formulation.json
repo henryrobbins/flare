@@ -147,6 +147,10 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC1"
-        }
+        },
+        "notes": [
+            "A hole at $(i,j)$ forces an interval ending at column $j-1$ to terminate on row $i$.",
+            "This cut was identified by `FLARE` to be invalid. The tile immediately to the left of a hole may span multiple rows and thus terminate on different row."
+        ]
     }
 }

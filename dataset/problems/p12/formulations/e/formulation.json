@@ -111,6 +111,10 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC1"
-        }
+        },
+        "notes": [
+            "Eliminate two-city tours.",
+            "This cut was identified by `FLARE` to be invalid. The inequality prevents the feasible $1 \\to 2 \\to 1$ tour for $n=2$ TSP instances."
+        ]
     }
 }

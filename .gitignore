@@ -2,7 +2,7 @@
 paper
 
 # Lake
-/.lake
+**/.lake
 .env
 
 # Byte-compiled / optimized / DLL files
@@ -226,3 +226,7 @@ results/
 
 # Integration test artifacts (per-case wd + stream.jsonl)
 tests/.runs/
+
+# Custom cache directory for FormulationBench dataset tarballs.
+# Used in the docs example to demonstrate the `cache_dir` argument of `download_dataset()`.
+custom_cache

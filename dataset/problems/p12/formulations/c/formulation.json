@@ -111,6 +111,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC2"
-        }
+        },
+        "notes": [
+            "If the tour returns to the depot from city $i$, then $i$'s MTZ position $u_i$ must be exactly $n$ (last)."
+        ]
     }
 }

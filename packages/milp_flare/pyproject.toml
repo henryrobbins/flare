@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "milp-flare"
+version = "0.2.0"
+description = "Official implementation of FLARE and FLARE-NL."
+readme = "README.md"
+authors = [{ name = "Henry Robbins", email = "hwr@stanford.edu" }]
+license = "MIT"
+license-files = ["LICENSE.md"]
+keywords = ["milp", "optimization", "lean", "llm", "afps", "reformulation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "jinja2",
+]
+
+[project.urls]
+Homepage = "https://milp-flare.henryrobbins.com"
+Documentation = "https://milp-flare.henryrobbins.com"
+Repository = "https://github.com/henryrobbins/flare"
+Issues = "https://github.com/henryrobbins/flare/issues"
+
+[project.optional-dependencies]
+docs = [
+    "sphinx>=7",
+    "myst-parser>=3",
+    "furo",
+    "sphinx-autodoc-typehints",
+    "sphinx-autobuild",
+    "numpydoc",
+]
+
+[project.scripts]
+milp-flare = "milp_flare.__main__:main"
+
+[dependency-groups]
+dev = [
+    "formulation-bench",
+    "mypy>=1.0",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "python-dotenv>=1.0",
+    "ruff>=0.4",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+milp_flare = [
+    "py.typed",
+    "assets/**/*",
+]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.mypy]
+strict = true
+files = ["src/milp_flare"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "src/milp_flare"]
+addopts = "--doctest-modules"
+markers = [
+    "docker: tests that require Docker (opt-out: -m 'not docker')",
+]

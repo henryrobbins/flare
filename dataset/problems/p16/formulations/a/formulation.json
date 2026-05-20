@@ -148,6 +148,9 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "formulation_id": "efficient"
-        }
+        },
+        "notes": [
+            "This is the aggregate (efficient) formulation."
+        ]
     }
 }

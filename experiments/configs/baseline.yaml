@@ -16,9 +16,7 @@ verifiers:
       reasoning_effort: high
 
   - type: flare
-    harness: opencode
+    harness: claude_code
     client:
       model: claude-opus-4-7
-      max_tokens: 16384
-      reasoning: true
-      reasoning_effort: medium
+      effort: high

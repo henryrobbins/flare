@@ -223,6 +223,9 @@
   "metadata": {
     "source": {
       "dataset": "EvoCut"
-    }
+    },
+    "notes": [
+        "Any arc from job $i$ to job $j$ whose travel time makes job $j$'s time window unreachable from job $i$ is fixed to zero."
+    ]
   }
 }

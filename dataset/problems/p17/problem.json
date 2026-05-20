@@ -82,6 +82,9 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025"
-        }
+        },
+        "notes": [
+            "The efficient formulation `p17.a` is a linear relaxation of the inefficient formulation `p17.b`. Hence, it is not a valid reformulation of `p17.b` by our constructive definition. We include it in the FormulationBench dataset as a negative reformulation example."
+        ]
     }
 }

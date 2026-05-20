@@ -1,25 +1,25 @@
 """Build ReformulationVerifier instances from dict specs (loaded from YAML)."""
 
-from pathlib import Path
 from typing import Any
 
-from src.llm_client import LLMConfig, make_client
+from milp_flare import HARNESSES, Harness
+
+from src.llm_client import make_client
 from src.verify.base import ReformulationVerifier
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.execution.execution import ExecutionVerifier
-from src.verify.flare.flare import FLAREVerifier
-from src.verify.flare.harness import HARNESSES, Harness
+from src.verify.flare import FLAREVerifier
 from src.verify.llm.llm import LLMVerifier
 
 
-def build_verifier(spec: dict[str, Any], *, repo_root: Path) -> ReformulationVerifier:
+def build_verifier(spec: dict[str, Any]) -> ReformulationVerifier:
     """Construct a verifier from a dict spec.
 
     Spec shape (by `type`):
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
       - {type: flare, harness: claude_code|codex|opencode,
-         client: {<LLMConfig fields, optional provider>}}
+         client: {model: <str>, effort?: <str>, provider?: <str>}}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
 
@@ -38,12 +38,12 @@ def build_verifier(spec: dict[str, Any], *, repo_root: Path) -> ReformulationVer
 
     if vtype == "flare":
         harness = _build_harness(spec)
-        return FLAREVerifier(repo_root=repo_root, harness=harness)
+        return FLAREVerifier(harness=harness)
 
     if vtype == "llm":
         client_spec = spec.pop("client")
         name = spec.pop("name")
-        template = spec.pop("template", "reformulation.j2")
+        template = spec.pop("template", "flare_nl")
         include_implicit = spec.pop("include_implicit", True)
         return LLMVerifier(
             make_client(client_spec),
@@ -60,8 +60,7 @@ def _build_harness(spec: dict[str, Any]) -> Harness:
     cls = HARNESSES.get(htype)
     if cls is None:
         raise ValueError(f"unknown flare harness: {htype!r}")
-    client_spec = dict(spec.pop("client"))
-    provider = client_spec.pop("provider", None)
-    config = LLMConfig.from_dict(client_spec)
-    kwargs: dict[str, Any] = {"provider": provider} if provider is not None else {}
-    return cls(config=config, **kwargs)
+    kwargs = dict(spec.pop("client"))
+    if htype != "opencode":
+        kwargs.pop("provider", None)
+    return cls(**kwargs)

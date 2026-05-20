@@ -33,6 +33,10 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025"
-        }
+        },
+        "notes": [
+            "We add implicit assumptions that sets are non-empty, travel times $T_{ij} \\geq 0$, $T_{\\text{limit}} \\geq 0$, and $n \\leq |\\mathcal{S}|$."
+        ]
+
     }
 }

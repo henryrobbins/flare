@@ -148,6 +148,10 @@
             "dataset": "EquivaFormulation",
             "instance_id": "47",
             "variation_id": "i"
-        }
+        },
+        "notes": [
+            "Re-scale the objective function.",
+            "Source was missing objective re-scaling; applied arbitrary scaling factor of 2."
+        ]
     }
 }

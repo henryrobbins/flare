@@ -147,6 +147,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC3"
-        }
+        },
+        "notes": [
+            "A hole in the top row at column $j$ forces a new strip covering column $j$ to begin in row $1$, breaking the column at the hole vertically."
+        ]
     }
 }

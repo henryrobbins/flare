@@ -150,6 +150,10 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "formulation_id": "efficient"
-        }
+        },
+        "notes": [
+            "The efficient formulation pre-computes a feasibility indicator $\\delta_{ij}$ to avoid the need for big-M constraints.",
+            "We add an assumption that the feasibility indicator $\\delta_{ij} \\in \\{0,1\\}$ and $\\delta_{ij} = 1$ if and only if $T_{ij} \\leq T_{\\text{limit}}$."
+        ]
     }
 }

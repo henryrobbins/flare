@@ -9,10 +9,10 @@ from formulation_bench import Formulation
 from formulation_bench.models import Constraint
 
 from src.llm_client import LLMClient, compute_cost_usd
-from src.prompts import problem_info
 from src.verify.base import ReformulationResult, ReformulationVerifier
 from src.verify.equivamap.prompts import (
     VARIABLE_MAPPING_SCHEMA,
+    problem_info,
     render_variable_mapping,
 )
 
@@ -128,9 +128,9 @@ def _solve(formulation: Formulation, fdir: Path) -> dict[str, Any]:
     """gen_params → write solve.py → run → return solution dict."""
     fdir.mkdir(parents=True, exist_ok=True)
     params_path = fdir / "parameters.json"
-    formulation.gen_params(output_path=params_path)
+    formulation.run_gen_params(output_path=params_path)
     solve_path = fdir / "solve.py"
-    solve_path.write_text(formulation.gurobipy_code)
+    solve_path.write_text(formulation.gen_solve_py())
     solution_path = fdir / "solution.json"
     subprocess.run(
         ["python", str(solve_path), str(params_path), str(solution_path)],
@@ -149,7 +149,7 @@ class EquivaMapVerifier(ReformulationVerifier):
     def name(self) -> str:
         return "equivamap"
 
-    def method_config(self) -> dict[str, Any]:
+    def get_config_dict(self) -> dict[str, Any]:
         return {"tolerance": TOLERANCE, "llm": dataclasses.asdict(self.client.config)}
 
     def verify(
@@ -158,7 +158,7 @@ class EquivaMapVerifier(ReformulationVerifier):
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(
-            json.dumps(self.method_config(), indent=2)
+            json.dumps(self.get_config_dict(), indent=2)
         )
 
         start = time.time()

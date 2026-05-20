@@ -12,6 +12,7 @@ on:
       - "pyproject.toml"
       - "uv.lock"
       - ".github/workflows/ci-python.yml"
+      - "codecov.yml"
   pull_request:
     paths:
       - "src/**"
@@ -22,6 +23,7 @@ on:
       - "pyproject.toml"
       - "uv.lock"
       - ".github/workflows/ci-python.yml"
+      - "codecov.yml"
 
 jobs:
   lint:
@@ -72,7 +74,15 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
-      - name: Type check (mypy)
+      - name: Type check (mypy) — root
+        run: uv run mypy
+
+      - name: Type check (mypy) — formulation_bench
+        working-directory: packages/formulation_bench
+        run: uv run mypy
+
+      - name: Type check (mypy) — milp_flare
+        working-directory: packages/milp_flare
         run: uv run mypy
 
   test:
@@ -89,5 +99,63 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
 
+      - name: Pre-warm dataset cache
+        run: uv run python -c "from formulation_bench import Dataset; Dataset.load()"
+
       - name: Run unit tests (no gurobi, no docker)
         run: uv run pytest -m 'not docker and not gurobi'
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install dependencies
+        run: uv sync --all-extras
+
+      - name: Pre-warm dataset cache
+        run: uv run python -c "from formulation_bench import Dataset; Dataset.load()"
+
+      - name: Coverage — formulation_bench
+        working-directory: packages/formulation_bench
+        run: make cov
+
+      - name: Upload formulation_bench coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/formulation_bench/coverage.xml
+          flags: formulation_bench
+          name: formulation_bench
+          fail_ci_if_error: false
+
+      - name: Coverage — milp_flare
+        working-directory: packages/milp_flare
+        run: make cov
+
+      - name: Upload milp_flare coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: packages/milp_flare/coverage.xml
+          flags: milp_flare
+          name: milp_flare
+          fail_ci_if_error: false
+
+      - name: Coverage — src (root)
+        run: make cov
+
+      - name: Upload src coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          flags: src
+          name: src
+          fail_ci_if_error: false

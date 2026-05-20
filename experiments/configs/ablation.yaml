@@ -5,13 +5,13 @@ runs: 3
 
 modes:
   - label: regular
-    template: reformulation.j2
+    template: flare_nl
     include_implicit: true
   - label: no_definition
     template: no_definition.j2
     include_implicit: true
   - label: allow_implicit
-    template: reformulation.j2
+    template: flare_nl
     include_implicit: false
 
 models:

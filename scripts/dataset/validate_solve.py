@@ -49,17 +49,25 @@ def main() -> None:
     ):
         label = f"problem {pid} / formulation {fid}"
 
-        (formulation.path / "solve.py").write_text(formulation.gurobipy_code)
+        (formulation.path / "solve.py").write_text(formulation.gen_solve_py())
 
         try:
-            formulation.gen_params()
+            formulation.run_gen_params()
         except subprocess.CalledProcessError:
             tqdm.write(f"FAIL  gen_params  {label}")
             failures.append((pid, fid, "gen_params"))
             continue
 
         try:
-            formulation.solve()
+            subprocess.run(
+                [
+                    "python",
+                    str(formulation.path / "solve.py"),
+                    str(formulation.path / "parameters.json"),
+                    str(formulation.path / "solution.json"),
+                ],
+                check=True,
+            )
         except subprocess.CalledProcessError:
             tqdm.write(f"FAIL  solve       {label}")
             failures.append((pid, fid, "solve"))

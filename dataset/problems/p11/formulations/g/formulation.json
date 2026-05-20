@@ -590,6 +590,9 @@
         "source": {
             "dataset": "EvoCut",
             "name": "EC3b"
-        }
+        },
+        "notes": [
+            "Generator $g$'s maximum available output in period $t$ is bounded by the reachable level from $t-1$ assuming startup derating was applied at $t-1$."
+        ]
     }
 }

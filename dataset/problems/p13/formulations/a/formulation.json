@@ -1,5 +1,5 @@
 {
-    "valid": false,
+    "valid": true,
     "parameters": {
         "nP": {
             "description": "Number of flights",
@@ -141,6 +141,9 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "formulation_id": "inefficient"
-        }
+        },
+        "notes": [
+            "This is the disaggregate (inefficient) formulation."
+        ]
     }
 }

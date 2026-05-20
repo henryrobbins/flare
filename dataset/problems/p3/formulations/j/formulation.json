@@ -131,6 +131,9 @@
       "dataset": "EquivaFormulation",
       "instance_id": "92",
       "variation_id": "l"
-    }
+    },
+    "notes": [
+      "Arbitrarily remove constraints from the original formulation."
+    ]
   }
 }

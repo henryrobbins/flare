@@ -142,6 +142,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC2"
-        }
+        },
+        "notes": [
+            "For every demand threshold $v$ corresponding to some customer demand, the total number of 'slots' of size $v$ across all open warehouses must be at least the number of customers with demand at least $v$. This gives a family of lower bounds on the number of warehouses that must be opened."
+        ]
     }
 }

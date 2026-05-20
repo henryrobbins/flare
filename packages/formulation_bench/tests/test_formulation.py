@@ -151,3 +151,9 @@ def test_imports_content(formulation_with_imports: Formulation) -> None:
 
 def test_problem_back_reference(problem1: Problem, formulation_a: Formulation) -> None:
     assert formulation_a.problem is problem1
+
+
+def test_lean_formulation_path(formulation_a: Formulation) -> None:
+    expected = formulation_a.path / "Formulation.lean"
+    assert formulation_a.lean_formulation_path == expected
+    assert formulation_a.lean_formulation_path.is_file()

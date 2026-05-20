@@ -111,6 +111,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC1"
-        }
+        },
+        "notes": [
+            "If the tour leaves the depot directly to city $j$, then $j$'s MTZ position $u_j$ must be at most $2$."
+        ]
     }
 }

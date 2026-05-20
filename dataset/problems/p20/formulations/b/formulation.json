@@ -392,6 +392,10 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "variation_id": "inefficient"
-        }
+        },
+        "notes": [
+            "The inefficient formulation is path-based.",
+            "Proving this is a valid reformulation requires introducing many assumptions that relate the path-based parameters to the underlying supply network structure of the efficient formulation. These assumptions ensure the set of paths is well-formed and allows for a flow-decomposition argument."
+        ]
     }
 }

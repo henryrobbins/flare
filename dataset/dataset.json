@@ -20,5 +20,1063 @@
         18,
         19,
         20
+    ],
+    "reformulations": [
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "c"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "f"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "h"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "i"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 1,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 1,
+                "formulation": "j"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "c"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "f"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "h"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "i"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 2,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 2,
+                "formulation": "j"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "c"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "f"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "h"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "i"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 3,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 3,
+                "formulation": "j"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "c"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "f"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "h"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "i"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 4,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 4,
+                "formulation": "j"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "c"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "f"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "h"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "i"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 5,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 5,
+                "formulation": "j"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "c"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "f"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "h"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "i"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 6,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 6,
+                "formulation": "j"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 7,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 7,
+                "formulation": "b"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 7,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 7,
+                "formulation": "c"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 7,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 7,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 7,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 7,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 7,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 7,
+                "formulation": "f"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 7,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 7,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 7,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 7,
+                "formulation": "h"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 7,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 7,
+                "formulation": "i"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 8,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 8,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 8,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 8,
+                "formulation": "c"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 8,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 8,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 9,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 9,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 9,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 9,
+                "formulation": "c"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 9,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 9,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 10,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 10,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 10,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 10,
+                "formulation": "c"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 10,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 10,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 10,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 10,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 11,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 11,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 11,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 11,
+                "formulation": "c"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 11,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 11,
+                "formulation": "d"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 11,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 11,
+                "formulation": "e"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 11,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 11,
+                "formulation": "f"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 11,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 11,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 11,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 11,
+                "formulation": "h"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 11,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 11,
+                "formulation": "i"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 12,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 12,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 12,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 12,
+                "formulation": "c"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 12,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 12,
+                "formulation": "d"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 12,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 12,
+                "formulation": "e"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 12,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 12,
+                "formulation": "f"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 12,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 12,
+                "formulation": "g"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 12,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 12,
+                "formulation": "h"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 12,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 12,
+                "formulation": "i"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 13,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 13,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 14,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 14,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 15,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 15,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 16,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 16,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 17,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 17,
+                "formulation": "b"
+            },
+            "reformulation": false
+        },
+        {
+            "a": {
+                "problem": 18,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 18,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 19,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 19,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 20,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 20,
+                "formulation": "b"
+            },
+            "reformulation": true
+        }
     ]
 }

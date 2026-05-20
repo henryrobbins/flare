@@ -44,6 +44,9 @@
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025"
-        }
+        },
+        "notes": [
+            "We identify a number of modeling inconsistencies in the original pair of formulations. To address this, we propose a new pair of flow-based formulations. The efficient formulation `p13.b` is an aggregated version of `p13.a`."
+        ]
     }
 }

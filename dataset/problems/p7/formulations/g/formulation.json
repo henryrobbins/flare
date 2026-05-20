@@ -147,6 +147,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC6"
-        }
+        },
+        "notes": [
+            "An interior hole at $(i, j)$ forces a strip covering column $j$ to begin in row $i+1$, breaking the column at the hole from below."
+        ]
     }
 }

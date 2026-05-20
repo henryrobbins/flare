@@ -573,6 +573,9 @@
     "metadata": {
         "source": {
             "dataset": "EvoCut"
-        }
+        },
+        "notes": [
+            "This is the MILP formulation given in Section F.7 of EvoCut arXiv submission `v2`."
+        ]
     }
 }

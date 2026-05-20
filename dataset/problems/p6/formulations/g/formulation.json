@@ -130,6 +130,9 @@
             "dataset": "EvoCut",
             "version": 2,
             "name": "EC3"
-        }
+        },
+        "notes": [
+            "Customer $i$ can only be assigned to warehouse $j$ if $j$ is open."
+        ]
     }
 }

@@ -115,6 +115,10 @@
             "dataset": "EquivaFormulation",
             "instance_id": "74",
             "variation_id": "i"
-        }
+        },
+        "notes": [
+            "Re-scale the objective function.",
+            "Source variation scaled the variables and objective by a factor of 1/10. This makes the reformulation invalid when the decision variables are integer. We replace the source transformation by simply scaling the objective by a factor of 2."
+        ]
     }
 }

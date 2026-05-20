@@ -111,6 +111,10 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC3"
-        }
+        },
+        "notes": [
+            "Eliminate triangles involving the depot.",
+            "This cut was identified by `FLARE` to be invalid. The inequality prevents the feasible $1 \\to 2 \\to 3 \\to 1$ tour for $n=3$ TSP instances."
+        ]
     }
 }

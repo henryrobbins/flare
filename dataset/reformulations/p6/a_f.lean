@@ -1,6 +1,6 @@
 import Common
-import dataset.problems.p6.formulations.a.Formulation
-import dataset.problems.p6.formulations.f.Formulation
+import problems.p6.formulations.a.Formulation
+import problems.p6.formulations.f.Formulation
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Real.Basic

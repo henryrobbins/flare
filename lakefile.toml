@@ -1,19 +1,10 @@
-name = "dataset"
+name = "flare"
 version = "0.1.0"
-defaultTargets = ["Common", "Dataset"]
+defaultTargets = ["Results"]
 
 [[require]]
-name = "mathlib"
-git = "https://github.com/leanprover-community/mathlib4"
-rev = "v4.28.0"
-
-[[lean_lib]]
-name = "Common"
-
-[[lean_lib]]
-name = "Dataset"
-srcDir = "."
-globs = ["dataset.+"]
+name = "FormulationBench"
+path = "dataset"
 
 [[lean_lib]]
 name = "Results"

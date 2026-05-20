@@ -130,6 +130,10 @@
             "dataset": "EquivaFormulation",
             "instance_id": "74",
             "variation_id": "g"
-        }
+        },
+        "notes": [
+            "Introduce slack variables to convert inequality constraints into equality constraints.",
+            "Source variation was missing the slack variables; we introduced them."
+        ]
     }
 }

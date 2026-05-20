@@ -1,7 +1,7 @@
 import Common
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-import dataset.problems.p3.formulations.a.Formulation
-import dataset.problems.p3.formulations.e.Formulation
+import problems.p3.formulations.a.Formulation
+import problems.p3.formulations.e.Formulation
 
 open BigOperators Finset
 

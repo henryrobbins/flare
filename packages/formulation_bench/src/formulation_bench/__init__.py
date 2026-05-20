@@ -1,4 +1,5 @@
 from .dataset import Dataset
+from .download import DEFAULT_DATASET_VERSION, download_dataset
 from .formulation import Formulation
 from .models import (
     Assumption,
@@ -11,13 +12,15 @@ from .models import (
     Variable,
     VariableType,
 )
-from .pair import Pair
 from .problem import Problem
+from .reformulation import Reformulation
 
 __all__ = [
     "Dataset",
+    "DEFAULT_DATASET_VERSION",
+    "download_dataset",
     "Formulation",
-    "Pair",
+    "Reformulation",
     "Problem",
     "Parameter",
     "ParameterType",

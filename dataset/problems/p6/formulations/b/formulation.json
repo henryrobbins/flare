@@ -146,6 +146,9 @@
             "dataset": "EvoCut",
             "version": 1,
             "name": "EC1"
-        }
+        },
+        "notes": [
+            "Any two customers with demand exceeding half the maximum warehouse capacity cannot share a warehouse, so each such customer requires a distinct opened warehouse. This gives a simple lower bound on the number of warehouses that must be opened."
+        ]
     }
 }

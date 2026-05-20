@@ -38,6 +38,11 @@
         "source": {
             "dataset": "EquivaFormulation",
             "instance_id": 74
-        }
+        },
+        "notes": [
+            "The source variable type is continuous; we correct the variable type to integer.",
+            "The cutting plane (source variation `74_e`) is excluded because it is instance-specific.",
+            "Implicit non-negativity assumptions are added for every parameter."
+        ]
     }
 }

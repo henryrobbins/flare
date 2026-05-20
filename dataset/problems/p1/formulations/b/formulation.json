@@ -148,6 +148,10 @@
             "dataset": "EquivaFormulation",
             "instance_id": "47",
             "variation_id": "c"
-        }
+        },
+        "notes": [
+            "Change the names of parameters and variables.",
+            "Source typo $U \\leq A \\cdot K + s \\cdot r$ corrected to $U \\leq A \\cdot s + K \\cdot r$ to match Gurobi code and problem description."
+        ]
     }
 }

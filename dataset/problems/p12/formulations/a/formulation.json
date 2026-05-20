@@ -101,6 +101,9 @@
     "metadata": {
         "source": {
             "dataset": "EvoCut"
-        }
+        },
+        "notes": [
+            "This is the Miller-Tucker-Zemlin (MTZ) MILP formulation given in Section F.1 of EvoCut arXiv submission `v1`."
+        ]
     }
 }

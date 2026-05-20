@@ -1,8 +1,8 @@
 import Common
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Int.Basic
-import dataset.problems.p2.formulations.a.Formulation
-import dataset.problems.p2.formulations.g.Formulation
+import problems.p2.formulations.a.Formulation
+import problems.p2.formulations.g.Formulation
 
 open BigOperators Finset
 

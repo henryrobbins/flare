@@ -12,7 +12,7 @@ from pathlib import Path
 from threading import Lock
 from typing import Any
 
-from formulation_bench import Formulation, Pair
+from formulation_bench import Formulation, Reformulation
 
 from src.verify.base import ReformulationVerifier
 
@@ -45,7 +45,9 @@ def resolve_problem_filter(
     return None
 
 
-def filter_pairs(pairs: list[Pair], problem_filter: set[int] | None) -> list[Pair]:
+def filter_pairs(
+    pairs: list[Reformulation], problem_filter: set[int] | None
+) -> list[Reformulation]:
     if problem_filter is None:
         return list(pairs)
     return [
@@ -145,7 +147,7 @@ def add_common_args(parser: argparse.ArgumentParser, default_config: Path) -> No
 
 def run_verification(
     verifier: ReformulationVerifier,
-    pair: Pair,
+    pair: Reformulation,
     artifacts_dir: Path,
     name: str,
     run_idx: int | None,
@@ -163,7 +165,7 @@ def run_verification(
         "formulation_a": fa,
         "problem_b": pb,
         "formulation_b": fb,
-        "ground_truth": pair.reformulation,
+        "ground_truth": pair.is_reformulation,
         "method": name,
         "model": model,
         "mode": mode,

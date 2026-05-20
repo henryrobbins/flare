@@ -18,6 +18,10 @@
     "metadata": {
         "source": {
             "dataset": "EvoCut"
-        }
+        },
+        "notes": [
+            "EvoCut arXiv submission `v1` proposes three inequalities used to generate formulations `p12.b-d`.",
+            "EvoCut arXiv submission `v2` proposes five inequalities used to generate formulations `p12.e-i`."
+        ]
     }
 }

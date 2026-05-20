@@ -332,6 +332,10 @@
         "source": {
             "dataset": "Ferchtandiker2025",
             "formulation_id": "efficient"
-        }
+        },
+        "notes": [
+            "The efficient formulation is node-based with continuous flow variables $F_{ijk}$ on graph edges.",
+            "The original formulation was identified by `FLARE` to be invalid. Its procurement cost was $\\sum_{k \\in K} \\mathrm{pc}_k \\sum_{j \\in N_B} \\mathrm{dem}_j R_k$, which depends only on the ration size $R_k$, while the inefficient formulation charges procurement on the total amount shipped $\\sum_{p \\in P} x_{pk}$. Since the demand constraint $\\sum_{i \\in N} E_{ij} F_{ijk} \\geq \\mathrm{dem}_j R_k$ permits shipping in excess of $\\mathrm{dem}_j R_k$ without additional procurement penalty, the objectives are misaligned. To make this a valid reformulation, we charge procurement on the supplier outflow $\\sum_{s \\in N_S} \\sum_{j \\in N} E_{S_s, j} F_{S_s, j, k}$."
+        ]
     }
 }
