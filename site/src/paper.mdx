@@ -75,6 +75,77 @@ Accuracy of automated reformulation checking methods on the *FormulationBench* d
 | `FLARE`                 | ✓           | **100.0%**   | *95.7%*      | *96.9%*      |
 | `FLARE-NL`              | ✗           | *99.5%*      | **100.0%**   | **99.7%**    |
 
+## FormulationBench
+
+*FormulationBench* is a dataset of 20 optimization problems with 116 MILP formulations. Each formulation includes a natural-language description, a LaTeX formulation, a GurobiPy implementation, and a Lean representation. The dataset also includes 96 reformulation pairs (70 positive and 26 negative examples), with a machine-checked Lean 4 reformulation proof for every positive pair.
+
+The [`formulation-bench`](https://pypi.org/project/formulation-bench/) Python package provides utilities for loading and working with the dataset. Install it with:
+
+```bash
+pip install formulation-bench
+```
+
+Working with the dataset is straightforward:
+
+```python
+from formulation_bench import Dataset
+
+ds = Dataset.load()
+
+p1 = ds.problems[1]
+p1a = p1.formulations["a"]
+
+pos = [r for r in ds.reformulations if r.is_reformulation]
+neg = [r for r in ds.reformulations if not r.is_reformulation]
+```
+
+See the [documentation](https://formulation-bench.henryrobbins.com) for the full schema and API reference.
+
+## FLARE
+
+`FLARE` (Formulation-Level Automated Reformulation Evaluation) verifies that one MILP formulation is a valid reformulation of another by combining an LLM-based coding agent with the Lean 4 proof assistant. Given two formulations in natural language and GurobiPy, the agent formalizes both in Lean, states the reformulation claim against our formal definition, and constructs a machine-checkable proof — using the Lean LSP MCP server for feedback as it works. The output is a Lean artifact that anyone can independently re-check.
+
+`FLARE-NL` is a single-shot, natural-language proxy for `FLARE` that asks an LLM to judge reformulation directly. It trades the formal certificate for speed and cost, and is useful when machine-checkable guarantees are not required.
+
+Both methods are implemented in the [`milp-flare`](https://pypi.org/project/milp-flare/) Python package:
+
+```bash
+pip install milp-flare
+milp-flare build-image
+```
+
+Running `FLARE` on a pair from FormulationBench:
+
+```python
+from pathlib import Path
+
+from formulation_bench import Dataset
+from milp_flare import FLARE, FormulationInput
+from milp_flare.harness import ClaudeCodeHarness
+
+ds = Dataset.load()
+p1 = ds.problems[1]
+a, b = p1.formulations["a"], p1.formulations["b"]
+
+harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
+flare = FLARE(harness=harness)
+
+a_in = FormulationInput(formulation_md=a.render_markdown(), solve_py=a.gen_solve_py())
+b_in = FormulationInput(formulation_md=b.render_markdown(), solve_py=b.gen_solve_py())
+
+result = flare.verify(a_in, b_in, output_path=Path("runs/p1_a_b"))
+```
+
+Building a `FLARE-NL` prompt for the same pair:
+
+```python
+from milp_flare import flare_nl_prompt
+
+prompt = flare_nl_prompt(a.render_markdown(), b.render_markdown())
+```
+
+See the [documentation](https://milp-flare.henryrobbins.com) for harness configuration, agent skills, and a tutorial on running `FLARE` end-to-end.
+
 {/* ## BibTeX citation
 
 ```bibtex
