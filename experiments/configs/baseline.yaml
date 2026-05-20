@@ -16,7 +16,7 @@ verifiers:
       reasoning_effort: high
 
   - type: flare
-    harness: opencode
+    harness: claude_code
     client:
       model: claude-opus-4-7
-      effort: medium
+      effort: high
