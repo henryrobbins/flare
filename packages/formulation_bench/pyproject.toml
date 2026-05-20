@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "formulation-bench"
-version = "0.2.0"
+version = "0.3.0"
 description = "Utilities for loading and working with the FormulationBench dataset."
 readme = "README.md"
 authors = [{ name = "Henry Robbins", email = "hwr@stanford.edu" }]
