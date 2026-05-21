@@ -1,6 +1,6 @@
 name = "flare"
 version = "0.1.0"
-defaultTargets = ["Results"]
+defaultTargets = []
 
 [[require]]
 name = "FormulationBench"
