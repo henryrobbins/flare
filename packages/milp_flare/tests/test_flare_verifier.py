@@ -52,11 +52,12 @@ def pair(request, dataset: Dataset) -> tuple[Formulation, Formulation, bool]:
 # ---------------------------------------------------------------------------
 
 
-# Match either fully-qualified `import dataset.problems.pX.formulations.Y.Formulation`
-# or the trailing bare `import Y.Formulation` form; rewrite both to the
+# Match a fully-qualified `import problems.pX.formulations.Y.Formulation`
+# (the lake project's srcDir is `dataset/`, so that is the module path) or
+# the trailing bare `import Y.Formulation` form; rewrite both to the
 # in-container module name (A.Formulation / B.Formulation).
 _FORM_IMPORT = re.compile(
-    r"^import\s+(?:dataset\.problems\.p\d+\.formulations\.)?([a-z])\.Formulation\s*$",
+    r"^import\s+(?:problems\.p\d+\.formulations\.)?([a-z])\.Formulation\s*$",
     re.MULTILINE,
 )
 
@@ -81,8 +82,8 @@ def _copy_ground_truth(
 ) -> None:
     """Populate wd with the ground-truth Formulation.lean + Reformulation.lean.
 
-    The dataset's reformulation file imports the formulations by their full
-    `dataset.problems.pX.formulations.Y.Formulation` path. Inside the
+    The dataset's reformulation file imports the formulations by their
+    `problems.pX.formulations.Y.Formulation` module path. Inside the
     container that module path doesn't resolve, so we rewrite the imports
     to the local `A.Formulation` / `B.Formulation` modules served by the
     docker lakefile.
