@@ -3,20 +3,31 @@
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
+import tempfile
+from pathlib import Path
 
 from milp_flare._assets import BUILD_CONTEXT, DOCKERFILE
 from milp_flare.harness.base import IMAGE
 
 
 def build_image(tag: str, no_cache: bool) -> int:
-    cmd = ["docker", "build", "-f", str(DOCKERFILE), "-t", tag]
-    if no_cache:
-        cmd.append("--no-cache")
-    cmd.append(str(BUILD_CONTEXT))
-    print(f"$ {' '.join(cmd)}")
-    return subprocess.run(cmd).returncode
+    # Stage the build context in a temp dir, dereferencing symlinks.
+    # - In a dev checkout, files under `assets/lean/` are symlinks into the
+    #   repo's `dataset/` which is outside the build context.
+    # - In an installed package they are already real files.
+    with tempfile.TemporaryDirectory() as tmp:
+        ctx = Path(tmp) / "context"
+        shutil.copytree(BUILD_CONTEXT, ctx, symlinks=False)
+        dockerfile = ctx / DOCKERFILE.relative_to(BUILD_CONTEXT)
+        cmd = ["docker", "build", "-f", str(dockerfile), "-t", tag]
+        if no_cache:
+            cmd.append("--no-cache")
+        cmd.append(str(ctx))
+        print(f"$ {' '.join(cmd)}")
+        return subprocess.run(cmd).returncode
 
 
 def main(argv: list[str] | None = None) -> int:
