@@ -15,7 +15,16 @@
             ]
         }
     },
-    "assumptions": [],
+    "assumptions": [
+        {
+            "description": "There must be at least two cities to form a tour.",
+            "formulation": "n \\geq 2",
+            "explicit": false,
+            "code": {
+                "python": "assert n >= 2"
+            }
+        }
+    ],
     "variables": {
         "x": {
             "description": "1 if the tour goes directly from city i to city j, 0 otherwise",

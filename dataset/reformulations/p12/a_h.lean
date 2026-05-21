@@ -23,7 +23,7 @@ private lemma xnn {p : P12.a.Params} {v : P12.a.Vars p} (h : P12.a.Feasible p v)
 private lemma exists_unique_out {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (i : Fin p.n) :
     ∃! k : Fin p.n, v.x i k = 1 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hsum := h.hout i
   have hex : ∃ k : Fin p.n, v.x i k = 1 := by
     by_contra hc
@@ -46,7 +46,7 @@ private lemma exists_unique_out {p : P12.a.Params} {v : P12.a.Vars p}
 private lemma exists_unique_in {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (j : Fin p.n) :
     ∃! k : Fin p.n, v.x k j = 1 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hsum := h.hin j
   have hex : ∃ k : Fin p.n, v.x k j = 1 := by
     by_contra hc
@@ -138,7 +138,7 @@ private lemma pos_iterate_increase {p : P12.a.Params} {v : P12.a.Vars p}
 private lemma reaches_depot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (m : Fin p.n) :
     ∃ k : ℕ, ((succF h)^[k] m).val = 0 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   by_contra hc
   push_neg at hc
   have hall : ∀ i : ℕ, ((succF h)^[i] m).val ≠ 0 := hc
@@ -173,10 +173,10 @@ private lemma min_reaches_depot {p : P12.a.Params} {v : P12.a.Vars p}
 
 private lemma chain_length_aux {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (j : Fin p.n) (_hj : j.val ≠ 0)
-    (hxj : haveI := p.hn; v.x 0 j = 1) :
+    (hxj : haveI : NeZero p.n := ⟨by have := p.hn; omega⟩; v.x 0 j = 1) :
     ∃ k : ℕ, k = p.n - 1 ∧ ((succF h)^[k] j).val = 0 ∧
       ∀ i, i < k → ((succF h)^[i] j).val ≠ 0 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   obtain ⟨k, hk_zero, hk_nondepot⟩ := min_reaches_depot h j
   refine ⟨k, ?_, hk_zero, hk_nondepot⟩
@@ -254,7 +254,7 @@ private lemma chain_length_aux {p : P12.a.Params} {v : P12.a.Vars p}
 private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {i j : Fin p.n} (hi : i.val ≠ 0) (hj : j.val ≠ 0)
     (hxji : v.x j i = 1) : v.u i = v.u j + 1 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   have hn2 : 2 ≤ p.n := by
     by_contra hlt; push_neg at hlt
@@ -396,8 +396,8 @@ private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars p}
 /-- If `x_{i0} = 1` and `i ≠ 0`, then `u_i = n`. -/
 private lemma u_eq_n_of_arc_to_depot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {i : Fin p.n} (hi : i.val ≠ 0)
-    (hxi0 : haveI := p.hn; v.x i 0 = 1) : v.u i = (p.n : ℝ) := by
-  haveI : NeZero p.n := p.hn
+    (hxi0 : haveI : NeZero p.n := ⟨by have := p.hn; omega⟩; v.x i 0 = 1) : v.u i = (p.n : ℝ) := by
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   have hn2 : 2 ≤ p.n := by
     by_contra hlt; push_neg at hlt
@@ -451,8 +451,8 @@ private lemma u_eq_n_of_arc_to_depot {p : P12.a.Params} {v : P12.a.Vars p}
 /-- If `x_{0i} = 1` and `i ≠ 0`, then `u_i = 2`. -/
 private lemma u_eq_2_of_arc_from_depot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {i : Fin p.n} (hi : i.val ≠ 0)
-    (hx0i : haveI := p.hn; v.x 0 i = 1) : v.u i = 2 := by
-  haveI : NeZero p.n := p.hn
+    (hx0i : haveI : NeZero p.n := ⟨by have := p.hn; omega⟩; v.x 0 i = 1) : v.u i = 2 := by
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   have hn2 : 2 ≤ p.n := by
     by_contra hlt; push_neg at hlt
@@ -497,12 +497,12 @@ private def fwd (p : P12.a.Params) (v : P12.a.Vars p) : P12.h.Vars (paramMap p) 
 private lemma fwd_hec4 (p : P12.a.Params) (v : P12.a.Vars p)
     (h : P12.a.Feasible p v) :
     ∀ i : Fin (paramMap p).n, i.val ≠ 0 →
-      haveI := (paramMap p).hn
+      haveI : NeZero (paramMap p).n := ⟨by have := (paramMap p).hn; omega⟩
       3 - ((fwd p v).x 0 i : ℝ) + (((paramMap p).n : ℝ) - 3) *
         ((fwd p v).x i 0 : ℝ) ≤ (fwd p v).u i := by
   intro i hi
   simp only [fwd, paramMap]
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   have hi_lt : i.val < p.n := i.isLt
   have hn2 : 2 ≤ p.n := by

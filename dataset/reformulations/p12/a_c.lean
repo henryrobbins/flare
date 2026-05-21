@@ -28,14 +28,14 @@ private def paramMap (p : P12.a.Params) : P12.c.Params :=
 -- breaking hmtz (the unique outgoing arc from such an i is 0, so x_{i j} = 0
 -- for all j in Fin p.n, and the incoming constraint forbids two such i's).
 private def fwd (p : P12.a.Params) (v : P12.a.Vars p) : P12.c.Vars (paramMap p) :=
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   { x := v.x
     u := fun i => if v.x i 0 = 1 then (p.n : ℝ) else v.u i }
 
 private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars p)
     (h : P12.a.Feasible p v) :
     P12.c.Feasible (paramMap p) (fwd p v) := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   -- x a b ∈ {0, 1} so nonneg
   have xnn : ∀ (a b : Fin p.n), 0 ≤ v.x a b := fun a b => by

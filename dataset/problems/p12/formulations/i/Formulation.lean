@@ -12,7 +12,7 @@ structure Params where
   n : ℕ  -- number of cities
   c : Fin n → Fin n → ℝ  -- arc cost
   -- Implicit Assumptions
-  hn : NeZero n
+  hn : 2 ≤ n
 
 structure Vars (p : Params) where
   x : Fin p.n → Fin p.n → ℤ  -- arc indicator
@@ -27,14 +27,14 @@ structure Feasible (p : Params) (v : Vars p) : Prop where
   hmtz : ∀ (i : Fin p.n) (j : Fin p.n), i.val ≠ 0 → j.val ≠ 0 → i ≠ j →
     v.u i - v.u j + (p.n : ℝ) * (v.x i j : ℝ) ≤ (p.n : ℝ) - 1
   -- Depot position fixed to 1
-  hu_depot : haveI := p.hn; v.u 0 = 1
+  hu_depot : haveI : NeZero p.n := ⟨by have := p.hn; omega⟩; v.u 0 = 1
   hx_bin : ∀ (i j : Fin p.n), v.x i j = 0 ∨ v.x i j = 1
   -- u ∈ [2, n] for non-depot cities
   hu_lo : ∀ i : Fin p.n, i.val ≠ 0 → 2 ≤ v.u i
   hu_hi : ∀ i : Fin p.n, v.u i ≤ (p.n : ℝ)
   -- EC5 (V2): tightens upper bound on city i's position using depot-adjacent arcs
   hec5 : ∀ i : Fin p.n, i.val ≠ 0 →
-    haveI := p.hn
+    haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
     v.u i ≤ ((p.n : ℝ) - 1) + (v.x i 0 : ℝ) - ((p.n : ℝ) - 3) * (v.x 0 i : ℝ)
   -- [Implicit Constraints]
   -- No self-loops

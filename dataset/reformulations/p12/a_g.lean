@@ -23,7 +23,7 @@ private lemma xnn {p : P12.a.Params} {v : P12.a.Vars p} (h : P12.a.Feasible p v)
 private lemma exists_unique_out {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (i : Fin p.n) :
     ∃! k : Fin p.n, v.x i k = 1 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hsum := h.hout i
   have hex : ∃ k : Fin p.n, v.x i k = 1 := by
     by_contra hc
@@ -115,7 +115,7 @@ private lemma pos_iterate_increase {p : P12.a.Params} {v : P12.a.Vars p}
 private lemma reaches_depot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (m : Fin p.n) :
     ∃ k : ℕ, ((succF h)^[k] m).val = 0 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   by_contra hc
   push_neg at hc
   have hall : ∀ i : ℕ, ((succF h)^[i] m).val ≠ 0 := hc
@@ -150,10 +150,10 @@ private lemma min_reaches_depot {p : P12.a.Params} {v : P12.a.Vars p}
 
 private lemma chain_length_aux {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) (j : Fin p.n) (_hj : j.val ≠ 0)
-    (hxj : haveI := p.hn; v.x 0 j = 1) :
+    (hxj : haveI : NeZero p.n := ⟨by have := p.hn; omega⟩; v.x 0 j = 1) :
     ∃ k : ℕ, k = p.n - 1 ∧ ((succF h)^[k] j).val = 0 ∧
       ∀ i, i < k → ((succF h)^[i] j).val ≠ 0 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   obtain ⟨k, hk_zero, hk_nondepot⟩ := min_reaches_depot h j
   refine ⟨k, ?_, hk_zero, hk_nondepot⟩
@@ -233,7 +233,7 @@ private lemma chain_length_aux {p : P12.a.Params} {v : P12.a.Vars p}
 private lemma arc_consec_nondepot {p : P12.a.Params} {v : P12.a.Vars p}
     (h : P12.a.Feasible p v) {i j : Fin p.n} (hi : i.val ≠ 0) (hj : j.val ≠ 0)
     (hxji : v.x j i = 1) : v.u i = v.u j + 1 := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   have hn2 : 2 ≤ p.n := by
     by_contra hlt; push_neg at hlt
@@ -414,7 +414,7 @@ private lemma fwd_hec3 (p : P12.a.Params) (v : P12.a.Vars p)
   have hpair : v.x i j + v.x j i ≤ 1 := by
     have h1 := h.hmtz i j hi hj hij
     have h2 := h.hmtz j i hj hi (Ne.symm hij)
-    haveI : NeZero p.n := p.hn
+    haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
     have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
     have hn_pos_r : (0 : ℝ) < (p.n : ℝ) := by exact_mod_cast hn_pos
     by_contra hc; push_neg at hc

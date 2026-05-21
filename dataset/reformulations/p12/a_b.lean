@@ -46,14 +46,14 @@ private def paramMap (p : P12.a.Params) : P12.b.Params :=
 -- fwd modifies u: if x 0 j = 1, set u j = 2; otherwise keep u j.
 -- This ensures hec1 holds: when x 0 j = 1, u j = 2 ≤ 2 + 0.
 private def fwd (p : P12.a.Params) (v : P12.a.Vars p) : P12.b.Vars (paramMap p) :=
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   { x := v.x
     u := fun i => if v.x 0 i = 1 then 2 else v.u i }
 
 private lemma fwd_feas (p : P12.a.Params) (v : P12.a.Vars p)
     (h : P12.a.Feasible p v) :
     P12.b.Feasible (paramMap p) (fwd p v) := by
-  haveI : NeZero p.n := p.hn
+  haveI : NeZero p.n := ⟨by have := p.hn; omega⟩
   have hn_pos : 0 < p.n := Nat.pos_of_ne_zero (NeZero.ne p.n)
   -- Depot index (same n since (paramMap p).n = p.n definitionally)
   let depot : Fin p.n := ⟨0, hn_pos⟩
