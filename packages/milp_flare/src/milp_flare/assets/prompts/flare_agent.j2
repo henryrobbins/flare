@@ -43,7 +43,7 @@ The working directory will be initialized with the following structure:
 
 - Interpret `lean_diagnostic_messages` carefully: `success:true, items:[]` means the file compiles cleanly. `success:false, items:[]` typically means imports aren't built yet — build them, don't assume the file is broken. Real errors come back as `items` with severity/message fields.
 - If there issues with the Lean environment or MCP tools, it is imperative to handle them as described in the rules above. Report and exit.
-- If you are stuck in proving the reformulation due missing problem data assumptions in either `Formulation.lean`, verify that the assumptions specified in `formulation.md` are all present in the corresponding `Formulation.lean`. If they are not, DO NOT ADD ASSUMPTIONS YOURSELF. Instead, report the missing assumptions as an issue preventing the reformulation proof in `Reformulation.lean` and exit.
+- If you are stuck proving the reformulation due missing assumptions in the `Formulation.lean` files, first verify that the assumptions specified in `formulation.md` are all present in the corresponding `Formulation.lean`. If any assumptions are missing, add them. Otherwise, DO NOT ADD ASSUMPTIONS YOURSELF. Instead, report the missing necessary assumptions as an issue preventing the reformulation proof in `Reformulation.lean` and exit.
 
 ## Available Tools
 
