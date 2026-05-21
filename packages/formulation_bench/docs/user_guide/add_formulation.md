@@ -1,154 +1,107 @@
-# Adding a new formulation to the dataset
+# Adding a new formulation
 
-A formulation is one specific MILP encoding of a problem: a choice of
-variables, constraints, and objective expressed both
-mathematically (LaTeX) and as runnable Gurobi code. Most files in a
-formulation directory are *generated* from `formulation.json` — the
-JSON is the source of truth.
+A MILP formulation must be added to an existing optimization problem. To create a new problem, follow the instructions in {doc}`add_problem`.
 
-Pick the next free single-letter label for the problem (e.g. `g` if
-`a` through `f` exist) and create
-`dataset/problems/pN/formulations/g/` with two hand-written files
-and two generated files.
+Adding a new formulation consists of writing the following files:
+- JSON file expressing every component of the formulation (e.g., variables, constraints, objective) in natural-language, math (LaTeX), and code (GurobiPy). 
+- Parameter generation script that translates problem data into parameter input for the formulation.
+- Lean 4 encoding following {doc}`/lean/formulation`
 
-## 1. `formulation.json` (hand-written)
+By convention, formulation names are single letter labels (e.g., `a`, `b`). Pick the next free label `x` for `pN` and create `problems/pN/formulations/x/`. Next, populate the directory with the required files as outlined below.
 
-The structured description of the MILP. See {doc}`../schema`
-for the full schema; the required keys are:
+## JSON File
 
-- `valid` — `true` if the formulation correctly captures the parent
-  problem, `false` if it is being kept as a labelled negative example.
-- `parameters` — parameters consumed by this formulation. Usually a
-  subset of the problem's parameters, possibly with renames or
-  derived constants.
-- `assumptions` — list of `{description, formulation, explicit, code.python}`
-  entries; `explicit` is `true` when the assumption appears in the
-  problem statement, `false` when implied (e.g., non-negativity).
-- `variables` — dict of `{description, type, shape}` entries.
-  `type` is one of `"integer"`, `"continuous"`, `"binary"`.
-- `constraints` — list of `{description, formulation, explicit, code.gurobipy}`.
-- `objective` — `{description, formulation, code.gurobipy}`.
-- Optional: `definitions` (ordered derived quantities) and `imports`
-  (extra Python imports for `solve.py`).
+The `formulation.json` file is the core object defining the formulation. See {ref}`formulation-level-files` for the full schema. In order for {meth}`Formulation.gen_solve_py() <formulation_bench.formulation.Formulation.gen_solve_py>` to generate a working solver script, all `assumptions` and `definitions` must contain `code.python` and all `constraints` and the `objective` must contain `code.gurobipy`.
 
-Pay attention to the **`shape`** and **`indices`** fields on
-variables: they determine how the generator builds `model.addVars(...)`
-calls.
+:::{tip}
+Reading raw LaTeX while editing the JSON file can be cumbersome. The {doc}`/problems/index` documentation is automatically generated from the dataset and provides a nice way to view a rendering of the formulation while editing. If you're working in the {github}`FLARE monorepo </>`, you can run `make docs-serve` from `packages/formulation_bench` to host the docs with live-reload on `http://127.0.0.1:8000`.
+:::
 
-```json
-{
-    "valid": true,
-    "parameters": { "...": "..." },
-    "variables": {
-        "NumCashMachines": {
-            "description": "The number of cash-based machines",
-            "type": "integer",
-            "shape": []
-        }
-    },
-    "constraints": [ { "...": "..." } ],
-    "objective": {
-        "description": "Minimize the total number of machines.",
-        "formulation": "Min \\ NumCashMachines + NumCardMachines",
-        "code": {"gurobipy": "model.setObjective(NumCashMachines + NumCardMachines, GRB.MINIMIZE)"}
-    },
-    "metadata": {"source": { "...": "..." }}
-}
+### Example
+
+{doc}`/problems/p12` Formulation `a`
+
+:::{dropdown} `problems/p12/formulations/a/formulation.json`
+:icon: code
+```{literalinclude} ../../../../dataset/problems/p12/formulations/a/formulation.json
+:language: json
 ```
+:::
 
-## 2. `gen_params.py` (hand-written)
+## Parameter Generation Script
 
-A short script that reads the problem's `data.json` and writes a
-`parameters.json` containing exactly the parameters listed in
-`formulation.json`. If the formulation uses the same parameter names
-as the problem, this is a one-to-one copy; if it renames or derives
-parameters, the mapping happens here.
+The parameter generation script `gen_params.py` reads the problem data instance defined in `data.json` and transforms it into the parameter input for the formulation (`parameters.json`). This allows the dataset to have a single source of data per problem. The script should include `--data` and `--output` flags for the `data.json` and `parameters.json` paths, respectively.
 
-```python
-import argparse
-import json
+### Example
 
+{doc}`/problems/p1` Formulation `b`
 
-def main(data_path: str, output_path: str) -> None:
-    with open(data_path) as f:
-        data = json.load(f)
-
-    params = {
-        "CashMachineProcessingRate": data["CashMachineProcessingRate"],
-        # ... one entry per parameter in formulation.json
-    }
-
-    with open(output_path, "w") as f:
-        json.dump(params, f, indent=4)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument("data")
-    parser.add_argument("output")
-    args = parser.parse_args()
-    main(args.data, args.output)
+:::{dropdown} `problems/p1/formulations/b/gen_params.py`
+:icon: code
+```{literalinclude} ../../../../dataset/problems/p1/formulations/b/gen_params.py
+:language: python
 ```
+:::
 
-## 3. `solve.py` (generated)
+## Lean 4 Encoding
 
-Deterministically generated from `formulation.json` by the
-`formulation_bench` package. Do **not** edit by hand; regenerate it
-whenever `formulation.json` changes:
+Each formulation must have a Lean 4 encoding in `Formulation.lean` following the {doc}`/lean/formulation`. This file should import `MILPFormulation` from `Common.lean` and define `formulation` inside the `PN.x` namespace where `N` is the problem identifier and `x` is the formulation identifier.
 
-```python
-from formulation_bench import Dataset
+The {github}`FLARE monorepo </>` ships with the `milp-formulator` agent which uses the `lean-milp-formulation` agent skill from {mf}`FLARE </skills.html#lean-milp-formulation>` to automatically generate `Formulation.lean`.
 
-ds = Dataset.load()
-f = ds.problem("p57").formulation("g")
+### Example
 
-(f.path / "solve.py").write_text(f.gen_solve_py())
+{doc}`/problems/p1` Formulation `b`
+
+:::{dropdown} `problems/p1/formulations/b/Formulation.lean`
+:icon: code
+```{literalinclude} ../../../../dataset/problems/p1/formulations/b/Formulation.lean
+:language: lean
 ```
+:::
 
-Alternatively, run the dataset-wide regenerate-and-validate script,
-which rewrites every `solve.py` from JSON and then confirms each
-formulation produces the expected objective:
-
-```bash
-python scripts/dataset/validate_solve.py
-```
-
-## 4. `Formulation.lean` (Lean 4 encoding)
-
-A `MILPFormulation` (see `dataset/Common.lean`) corresponding to the
-JSON. This file is what reformulation proofs depend on. The repository
-ships a `milp-formulator` agent that produces this file from the
-problem and formulation source — see `AGENTS.md` at the repo root for
-the workflow.
-
-## Registering reformulation pairs
+## Registering Reformulation Pairs
 
 If your new formulation forms a (positive or negative) reformulation
-pair with another formulation of the same problem, add an entry to
-`dataset/dataset.json`:
+pair with another formulation of the same problem, add an entry to the `reformulations` field in `dataset.json`:
 
 ```json
 {
-  "a": {"problem": 57, "formulation": "a"},
-  "b": {"problem": 57, "formulation": "g"},
+  "a": {"problem": 21, "formulation": "a"},
+  "b": {"problem": 21, "formulation": "b"},
   "reformulation": true
 }
 ```
 
-For *positive* pairs (`reformulation: true`), add the Lean proof at
-`dataset/reformulations/p57/a_g.lean`. The repository's
-`milp-reformulation-autoformalizer` agent can scaffold this; see
-`AGENTS.md`. Negative pairs (`reformulation: false`) have no Lean
-file by design.
+For positive pairs, create a Lean proof following the {doc}`/lean/reformulation`. This should be defined in `reformulations/pN/x_y.lean` where `N` is the common problem and the proof shows `y` is a reformulation of `x`. The file should import `Common` and both formulations:
+
+```lean
+import Common
+import problems.pN.formulations.x.Formulation
+import problems.pN.formulations.y.Formulation
+```
+
+The definition `xYReformulation : MILPReformulation PN.x.formulation PN.y.formulation` should be defined within the `PN` namespace.
+
+The {github}`FLARE monorepo </>` ships with the `milp-reformulation-autoformalizer` agent which uses the `lean-milp-reformulation` agent skill from {mf}`FLARE </skills.html#lean-milp-reformulation>` to automatically generate the Lean proof.
+
+### Example
+
+{doc}`/problems/p1` (`b` is a reformulation of `a`)
+
+:::{dropdown} `reformulations/p1/a_b.lean`
+:icon: code
+```{literalinclude} ../../../../dataset/reformulations/p1/a_b.lean
+:language: lean
+```
+:::
 
 ## Validating
 
-After adding everything:
+The {github}`FLARE monorepo </>` provides a validation script to test if the `solve.py` script generated by {meth}`Formulation.gen_solve_py() <formulation_bench.formulation.Formulation.gen_solve_py>` achieves the ground-truth optimal solution specified in the problem's `solution.json` file. This also verifies that `formulation.json` is well-structured.
 
 ```bash
-# Regenerate solve.py for every formulation and check objectives match.
-python scripts/dataset/validate_solve.py
-
-# Check the Lean files compile.
-lake build
+python scripts/dataset/validate_solve.py -p N  # run on problem pN
 ```
+
+Additionally, follow the instructions in {doc}`/user_guide/build_lean` to compile `Formulation.lean` and any reformulation proof Lean files.

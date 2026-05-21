@@ -2,32 +2,33 @@
 
 ## Install the package
 
+The `formulation-bench` package is available on [PyPI](https://pypi.org/project/formulation-bench/) and can be installed with `pip`:
+
 ```bash
 pip install formulation-bench
 ```
 
 ## Quickstart
 
+Download the dataset:
+
 ```python
 from formulation_bench import Dataset
-
 ds = Dataset.load()
-
-# Iterate over problems
-for problem in ds.problems:
-    print(problem.id, problem.description)
-
-# Access a specific problem and its formulations
-p1 = ds.problem("p1")
-for f in p1.formulations:
-    print(f.id, f.valid)
-
-# Iterate over labelled reformulations
-for r in ds.reformulations:
-    print(r.a.id, r.b.id, r.is_reformulation)
 ```
 
-```{note}
-The API above is illustrative — see the {doc}`api/index` for the actual
-entry points exposed by each module.
+Access a problem's formulations:
+
+```python
+p1 = ds.problems[1]
+p1a = p1.formulations["a"]
 ```
+
+Access reformulation pairs:
+
+```python
+pos = [r for r in ds.reformulations if r.is_reformulation]
+neg = [r for r in ds.reformulations if not r.is_reformulation]
+```
+
+See {doc}`user_guide/index` for user guides and {doc}`api/index` for the full API reference.

@@ -90,7 +90,7 @@ class Formulation:
         >>> f.parameters
         {'n': Parameter(...), 'c': Parameter(...)}
         >>> f.assumptions
-        []
+        [Assumption(description='There must be at least two cities ...)]
 
     Get the first constraint of the formulation::
 

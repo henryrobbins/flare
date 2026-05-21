@@ -40,7 +40,8 @@ def download_dataset(
 
     A tarball is fetched from the GitHub release tagged ``version`` and
     extracted under ``<cache_dir>/<version>/``. Subsequent calls with the same
-    ``version`` reuse the cached copy unless ``force=True``.
+    ``version`` reuse the cached copy unless ``force=True``. Also see
+    :doc:`/user_guide/download`.
 
     Parameters
     ----------

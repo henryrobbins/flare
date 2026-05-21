@@ -1,102 +1,86 @@
-# Adding a new problem to the dataset
+# Adding a new problem
 
-A problem is a self-contained optimization story plus the data needed
-to instantiate one concrete example of it. Once a problem exists, you
-can hang any number of formulations off of it
-(see {doc}`add_formulation`).
+Before adding a MILP formulation, you must create the optimization problem. This consists of writing a description, defining the necessary input data, and generating/solving a concrete instance of the problem. Afterward, you can add MILP formulations for the problem (see {doc}`add_formulation`).
 
-Pick the next free identifier `pN` (e.g. `p57`) and create the
-directory `dataset/problems/p57/` with four files.
+First, pick the next free identifier `pN` (e.g. `p21`) and create the
+directory `problems/p21/`. Next, populate this directory with all the files required by the dataset schema (see {ref}`problem-level-files`). The sections below walk through creating every necessary file. Lastly, append the problem identifier to the `problems` field in `dataset.json`.
 
-## 1. `description.md`
+## Description
 
-A natural-language statement of the optimization problem. Self-contained
-— a reader should be able to understand what is being optimized
-without any other file. Keep it parameter-name-free if possible; the
-formulations are responsible for binding parameter names.
+The `description.md` file contains a natural-language description of the optimization problem. This description populates `problem_description` when rendering a formulation in Markdown (see {meth}`Formulation.render_markdown() <formulation_bench.formulation.Formulation.render_markdown>`). Problem descriptions vary in size.
 
-```markdown
-A theme park operates two types of ticket machines: cash-based and
-card-only. Each cash machine processes people at a fixed rate per hour
-and consumes a fixed number of paper rolls per hour; card-only
-machines have their own rate and roll consumption. The park must
-process at least a given minimum of people per hour without exceeding
-a maximum supply of paper rolls per hour. The number of card-only
-machines cannot exceed the number of cash-based ones. Determine how
-many of each machine type minimize the total number of machines.
+### Examples
+
+{doc}`/problems/p1`
+
+:::{dropdown} `problems/p1/description.md`
+:icon: code
+:open:
+```{literalinclude} ../../../../dataset/problems/p1/description.md
+:language: markdown
+:class: wrap
 ```
+:::
 
-## 2. `problem.json`
+{doc}`/problems/p12`
 
-The parameter *schema*: every parameter the problem refers to, with
-its description, type, and shape. Shapes follow the notation in
-{doc}`../schema` — `[]` for a scalar, `["n"]` for a vector,
-etc. Include a `metadata.source` block recording where the problem
-came from.
-
-```json
-{
-    "name": "Amusement Park Ticket Machines",
-    "parameters": {
-        "CashMachineProcessingRate": {
-            "description": "Processing rate of a cash-based machine in people per hour",
-            "type": "continuous",
-            "shape": []
-        },
-        "CardMachineProcessingRate": { "...": "..." }
-    },
-    "metadata": {
-        "source": {"dataset": "EquivaFormulation", "instance_id": 47},
-        "notes": ["Implicit non-negativity assumptions added for every parameter."]
-    }
-}
+:::{dropdown} `problems/p12/description.md`
+:icon: code
+:open:
+```{literalinclude} ../../../../dataset/problems/p12/description.md
+:language: markdown
+:class: wrap
 ```
+:::
 
-## 3. `data.json`
+Find other problem descriptions in {doc}`/problems/index`.
 
-A single concrete instance: one value for every parameter listed in
-`problem.json`. This instance is what every formulation will be solved
-against; valid formulations must agree on the optimal objective for
-this instance.
+## JSON File
 
-```json
-{
-    "CashMachineProcessingRate": 20,
-    "CardMachineProcessingRate": 30,
-    "CashMachinePaperRolls": 4,
-    "CardMachinePaperRolls": 5,
-    "MinPeopleProcessed": 500,
-    "MaxPaperRolls": 90
-}
+The `problem.json` file defines the problem name, data parameters, and additional metadata. See {class}`Parameter <formulation_bench.models.Parameter>` for the parameters schema. The `metadata` field is freeform and typically includes `source` and `notes` fields which populate the source and notes blocks on the {doc}`/problems/index` pages.
+
+### Examples
+
+{doc}`/problems/p1`
+
+:::{dropdown} `problems/p1/problem.json`
+:icon: code
+```{literalinclude} ../../../../dataset/problems/p1/problem.json
+:language: json
 ```
+:::
 
-Choose an instance that is *non-trivial*: the optimum should not be
-degenerate (e.g. all zeros), so that two different formulations
-disagreeing about the constraints will produce different objectives.
+{doc}`/problems/p12`
 
-## 4. `solution.json`
-
-A reference optimal solution for the instance in `data.json`. Include
-variable values and the optimal objective. Variable names here are
-informational only — formulations may rename them — but the
-objective value is the source of truth that
-`scripts/dataset/validate_solve.py` compares each formulation against.
-
-```json
-{
-    "variables": {
-        "NumCashMachines": 10.0,
-        "NumCardMachines": 10.0
-    },
-    "objective": 20.0
-}
+:::{dropdown} `problems/p12/problem.json`
+:icon: code
+```{literalinclude} ../../../../dataset/problems/p12/problem.json
+:language: json
 ```
+:::
 
-## Wiring it in
+## Data & Solution
 
-You do **not** need to edit `dataset/dataset.json` until you also have
-formulation pairs: `dataset.json` lists labelled reformulation pairs,
-not problems. Problems are discovered by walking
-`dataset/problems/*/`.
+A single concrete instance must be defined in `data.json`. Its keys should match the parameter keys defined in `problem.json`.
 
-Next: add at least one formulation following {doc}`add_formulation`.
+Provide its optimal solution in `solution.json`. This dictionary has `variables` and `objective` keys. Note that variable values are specific to a *formulation*, not a problem. By convention, use the variable names of formulation `a` for the problem.
+
+### Example
+
+{doc}`/problems/p1`
+
+:::{dropdown} `problems/p1/data.json`
+:icon: code
+:open:
+```{literalinclude} ../../../../dataset/problems/p1/data.json
+:language: json
+```
+:::
+
+:::{dropdown} `problems/p1/solution.json`
+:icon: code
+:open:
+```{literalinclude} ../../../../dataset/problems/p1/solution.json
+:language: json
+```
+:::

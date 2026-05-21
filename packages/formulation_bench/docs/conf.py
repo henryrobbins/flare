@@ -12,11 +12,25 @@ release = _pkg_version("formulation-bench")
 extensions = [
     "myst_parser",
     "sphinx.ext.autodoc",
+    "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "numpydoc",
+    "sphinx_design",
     "gen_problem_pages",
 ]
+
+extlinks = {
+    "github": (
+        "https://github.com/henryrobbins/flare%s",
+        "GitHub%.0s",
+    ),
+    "paper": ("https://flare.henryrobbins.com%s", "FLARE Paper%.0s"),
+    "mf": (
+        "https://milp-flare.henryrobbins.com/en/latest%s",
+        "milp-flare%.0s",
+    ),
+}
 
 myst_enable_extensions = [
     "colon_fence",
@@ -24,7 +38,14 @@ myst_enable_extensions = [
     "fieldlist",
     "dollarmath",
     "amsmath",
+    "substitution",
 ]
+
+myst_substitutions = {
+    "GitHub": "[GitHub](https://github.com/henryrobbins/flare)",
+    "FLARE Paper": "[FLARE Paper](https://flare.henryrobbins.com)",
+    "milp-flare": "[milp-flare](https://milp-flare.henryrobbins.com/en/latest)",
+}
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
@@ -35,6 +56,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "furo"
 html_title = "FormulationBench"
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 autodoc_default_options = {"members": True, "undoc-members": True}
 autodoc_typehints = "none"

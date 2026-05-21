@@ -1,81 +1,74 @@
-# Compiling Lean files with `lake build`
+# Compiling Lean files
 
-The dataset's Lean 4 files — each formulation's `Formulation.lean`
-and each reformulation proof under `dataset/reformulations/` — are
-organized as a Lake project rooted at `dataset/`. The root
-`lakefile.toml` requires it as a sibling package, so you can build
-from either location.
+The FormulationBench dataset includes many [Lean](https://lean-lang.org/) files. Each formulation and reformulation proof has a corresponding Lean file and `Common.lean` defines {doc}`/lean/formulation` and {doc}`/lean/reformulation`.
 
-## Prerequisites
+This guide provides minimal instructions for compiling Lean files. For extensive documentation and tutorials on Lean, we direct the curious reader to the [Lean Community](https://leanprover-community.github.io/) documentation.
 
-1. **Install elan** (the Lean version manager). See the
-   [Lean community install guide](https://leanprover-community.github.io/get_started.html).
-   `elan` will read `lean-toolchain` and fetch the right Lean
-   automatically the first time you build.
-2. **Fetch the mathlib cache** (one-time, big download — avoids
-   compiling mathlib from source):
+## Install Lean
 
-   ```bash
-   lake update
-   lake exe cache get
-   ```
+See the Lean [installation instructions](https://lean-lang.org/install/). The recommended way to install Lean is through VS Code. You can also install it [manually](https://lean-lang.org/install/manual/). This will install `elan`, the Lean version manager. `elan` will read `lean-toolchain` and fetch the right Lean version automatically.
 
-   `lake update` resolves the mathlib dependency pinned in
-   `dataset/lakefile.toml`; `cache get` downloads pre-compiled
-   `.olean` files for it.
+## Initial Setup
+
+The dataset is structured as a Lean project; it includes a `lakefile.toml` (see below) that specifies all dependency information and project structure. FormulationBench has one dependency: [Mathlib](https://mathlib-initiative.org/), Lean's comprehensive mathematical library.
+
+:::{dropdown} `lakefile.toml`
+:icon: code
+```{literalinclude} ../../../../dataset/lakefile.toml
+:language: lean
+```
+:::
+
+Lean projects are managed by `lake`, the Lean package manager. After downloading the dataset (see {doc}`/user_guide/download`), run the following commands from the dataset root to download pre-compiled Mathlib files. This may take a few minutes.
+
+```bash
+lake update
+lake exe cache get
+```
 
 ## Building everything
 
-From the repository root:
+Run `lake build` from the dataset root to compile every Lean file in the dataset. This is expected to take ~5-10 minutes on the first build. Subsequent builds are incremental. 
 
 ```bash
 lake build
 ```
 
-This builds the default targets declared in `lakefile.toml`. From
-inside `dataset/`, `lake build` instead builds the `Common` and
-`Dataset` libraries, which together cover every formulation and
-reformulation file in the dataset. The first build after a clean
-checkout takes a while; incremental rebuilds reuse `.olean`s.
+:::{warning}
+If pre-compiled Mathlib files were not downloaded successfully, the initial build will take substantially longer than 10 minutes. When you run `lake build`, verify the initial output is consistent with Mathlib being pre-compiled successfully.
+
+**[BAD] Mathlib is missing and is being compiled from source:**
+
+```bash
+$ lake build
+[2/40] Running importGraph:optBarrel (+ 3 more)
+```
+
+**[GOOD] Mathlib was pre-compiled successfully:**
+
+```bash
+$ lake build
+[3102/3289] Running Common (+ 0 more)
+```
+:::
 
 ## Building a single file
 
 To compile just one formulation or proof, pass its module path:
 
 ```bash
-# From the repo root, build a single MILP formulation:
+# Build a single MILP formulation:
 lake build problems.p1.formulations.a.Formulation
 
 # Build a single reformulation proof:
 lake build reformulations.p1.a_b
 ```
 
-The module path mirrors the on-disk path with `/` replaced by `.`
+The module path mirrors the dataset path with `/` replaced by `.`
 and the `.lean` extension dropped. Lake will pull in only the
 files actually required by the target.
 
-## When the build is unhappy
+## FLARE Monorepo
 
-- **`unknown package 'Mathlib'`** — `lake exe cache get` hasn't been
-  run yet, or `lake-manifest.json` is out of sync. Re-run
-  `lake update && lake exe cache get`.
-- **`unknown package 'Common'`** — you are building from the wrong
-  directory. `Common` is provided by the `FormulationBench` package
-  declared in `dataset/lakefile.toml`; build from `dataset/` or the
-  repo root, not from a subdirectory.
-- **Toolchain mismatch** — `lean-toolchain` was bumped but `elan`
-  hasn't fetched the new version. Run any `lake` command and `elan`
-  will install it.
-- **Slow first build / out of disk** — mathlib oleans are several GB.
-  Make sure `lake exe cache get` succeeded; otherwise Lake will
-  compile mathlib from source.
+The FormulationBench dataset is managed by the {github}`FLARE monorepo </>`. This is configured as its *own* Lean project to support compiling Lean files generated by {mf}`FLARE </>`, and the FormulationBench dataset is configured as a local dependency. From the root of the monorepo, run `lake build FormulationBench` to build everything. Use the same commands as above to build single files; the module paths are the same. If you did the initial setup inside the `dataset` directory, you'll need to re-run from the root of the monorepo.
 
-## Inside the FLARE Docker harness
-
-When FLARE drives an agent inside the bundled `flare-agent` image,
-the mathlib oleans live in the image layer at `/workspace/.lake` and
-are symlinked into the agent working directory at
-`/workspace/wd/.lake`. No `lake update` or `cache get` is required
-inside the container — the build cache is baked into the image at
-`milp-flare build-image` time. See {doc}`check_reformulation` for the
-end-to-end FLARE workflow.
