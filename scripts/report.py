@@ -6,6 +6,10 @@ Reads `runs/{run_id}/results.jsonl` and prints either a per-instance table
 field, per-run Prec/Rec/Acc are reported as mean ± std; rows where `run` is
 null are treated as a single run with no std suffix.
 
+Results that hit the model's token limit (a truncated response) are counted
+as `False` predictions rather than dropped; any other error leaves the row
+unclassified. See resolve_prediction.
+
 Mode/model labels come from the `model` and `mode` fields written by
 experiments/utils.py. Use scripts/backfill_method_metadata.py to populate
 these on historic results.jsonl files.
@@ -93,6 +97,32 @@ def group_key(r: dict[str, Any]) -> str | None:
     return val  # None → row excluded from grouped summary
 
 
+def is_truncation_error(err: str | None) -> bool:
+    """True when an error reflects hitting the model's token limit.
+
+    Such a response carries a real verdict (the model declined to finish), so
+    it is interpreted as a `False` prediction rather than a dropped result.
+    All LLM clients phrase this as a "... response truncated ..." RuntimeError.
+    """
+    return err is not None and "truncated" in err
+
+
+def resolve_prediction(r: dict[str, Any]) -> bool | None:
+    """Effective classifier prediction for a result row.
+
+    A response that hit the token limit counts as `False`. Any other error
+    (or a genuinely missing prediction) returns None, leaving the row
+    unclassified.
+    """
+    err = r.get("error")
+    if is_truncation_error(err):
+        return False
+    if err:
+        return None
+    pred = r.get("is_reformulation")
+    return None if pred is None else bool(pred)
+
+
 def fmt_duration(s: float | None) -> str:
     if s is None:
         return "-"
@@ -154,14 +184,14 @@ if args.instance:
             f"{r['problem_b']}.{r['formulation_b']}"
         )
         gt = r["ground_truth"]
-        pred = r.get("is_reformulation")
+        pred = resolve_prediction(r)
         err = r.get("error")
-        is_error = bool(err) or pred is None
-        is_wrong = not is_error and pred != gt
-        if not args.verbose and not is_error and not is_wrong:
+        is_unresolved = pred is None
+        is_wrong = not is_unresolved and pred != gt
+        if not args.verbose and not err and not is_wrong:
             continue
         gt_str = "T" if gt else "F"
-        pred_str = ("T" if pred else "F") if not is_error else "-"
+        pred_str = ("T" if pred else "F") if not is_unresolved else "-"
         err_str = "Y" if err else "N"
         time_str = fmt_duration(r.get("duration_s"))
         cost_str = fmt_cost(r.get("cost_usd"))
@@ -213,8 +243,7 @@ for r in rows:
     if key is None:
         continue  # grouping by model/mode and this row has no value
     gt = r["ground_truth"]
-    pred = r.get("is_reformulation")
-    err = r.get("error")
+    pred = resolve_prediction(r)
     run_idx = r.get("run")
 
     if run_idx is None:
@@ -238,7 +267,7 @@ for r in rows:
             totals[key][f"{dst}_sum"] += v
             totals[key][f"{dst}_n"] += 1
 
-    if err or pred is None:
+    if pred is None:
         continue
 
     if pred and gt:
