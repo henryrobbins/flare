@@ -163,7 +163,10 @@ class DummyHarness(Harness):
                     }
                 )
             )
-            (wd / "compile_log.txt").write_text("")
+            (wd / "compile_log.txt").write_text(
+                "'reformulation' depends on axioms: "
+                "[propext, Classical.choice, Quot.sound]\n"
+            )
         else:
             (wd / "Reformulation.lean").write_text(
                 "-- NOT REFORMULATION\n-- stub harness verdict\n"
@@ -176,6 +179,24 @@ class DummyHarness(Harness):
             output_tokens=0,
             stop_reason="end_turn",
         )
+
+
+class BadAxiomHarness(DummyHarness):
+    """DummyHarness variant whose compile log reports a non-standard axiom.
+
+    Every Lean file still compiles cleanly, so this isolates the axiom check:
+    FLARE must reject the pair purely because the proof depends on an axiom
+    outside the standard set.
+    """
+
+    name = "bad_axiom"
+
+    def run(self, wd: Path) -> HarnessRunResult:
+        result = super().run(wd)
+        (wd / "compile_log.txt").write_text(
+            "'reformulation' depends on axioms: [propext, Classical.choice, P1.cheat]\n"
+        )
+        return result
 
 
 # ---------------------------------------------------------------------------
@@ -265,6 +286,24 @@ def test_flare_verifier(
     a_in, b_in = _inputs(a, b)
     result = verifier.verify(a_in, b_in, tmp_path)
     assert result.is_reformulation is expected
+
+
+def test_flare_verifier_rejects_extra_axiom(
+    repo_root: Path,
+    tmp_path: Path,
+    dataset: Dataset,
+) -> None:
+    """A proof depending on an axiom outside the standard set fails, even when
+    every Lean file compiles cleanly."""
+    problem = dataset.problems[1]
+    a, b = problem.formulations["a"], problem.formulations["b"]
+    harness = BadAxiomHarness(repo_root=repo_root, a=a, b=b, expected=True)
+    verifier = FLARE(harness=harness)
+    a_in, b_in = _inputs(a, b)
+    result = verifier.verify(a_in, b_in, tmp_path)
+    assert result.is_reformulation is False
+    assert result.metadata["no_new_axioms"] is False
+    assert "P1.cheat" in result.metadata["axioms"]
 
 
 @pytest.mark.docker

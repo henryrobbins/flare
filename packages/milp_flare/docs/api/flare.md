@@ -10,4 +10,6 @@
 
 .. autoclass:: milp_flare.flare.FLAREResult
    :no-members:
+
+.. autodata:: milp_flare.flare.STANDARD_AXIOMS
 ```

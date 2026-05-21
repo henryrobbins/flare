@@ -10,6 +10,10 @@ from milp_flare._assets import LEAN_DIR
 from milp_flare._prompts import render_flare_agent_prompt
 from milp_flare.harness import Harness
 
+#: Axioms permitted in a verified reformulation proof. All of Mathlib is built on
+#: these three; a proof depending on anything else is not trusted by FLARE.
+STANDARD_AXIOMS = frozenset({"propext", "Classical.choice", "Quot.sound"})
+
 
 @dataclass(frozen=True)
 class FormulationInput:
@@ -68,7 +72,8 @@ class FLAREResult:
     is_reformulation : bool
         Final verdict. True if all sub-checks pass: both ``Formulation.lean``
         files compile, ``Reformulation.lean`` compiles and contains a
-        ``def : MILPReformulation``, and the proof is ``sorry``-free.
+        ``def : MILPReformulation``, and the proof is ``sorry``-free using
+        only the :data:`STANDARD_AXIOMS`.
     duration_s : float, optional
         Wall-clock duration of the agent run, in seconds.
     cost_usd : float, optional
@@ -78,7 +83,7 @@ class FLAREResult:
         Per-check breakdown and harness run metadata: ``form_a_written``,
         ``form_a_compiled``, ``form_b_written``, ``form_b_compiled``,
         ``proof_compiled``, ``milp_reform_found``, ``sorry_free``,
-        ``agent_decision``, and token counts.
+        ``no_new_axioms``, ``axioms``, ``agent_decision``, and token counts.
     """
 
     is_reformulation: bool
@@ -312,6 +317,8 @@ class FLARE:
                 "proof_compiled": None,
                 "milp_reform_found": None,
                 "sorry_free": None,
+                "no_new_axioms": None,
+                "axioms": None,
             }
 
         # Load the agent's compile results and log
@@ -346,12 +353,19 @@ class FLARE:
             else False
         )
 
+        # Check the reformulation proof's axiom dependencies
+        no_new_axioms, axioms = self._check_axioms(compile_log)
+        no_new_axioms = (
+            no_new_axioms if (proof_compiled and milp_reform_found) else False
+        )
+
         is_reformulation = (
             form_a_compiled
             and form_b_compiled
             and proof_compiled
             and milp_reform_found
             and sorry_free
+            and no_new_axioms
         )
 
         return {
@@ -364,6 +378,8 @@ class FLARE:
             "proof_compiled": proof_compiled,
             "milp_reform_found": milp_reform_found,
             "sorry_free": sorry_free,
+            "no_new_axioms": no_new_axioms,
+            "axioms": axioms,
         }
 
     def _check_agent_decision(self, reform_content: str) -> str | None:
@@ -378,3 +394,14 @@ class FLARE:
         if normalized.startswith("MCP_UNAVAILABLE"):
             return "mcp_unavailable"
         return None
+
+    def _check_axioms(self, compile_log: str) -> tuple[bool, list[str]]:
+        """Parse ``#print axioms`` output and check it against the allowlist."""
+        match = re.search(r"depends on axioms: \[([^\]]*)\]", compile_log)
+        if match is None:
+            if "does not depend on any axioms" in compile_log:
+                return True, []
+            return False, []
+        axioms = [a.strip() for a in match.group(1).split(",") if a.strip()]
+        no_new_axioms = all(a in STANDARD_AXIOMS for a in axioms)
+        return no_new_axioms, axioms
