@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from .models import Variable
+from .models import DimensionType, Shape, Variable
 
 if TYPE_CHECKING:
     from .formulation import Formulation
@@ -28,21 +28,7 @@ def _detect_imports(codes: list[str]) -> tuple[bool, bool]:
     return use_gp, bare_quicksum
 
 
-def _has_ragged(shape: list[Any]) -> bool:
-    return any(re.match(r"^\w+\[\w+\]$", str(d)) for d in shape)
-
-
-def _build_loops(shape: list[Any]) -> list[tuple[str, str]]:
-    parsed: list[dict[str, Any]] = []
-    for d in shape:
-        m = re.match(r"^(\w+)\[(\w+)\]$", str(d))
-        if m:
-            parsed.append(
-                {"ragged": True, "array": m.group(1), "indexed_by": m.group(2)}
-            )
-        else:
-            parsed.append({"ragged": False, "param": str(d)})
-
+def _build_loops(shape: Shape) -> list[tuple[str, str]]:
     def _suggest_idx(param: str) -> str:
         if param.startswith("n_") and len(param) > 2:
             return param[2:].lower()[0]
@@ -50,8 +36,9 @@ def _build_loops(shape: list[Any]) -> list[tuple[str, str]]:
 
     used: set[str] = set()
     idx_vars: list[str] = []
-    for p in parsed:
-        base: str = p["array"] if p["ragged"] else p["param"]
+    for dim in shape:
+        base = dim.array if dim.type is DimensionType.ragged else dim.dim_str
+        assert base is not None
         cand = _suggest_idx(base)
         if cand in used:
             for fb in "ijklmn":
@@ -61,17 +48,20 @@ def _build_loops(shape: list[Any]) -> list[tuple[str, str]]:
         used.add(cand)
         idx_vars.append(cand)
 
-    param_to_idx = {
-        p["param"]: idx for p, idx in zip(parsed, idx_vars) if not p["ragged"]
+    dim_str_to_idx = {
+        dim.dim_str: idx
+        for dim, idx in zip(shape, idx_vars)
+        if dim.type is not DimensionType.ragged
     }
 
     loops: list[tuple[str, str]] = []
-    for p, idx in zip(parsed, idx_vars):
-        if p["ragged"]:
-            outer = param_to_idx[p["indexed_by"]]
-            loops.append((idx, f"range({p['array']}[{outer}])"))
+    for dim, idx in zip(shape, idx_vars):
+        if dim.type is DimensionType.ragged:
+            assert dim.array is not None and dim.indexed_by is not None
+            outer = dim_str_to_idx[dim.indexed_by]
+            loops.append((idx, f"range({dim.array}[{outer}])"))
         else:
-            loops.append((idx, f"range({p['param']})"))
+            loops.append((idx, f"range({dim.dim_str})"))
     return loops
 
 
@@ -79,10 +69,10 @@ def _var_decl(name: str, var: Variable) -> str:
     vtype = _gurobi_type(var)
     if var.indices is not None:
         return f'{name} = model.addVars([{var.indices}], vtype={vtype}, name="{name}")'
-    shape = list(var.shape)
-    if not shape:
+    shape = var.shape
+    if shape.is_scalar:
         return f'{name} = model.addVar(vtype={vtype}, name="{name}")'
-    if _has_ragged(shape):
+    if shape.is_ragged:
         loops = _build_loops(shape)
         key = (
             "({})".format(", ".join(idx for idx, _ in loops))
@@ -95,7 +85,7 @@ def _var_decl(name: str, var: Variable) -> str:
             f"{name} = {{{key}: model.addVar("
             f'vtype={vtype}, name=f"{name}_{name_fmt}") {loop_str}}}'
         )
-    dims = ", ".join(str(d) for d in shape)
+    dims = ", ".join(d.dim_str for d in shape)
     return f'{name} = model.addVars({dims}, vtype={vtype}, name="{name}")'
 
 
@@ -104,10 +94,10 @@ def _solution_extraction(name: str, var: Variable) -> list[str]:
         return [
             f'variables["{name}"] = {{"kind": "indexed", "data": {{json.dumps(list(k)): {name}[k].x for k in {name}}}}}'  # noqa: E501
         ]
-    shape = list(var.shape)
-    if not shape:
+    shape = var.shape
+    if shape.is_scalar:
         return [f'variables["{name}"] = {{"kind": "scalar", "data": {name}.x}}']
-    if _has_ragged(shape):
+    if shape.is_ragged:
         loops = _build_loops(shape)
         idx_tuple = ", ".join(idx for idx, _ in loops)
         result: str = f"{name}[{idx_tuple}].x"
@@ -115,12 +105,12 @@ def _solution_extraction(name: str, var: Variable) -> list[str]:
             result = f"[{result} for {idx} in {rng}]"
         return [f'variables["{name}"] = {{"kind": "array", "data": {result}}}']
     if len(shape) == 1:
-        d = shape[0]
+        d = shape[0].dim_str
         return [
             f'variables["{name}"] = {{"kind": "array", "shape": [{d}], "data": [{name}[i].x for i in range({d})]}}'  # noqa: E501
         ]
     if len(shape) == 2:
-        d1, d2 = shape
+        d1, d2 = shape[0].dim_str, shape[1].dim_str
         return [
             f'variables["{name}"] = {{"kind": "array", "shape": [{d1}, {d2}], '
             f'"data": [[{name}[i, j].x for j in range({d2})] for i in range({d1})]}}'
@@ -129,8 +119,8 @@ def _solution_extraction(name: str, var: Variable) -> list[str]:
     idx = ", ".join(iters)
     result = f"{name}[{idx}].x"
     for iter_var, dim in reversed(list(zip(iters, shape))):
-        result = f"[{result} for {iter_var} in range({dim})]"
-    shape_str = ", ".join(str(d) for d in shape)
+        result = f"[{result} for {iter_var} in range({dim.dim_str})]"
+    shape_str = ", ".join(d.dim_str for d in shape)
     return [
         f'variables["{name}"] = {{"kind": "array", "shape": [{shape_str}], "data": {result}}}'  # noqa: E501
     ]

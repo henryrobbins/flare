@@ -49,7 +49,7 @@ def test_parameters(formulation_a: Formulation) -> None:
     assert "CashMachineProcessingRate" in formulation_a.parameters
     p = formulation_a.parameters["CashMachineProcessingRate"]
     assert isinstance(p, Parameter)
-    assert p.shape == []
+    assert p.shape.is_scalar
 
 
 def test_variables(formulation_a: Formulation) -> None:
@@ -57,7 +57,7 @@ def test_variables(formulation_a: Formulation) -> None:
     v = formulation_a.variables["NumCashMachines"]
     assert isinstance(v, Variable)
     assert v.type == VariableType.integer
-    assert v.shape == []
+    assert v.shape.is_scalar
 
 
 def test_variable_type_integer(dataset: Dataset) -> None:

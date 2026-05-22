@@ -31,7 +31,7 @@ def test_parameters_loaded_eagerly(problem1: Problem) -> None:
     assert "CashMachineProcessingRate" in problem1.parameters
     p = problem1.parameters["CashMachineProcessingRate"]
     assert isinstance(p, Parameter)
-    assert p.shape == []
+    assert p.shape.is_scalar
     assert "people per hour" in p.description
 
 

@@ -1,3 +1,7 @@
+---
+tocdepth: 2
+---
+
 # `models`
 
 ```{eval-rst}
@@ -30,4 +34,13 @@
 
 .. autoclass:: formulation_bench.models.Solution
    :no-members:
+
+.. autoclass:: formulation_bench.models.Shape
+   :exclude-members: dimensions, is_ragged, is_scalar, has_cardinality
+
+.. autoclass:: formulation_bench.models.Dimension
+   :exclude-members: dim_str, type, array, indexed_by, set_name
+
+.. autoclass:: formulation_bench.models.DimensionType
+   :members:
 ```
