@@ -135,14 +135,6 @@
             "explicit": true
         },
         {
-            "description": "Longest Job Bound (EC3): the makespan is at least the total processing time of each job chain.",
-            "formulation": "C_{\\max} \\ge \\sum_{k=0}^{m-1} p_{j,k} \\quad \\forall j",
-            "code": {
-                "gurobipy": "model.addConstrs(C_max >= sum(p[j][k] for k in range(m)) for j in range(n))"
-            },
-            "explicit": true
-        },
-        {
             "description": "Start times are non-negative.",
             "formulation": "S_{j,k} \\ge 0 \\quad \\forall j, k",
             "code": {
@@ -155,6 +147,14 @@
             "formulation": "C_{\\max} \\ge 0",
             "code": {
                 "gurobipy": "model.addConstr(C_max >= 0)"
+            },
+            "explicit": true
+        },
+        {
+            "description": "Longest Job Bound (EC3): the makespan is at least the total processing time of each job chain.",
+            "formulation": "C_{\\max} \\ge \\sum_{k=0}^{m-1} p_{j,k} \\quad \\forall j",
+            "code": {
+                "gurobipy": "model.addConstrs(C_max >= sum(p[j][k] for k in range(m)) for j in range(n))"
             },
             "explicit": true
         }

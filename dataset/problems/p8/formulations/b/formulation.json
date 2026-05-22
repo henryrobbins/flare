@@ -135,14 +135,6 @@
             "explicit": true
         },
         {
-            "description": "Average Load Bound (EC1): the makespan is at least the average total processing time per machine.",
-            "formulation": "C_{\\max} \\ge \\frac{1}{m} \\sum_{j=0}^{n-1} \\sum_{k=0}^{m-1} p_{j,k}",
-            "code": {
-                "gurobipy": "model.addConstr(C_max >= sum(p[j][k] for j in range(n) for k in range(m)) / m)"
-            },
-            "explicit": true
-        },
-        {
             "description": "Start times are non-negative.",
             "formulation": "S_{j,k} \\ge 0 \\quad \\forall j, k",
             "code": {
@@ -155,6 +147,14 @@
             "formulation": "C_{\\max} \\ge 0",
             "code": {
                 "gurobipy": "model.addConstr(C_max >= 0)"
+            },
+            "explicit": true
+        },
+        {
+            "description": "Average Load Bound (EC1): the makespan is at least the average total processing time per machine.",
+            "formulation": "C_{\\max} \\ge \\frac{1}{m} \\sum_{j=0}^{n-1} \\sum_{k=0}^{m-1} p_{j,k}",
+            "code": {
+                "gurobipy": "model.addConstr(C_max >= sum(p[j][k] for j in range(n) for k in range(m)) / m)"
             },
             "explicit": true
         }
