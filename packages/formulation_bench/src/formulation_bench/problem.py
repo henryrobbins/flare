@@ -18,7 +18,7 @@ class Problem:
     ----------
     path : str or pathlib.Path
         Path to the directory containing this problem. See
-        :ref:`problem-level-files` for the expected directory structure.
+        :ref:`problem-directory` for the expected directory structure.
 
     Attributes
     ----------

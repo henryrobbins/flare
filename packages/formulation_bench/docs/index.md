@@ -18,6 +18,6 @@ installation
 user_guide/index
 problems/index
 schema
-lean/index
+definitions
 api/index
 ```

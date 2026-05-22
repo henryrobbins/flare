@@ -1,6 +1,6 @@
 # Compiling Lean files
 
-The FormulationBench dataset includes many [Lean](https://lean-lang.org/) files. Each formulation and reformulation proof has a corresponding Lean file and `Common.lean` defines {doc}`/lean/formulation` and {doc}`/lean/reformulation`.
+The FormulationBench dataset includes many [Lean](https://lean-lang.org/) files. Each formulation and reformulation proof has a corresponding Lean file and `Common.lean` defines {ref}`formulation-definition` and {ref}`reformulation-definition`.
 
 This guide provides minimal instructions for compiling Lean files. For extensive documentation and tutorials on Lean, we direct the curious reader to the [Lean Community](https://leanprover-community.github.io/) documentation.
 

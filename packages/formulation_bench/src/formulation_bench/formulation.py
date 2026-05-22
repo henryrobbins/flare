@@ -28,7 +28,7 @@ class Formulation:
     ----------
     path : str or pathlib.Path
         Path to the directory containing this formulation. See
-        :ref:`formulation-level-files` for the expected directory structure.
+        :ref:`formulation-directory` for the expected directory structure.
     problem : Problem
         The parent optimization problem this formulation belongs to.
 
@@ -62,7 +62,7 @@ class Formulation:
         (e.g., ``import networkx as nx``), they are included here.
     lean_formulation_path : pathlib.Path
         Path to a Lean file (``Formulation.lean``) containing a formal specification
-        of this formulation. See :doc:`/lean/formulation` for details on how a
+        of this formulation. See :ref:`formulation-definition` for details on how a
         MILP formulation is represented in Lean.
     metadata : dict[str, Any]
         Free-form metadata about the formulation. Typically includes a ``source``

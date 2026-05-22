@@ -5,21 +5,17 @@ A MILP formulation must be added to an existing optimization problem. To create 
 Adding a new formulation consists of writing the following files:
 - JSON file expressing every component of the formulation (e.g., variables, constraints, objective) in natural-language, math (LaTeX), and code (GurobiPy). 
 - Parameter generation script that translates problem data into parameter input for the formulation.
-- Lean 4 encoding following {doc}`/lean/formulation`
+- Lean 4 encoding following the {ref}`Formulation definition <formulation-definition>`
 
 By convention, formulation names are single letter labels (e.g., `a`, `b`). Pick the next free label `x` for `pN` and create `problems/pN/formulations/x/`. Next, populate the directory with the required files as outlined below.
 
 ## JSON File
 
-The `formulation.json` file is the core object defining the formulation. See {ref}`formulation-level-files` for the full schema. In order for {meth}`Formulation.gen_solve_py() <formulation_bench.formulation.Formulation.gen_solve_py>` to generate a working solver script, all `assumptions` and `definitions` must contain `code.python` and all `constraints` and the `objective` must contain `code.gurobipy`.
+The `formulation.json` file is the core object defining the formulation. See {ref}`formulation-directory` for the full schema. In order for {meth}`Formulation.gen_solve_py() <formulation_bench.formulation.Formulation.gen_solve_py>` to generate a working solver script, all `assumptions` and `definitions` must contain `code.python` and all `constraints` and the `objective` must contain `code.gurobipy`.
 
 :::{tip}
 Reading raw LaTeX while editing the JSON file can be cumbersome. The {doc}`/problems/index` documentation is automatically generated from the dataset and provides a nice way to view a rendering of the formulation while editing. If you're working in the {github}`FLARE monorepo </>`, you can run `make docs-serve` from `packages/formulation_bench` to host the docs with live-reload on `http://127.0.0.1:8000`.
 :::
-
-### Example
-
-{doc}`/problems/p12` Formulation `a`
 
 :::{dropdown} `problems/p12/formulations/a/formulation.json`
 :icon: code
@@ -32,10 +28,6 @@ Reading raw LaTeX while editing the JSON file can be cumbersome. The {doc}`/prob
 
 The parameter generation script `gen_params.py` reads the problem data instance defined in `data.json` and transforms it into the parameter input for the formulation (`parameters.json`). This allows the dataset to have a single source of data per problem. The script should include `--data` and `--output` flags for the `data.json` and `parameters.json` paths, respectively.
 
-### Example
-
-{doc}`/problems/p1` Formulation `b`
-
 :::{dropdown} `problems/p1/formulations/b/gen_params.py`
 :icon: code
 ```{literalinclude} ../../../../dataset/problems/p1/formulations/b/gen_params.py
@@ -45,13 +37,9 @@ The parameter generation script `gen_params.py` reads the problem data instance 
 
 ## Lean 4 Encoding
 
-Each formulation must have a Lean 4 encoding in `Formulation.lean` following the {doc}`/lean/formulation`. This file should import `MILPFormulation` from `Common.lean` and define `formulation` inside the `PN.x` namespace where `N` is the problem identifier and `x` is the formulation identifier.
+Each formulation must have a Lean 4 encoding in `Formulation.lean` following the {ref}`Formulation definition <formulation-definition>`. This file should import `MILPFormulation` from `Common.lean` and define `formulation : MILPFormulation` inside the `PN.x` namespace where `N` is the problem identifier and `x` is the formulation identifier.
 
 The {github}`FLARE monorepo </>` ships with the `milp-formulator` agent which uses the `lean-milp-formulation` agent skill from {mf}`FLARE </skills.html#lean-milp-formulation>` to automatically generate `Formulation.lean`.
-
-### Example
-
-{doc}`/problems/p1` Formulation `b`
 
 :::{dropdown} `problems/p1/formulations/b/Formulation.lean`
 :icon: code
@@ -73,7 +61,7 @@ pair with another formulation of the same problem, add an entry to the `reformul
 }
 ```
 
-For positive pairs, create a Lean proof following the {doc}`/lean/reformulation`. This should be defined in `reformulations/pN/x_y.lean` where `N` is the common problem and the proof shows `y` is a reformulation of `x`. The file should import `Common` and both formulations:
+For positive pairs, create a Lean proof following the {ref}`Reformulation definition <reformulation-definition>`. This should be defined in `reformulations/pN/x_y.lean` where `N` is the common problem and the proof shows `y` is a reformulation of `x`. The file should import `Common` and both formulations:
 
 ```lean
 import Common
@@ -84,10 +72,6 @@ import problems.pN.formulations.y.Formulation
 The definition `xYReformulation : MILPReformulation PN.x.formulation PN.y.formulation` should be defined within the `PN` namespace.
 
 The {github}`FLARE monorepo </>` ships with the `milp-reformulation-autoformalizer` agent which uses the `lean-milp-reformulation` agent skill from {mf}`FLARE </skills.html#lean-milp-reformulation>` to automatically generate the Lean proof.
-
-### Example
-
-{doc}`/problems/p1` (`b` is a reformulation of `a`)
 
 :::{dropdown} `reformulations/p1/a_b.lean`
 :icon: code

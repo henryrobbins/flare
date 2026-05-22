@@ -10,7 +10,7 @@ class Reformulation:
 
     Consists of two MILP formulations ``a`` and ``b`` and a boolean ``is_reformulation``
     label indicating whether ``b`` is a reformulation of ``a``. The formal definition
-    of *reformulation* is given in :doc:`/lean/reformulation`. Positive entries
+    of *reformulation* is given in :ref:`reformulation-definition`. Positive entries
     (``is_reformulation=True``) are accompanied by a Lean 4 proof whose path is
     accessible via the ``lean_proof_path`` attribute; negative entries have no proof
     and ``lean_proof_path`` resolves to ``None``.

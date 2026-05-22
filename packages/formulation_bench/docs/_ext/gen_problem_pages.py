@@ -19,7 +19,7 @@ from pathlib import Path
 
 from formulation_bench import Dataset
 from formulation_bench.formulation import Formulation
-from formulation_bench.models import Objective, Parameter, Variable
+from formulation_bench.models import Objective, Parameter, Shape, Variable
 
 CITATIONS_BIBTEX = """\
 @article{yazdani2025,
@@ -56,10 +56,10 @@ SOURCE_LINKS = {
 }
 
 
-def _fmt_shape(shape: list) -> str:
-    if not shape:
+def _fmt_shape(shape: Shape) -> str:
+    if shape.is_scalar:
         return "*scalar*"
-    return "`[" + ", ".join(str(s) for s in shape) + "]`"
+    return "`[" + ", ".join(d.dim_str for d in shape) + "]`"
 
 
 def _params_table(params: dict[str, Parameter]) -> str:
