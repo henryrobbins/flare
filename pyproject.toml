@@ -52,7 +52,6 @@ testpaths = [
 ]
 markers = [
     "docker: tests that require Docker (opt-out: -m 'not docker')",
-    "gurobi: tests that require Gurobi (opt-out: -m 'not gurobi')",
 ]
 addopts = "-m 'not docker' -n 5 --doctest-modules --import-mode=importlib"
 

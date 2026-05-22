@@ -131,16 +131,15 @@ The pytest config at the repo root (`pyproject.toml`) collects from:
 - `packages/milp_flare/{tests,src/milp_flare}`
 
 Source-tree paths are included so `--doctest-modules` exercises docstring
-examples — keep them runnable. Two markers gate optional dependencies:
+examples — keep them runnable. One marker gates an optional dependency:
 
 - `docker` — tests that need a running Docker daemon (build
   `flare-agent` first via `make -C packages/milp_flare build-image`).
-- `gurobi` — tests that need a Gurobi license.
 
 `addopts` skips `docker` by default. From the repo root:
 
 ```bash
-make test          # pytest, excluding docker and gurobi
+make test          # pytest, excluding docker
 make check         # lint + typecheck + test
 make check-all     # check at the root and in every package
 ```
