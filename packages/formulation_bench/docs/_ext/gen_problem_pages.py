@@ -23,26 +23,24 @@ from formulation_bench.models import Objective, Parameter, Variable
 
 CITATIONS_BIBTEX = """\
 @article{yazdani2025,
-  title = {{{EvoCut}}: {{Strengthening Integer Programs}} via {{Evolution-Guided Language Models}}},
+  title = {EvoCut: Strengthening Integer Programs via Evolution-Guided Language Models},
   author = {Yazdani, Milad and Mostajabdaveh, Mahdi and Aref, Samin and Zhou, Zirui},
   journal = {arXiv preprint arXiv:2508.11850},
   year = 2025
 }
 
 @inproceedings{zhai2025a,
-  title={\\textup{EquivaMap}: Leveraging \\textup{LLMs} for Automatic Equivalence Checking of Optimization Formulations},
-  author={Haotian Zhai and Connor Lawless and Ellen Vitercik and Liu Leqi},
-  booktitle={Forty-second International Conference on Machine Learning},
-  year={2025}
+  title = {EquivaMap: Leveraging LLMs for Automatic Equivalence Checking of Optimization Formulations},
+  author = {Haotian Zhai and Connor Lawless and Ellen Vitercik and Liu Leqi},
+  booktitle = {Forty-second International Conference on Machine Learning},
+  year = 2025
 }
 
 @mastersthesis{ferchtandiker2025,
-  title = {Generating {{Efficient Optimization Formulations Using Large Language Models}}},
+  title = {Generating Efficient Optimization Formulations Using Large Language Models},
   author = {Ferchtandiker, Nathan},
-  year = 2025,
-  month = jul,
-  langid = {english},
-  school = {Universiteit van Amsterdam}
+  school = {Universiteit van Amsterdam},
+  year = 2025
 }
 """
 
@@ -122,7 +120,7 @@ def _objective_block(obj: Objective) -> str:
 
 def _formulation_section(fid: str, f: Formulation) -> str:
     badge = "valid" if f.valid else "invalid"
-    parts = [f"### Formulation `{fid}` — {badge}\n"]
+    parts = [f"### Formulation `{fid}` ({badge})\n"]
     src = f.metadata.get("source")
     if src:
         parts += [
@@ -199,7 +197,13 @@ def _notes_admonition(notes: object, kind: str = "note") -> str:
 
 
 def _problem_page(pid: int, problem) -> str:
-    header = [f"# p{pid} — {problem.name}\n"]
+    header = [
+        "---",
+        "tocdepth: 3",  # Don't show formulation subsections in the sidebar
+        "---",
+        "",
+        f"# p{pid} | {problem.name}\n",
+    ]
     src = problem.metadata.get("source")
     if src:
         label = _source_label(src)
@@ -233,8 +237,10 @@ def _source_short(src: object) -> str:
 def _index_page(problems: dict[int, object]) -> str:
     lines = [
         "# Problems\n",
-        "The table below lists every problem and the source it was adapted "
-        "from. Click a problem id to see its formulations.\n",
+        "The table below enumerates every problem in FormulationBench and the "
+        "source it was adapted from. Each problem page provides detailed information "
+        "about the problem and every formulation of it. This documentation is "
+        "automatically generated from the dataset to ensure it is up-to-date.\n",
         "| Problem | Name | Source |",
         "|---|---|---|",
     ]
