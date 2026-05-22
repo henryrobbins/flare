@@ -5,8 +5,6 @@ import pytest
 from formulation_bench import Dataset, Parameter, Problem, Solution
 from formulation_bench.formulation import Formulation
 
-DATASET_ROOT = Path(__file__).parent.parent.parent / "dataset"
-
 
 @pytest.fixture
 def problem11(dataset: Dataset) -> Problem:
