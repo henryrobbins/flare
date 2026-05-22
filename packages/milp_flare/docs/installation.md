@@ -13,7 +13,7 @@ pip install milp-flare
 This quickstart runs `FLARE` on a pair of formulations from the {fb}`FormulationBench </>` dataset (see {doc}`/user_guide/run_flare` for more detail). It requires the following prerequisites:
 
 - **Docker** installed and the `flare-agent` image built (see {doc}`user_guide/docker`)
-- **Claude Code authentication key** on the host (see {doc}`user_guide/authenticate_agent`)
+- **Claude Code authentication key** on the host (see {doc}`agent_harness/index`)
 - **FormulationBench** Python package `formulation-bench` (see {fb}`FormulationBench </installation.html>`)
 
 

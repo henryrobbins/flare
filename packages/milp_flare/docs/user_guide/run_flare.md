@@ -14,7 +14,7 @@ easiest way to drive FLARE end-to-end.
 - Docker running and the `flare-agent:latest` image built (see
   {doc}`docker`).
 - A harness credential available on the host (see
-  {doc}`authenticate_agent`).
+  {doc}`../agent_harness/index`).
 
 ## Verifying a dataset pair
 

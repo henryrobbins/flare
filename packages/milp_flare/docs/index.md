@@ -20,6 +20,7 @@ reference.
 
 installation
 user_guide/index
+agent_harness/index
 prompts
 skills
 api/index
