@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import hashlib
 import os
 import tarfile
 import urllib.request
@@ -31,10 +30,7 @@ def _release_url(version: str) -> str:
 
 
 def download_dataset(
-    version: str | None = None,
-    cache_dir: str | Path | None = None,
-    force: bool = False,
-    sha256: str | None = None,
+    version: str | None = None, cache_dir: str | Path | None = None, force: bool = False
 ) -> Path:
     """Download the FormulationBench dataset.
 
@@ -103,14 +99,6 @@ def download_dataset(
     archive = version_dir / ASSET_NAME
     url = _release_url(version)
     urllib.request.urlretrieve(url, archive)  # noqa: S310
-
-    if sha256:
-        digest = hashlib.sha256(archive.read_bytes()).hexdigest()
-        if digest != sha256:
-            archive.unlink(missing_ok=True)
-            raise ValueError(
-                f"sha256 mismatch for {url}: expected {sha256}, got {digest}"
-            )
 
     with tarfile.open(archive, "r:gz") as tf:
         tf.extractall(version_dir, filter="data")
