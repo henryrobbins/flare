@@ -1,4 +1,4 @@
-# Configuring an agent harness
+# Agent Harness Configuration
 
 FLARE ships three agent harnesses — Claude Code, Codex, and OpenCode.
 All three implement the {class}`~milp_flare.harness.base.Harness`

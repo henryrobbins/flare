@@ -11,10 +11,10 @@ easiest way to drive FLARE end-to-end.
 
 - `formulation-bench` and `milp-flare` installed in the same
   environment.
-- Docker daemon running and the `flare-agent:latest` image built
-  (`milp-flare build-image`).
+- Docker running and the `flare-agent:latest` image built (see
+  {doc}`docker`).
 - A harness credential available on the host (see
-  {doc}`../installation`).
+  {doc}`authenticate_agent`).
 
 ## Verifying a dataset pair
 

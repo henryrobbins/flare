@@ -1,13 +1,18 @@
-# User Guide
+# User Guides
 
-Task-oriented tutorials for common FLARE workflows. Each tutorial
-assumes you have completed {doc}`../installation` (installed
-`milp-flare`, built the agent Docker image, and authenticated the
-agent CLI you intend to use).
+We provide user guides for common workflows. Each guide assumes you have already installed the `milp-flare` Python package (see {doc}`../installation`).
 
 ```{toctree}
 :maxdepth: 1
 
-run_flare
+docker
+authenticate_agent
 configure_harness
+run_flare
 ```
+
+Also see the {fb}`FormulationBench User Guides </user_guide/index.html>`.
+
+:::{note}
+For general development information, see the {github}`AGENTS.md </AGENTS.md>`.
+:::
