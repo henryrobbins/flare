@@ -1,3 +1,7 @@
+---
+tocdepth: 3
+---
+
 # `harness`
 
 ## Base

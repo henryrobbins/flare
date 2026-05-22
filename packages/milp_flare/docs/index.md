@@ -1,17 +1,18 @@
 # FLARE
 
-FLARE is an agent-driven verifier for MILP reformulations. Given two
-MILP formulations, FLARE drives a coding agent inside a sandboxed
-Docker container to (1) auto-formalize each formulation as a Lean 4
-`MILPFormulation` and (2) construct a machine-checked
-`MILPReformulation` proof connecting them. A post-hoc Lean compile
-step decides whether the proof type-checks.
+:::{note}
+This is the official implementation of `FLARE` and `FLARE-NL`, introduced by *{paper}`FLARE: Verifying MILP Reformulations with LLM-Based Formal Proof Synthesis </>`*
+:::
 
-FLARE reuses the same Lean definitions (`MILPFormulation`,
-`MILPReformulation`) as
-[FormulationBench](https://formulation-bench.henryrobbins.com/) — see
-the {fb}`Lean reference there </en/latest/lean/index.html>`
-for the underlying structures.
+`FLARE` (Formulation-Level Automated Reformulation Evaluation) uses an
+LLM-based agent and the Lean proof assistant to verify mixed-integer linear
+program (MILP) reformulations according to the
+{fb}`FormulationBench </definitions.html>` definition of *reformulation*.
+`FLARE-NL` is a Large Language Model (LLM) proxy for `FLARE` that trades off formal guarantees for speed and cost.
+
+The `milp-flare` Python package is the official implementation of both
+methods. See below for installation instructions, user guides, and the API
+reference.
 
 ```{toctree}
 :maxdepth: 2

@@ -58,8 +58,8 @@ FLARE writes Lean files against the same `MILPFormulation` /
 `MILPReformulation` structures used by FormulationBench. They are
 documented in the FormulationBench docs:
 
-- {fb}`MILPFormulation </lean/formulation.html>`
-- {fb}`MILPReformulation </lean/reformulation.html>`
+- {fb}`MILPFormulation </definitions.html#milp-formulation>`
+- {fb}`MILPReformulation </definitions.html#reformulation>`
 
 A copy of `Common.lean` (and a minimal Lake skeleton) is bundled with
 `milp_flare` and copied into the agent working directory at runtime.

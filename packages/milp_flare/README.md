@@ -11,7 +11,7 @@
 > [!NOTE]
 > This is the official implementation of `FLARE` and `FLARE-NL` introduced in *[FLARE: Verifying MILP Reformulations with LLM-Based Formal Proof Synthesis](https://flare.henryrobbins.com/)*.
 
-`FLARE` (Formulation-Level Automated Reformulation Evaluation) uses an LLM-based agent and the Lean proof assistant to verify mixed-integer linear program (MILP) reformulations according to the [FormulationBench](https://formulation-bench.henryrobbins.com/en/latest/lean/reformulation.html) definition of reformulation. `FLARE-NL` is a Large Language Model (LLM) proxy for `FLARE` that trades off formal guarantees for speed and cost. See the [documentation](https://milp-flare.henryrobbins.com) for details.
+`FLARE` (Formulation-Level Automated Reformulation Evaluation) uses an LLM-based agent and the Lean proof assistant to verify mixed-integer linear program (MILP) reformulations according to the [FormulationBench](https://formulation-bench.henryrobbins.com/en/latest/definitions.html) definition of reformulation. `FLARE-NL` is a Large Language Model (LLM) proxy for `FLARE` that trades off formal guarantees for speed and cost. See the [documentation](https://milp-flare.henryrobbins.com) for details.
 
 ## Installation
 

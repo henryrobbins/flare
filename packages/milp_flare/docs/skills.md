@@ -1,43 +1,39 @@
 # Agent Skills
 
-FLARE bundles two [Agent
-Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview)
-that the agent loads inside the Docker container — one for authoring
-Lean 4 MILP formulations and one for authoring `MILPReformulation`
-proofs. Each skill ships a `SKILL.md` (the instructions the agent
-reads) and a `template.lean` (a scaffold the agent copies into the
-working directory).
+`FLARE` utilizes two [Agent Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) for auto-formalization of the `MILPFormulation` (see {fb}`definition </definitions.html#lean-encoding>`) and automated formal proof synthesis (AFPS) of `MILPReformulation` (see {fb}`definition </definitions.html#id2>`). Both skills include a `SKILL.md` and a Lean template `template.lean` with detailed scaffolding instructions.
 
 ## `lean-milp-formulation`
 
-Standard for the structure and conventions of Lean 4 MILP formulation
-files.
+Standard structure and conventions for a Lean file defining a MILP formulation `MILPFormulation`.
 
-### `SKILL.md`
-
+:::{dropdown} `assets/skills/lean-milp-formulation/SKILL.md`
+:icon: markdown
 ```{literalinclude} ../src/milp_flare/assets/skills/lean-milp-formulation/SKILL.md
 :language: markdown
 ```
+:::
 
-### `template.lean`
-
+:::{dropdown} `assets/skills/lean-milp-formulation/template.lean`
+:icon: code
 ```{literalinclude} ../src/milp_flare/assets/skills/lean-milp-formulation/template.lean
 :language: lean
 ```
+:::
 
 ## `lean-milp-reformulation`
 
-Standard for the structure and conventions of Lean 4 MILP
-reformulation proof files.
+Standard structure and conventions for a Lean file containing a constructive reformulation proof `MILPReformulation`.
 
-### `SKILL.md`
-
+:::{dropdown} `assets/skills/lean-milp-reformulation/SKILL.md`
+:icon: markdown
 ```{literalinclude} ../src/milp_flare/assets/skills/lean-milp-reformulation/SKILL.md
 :language: markdown
 ```
+:::
 
-### `template.lean`
-
+:::{dropdown} `assets/skills/lean-milp-reformulation/template.lean`
+:icon: code
 ```{literalinclude} ../src/milp_flare/assets/skills/lean-milp-reformulation/template.lean
 :language: lean
 ```
+:::

@@ -30,7 +30,7 @@ def flare_nl_prompt(formulation_a: str, formulation_b: str) -> FLARENLPrompt:
 
     FLARE-NL is a natural language judge for :class:`FLARE` that prompts an LLM
     to decided if one formulation is a reformulation of another according to
-    the :fb:`/lean/reformulation.html` definition of reformulation. See
+    the :fb:`/definitions.html` definition of reformulation. See
     :doc:`/prompts` for the full prompt. See the :paper:`/` for more details.
 
     Parameters

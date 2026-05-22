@@ -39,6 +39,7 @@ docs = [
     "furo",
     "sphinx-autodoc-typehints",
     "sphinx-autobuild",
+    "sphinx-design",
     "numpydoc",
 ]
 

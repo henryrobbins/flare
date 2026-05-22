@@ -11,6 +11,7 @@ extensions = [
     "sphinx.ext.extlinks",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "sphinx_design",
     "numpydoc",
 ]
 
@@ -56,6 +57,8 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "furo"
 html_title = "FLARE"
+html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 autodoc_default_options = {"members": True, "undoc-members": True}
 autodoc_typehints = "none"

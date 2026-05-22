@@ -97,7 +97,7 @@ class FLARE:
 
     FLARE (Formulation-Level Automated Reformulation Evaluation) uses an LLM-based
     agent and the Lean proof assistant to verify MILP reformulations according to
-    the :fb:`/lean/reformulation.html` definition of reformulation. See the
+    the :fb:`/definitions.html` definition of reformulation. See the
     :paper:`/` for more details.
 
     Parameters
@@ -161,7 +161,7 @@ class FLARE:
         """Run FLARE on a pair of MILP formulations.
 
         Run FLARE to determine if formulation ``b`` is a reformulation of
-        formulation ``a`` according to the :fb:`/lean/reformulation.html`
+        formulation ``a`` according to the :fb:`/definitions.html`
         definition of reformulation. This method creates the agent working
         directory (see below), triggers the agent, and evaluates the
         agent output. Finally, it populates ``output_path`` with:
