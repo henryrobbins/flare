@@ -28,7 +28,7 @@
             "type": "continuous",
             "shape": [
                 "n_G",
-                "n_S[]"
+                "n_S[n_G]"
             ]
         },
         "C_su": {
@@ -36,7 +36,7 @@
             "type": "continuous",
             "shape": [
                 "n_G",
-                "n_S[]"
+                "n_S[n_G]"
             ]
         },
         "n_L": {
@@ -49,7 +49,7 @@
             "type": "continuous",
             "shape": [
                 "n_G",
-                "n_L[]"
+                "n_L[n_G]"
             ]
         },
         "C": {
@@ -57,7 +57,7 @@
             "type": "continuous",
             "shape": [
                 "n_G",
-                "n_L[]"
+                "n_L[n_G]"
             ]
         },
         "C_fixed": {
