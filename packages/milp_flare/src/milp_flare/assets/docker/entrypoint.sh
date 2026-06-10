@@ -52,7 +52,12 @@ run_compile B/Formulation.lean; FORM_B_EXIT=$?
 # any axioms the proof depends on beyond Lean's standard set. The command is
 # inserted before the file's final `end` so the unqualified def name resolves
 # inside its namespace.
-REFORM_DEF=$(grep -oE 'def[[:space:]]+[A-Za-z0-9_]+[[:space:]]*:[[:space:]]*MILPReformulation' Reformulation.lean 2>/dev/null \
+#
+# Newlines are flattened to spaces before matching so a signature split across
+# lines (e.g. `def foo :` on one line, `MILPReformulation ... where` on the
+# next) is still detected; the line-based grep would otherwise miss it.
+REFORM_DEF=$(tr '\n' ' ' < Reformulation.lean 2>/dev/null \
+    | grep -oE 'def[[:space:]]+[A-Za-z0-9_]+[[:space:]]*:[[:space:]]*MILPReformulation' \
     | head -1 | sed -E 's/.*def[[:space:]]+([A-Za-z0-9_]+).*/\1/')
 if [[ -n $REFORM_DEF ]]; then
     awk -v cmd="#print axioms ${REFORM_DEF}" '
