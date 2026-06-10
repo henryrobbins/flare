@@ -39,6 +39,8 @@ def with_retry(fn: Callable[[], T], max_attempts: int = 4) -> T:
 # https://platform.claude.com/docs/en/about-claude/pricing
 # https://developers.openai.com/api/docs/pricing
 _COST_PER_MTOK: dict[str, tuple[float, float]] = {
+    "claude-fable-5": (10.0, 50.0),
+    "claude-opus-4-8": (5.0, 25.0),
     "claude-opus-4-7": (5.0, 25.0),
     "claude-opus-4-6": (5.0, 25.0),
     "claude-sonnet-4-6": (3.0, 15.0),

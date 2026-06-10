@@ -7,6 +7,8 @@
 #: - `OpenAI Pricing <https://developers.openai.com/api/docs/pricing>`_
 #: - `DeepSeek Pricing <https://api-docs.deepseek.com/quick_start/pricing>`_
 COST_PER_MTOK: dict[str, tuple[float, float]] = {
+    "claude-fable-5": (10.0, 50.0),
+    "claude-opus-4-8": (5.0, 25.0),
     "claude-opus-4-7": (5.0, 25.0),
     "claude-opus-4-6": (5.0, 25.0),
     "claude-sonnet-4-6": (3.0, 15.0),
