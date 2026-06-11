@@ -14,6 +14,7 @@ structure MILPReformulation (F G : MILPFormulation) where
   bwd         : (p : F.Params) → G.Vars (paramMap p) → F.Vars p
   fwd_feas    : ∀ p x, F.feasible p x → G.feasible (paramMap p) (fwd p x)
   bwd_feas    : ∀ p x', G.feasible (paramMap p) x' → F.feasible p (bwd p x')
+  bwd_fwd     : ∀ p x, F.feasible p x → bwd p (fwd p x) = x
   objMap      : ℝ → ℝ
   objMap_mono : StrictMono objMap
   fwd_obj     : ∀ p x, F.feasible p x →
