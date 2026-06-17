@@ -219,8 +219,7 @@ NOTE: The final def should be a `MILPReformulation` structure:
 - `fwd` / `bwd`: reference the private defs above, or inline for trivial cases
     e.g., `fwd _ v := { a := v.numTop, g := v.numFront }`
 - `fwd_feas` / `bwd_feas`: reference the private lemmas above
-- `bwd_fwd`: use `fun _ _ _ => rfl` when the round trip holds definitionally;
-    reference the private lemma above when the Round-Trip Identity section is present
+- `bwd_fwd`: reference the private defs above, or inline for trivial cases
 - `objMap`: use `id` when both objectives are identical; reference the private
     def above when the Objective Mapping section is present
 - `objMap_mono`: use `strictMono_id` when `objMap = id`; reference the
