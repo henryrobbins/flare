@@ -49,9 +49,11 @@ pytestmark = pytest.mark.modal
 
 
 # These integration runs are single tool calls (or a no-op + post-hoc compile),
-# so they finish fast. Cap the Sandbox lifetime aggressively as a safety net so
-# a wedged run self-terminates in ~2 min instead of the 30 min default.
-_TEST_SANDBOX_TIMEOUT_S = 120
+# so they finish fast. Cap the Sandbox lifetime as a safety net so a wedged run
+# self-terminates in a few minutes instead of the 30 min default. Kept modest
+# but with headroom over claude-haiku's runtime, since codex auth / opencode
+# startup can be slower.
+_TEST_SANDBOX_TIMEOUT_S = 180
 
 
 def _harness(cli: str) -> Harness:

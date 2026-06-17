@@ -121,7 +121,18 @@ class ModalRunner(Runner):
             # Run the baked entrypoint: agent.sh (the CLI) + post-hoc compile.
             # No PTY: agent.sh writes stream-json to agent_output.jsonl, which a
             # PTY would corrupt.
-            proc = sb.exec("/usr/local/bin/run-agent", workdir=REMOTE_WD)
+            #
+            # Redirect stdin from /dev/null. Modal's exec leaves stdin as an open
+            # pipe with no EOF, so the agent CLIs block reading it — claude waits
+            # 3s then proceeds, but codex/opencode hang indefinitely until the
+            # Sandbox times out. `docker run` (no -i) gives stdin immediate EOF,
+            # which is why the Docker backend never hit this.
+            proc = sb.exec(
+                "bash",
+                "-c",
+                "exec /usr/local/bin/run-agent < /dev/null",
+                workdir=REMOTE_WD,
+            )
             # Drain stdout/stderr. We do NOT live-tail (the baseline driver runs
             # many pairs concurrently, so interleaved output is noise), but the
             # pipes must still be consumed: if the exec's output buffer fills, the
