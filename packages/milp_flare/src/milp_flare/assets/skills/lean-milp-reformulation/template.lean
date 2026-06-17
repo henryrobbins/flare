@@ -157,6 +157,22 @@ private lemma bwd_feas (p : <A>.Params) (v : <B>.Vars (paramMap p))
   sorry
 
 -- ============================================================================
+-- § Round-Trip Identity
+-- ============================================================================
+
+/-
+NOTE: This section is *optional*. Include only if `bwd_fwd` is longer
+than a single line. Otherwise, put it inline in the reformulation structure.
+
+- Use `private lemma bwd_fwd` if not inline
+-/
+
+private lemma bwd_fwd (p : <A>.Params) (v : <A>.Vars p)
+    (h : <A>.Feasible p v) :
+    bwd p (fwd p v) = v := by
+  sorry
+
+-- ============================================================================
 -- § Objective Mapping
 -- ============================================================================
 
@@ -203,6 +219,8 @@ NOTE: The final def should be a `MILPReformulation` structure:
 - `fwd` / `bwd`: reference the private defs above, or inline for trivial cases
     e.g., `fwd _ v := { a := v.numTop, g := v.numFront }`
 - `fwd_feas` / `bwd_feas`: reference the private lemmas above
+- `bwd_fwd`: use `fun _ _ _ => rfl` when the round trip holds definitionally;
+    reference the private lemma above when the Round-Trip Identity section is present
 - `objMap`: use `id` when both objectives are identical; reference the private
     def above when the Objective Mapping section is present
 - `objMap_mono`: use `strictMono_id` when `objMap = id`; reference the
@@ -217,6 +235,7 @@ def <formA><FormB>Reformulation : MILPReformulation <A>.formulation <B>.formulat
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := bwd_fwd
   objMap      := id
   objMap_mono := strictMono_id
   fwd_obj _ _ _ := rfl

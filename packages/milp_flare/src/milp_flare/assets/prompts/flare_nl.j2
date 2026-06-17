@@ -23,6 +23,7 @@ The objective is to minimize the linear function $f_0(\cdot ; p) : R^{n(p)} \to 
 $B$ is a *reformulation* of $A$ if there exists a reformulation construction satisfying the following conditions for every instance $p \in P$, with $p' = \Phi_{p}(p)$:
 - **Forward feasibility.** For all feasible points $x \in F(p)$, the forward mapping maps to a feasible point $x' = \Phi_{fwd}(x;p) \in F'(\Phi_{p}(p))$.
 - **Backward feasibility.** For all feasible points $x' \in F'(p')$, the backward mapping maps to a feasible point $x = \Phi_{bwd}(x';p) \in F(p)$.
+- **Inverse consistency.** For all feasible points $x \in F(p)$, the backward mapping recovers the original point: $\Phi_{bwd}(\Phi_{fwd}(x;p);p) = x$.
 - **Objective mapping.** The forward and backward mappings induce an objective mapping. The following two conditions must hold. (1) For all feasible points ${x \in F(p)}$, the forward mapped point $x' = \Phi_{fwd}(x;p)$ has objective value $f_0'(x';p') = \Phi_{\text{obj}}(f_0(x;p))$. (2) For all feasible points ${x' \in F'(p')}$, the backward mapped point is $x = \Phi_{bwd}(x';p)$ and $f_0'(x';p') = \Phi_{\text{obj}}(f_0(x;p))$.
 - **Strictly monotone.** The objective mapping $\Phi_{\text{obj}}$ is strictly monotonically increasing.
 
