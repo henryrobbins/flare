@@ -359,6 +359,15 @@ noncomputable def aBReformulation : MILPReformulation P16.a.formulation P16.b.fo
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd p v h := by
+    show bwd p (fwd p v) = v
+    unfold bwd
+    cases v with
+    | mk y z =>
+      simp only [fwd]
+      congr 1
+      funext s q
+      exact fwd_sum_x_eq_z p { y := y, z := z } h s q
   objMap      := id
   objMap_mono := strictMono_id
   fwd_obj p v h := fwd_obj p v h

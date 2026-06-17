@@ -246,6 +246,18 @@ private def bwd (p : P18.a.Params) (v : P18.b.Vars (paramMap p)) : P18.a.Vars p 
   { x := v.x
     y := fun i => ∑ j : Fin p.M, v.y i j }
 
+private lemma bwd_fwd (p : P18.a.Params) (v : P18.a.Vars p)
+    (h : P18.a.Feasible p v) :
+    bwd p (fwd p v) = v := by
+  haveI := p.hM
+  cases v with
+  | mk vx vy =>
+    show (⟨vx, fun i => ∑ j : Fin p.M, (fwd p ⟨vx, vy⟩).y i j⟩ : P18.a.Vars p)
+        = ⟨vx, vy⟩
+    congr 1
+    funext i
+    exact fwd_sum_y_eq_y p ⟨vx, vy⟩ h i
+
 private lemma bwd_feas (p : P18.a.Params) (v : P18.b.Vars (paramMap p))
     (h : P18.b.Feasible (paramMap p) v) :
     P18.a.Feasible p (bwd p v) := by
@@ -346,6 +358,7 @@ noncomputable def aBReformulation : MILPReformulation P18.a.formulation P18.b.fo
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := bwd_fwd
   objMap      := id
   objMap_mono := strictMono_id
   fwd_obj p v h := fwd_obj p v h

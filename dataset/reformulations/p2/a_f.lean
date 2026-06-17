@@ -69,6 +69,7 @@ def aFReformulation : MILPReformulation P2.a.formulation P2.f.formulation where
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := fun _ v _ => by cases v; simp [bwd, fwd]
   objMap      := id
   objMap_mono := strictMono_id
   fwd_obj     := fun _ v _ => by

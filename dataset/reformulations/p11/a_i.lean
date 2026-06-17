@@ -180,6 +180,7 @@ def aIReformulation : MILPReformulation P11.a.formulation P11.i.formulation wher
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := fun _ _ _ => rfl
   objMap      := id
   objMap_mono := strictMono_id
   fwd_obj _ _ _ := rfl

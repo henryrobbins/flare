@@ -480,6 +480,7 @@ def aGReformulation : MILPReformulation P12.a.formulation P12.g.formulation wher
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := fun _ _ _ => rfl
   objMap      := id
   objMap_mono := strictMono_id
   fwd_obj p v _ := by

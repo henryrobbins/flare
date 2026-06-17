@@ -59,6 +59,7 @@ def aGReformulation : MILPReformulation P5.a.formulation P5.g.formulation where
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := fun _ _ _ => rfl
   objMap      := fun x => 2 * x
   objMap_mono := (fun _ _ h => by linarith)
   fwd_obj := fun _ v _ => by
