@@ -120,10 +120,20 @@ class ModalRunner(Runner):
 
             # Run the baked entrypoint: agent.sh (the CLI) + post-hoc compile.
             # No PTY: agent.sh writes stream-json to agent_output.jsonl, which a
-            # PTY would corrupt. No live log tailing: the baseline driver runs
-            # many pairs concurrently, so interleaved stdout is noise.
+            # PTY would corrupt.
             proc = sb.exec("/usr/local/bin/run-agent", workdir=REMOTE_WD)
+            # Drain stdout/stderr. We do NOT live-tail (the baseline driver runs
+            # many pairs concurrently, so interleaved output is noise), but the
+            # pipes must still be consumed: if the exec's output buffer fills, the
+            # agent process blocks and proc.wait() hangs until the Sandbox times
+            # out. agent_output.jsonl is pulled back as the artifact; stderr is
+            # persisted for diagnostics (parity with DockerRunner).
+            for _ in proc.stdout:
+                pass
+            stderr = proc.stderr.read()
             proc.wait()
+            if stderr:
+                (wd / "modal_stderr.txt").write_text(stderr)
 
             self._pull_wd(sb, wd)
         finally:

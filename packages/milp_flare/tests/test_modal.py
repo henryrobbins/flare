@@ -48,9 +48,19 @@ _spec.loader.exec_module(dk)
 pytestmark = pytest.mark.modal
 
 
+# These integration runs are single tool calls (or a no-op + post-hoc compile),
+# so they finish fast. Cap the Sandbox lifetime aggressively as a safety net so
+# a wedged run self-terminates in ~2 min instead of the 30 min default.
+_TEST_SANDBOX_TIMEOUT_S = 120
+
+
 def _harness(cli: str) -> Harness:
     """Build the CLI's harness configured to run on a Modal Sandbox."""
-    return HARNESSES[cli](model=dk._model_for(cli), effort="low", runner=ModalRunner())
+    return HARNESSES[cli](
+        model=dk._model_for(cli),
+        effort="low",
+        runner=ModalRunner(timeout=_TEST_SANDBOX_TIMEOUT_S),
+    )
 
 
 def _run(cli: str, repo_root: Path, pair_dir: Path, action: str) -> Path:
