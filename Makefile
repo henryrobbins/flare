@@ -10,7 +10,7 @@ PACKAGES := packages/formulation_bench packages/milp_flare
 help:
 	@echo "Targets (root — experiment code under src/, experiments/, scripts/):"
 	@echo "  install     Sync workspace deps with uv"
-	@echo "  test        Run pytest (excluding docker marked tests)"
+	@echo "  test        Run pytest (excluding docker + modal marked tests)"
 	@echo "  cov         Run pytest with coverage scoped to src/; writes htmlcov/ and coverage.xml"
 	@echo "  cov-open    Open the HTML coverage report"
 	@echo "  cov-clean   Remove coverage artifacts"
@@ -30,10 +30,10 @@ install:
 	uv sync
 
 test:
-	uv run pytest -m 'not docker'
+	uv run pytest -m 'not docker and not modal'
 
 cov:
-	uv run pytest -m 'not docker' \
+	uv run pytest -m 'not docker and not modal' \
 		--cov=src \
 		--cov-report=term-missing \
 		--cov-report=html \

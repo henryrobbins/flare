@@ -6,6 +6,7 @@ from typing import Any
 
 from milp_flare._assets import SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
+from milp_flare.harness.runner import AuthSpec, Runner
 
 _TEMPLATE: str = (SCRIPTS_DIR / "opencode_agent.sh").read_text()
 
@@ -67,6 +68,7 @@ class OpenCodeHarness(Harness):
         >>> print(json.dumps(harness.get_config_dict(), indent=2))
         {
           "harness": "opencode",
+          "compute": "docker",
           "image": "flare-agent:latest",
           "model": "deepseek-v4-pro",
           "effort": "high",
@@ -81,8 +83,9 @@ class OpenCodeHarness(Harness):
         model: str,
         effort: str = "medium",
         provider: str | None = None,
+        runner: Runner | None = None,
     ) -> None:
-        super().__init__(model, effort)
+        super().__init__(model, effort, runner)
         self.provider = provider or _infer_provider(model)
 
     def get_config_dict(self) -> dict[str, Any]:
@@ -123,18 +126,19 @@ class OpenCodeHarness(Harness):
             },
         }
 
-    def _agent_docker_args(self) -> list[str]:
+    def auth_spec(self) -> AuthSpec:
         # Pass through any available provider API key
-        args: list[str] = []
-        for key in (
-            "ANTHROPIC_API_KEY",
-            "OPENAI_API_KEY",
-            "GOOGLE_API_KEY",
-            "DEEPSEEK_API_KEY",
-        ):
-            if key in os.environ:
-                args += ["-e", key]
-        return args
+        env = [
+            key
+            for key in (
+                "ANTHROPIC_API_KEY",
+                "OPENAI_API_KEY",
+                "GOOGLE_API_KEY",
+                "DEEPSEEK_API_KEY",
+            )
+            if key in os.environ
+        ]
+        return AuthSpec(env=env, home_dirs=[])
 
     def _agent_command(self) -> str:
         # Pass model and provider to the agent command template

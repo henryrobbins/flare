@@ -137,9 +137,6 @@ class DummyHarness(Harness):
     def configure_wd(self, wd: Path) -> None:
         return
 
-    def _agent_docker_args(self) -> list[str]:
-        return []
-
     def _agent_command(self) -> str:
         return ""
 
@@ -238,9 +235,6 @@ class GroundTruthHarness(Harness):
             (wd / "Reformulation.lean").write_text(
                 "-- NOT REFORMULATION\n-- ground-truth harness verdict\n"
             )
-
-    def _agent_docker_args(self) -> list[str]:
-        return []
 
     def _agent_command(self) -> str:
         # Build A.Formulation and B.Formulation so that the entrypoint's

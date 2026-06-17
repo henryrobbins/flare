@@ -119,25 +119,25 @@ def test_configure_wd(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _agent_docker_args — credential forwarding contract
+# auth_spec — credential forwarding contract
 # ---------------------------------------------------------------------------
 
 
-def test_docker_args_requires_codex_login(
+def test_auth_spec_requires_codex_login(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
     """Codex raises a helpful error when ~/.codex is absent."""
     monkeypatch.setattr(codex_module.Path, "home", lambda: tmp_path)
     with pytest.raises(RuntimeError, match="codex"):
-        _codex()._agent_docker_args()
+        _codex().auth_spec()
 
 
-def test_docker_args_mounts_codex_dir(
+def test_auth_spec_maps_codex_dir(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """When ~/.codex exists, it is bind-mounted into the container."""
+    """When ~/.codex exists, it is offered as a home dir (no env vars)."""
     (tmp_path / ".codex").mkdir()
     monkeypatch.setattr(codex_module.Path, "home", lambda: tmp_path)
-    args = _codex()._agent_docker_args()
-    # the host ~/.codex appears in one of the bind-mount specs
-    assert any(str(tmp_path / ".codex") in a for a in args)
+    spec = _codex().auth_spec()
+    assert spec.env == []
+    assert spec.home_dirs == [(tmp_path / ".codex", ".codex")]

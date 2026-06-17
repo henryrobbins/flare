@@ -6,6 +6,7 @@ from typing import Any
 
 from milp_flare._assets import MCP_JSON, SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
+from milp_flare.harness.runner import AuthSpec
 
 _TEMPLATE: str = (SCRIPTS_DIR / "claude_code_agent.sh").read_text()
 
@@ -55,6 +56,7 @@ class ClaudeCodeHarness(Harness):
         >>> print(json.dumps(harness.get_config_dict(), indent=2))
         {
           "harness": "claude_code",
+          "compute": "docker",
           "image": "flare-agent:latest",
           "model": "claude-opus-4-7",
           "effort": "high"
@@ -75,7 +77,7 @@ class ClaudeCodeHarness(Harness):
         claude_skills.parent.mkdir(exist_ok=True)
         shutil.copytree(SKILLS_DIR, claude_skills, dirs_exist_ok=True)
 
-    def _agent_docker_args(self) -> list[str]:
+    def auth_spec(self) -> AuthSpec:
         # We use a long-lived token here instead of an API key to avoid the
         # higher API costs compared a Claude Code subscription
         # https://code.claude.com/docs/en/authentication#generate-a-long-lived-token
@@ -84,7 +86,7 @@ class ClaudeCodeHarness(Harness):
                 "claude_code harness requires CLAUDE_CODE_OAUTH_TOKEN"
                 " from `claude setup-token`"
             )
-        return ["-e", "CLAUDE_CODE_OAUTH_TOKEN"]
+        return AuthSpec(env=["CLAUDE_CODE_OAUTH_TOKEN"], home_dirs=[])
 
     def _agent_command(self) -> str:
         # Pass model and effort to the agent command template
