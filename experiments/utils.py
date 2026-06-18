@@ -14,7 +14,32 @@ from typing import Any
 
 from formulation_bench import Formulation, Reformulation
 
-from src.verify.base import ReformulationVerifier
+from src.verify.base import ReformulationRun, ReformulationVerifier
+
+
+class RunRegistry:
+    """Thread-safe set of in-flight :class:`ReformulationRun` handles."""
+
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._runs: set[ReformulationRun] = set()
+
+    def add(self, run: ReformulationRun) -> None:
+        with self._lock:
+            self._runs.add(run)
+
+    def remove(self, run: ReformulationRun) -> None:
+        with self._lock:
+            self._runs.discard(run)
+
+    def cancel_all(self) -> None:
+        with self._lock:
+            runs = list(self._runs)
+        for run in runs:
+            try:
+                run.cancel()
+            except Exception:
+                pass
 
 
 def pair_id(a: Formulation, b: Formulation) -> str:
@@ -120,18 +145,18 @@ def drain_with_interrupt(
     futures: Iterable[Future[Any]],
     run_id: str,
     on_result: Callable[[Future[Any]], None],
-    on_interrupt: Callable[[], None] | None = None,
+    registry: RunRegistry,
 ) -> None:
     """Iterate `as_completed(futures)` calling `on_result(future)` for each;
-    on KeyboardInterrupt, signal in-flight runs to cancel, kill any run
-    containers, cancel pending futures, and shut down the executor.
+    on KeyboardInterrupt, cancel in-flight runs, kill any run containers, cancel
+    pending futures, shut down the executor, then sweep leaked Modal Sandboxes.
 
-    `on_interrupt` (if given) is invoked first to flip a cooperative cancel
-    flag. For FLARE that flag (`src.verify.flare.CANCEL_EVENT`) is polled by
-    each in-flight run's `should_cancel` hook, which stops the agent — on the
-    Docker *and* Modal backends — within one poll interval and lets the worker
-    return. The cooperative path owns in-flight runs: each worker stops its own
-    agent, captures partial artifacts, and tears down its own container/Sandbox.
+    `registry.cancel_all()` runs first to flip each in-flight run's cooperative
+    cancel flag. For FLARE that flag is polled by the run's `should_cancel`
+    hook, which stops the agent — on the Docker *and* Modal backends — within
+    one poll interval and lets the worker return. The cooperative path owns
+    in-flight runs: each worker stops its own agent, captures partial artifacts,
+    and tears down its own container/Sandbox.
 
     `kill_run_containers` runs *before* the drain because the Docker bind mount
     means artifacts are already local — an immediate hard-kill loses nothing and
@@ -149,8 +174,8 @@ def drain_with_interrupt(
             on_result(future)
     except KeyboardInterrupt:
         print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
-        if on_interrupt is not None:
-            on_interrupt()
+        # Flip each in-flight run's cooperative cancel flag (Docker + Modal).
+        registry.cancel_all()
         # Docker: hard-kill now (bind mount => no artifacts lost; frees workers
         # blocked in popen.wait). Modal sweep is deferred until after the drain.
         kill_run_containers(run_id)
@@ -203,6 +228,7 @@ def run_verification(
     artifacts_dir: Path,
     name: str,
     run_idx: int | None,
+    registry: RunRegistry,
     model: str | None = None,
     mode: str | None = None,
 ) -> dict[str, Any]:
@@ -232,7 +258,12 @@ def run_verification(
         "error": None,
     }
     try:
-        result = verifier.verify(pair.a, pair.b, artifacts_dir)
+        run = verifier.start(pair.a, pair.b, artifacts_dir)
+        registry.add(run)
+        try:
+            result = run.result()
+        finally:
+            registry.remove(run)
         row["is_reformulation"] = result.is_reformulation
         row["duration_s"] = result.duration_s
         row["cost_usd"] = result.cost_usd
