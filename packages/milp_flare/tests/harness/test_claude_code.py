@@ -122,18 +122,20 @@ def test_configure_wd_is_idempotent(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _agent_docker_args — credential forwarding contract
+# auth_spec — credential forwarding contract
 # ---------------------------------------------------------------------------
 
 
-def test_docker_args_requires_oauth_token(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_auth_spec_requires_oauth_token(monkeypatch: pytest.MonkeyPatch) -> None:
     """Claude Code raises a helpful error when the OAuth token is unset."""
     monkeypatch.delenv("CLAUDE_CODE_OAUTH_TOKEN", raising=False)
     with pytest.raises(RuntimeError, match="CLAUDE_CODE_OAUTH_TOKEN"):
-        _claude()._agent_docker_args()
+        _claude().auth_spec()
 
 
-def test_docker_args_forwards_oauth_token(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_auth_spec_forwards_oauth_token(monkeypatch: pytest.MonkeyPatch) -> None:
     """When set, the OAuth token is forwarded into the container."""
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "secret")
-    assert "CLAUDE_CODE_OAUTH_TOKEN" in _claude()._agent_docker_args()
+    spec = _claude().auth_spec()
+    assert spec.env == ["CLAUDE_CODE_OAUTH_TOKEN"]
+    assert spec.home_dirs == []

@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from milp_flare import HARNESSES, Harness
+from milp_flare import HARNESSES, Harness, make_runner
 
 from src.llm_client import make_client
 from src.verify.base import ReformulationVerifier
@@ -19,6 +19,7 @@ def build_verifier(spec: dict[str, Any]) -> ReformulationVerifier:
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
       - {type: flare, harness: claude_code|codex|opencode,
+         compute?: docker, docker?: {...},
          client: {model: <str>, effort?: <str>, provider?: <str>}}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
@@ -60,7 +61,12 @@ def _build_harness(spec: dict[str, Any]) -> Harness:
     cls = HARNESSES.get(htype)
     if cls is None:
         raise ValueError(f"unknown flare harness: {htype!r}")
+    # Select the compute backend (default docker; existing YAMLs unchanged).
+    # The per-backend config block (e.g. `docker:`) is optional.
+    compute = spec.pop("compute", "docker")
+    runner_cfg = spec.pop(compute, {})
+    runner = make_runner(compute, runner_cfg)
     kwargs = dict(spec.pop("client"))
     if htype != "opencode":
         kwargs.pop("provider", None)
-    return cls(**kwargs)
+    return cls(**kwargs, runner=runner)

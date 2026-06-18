@@ -120,27 +120,29 @@ def test_configure_wd(tmp_path: Path) -> None:
 
 
 # ---------------------------------------------------------------------------
-# _agent_docker_args — credential forwarding contract
+# auth_spec — credential forwarding contract
 # ---------------------------------------------------------------------------
 
 
-def test_docker_args_forwards_only_set_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_auth_spec_forwards_only_set_keys(monkeypatch: pytest.MonkeyPatch) -> None:
     """OpenCode forwards exactly the provider API keys that are set."""
     for key in _OPENCODE_KEYS:
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setenv("ANTHROPIC_API_KEY", "a")
     monkeypatch.setenv("DEEPSEEK_API_KEY", "d")
 
-    args = _opencode()._agent_docker_args()
+    env = _opencode().auth_spec().env
 
-    assert "ANTHROPIC_API_KEY" in args
-    assert "DEEPSEEK_API_KEY" in args
-    assert "OPENAI_API_KEY" not in args
-    assert "GOOGLE_API_KEY" not in args
+    assert "ANTHROPIC_API_KEY" in env
+    assert "DEEPSEEK_API_KEY" in env
+    assert "OPENAI_API_KEY" not in env
+    assert "GOOGLE_API_KEY" not in env
 
 
-def test_docker_args_empty_when_no_keys(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_auth_spec_empty_when_no_keys(monkeypatch: pytest.MonkeyPatch) -> None:
     """OpenCode forwards nothing (and does not raise) when no keys are set."""
     for key in _OPENCODE_KEYS:
         monkeypatch.delenv(key, raising=False)
-    assert _opencode()._agent_docker_args() == []
+    spec = _opencode().auth_spec()
+    assert spec.env == []
+    assert spec.home_dirs == []

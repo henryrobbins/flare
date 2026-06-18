@@ -5,6 +5,7 @@ from typing import Any
 
 from milp_flare._assets import SCRIPTS_DIR, SKILLS_DIR
 from milp_flare.harness.base import Harness
+from milp_flare.harness.runner import AuthSpec
 
 _TEMPLATE: str = (SCRIPTS_DIR / "codex_agent.sh").read_text()
 
@@ -47,6 +48,7 @@ class CodexHarness(Harness):
         >>> print(json.dumps(harness.get_config_dict(), indent=2))
         {
           "harness": "codex",
+          "compute": "docker",
           "image": "flare-agent:latest",
           "model": "gpt-5.4",
           "effort": "high"
@@ -65,15 +67,15 @@ class CodexHarness(Harness):
         agents_skills.parent.mkdir(exist_ok=True)
         shutil.copytree(SKILLS_DIR, agents_skills, dirs_exist_ok=True)
 
-    def _agent_docker_args(self) -> list[str]:
+    def auth_spec(self) -> AuthSpec:
         # We use this authentication strategy instead of an API key to avoid the
-        # higher API costs compared a ChatGPT subscription
-        # Mount rw because codex refreshes its access token mid-session
+        # higher API costs compared a ChatGPT subscription. The runner mounts the
+        # dir rw because codex refreshes its access token mid-session.
         # https://developers.openai.com/codex/auth/ci-cd-auth
         codex_dir = Path.home() / ".codex"
         if not codex_dir.exists():
             raise RuntimeError("codex harness requires ~/.codex from `codex login`")
-        return ["-v", f"{codex_dir}:/home/agent/.codex"]
+        return AuthSpec(env=[], home_dirs=[(codex_dir, ".codex")])
 
     def _agent_command(self) -> str:
         # Pass model and effort to the agent command template

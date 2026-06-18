@@ -22,6 +22,7 @@ from formulation_bench import Dataset, Formulation
 
 from milp_flare import (
     FLARE,
+    AuthSpec,
     FormulationInput,
     Harness,
     HarnessRunResult,
@@ -155,8 +156,8 @@ class DummyHarness(Harness):
     def configure_wd(self, wd: Path) -> None:
         return
 
-    def _agent_docker_args(self) -> list[str]:
-        return []
+    def auth_spec(self) -> AuthSpec:
+        return AuthSpec(env=[], home_dirs=[])
 
     def _agent_command(self) -> str:
         return ""
@@ -260,8 +261,8 @@ class GroundTruthHarness(Harness):
                 "-- NOT REFORMULATION\n-- ground-truth harness verdict\n"
             )
 
-    def _agent_docker_args(self) -> list[str]:
-        return []
+    def auth_spec(self) -> AuthSpec:
+        return AuthSpec(env=[], home_dirs=[])
 
     def _agent_command(self) -> str:
         # Build A.Formulation and B.Formulation so that the entrypoint's
