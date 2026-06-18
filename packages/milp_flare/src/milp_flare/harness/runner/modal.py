@@ -237,14 +237,9 @@ class ModalRunner(Runner):
         an empty snapshot is returned — the next tick self-heals.
         """
         try:
-            f = sb.open(f"{REMOTE_WD}/agent_output.jsonl", "r")
+            return sb.filesystem.read_text(f"{REMOTE_WD}/agent_output.jsonl")
         except Exception:
             return ""
-        try:
-            data = f.read()
-        finally:
-            f.close()
-        return data if isinstance(data, str) else data.decode()
 
     def _kill_agent(self, sb: modal.Sandbox) -> None:
         """Stop the agent process inside the Sandbox, leaving the Sandbox alive.

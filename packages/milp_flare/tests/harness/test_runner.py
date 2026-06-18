@@ -293,31 +293,18 @@ def test_docker_cmd_includes_unique_name(tmp_path: Path) -> None:
 
 
 def test_modal_read_remote_output_returns_contents() -> None:
-    """`_read_remote_output` reads and closes the remote file handle."""
-
-    class _FakeFile:
-        def __init__(self) -> None:
-            self.closed = False
-
-        def read(self) -> str:
-            return "snap\n"
-
-        def close(self) -> None:
-            self.closed = True
-
-    handle = _FakeFile()
-    sb = SimpleNamespace(open=lambda path, mode: handle)
+    """`_read_remote_output` reads the remote file via the filesystem API."""
+    sb = SimpleNamespace(filesystem=SimpleNamespace(read_text=lambda path: "snap\n"))
     assert ModalRunner()._read_remote_output(sb) == "snap\n"
-    assert handle.closed
 
 
 def test_modal_read_remote_output_missing_file_is_empty() -> None:
     """A not-yet-created output file yields an empty snapshot, not an error."""
 
-    def _open(path: str, mode: str) -> Any:
+    def _read_text(path: str) -> str:
         raise FileNotFoundError(path)
 
-    sb = SimpleNamespace(open=_open)
+    sb = SimpleNamespace(filesystem=SimpleNamespace(read_text=_read_text))
     assert ModalRunner()._read_remote_output(sb) == ""
 
 
