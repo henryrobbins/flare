@@ -24,6 +24,7 @@ load_dotenv()
 from formulation_bench import Dataset, Reformulation  # noqa: E402
 
 from experiments.utils import (  # noqa: E402
+    RunRegistry,
     add_common_args,
     drain_with_interrupt,
     filter_pairs,
@@ -47,6 +48,7 @@ def process_pair_verifier(
     run_idx: int,
     results_path: Path,
     write_lock: Lock,
+    registry: RunRegistry,
 ) -> None:
     pid = pair_id(pair.a, pair.b)
     artifacts_dir = results_path.parent / "pairs" / pid / verifier.name / str(run_idx)
@@ -56,6 +58,7 @@ def process_pair_verifier(
         artifacts_dir,
         verifier.name,
         run_idx,
+        registry,
         model=model,
         mode=mode,
     )
@@ -114,6 +117,7 @@ def main() -> None:
         for run_idx in range(1, runs + 1)
     ]
 
+    registry = RunRegistry()
     executor = ThreadPoolExecutor(max_workers=workers)
     futures = {
         executor.submit(
@@ -125,6 +129,7 @@ def main() -> None:
             run_idx,
             results_path,
             write_lock,
+            registry,
         ): (pair, verifier, run_idx)
         for pair, verifier, model, mode, run_idx in tasks
     }
@@ -137,7 +142,9 @@ def main() -> None:
             print(f"  FATAL [{verifier.name}#{run_idx}] [{pid}]: {exc}")
 
     try:
-        drain_with_interrupt(executor, futures, run_dir.name, on_result)
+        drain_with_interrupt(
+            executor, futures, run_dir.name, on_result, registry=registry
+        )
     finally:
         executor.shutdown(wait=True)
 

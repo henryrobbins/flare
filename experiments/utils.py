@@ -125,25 +125,24 @@ def drain_with_interrupt(
     futures: Iterable[Future[Any]],
     run_id: str,
     on_result: Callable[[Future[Any]], None],
-    registry: "RunRegistry | None" = None,
+    registry: RunRegistry,
 ) -> None:
     """Iterate `as_completed(futures)` calling `on_result(future)` for each;
     on KeyboardInterrupt, cancel in-flight runs, cancel pending futures, and
     shut down the executor.
 
-    If a `registry` is given, every live run is cancelled by its handle first
-    (run-level, 1-1: each handle kills its own container). `kill_run_containers`
-    then runs as a label-scoped backstop for anything a handle can't reach.
-    Either way the killed containers make the workers' blocked `docker` calls
-    return, so `wait=True` drains them promptly."""
+    Every live run in `registry` is cancelled by its handle first (run-level,
+    1-1: each handle kills its own container). `kill_run_containers` then runs
+    as a label-scoped backstop for anything a handle can't reach. Either way
+    the killed containers make the workers' blocked `docker` calls return, so
+    `wait=True` drains them promptly."""
     futures = list(futures)
     try:
         for future in as_completed(futures):
             on_result(future)
     except KeyboardInterrupt:
         print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
-        if registry is not None:
-            registry.cancel_all()
+        registry.cancel_all()
         kill_run_containers(run_id)
         for f in futures:
             f.cancel()
@@ -188,14 +187,14 @@ def run_verification(
     artifacts_dir: Path,
     name: str,
     run_idx: int | None,
+    registry: RunRegistry,
     model: str | None = None,
     mode: str | None = None,
-    registry: "RunRegistry | None" = None,
 ) -> dict[str, Any]:
     """Verify one pair, returning a row dict (errors captured in row['error']).
 
-    When a `registry` is supplied the run handle is registered for the duration
-    of the call so a batch Ctrl+C can cancel it (see :class:`RunRegistry`)."""
+    The run handle is registered in `registry` for the duration of the call so
+    a batch Ctrl+C can cancel it (see :class:`RunRegistry`)."""
     pid = pair_id(pair.a, pair.b)
     pa, fa = pid.split("__")[0].split("_", 1)
     pb, fb = pid.split("__")[1].split("_", 1)
@@ -222,13 +221,11 @@ def run_verification(
     }
     try:
         run = verifier.start(pair.a, pair.b, artifacts_dir)
-        if registry is not None:
-            registry.add(run)
+        registry.add(run)
         try:
             result = run.result()
         finally:
-            if registry is not None:
-                registry.remove(run)
+            registry.remove(run)
         row["is_reformulation"] = result.is_reformulation
         row["duration_s"] = result.duration_s
         row["cost_usd"] = result.cost_usd
