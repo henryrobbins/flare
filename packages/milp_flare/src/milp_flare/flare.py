@@ -8,7 +8,7 @@ from typing import Any
 
 from milp_flare._assets import LEAN_DIR
 from milp_flare._prompts import render_flare_agent_prompt
-from milp_flare.harness import Harness
+from milp_flare.harness import Harness, HarnessRun
 
 #: Axioms permitted in a verified reformulation proof. All of Mathlib is built on
 #: these three; a proof depending on anything else is not trusted by FLARE.
@@ -90,6 +90,46 @@ class FLAREResult:
     duration_s: float | None = None
     cost_usd: float | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+class FLARERun:
+    """Handle for a single in-flight FLARE verification.
+
+    Returned by :meth:`FLARE.start`. Wraps the underlying :class:`HarnessRun`:
+    :meth:`cancel` forwards to it (stopping the agent's container), and
+    :meth:`result` blocks until the agent finishes, then evaluates the produced
+    Lean artifacts and returns the :class:`FLAREResult`. ``cancel`` is safe to
+    call from another thread while ``result`` is blocking, and is idempotent.
+    """
+
+    def __init__(
+        self,
+        flare: "FLARE",
+        harness_run: HarnessRun,
+        artifacts_dir: Path,
+        wd: Path,
+    ) -> None:
+        self._flare = flare
+        self._harness_run = harness_run
+        self._artifacts_dir = artifacts_dir
+        self._wd = wd
+
+    def cancel(self) -> None:
+        """Stop the run by cancelling the underlying agent container."""
+        self._harness_run.cancel()
+
+    def result(self) -> FLAREResult:
+        """Block for the agent to finish, then evaluate and return the verdict."""
+        run_result = self._harness_run.result()
+        meta = self._flare._evaluate(self._wd)
+        meta.update(dataclasses.asdict(run_result))
+        (self._artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
+        return FLAREResult(
+            is_reformulation=meta["is_reformulation"],
+            duration_s=meta.get("duration_s"),
+            cost_usd=meta.get("cost_usd"),
+            metadata=meta,
+        )
 
 
 class FLARE:
@@ -226,6 +266,37 @@ class FLARE:
 
         See :doc:`/user_guide/run_flare` for more example usage.
         """
+        return self.start(a, b, output_path).result()
+
+    def start(
+        self,
+        a: FormulationInput,
+        b: FormulationInput,
+        output_path: Path,
+    ) -> FLARERun:
+        """Start a FLARE run on a pair of MILP formulations and return a handle.
+
+        Does the same setup as :meth:`verify` (writes ``config.json``, populates
+        the agent working directory, launches the agent harness) but returns a
+        :class:`FLARERun` immediately instead of blocking. Call
+        :meth:`FLARERun.result` to block for the verdict (which evaluates the
+        agent's Lean artifacts and writes ``result.json``) or
+        :meth:`FLARERun.cancel` to stop the run.
+
+        Parameters
+        ----------
+        a : FormulationInput
+            Inputs for formulation A.
+        b : FormulationInput
+            Inputs for formulation B (the candidate reformulation of A).
+        output_path : pathlib.Path
+            Directory to populate with run artifacts.
+
+        Returns
+        -------
+        run : FLARERun
+            Handle to the in-flight run (cancel / await its result).
+        """
         # Create the artifacts directory at the output path and write config
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
@@ -237,20 +308,9 @@ class FLARE:
         wd = artifacts_dir / "wd"
         self._setup_wd(wd, a, b)
 
-        # Run the agent harness
-        run_result = self.harness.run(wd)
-
-        # Evaluate the agent's output to obtain final result and write metadata
-        meta = self._evaluate(wd)
-        meta.update(dataclasses.asdict(run_result))
-        (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-
-        return FLAREResult(
-            is_reformulation=meta["is_reformulation"],
-            duration_s=meta.get("duration_s"),
-            cost_usd=meta.get("cost_usd"),
-            metadata=meta,
-        )
+        # Launch the agent harness and hand back a cancellable run handle.
+        harness_run = self.harness.start(wd)
+        return FLARERun(self, harness_run, artifacts_dir, wd)
 
     def _setup_wd(
         self,

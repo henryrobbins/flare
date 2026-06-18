@@ -109,6 +109,24 @@ def _copy_ground_truth(
 # ---------------------------------------------------------------------------
 
 
+class _ImmediateRun:
+    """A HarnessRun-shaped handle whose work already completed during start().
+
+    Lets the in-process dummy harnesses satisfy the ``Harness.start`` ->
+    run-handle contract without a real container: ``cancel`` is a no-op and
+    ``result`` just returns the precomputed ``HarnessRunResult``.
+    """
+
+    def __init__(self, result: HarnessRunResult) -> None:
+        self._result = result
+
+    def cancel(self) -> None:
+        pass
+
+    def result(self) -> HarnessRunResult:
+        return self._result
+
+
 class DummyHarness(Harness):
     """Harness that bypasses Docker and pre-writes ground-truth Lean files.
 
@@ -151,7 +169,10 @@ class DummyHarness(Harness):
             "cost_usd": 0.0,
         }
 
-    def run(self, wd: Path) -> HarnessRunResult:
+    def start(self, wd: Path) -> _ImmediateRun:
+        return _ImmediateRun(self._fake_run(wd))
+
+    def _fake_run(self, wd: Path) -> HarnessRunResult:
         if self.expected:
             _copy_ground_truth(wd, self.repo_root, self.a, self.b)
             (wd / "result.json").write_text(
@@ -191,8 +212,8 @@ class BadAxiomHarness(DummyHarness):
 
     name = "bad_axiom"
 
-    def run(self, wd: Path) -> HarnessRunResult:
-        result = super().run(wd)
+    def _fake_run(self, wd: Path) -> HarnessRunResult:
+        result = super()._fake_run(wd)
         (wd / "compile_log.txt").write_text(
             "'reformulation' depends on axioms: [propext, Classical.choice, P1.cheat]\n"
         )
