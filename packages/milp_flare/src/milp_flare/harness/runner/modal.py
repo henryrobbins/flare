@@ -174,31 +174,33 @@ class ModalRunner(Runner):
                 workdir=REMOTE_WD,
             )
 
-            # Drain the agent exec's own pipes in a background thread — mostly
-            # empty (agent.sh writes the stream to the file, not stdout), but if
-            # the buffer fills the agent blocks and proc.wait() hangs. Draining
-            # off the main thread *and* signaling completion via `done` lets the
-            # main thread run the supervision tick loop concurrently. Persist
-            # stderr for diagnostics (parity with DockerRunner).
-            done = threading.Event()
-            captured: dict[str, str] = {}
-
-            def _drain() -> None:
-                try:
-                    for _ in proc.stdout:
-                        pass
-                    captured["stderr"] = proc.stderr.read()
-                    proc.wait()
-                finally:
-                    done.set()
-
-            drain = threading.Thread(target=_drain, daemon=True)
-            drain.start()
-
             if on_output is None and should_cancel is None:
-                # No-hooks fast path: just block until the drain thread is done.
-                done.wait()
+                # No-hooks fast path: drain the exec's pipes and block inline
+                # (verbatim historical behavior, no supervision thread). Draining
+                # is required — if the buffer fills the agent blocks and
+                # proc.wait() hangs. Persist stderr for diagnostics.
+                for _ in proc.stdout:
+                    pass
+                stderr = proc.stderr.read()
+                proc.wait()
             else:
+                # Supervised path: drain the exec's pipes in a background thread
+                # (which also signals completion via `done`) so the main thread
+                # can run the shared tick loop concurrently.
+                done = threading.Event()
+                captured: dict[str, str] = {}
+
+                def _drain() -> None:
+                    try:
+                        for _ in proc.stdout:
+                            pass
+                        captured["stderr"] = proc.stderr.read()
+                        proc.wait()
+                    finally:
+                        done.set()
+
+                drain = threading.Thread(target=_drain, daemon=True)
+                drain.start()
                 self._supervise(
                     is_running=lambda: not done.is_set(),
                     read_output=lambda: self._read_remote_output(sb),
@@ -215,8 +217,8 @@ class ModalRunner(Runner):
                     poll_interval=poll_interval,
                 )
                 drain.join()
+                stderr = captured.get("stderr", "")
 
-            stderr = captured.get("stderr", "")
             if stderr:
                 (wd / "modal_stderr.txt").write_text(stderr)
 

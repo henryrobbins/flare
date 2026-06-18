@@ -37,6 +37,7 @@ from experiments.utils import (  # noqa: E402
 )
 from src.verify.base import ReformulationVerifier  # noqa: E402
 from src.verify.factory import build_verifier  # noqa: E402
+from src.verify.flare import CANCEL_EVENT  # noqa: E402
 
 DEFAULT_CONFIG = Path(__file__).parent / "configs" / "baseline.yaml"
 
@@ -135,7 +136,9 @@ def main() -> None:
             print(f"  FATAL [{entry.name}{suffix}] [{pid}]: {exc}")
 
     try:
-        drain_with_interrupt(executor, futures, run_dir.name, on_result)
+        drain_with_interrupt(
+            executor, futures, run_dir.name, on_result, on_interrupt=CANCEL_EVENT.set
+        )
     finally:
         executor.shutdown(wait=True)
 

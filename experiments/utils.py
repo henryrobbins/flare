@@ -93,23 +93,32 @@ def drain_with_interrupt(
     futures: Iterable[Future[Any]],
     run_id: str,
     on_result: Callable[[Future[Any]], None],
+    on_interrupt: Callable[[], None] | None = None,
 ) -> None:
     """Iterate `as_completed(futures)` calling `on_result(future)` for each;
-    on KeyboardInterrupt, kill all run containers, cancel pending futures,
-    and shut down the executor without waiting for the (now-dying) workers
-    to drain naturally."""
+    on KeyboardInterrupt, signal in-flight runs to cancel, kill any run
+    containers, cancel pending futures, and shut down the executor.
+
+    `on_interrupt` (if given) is invoked first to flip a cooperative cancel
+    flag. For FLARE that flag (`src.verify.flare.CANCEL_EVENT`) is polled by
+    each in-flight run's `should_cancel` hook, which stops the agent — on the
+    Docker *and* Modal backends — within one poll interval and lets the worker
+    return. `kill_run_containers` is kept as a Docker fast-path / belt-and-
+    suspenders for the setup window before the hook loop starts."""
     futures = list(futures)
     try:
         for future in as_completed(futures):
             on_result(future)
     except KeyboardInterrupt:
-        print("\n  Interrupted. Killing containers and shutting down...")
+        print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
+        if on_interrupt is not None:
+            on_interrupt()
         kill_run_containers(run_id)
         for f in futures:
             f.cancel()
-        # Workers are blocked in subprocess.run waiting for docker; once
-        # docker kill lands, those calls return and threads exit. wait=True
-        # is still safe (and quick) after the kill.
+        # In-flight workers observe the cancel flag within a poll interval,
+        # stop their agent, capture partial artifacts, and return; wait=True
+        # then drains them promptly.
         executor.shutdown(wait=True, cancel_futures=True)
         raise SystemExit(130)
 
