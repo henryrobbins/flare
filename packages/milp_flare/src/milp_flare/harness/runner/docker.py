@@ -99,6 +99,18 @@ class DockerRunner(Runner):
             )
 
         start = time.time()
+
+        # If a cancel is already pending, don't launch the container at all.
+        # (Docker's setup window is tiny — Popen returns at once and the
+        # container is named immediately — so the supervise loop's first tick
+        # otherwise catches everything; this just avoids a needless launch.)
+        if should_cancel is not None:
+            try:
+                if should_cancel():
+                    return time.time() - start
+            except Exception:
+                pass
+
         with open(wd / "docker_stderr.txt", "wb") as stderr_f:
             popen = subprocess.Popen(
                 self._build_docker_cmd(wd, auth, name=container),

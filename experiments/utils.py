@@ -88,6 +88,33 @@ def kill_run_containers(run_id: str) -> None:
     subprocess.run(["docker", "kill", *ids], check=False, capture_output=True)
 
 
+def kill_run_sandboxes(run_id: str) -> None:
+    """`terminate` every Modal Sandbox tagged flare-run=<run_id>.
+
+    The Modal analogue of :func:`kill_run_containers`: the Modal backend tags
+    each Sandbox with its ``flare-run`` run ID, so on Ctrl+C we can reap the
+    whole batch by tag. This is the backstop the per-run cooperative cancel
+    can't cover — Sandboxes whose driving thread is wedged, or any leaked
+    during the long ``Sandbox.create`` / push setup window. ``modal`` is an
+    optional dependency, so a missing install is silently a no-op."""
+    try:
+        import modal
+    except ModuleNotFoundError:
+        return
+    try:
+        sandboxes = list(modal.Sandbox.list(tags={"flare-run": run_id}))
+    except Exception:
+        return
+    if not sandboxes:
+        return
+    print(f"  Stopping {len(sandboxes)} sandbox(es)...")
+    for sb in sandboxes:
+        try:
+            sb.terminate()
+        except Exception:
+            pass
+
+
 def drain_with_interrupt(
     executor: ThreadPoolExecutor,
     futures: Iterable[Future[Any]],
@@ -103,8 +130,19 @@ def drain_with_interrupt(
     flag. For FLARE that flag (`src.verify.flare.CANCEL_EVENT`) is polled by
     each in-flight run's `should_cancel` hook, which stops the agent — on the
     Docker *and* Modal backends — within one poll interval and lets the worker
-    return. `kill_run_containers` is kept as a Docker fast-path / belt-and-
-    suspenders for the setup window before the hook loop starts."""
+    return. The cooperative path owns in-flight runs: each worker stops its own
+    agent, captures partial artifacts, and tears down its own container/Sandbox.
+
+    `kill_run_containers` runs *before* the drain because the Docker bind mount
+    means artifacts are already local — an immediate hard-kill loses nothing and
+    promptly unblocks any worker parked in `popen.wait`. `kill_run_sandboxes`
+    runs *after* the drain: a Modal run must pull partial artifacts off the live
+    Sandbox before it dies, so terminating Sandboxes out from under in-flight
+    workers would both lose those artifacts and crash the pull. By the time the
+    executor has drained, healthy Modal workers have already terminated their
+    own Sandboxes, so the sweep only reaps genuine leaks (a worker that died
+    before its `finally`). Both reapers are tag-scoped no-ops when their backend
+    isn't in use."""
     futures = list(futures)
     try:
         for future in as_completed(futures):
@@ -113,6 +151,8 @@ def drain_with_interrupt(
         print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
         if on_interrupt is not None:
             on_interrupt()
+        # Docker: hard-kill now (bind mount => no artifacts lost; frees workers
+        # blocked in popen.wait). Modal sweep is deferred until after the drain.
         kill_run_containers(run_id)
         for f in futures:
             f.cancel()
@@ -120,6 +160,9 @@ def drain_with_interrupt(
         # stop their agent, capture partial artifacts, and return; wait=True
         # then drains them promptly.
         executor.shutdown(wait=True, cancel_futures=True)
+        # Backstop: reap any Modal Sandbox the cooperative path left behind
+        # (e.g. a worker that died before its own terminate()).
+        kill_run_sandboxes(run_id)
         raise SystemExit(130)
 
 

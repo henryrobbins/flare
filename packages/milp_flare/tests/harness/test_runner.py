@@ -24,6 +24,7 @@ from milp_flare.harness.runner import (
     make_runner,
 )
 from milp_flare.harness.runner import docker as docker_module
+from milp_flare.harness.runner import modal as modal_module
 
 
 def test_docker_cmd_includes_mount_and_image(tmp_path: Path) -> None:
@@ -280,6 +281,28 @@ def test_docker_run_supervised_streams_and_returns(
     assert "line2" in snapshots[-1]
 
 
+def test_docker_run_skips_launch_when_already_canceled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cancel pending before launch returns without spawning the container."""
+    wd = tmp_path / "wd"
+    wd.mkdir()
+
+    def _boom(*args: Any, **kwargs: Any) -> None:
+        raise AssertionError("Popen should not be called when already canceled")
+
+    monkeypatch.setattr(docker_module.subprocess, "Popen", _boom)
+
+    duration = DockerRunner().run(
+        wd,
+        AuthSpec(env=[], home_dirs=[]),
+        on_output=lambda _s: None,
+        should_cancel=lambda: True,
+        poll_interval=0.0,
+    )
+    assert duration >= 0.0
+
+
 def test_docker_cmd_includes_unique_name(tmp_path: Path) -> None:
     """A supplied name becomes a unique `--name` for per-run cancel."""
     cmd = DockerRunner()._build_docker_cmd(
@@ -308,6 +331,55 @@ def test_modal_read_remote_output_missing_file_is_empty() -> None:
     assert ModalRunner()._read_remote_output(sb) == ""
 
 
+def test_modal_run_canceled_during_setup_terminates_without_launch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A cancel during the setup window terminates the Sandbox and never execs
+    the agent — closing the leak the supervise loop can't reach yet."""
+    wd = tmp_path / "wd"
+    wd.mkdir()
+
+    events: list[str] = []
+
+    class _FakeSandbox:
+        def set_tags(self, tags: dict[str, str]) -> None:
+            events.append("set_tags")
+
+        def exec(self, *args: Any, **kwargs: Any) -> None:
+            raise AssertionError("agent must not be exec'd after a setup cancel")
+
+        def terminate(self) -> None:
+            events.append("terminate")
+
+        def detach(self) -> None:
+            events.append("detach")
+
+    fake_modal = SimpleNamespace(
+        App=SimpleNamespace(lookup=lambda *a, **k: object()),
+        Image=SimpleNamespace(from_name=lambda *a, **k: object()),
+        Secret=SimpleNamespace(from_dict=lambda *a, **k: object()),
+        Sandbox=SimpleNamespace(create=lambda *a, **k: _FakeSandbox()),
+    )
+    monkeypatch.setattr(modal_module, "_require_modal", lambda: fake_modal)
+    # Cancel is already pending: the first setup checkpoint (right after
+    # tagging) trips before _push_wd / exec.
+    monkeypatch.setattr(
+        ModalRunner, "_push_wd", lambda *a, **k: events.append("push_wd")
+    )
+
+    duration = ModalRunner().run(
+        wd,
+        AuthSpec(env=[], home_dirs=[]),
+        should_cancel=lambda: True,
+        poll_interval=0.0,
+    )
+    assert duration >= 0.0
+    # Tagged (so a reaper could find it), then torn down via the finally —
+    # without pushing wd or launching the agent.
+    assert "push_wd" not in events
+    assert events[-2:] == ["terminate", "detach"]
+
+
 def test_modal_kill_agent_pkills_run_agent() -> None:
     """`_kill_agent` issues a pkill against run-agent and waits on it."""
     calls: list[tuple[str, ...]] = []
@@ -323,3 +395,23 @@ def test_modal_kill_agent_pkills_run_agent() -> None:
     sb = SimpleNamespace(exec=_exec)
     ModalRunner()._kill_agent(sb)
     assert calls == [("pkill", "-TERM", "-f", "run-agent")]
+
+
+def test_modal_kill_agent_tolerates_gone_sandbox() -> None:
+    """A Sandbox reaped out from under us doesn't crash the cancel path."""
+
+    def _exec(*args: str, **kwargs: Any) -> None:
+        raise RuntimeError("Sandbox already shut down")
+
+    sb = SimpleNamespace(exec=_exec)
+    ModalRunner()._kill_agent(sb)  # must not raise
+
+
+def test_modal_pull_wd_tolerates_gone_sandbox(tmp_path: Path) -> None:
+    """If the Sandbox vanished mid-cancel, _pull_wd logs and returns quietly."""
+
+    def _exec(*args: str, **kwargs: Any) -> None:
+        raise RuntimeError("Sandbox already shut down")
+
+    sb = SimpleNamespace(exec=_exec)
+    ModalRunner()._pull_wd(sb, tmp_path)  # must not raise

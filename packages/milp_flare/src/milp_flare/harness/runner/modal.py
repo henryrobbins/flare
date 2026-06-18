@@ -9,6 +9,7 @@ Docker backend works without it.
 from __future__ import annotations
 
 import io
+import logging
 import os
 import tarfile
 import tempfile
@@ -19,6 +20,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from milp_flare.harness.runner.base import AuthSpec, Runner
+
+log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     import modal
@@ -149,12 +152,34 @@ class ModalRunner(Runner):
 
         start = time.time()
         try:
-            # Tag with the FLARE run ID (parity with the docker --label).
+            # Tag with the FLARE run ID first thing, so a batch-level reaper
+            # (experiments' kill_run_sandboxes) can find and terminate this
+            # Sandbox by tag even if we are canceled mid-setup, before the
+            # supervise loop starts polling should_cancel.
             run_id = os.environ.get("FLARE_RUN_ID")
             if run_id:
                 sb.set_tags({"flare-run": run_id})
 
+            def _canceled() -> bool:
+                # Treat a hook error as "do not cancel" (mirrors _supervise).
+                try:
+                    return bool(should_cancel and should_cancel())
+                except Exception:
+                    log.exception("should_cancel hook failed; treating as no-cancel")
+                    return False
+
+            # Cancel checkpoints bracket the long, blocking setup calls
+            # (Sandbox.create above, _push_wd below) that run before the
+            # supervise loop can poll should_cancel. On cancel we return early;
+            # the `finally` terminates the Sandbox, so a Ctrl+C during setup no
+            # longer leaks a live Sandbox billing until `timeout`.
+            if _canceled():
+                return time.time() - start
+
             self._push_wd(sb, wd, auth)
+
+            if _canceled():
+                return time.time() - start
 
             # Run the baked entrypoint (agent.sh + post-hoc compile) via exec.
             # The idle Sandbox stays *Started* across the exec, so it remains
@@ -224,8 +249,17 @@ class ModalRunner(Runner):
 
             self._pull_wd(sb, wd)
         finally:
-            sb.terminate()
-            sb.detach()
+            # Tear down the Sandbox. Tolerate it being already gone (an external
+            # batch reaper may have terminated it) so cleanup never masks the
+            # original control flow.
+            try:
+                sb.terminate()
+            except Exception:
+                log.debug("terminate: Sandbox already gone")
+            try:
+                sb.detach()
+            except Exception:
+                log.debug("detach: Sandbox already gone")
 
         return time.time() - start
 
@@ -250,8 +284,15 @@ class ModalRunner(Runner):
         post-loop ``_pull_wd`` can still capture partial artifacts; the
         ``finally: sb.terminate()`` in :meth:`run` nukes any lingering
         grandchild afterward. Idempotent and safe to re-issue.
+
+        Best-effort: if the Sandbox is already gone (e.g. an external batch
+        reaper terminated it, or a prior call already killed it), the exec
+        raises and we simply treat the agent as already stopped.
         """
-        sb.exec("pkill", "-TERM", "-f", "run-agent").wait()
+        try:
+            sb.exec("pkill", "-TERM", "-f", "run-agent").wait()
+        except Exception:
+            log.debug("kill_agent: Sandbox unavailable; treating agent as stopped")
 
     def _push_wd(self, sb: modal.Sandbox, wd: Path, auth: AuthSpec) -> None:
         """Copy the populated ``wd`` (and any auth home dirs) into the Sandbox."""
@@ -280,14 +321,23 @@ class ModalRunner(Runner):
             ).wait()
 
     def _pull_wd(self, sb: modal.Sandbox, wd: Path) -> None:
-        """Tar the Sandbox ``wd`` back out and extract it over the host ``wd``."""
+        """Tar the Sandbox ``wd`` back out and extract it over the host ``wd``.
+
+        Best-effort: if the Sandbox has already been torn down (e.g. an external
+        batch reaper terminated it during a cancel), the exec/copy raises; we log
+        and return rather than crash the worker, keeping whatever artifacts had
+        already been written.
+        """
         # Exclude the big image-baked .lake symlink target.
-        sb.exec(
-            "bash",
-            "-c",
-            f"tar -czf /tmp/out.tar.gz -C {REMOTE_WD} --exclude=./.lake .",
-        ).wait()
-        with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp:
-            sb.filesystem.copy_to_local("/tmp/out.tar.gz", tmp.name)
-            with tarfile.open(tmp.name, mode="r:gz") as tf:
-                tf.extractall(wd)
+        try:
+            sb.exec(
+                "bash",
+                "-c",
+                f"tar -czf /tmp/out.tar.gz -C {REMOTE_WD} --exclude=./.lake .",
+            ).wait()
+            with tempfile.NamedTemporaryFile(suffix=".tar.gz") as tmp:
+                sb.filesystem.copy_to_local("/tmp/out.tar.gz", tmp.name)
+                with tarfile.open(tmp.name, mode="r:gz") as tf:
+                    tf.extractall(wd)
+        except Exception:
+            log.warning("pull_wd: failed to pull artifacts (Sandbox unavailable)")
