@@ -1,7 +1,7 @@
 """Unit tests for the compute-backend layer (`milp_flare.harness.runner`).
 
 These exercise `DockerRunner`'s command assembly and `DockerRun`'s lifecycle
-with `subprocess` monkeypatched, plus the `make_runner` / `RUNNERS` registry.
+with `subprocess` monkeypatched, plus the `RUNNERS` registry.
 No Docker daemon or image is involved; real container behavior is covered by
 `test_docker.py`.
 """
@@ -19,7 +19,6 @@ from milp_flare.harness.runner import (
     AuthSpec,
     DockerRunner,
     Runner,
-    make_runner,
 )
 from milp_flare.harness.runner import docker as docker_module
 
@@ -145,18 +144,8 @@ def test_docker_runner_config_surface() -> None:
 
 
 # ---------------------------------------------------------------------------
-# make_runner / RUNNERS registry
+# RUNNERS registry
 # ---------------------------------------------------------------------------
-
-
-def test_make_runner_selects_docker() -> None:
-    assert isinstance(make_runner("docker"), DockerRunner)
-    assert make_runner("docker", {"image": "x:y"}).image == "x:y"
-
-
-def test_make_runner_rejects_unknown() -> None:
-    with pytest.raises(ValueError, match="unknown compute backend"):
-        make_runner("modal")
 
 
 def test_registry_keys_match_names() -> None:

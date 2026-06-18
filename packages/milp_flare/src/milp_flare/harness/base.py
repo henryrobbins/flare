@@ -39,13 +39,7 @@ class HarnessRunResult:
 
 
 class HarnessRun:
-    """Handle for a single in-flight agent run.
-
-    Wraps the compute-level :class:`~milp_flare.harness.runner.base.RunnerRun`
-    returned by the harness's runner, forwarding cancellation and waiting on it
-    before parsing the agent output. The agent concern (parsing, cost) lives
-    here; the compute concern (launch, kill, timing) lives in the runner.
-    """
+    """Handle for a single in-flight agent run."""
 
     def __init__(
         self,
@@ -166,10 +160,8 @@ class Harness(ABC):
     def start(self, wd: Path) -> HarnessRun:
         """Launch the agent on the configured compute backend and return a handle.
 
-        Delegates the compute concern to :attr:`runner` (which launches the
-        container, bind-mounts ``wd``, and forwards credentials per
-        :meth:`auth_spec`). The container entrypoint calls the agent command
-        script which launches the agent. Agent output is written to
+        Prepare the populated agent working directory and configure necessary
+        agent credentials. Then launch the agent and write output to
         ``wd/agent_output.jsonl``.
 
         Parameters
@@ -190,21 +182,12 @@ class Harness(ABC):
         return HarnessRun(harness=self, runner_run=runner_run, wd=wd)
 
     def run(self, wd: Path) -> HarnessRunResult:
-        """Run the agent on the compute backend and block for the result.
-
-        Convenience wrapper over :meth:`start`: launches the run and waits for
-        it to finish. Equivalent to ``self.start(wd).result()``.
-        """
+        """Run the agent on the compute backend and block for the result."""
         return self.start(wd).result()
 
     @abstractmethod
     def auth_spec(self) -> AuthSpec:
-        """Return the credential-forwarding spec for this harness.
-
-        The default forwards nothing. Subclasses override this to forward the
-        env vars / host config dirs their agent CLI needs; the spec is
-        compute-agnostic and applied by the configured :attr:`runner`.
-        """
+        """Return the credential-forwarding spec for this harness."""
         ...
 
     @abstractmethod

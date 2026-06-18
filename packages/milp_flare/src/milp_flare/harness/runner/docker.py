@@ -1,5 +1,3 @@
-"""Local-Docker compute backend for the FLARE agent container."""
-
 from __future__ import annotations
 
 import os
@@ -17,12 +15,7 @@ IMAGE = "flare-agent:latest"
 
 
 class DockerRun(RunnerRun):
-    """Handle for a single in-flight Docker agent run.
-
-    Owns the launched ``docker run`` subprocess and its uniquely named
-    container. Cancellation kills the container by name (``docker kill``), which
-    is independent of the batch-level ``flare-run`` label backstop.
-    """
+    """Handle for a single in-flight Docker agent run."""
 
     def __init__(
         self,
@@ -54,16 +47,9 @@ class DockerRun(RunnerRun):
 class DockerRunner(Runner):
     """Run the agent in a local Docker container.
 
-    Bind-mounts the agent working directory into the container at
-    ``/workspace/wd`` and relies on the image's ``ENTRYPOINT`` to source
-    ``agent.sh`` and run the post-hoc Lean compile. This is the default backend
-    and preserves FLARE's historical behavior. Each run gets a unique container
-    ``--name`` so it can be canceled with ``docker kill`` independently of other
-    containers in the same batch.
-
     Parameters
     ----------
-    image : str, default ``"flare-agent:latest"``
+    image : str, default :const:`IMAGE`
         The Docker image tag to run.
     """
 
@@ -78,6 +64,14 @@ class DockerRunner(Runner):
         return self._image
 
     def start(self, wd: Path, auth: AuthSpec) -> DockerRun:
+        """Launch the agent in a Docker container and return a run handle.
+
+        Spawns a Docker container with the image specified by :const:`IMAGE`,
+        bind-mounts ``wd`` into the container, and forwards credentials per
+        ``auth``. The container entrypoint calls the agent command script which
+        launches the agent. Agent output is written to ``wd/agent_output.jsonl``.
+        """
+
         name = f"flare-{uuid.uuid4().hex[:12]}"
         stderr_file = open(wd / "docker_stderr.txt", "wb")
         start = time.time()

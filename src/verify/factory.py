@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from milp_flare import HARNESSES, Harness, make_runner
+from milp_flare import HARNESSES, RUNNERS, Harness, Runner
 
 from src.llm_client import make_client
 from src.verify.base import ReformulationVerifier
@@ -61,12 +61,19 @@ def _build_harness(spec: dict[str, Any]) -> Harness:
     cls = HARNESSES.get(htype)
     if cls is None:
         raise ValueError(f"unknown flare harness: {htype!r}")
-    # Select the compute backend (default docker; existing YAMLs unchanged).
-    # The per-backend config block (e.g. `docker:`) is optional.
-    compute = spec.pop("compute", "docker")
-    runner_cfg = spec.pop(compute, {})
-    runner = make_runner(compute, runner_cfg)
+    runner = _build_runner(spec)
     kwargs = dict(spec.pop("client"))
     if htype != "opencode":
         kwargs.pop("provider", None)
     return cls(**kwargs, runner=runner)
+
+
+def _build_runner(spec: dict[str, Any]) -> Runner:
+    # Select the compute backend (default docker; existing YAMLs unchanged).
+    # The per-backend config block (e.g. `docker:`) is optional.
+    compute = spec.pop("compute", "docker")
+    cls = RUNNERS.get(compute)
+    if cls is None:
+        raise ValueError(f"unknown compute backend: {compute!r}")
+    runner_cfg = spec.pop(compute, {})
+    return cls(**runner_cfg)

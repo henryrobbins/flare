@@ -9,7 +9,6 @@ from milp_flare.harness import (
     HarnessRun,
     HarnessRunResult,
     Runner,
-    make_runner,
 )
 
 __all__ = [
@@ -27,5 +26,4 @@ __all__ = [
     "HarnessRunResult",
     "Runner",
     "flare_nl_prompt",
-    "make_runner",
 ]
