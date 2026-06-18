@@ -1,8 +1,8 @@
 """Unit tests for `milp_flare.harness.base` — Docker-independent logic.
 
 `test_docker.py` spins up real containers and is otherwise the only thing
-exercising the harness layer. This module covers `Harness.run`'s
-post-processing and the base `configure_wd`, with `subprocess.run`
+exercising the harness layer. This module covers `Harness.start`/`run`'s
+post-processing and the base `configure_wd`, with `subprocess.Popen`
 monkeypatched so no Docker daemon or image is involved.
 """
 
@@ -10,12 +10,32 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import IO, Any
 
 import pytest
 
 from milp_flare.harness import base as harness_base
 from milp_flare.harness.base import Harness, HarnessRunResult
+
+
+def _fake_popen_factory(on_launch: Any) -> Any:
+    """Build a `subprocess.Popen` stand-in.
+
+    `on_launch(cmd, stderr_file)` runs at launch time to simulate the container
+    (write `agent_output.jsonl`, emit stderr). The returned object exposes the
+    minimal `wait()` the run handle needs.
+    """
+
+    def _popen(
+        cmd: list[str],
+        stdout: Any = None,
+        stderr: IO[bytes] | None = None,
+        **kwargs: Any,
+    ) -> SimpleNamespace:
+        on_launch(cmd, stderr)
+        return SimpleNamespace(wait=lambda: 0)
+
+    return _popen
 
 
 class _StubHarness(Harness):
@@ -59,12 +79,13 @@ def test_run_parses_stream_and_writes_stderr(
     wd.mkdir()
     harness = _StubHarness(model="claude-opus-4-7")
 
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
+    def _launch(cmd: list[str], stderr: IO[bytes] | None) -> None:
         assert cmd[0] == "docker"
         (wd / "agent_output.jsonl").write_text("synthetic agent output\n")
-        return SimpleNamespace(stderr="boom\n")
+        assert stderr is not None
+        stderr.write(b"boom\n")
 
-    monkeypatch.setattr(harness_base.subprocess, "run", _fake_run)
+    monkeypatch.setattr(harness_base.subprocess, "Popen", _fake_popen_factory(_launch))
 
     result = harness.run(wd)
 
@@ -78,21 +99,20 @@ def test_run_parses_stream_and_writes_stderr(
     assert (wd / "stub_stderr.txt").read_text() == "boom\n"
 
 
-def test_run_skips_stderr_file_when_empty(
+def test_run_keeps_empty_stderr_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """No stderr file is written when the subprocess produced no stderr."""
+    """The stderr file is kept even when the subprocess produced no stderr."""
     wd = tmp_path / "wd"
     wd.mkdir()
     harness = _StubHarness(model="claude-opus-4-7")
 
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
+    def _launch(cmd: list[str], stderr: IO[bytes] | None) -> None:
         (wd / "agent_output.jsonl").write_text("x\n")
-        return SimpleNamespace(stderr="")
 
-    monkeypatch.setattr(harness_base.subprocess, "run", _fake_run)
+    monkeypatch.setattr(harness_base.subprocess, "Popen", _fake_popen_factory(_launch))
     harness.run(wd)
-    assert not (wd / "stub_stderr.txt").exists()
+    assert (wd / "stub_stderr.txt").read_text() == ""
 
 
 def test_run_fills_cost_from_tokens_when_unset(
@@ -109,11 +129,10 @@ def test_run_fills_cost_from_tokens_when_unset(
         "cost_usd": None,
     }
 
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
+    def _launch(cmd: list[str], stderr: IO[bytes] | None) -> None:
         (wd / "agent_output.jsonl").write_text("x\n")
-        return SimpleNamespace(stderr="")
 
-    monkeypatch.setattr(harness_base.subprocess, "run", _fake_run)
+    monkeypatch.setattr(harness_base.subprocess, "Popen", _fake_popen_factory(_launch))
     result = harness.run(wd)
     # claude-opus-4-7 is priced at (5.0, 25.0) per Mtok -> 5 + 25 = 30.0
     assert result.cost_usd == pytest.approx(30.0)
@@ -127,17 +146,54 @@ def test_run_handles_missing_agent_output(
     wd.mkdir()
     harness = _StubHarness(model="claude-opus-4-7")
 
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
+    def _launch(cmd: list[str], stderr: IO[bytes] | None) -> None:
         # The agent produced no output file at all.
-        return SimpleNamespace(stderr="")
+        return
 
-    monkeypatch.setattr(harness_base.subprocess, "run", _fake_run)
+    monkeypatch.setattr(harness_base.subprocess, "Popen", _fake_popen_factory(_launch))
     result = harness.run(wd)
     assert result.stop_reason is None
     assert result.input_tokens == 0
     assert result.output_tokens == 0
     # compute_cost_usd("claude-opus-4-7", 0, 0) == 0.0
     assert result.cost_usd == 0.0
+
+
+def test_start_assigns_unique_name_and_cancel_kills_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`start` names the container uniquely; `cancel` docker-kills that name."""
+    wd = tmp_path / "wd"
+    wd.mkdir()
+    harness = _StubHarness(model="claude-opus-4-7")
+
+    captured: dict[str, list[str]] = {}
+
+    def _launch(cmd: list[str], stderr: IO[bytes] | None) -> None:
+        captured["cmd"] = cmd
+        (wd / "agent_output.jsonl").write_text("x\n")
+
+    monkeypatch.setattr(harness_base.subprocess, "Popen", _fake_popen_factory(_launch))
+
+    kills: list[list[str]] = []
+
+    def _fake_kill(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
+        kills.append(cmd)
+        return SimpleNamespace()
+
+    monkeypatch.setattr(harness_base.subprocess, "run", _fake_kill)
+
+    run = harness.start(wd)
+
+    assert "--name" in captured["cmd"]
+    name = captured["cmd"][captured["cmd"].index("--name") + 1]
+    assert name.startswith("flare-")
+
+    run.cancel()
+    assert kills == [["docker", "kill", name]]
+
+    # result() still completes after a cancel (the kill makes the proc exit).
+    assert isinstance(run.result(), HarnessRunResult)
 
 
 # ---------------------------------------------------------------------------

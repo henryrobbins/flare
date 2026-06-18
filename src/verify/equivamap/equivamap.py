@@ -9,7 +9,7 @@ from formulation_bench import Formulation
 from formulation_bench.models import Constraint
 
 from src.llm_client import LLMClient, compute_cost_usd
-from src.verify.base import ReformulationResult, ReformulationVerifier
+from src.verify.base import ReformulationResult, SynchronousVerifier
 from src.verify.equivamap.prompts import (
     VARIABLE_MAPPING_SCHEMA,
     problem_info,
@@ -141,7 +141,7 @@ def _solve(formulation: Formulation, fdir: Path) -> dict[str, Any]:
     return result
 
 
-class EquivaMapVerifier(ReformulationVerifier):
+class EquivaMapVerifier(SynchronousVerifier):
     def __init__(self, client: LLMClient) -> None:
         self.client = client
 
@@ -152,7 +152,7 @@ class EquivaMapVerifier(ReformulationVerifier):
     def get_config_dict(self) -> dict[str, Any]:
         return {"tolerance": TOLERANCE, "llm": dataclasses.asdict(self.client.config)}
 
-    def verify(
+    def _verify(
         self, a: Formulation, b: Formulation, output_path: Path
     ) -> ReformulationResult:
         artifacts_dir = output_path
