@@ -31,11 +31,9 @@ SCRIPTS_DIR = _ASSETS_DIR / "scripts"
 DOCKER_DIR = _ASSETS_DIR / "docker"
 DOCKERFILE = DOCKER_DIR / "Dockerfile"
 
-# Root-based Dockerfile variant for the Modal compute backend. Modal ignores
-# the canonical image's non-root `agent` user, so this installs every tool to a
-# global location and bakes `run-agent` without setting it as the ENTRYPOINT.
-# Shares the same build context as `DOCKERFILE`.
-MODAL_DOCKERFILE = DOCKER_DIR / "Dockerfile.modal"
+# The Modal compute backend builds its image programmatically (see
+# `milp_flare.__main__:build_modal_image`) rather than from a Dockerfile, so
+# there is no Modal-specific Dockerfile asset.
 
 # Build context for `docker build` — the parent of `lean/` and `docker/`.
 BUILD_CONTEXT = _ASSETS_DIR
