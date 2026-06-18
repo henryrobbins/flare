@@ -7,10 +7,6 @@ from typing import Any, ClassVar
 from milp_flare.harness.cost import compute_cost_usd
 from milp_flare.harness.runner import AuthSpec, DockerRunner, Runner
 
-#: The default agent Docker image tag. Retained here for back-compat; image
-#: identity now lives on the :class:`~milp_flare.harness.runner.Runner`.
-IMAGE = "flare-agent:latest"
-
 
 @dataclass
 class HarnessRunResult:

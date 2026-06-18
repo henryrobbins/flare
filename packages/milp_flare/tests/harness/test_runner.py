@@ -4,7 +4,7 @@
 `docker run` command; its `run` is exercised with `subprocess.run`
 monkeypatched. `ModalRunner` network behavior is covered by `modal`-marked
 tests elsewhere; here we only check its static config surface and the
-registry/`make_runner` selection.
+`RUNNERS` registry.
 """
 
 from __future__ import annotations
@@ -21,7 +21,6 @@ from milp_flare.harness.runner import (
     DockerRunner,
     ModalRunner,
     Runner,
-    make_runner,
 )
 from milp_flare.harness.runner import docker as docker_module
 from milp_flare.harness.runner import modal as modal_module
@@ -102,19 +101,6 @@ def test_modal_runner_config_surface() -> None:
     assert runner.name == "modal"
     assert runner.home == "/root"
     assert runner.image == "flare-agent"
-
-
-def test_make_runner_selects_backend() -> None:
-    """`make_runner` instantiates the right class and forwards config."""
-    assert isinstance(make_runner("docker"), DockerRunner)
-    assert isinstance(make_runner("modal", {"cpu": 8.0}), ModalRunner)
-    assert make_runner("docker", {"image": "x:1"}).image == "x:1"
-
-
-def test_make_runner_rejects_unknown() -> None:
-    """An unknown backend name is a clear error."""
-    with pytest.raises(ValueError, match="unknown compute backend"):
-        make_runner("nope")
 
 
 def test_registry_keys_match_names() -> None:

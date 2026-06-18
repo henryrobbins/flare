@@ -8,7 +8,6 @@ from milp_flare.harness.runner import (
     DockerRunner,
     ModalRunner,
     Runner,
-    make_runner,
 )
 
 HARNESSES: dict[str, type[Harness]] = {
@@ -29,5 +28,4 @@ __all__ = [
     "ModalRunner",
     "OpenCodeHarness",
     "Runner",
-    "make_runner",
 ]
