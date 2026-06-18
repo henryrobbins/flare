@@ -16,6 +16,7 @@ import json
 import re
 import shutil
 from pathlib import Path
+from typing import Any
 
 import pytest
 from formulation_bench import Dataset, Formulation
@@ -148,7 +149,7 @@ class DummyHarness(Harness):
             "cost_usd": 0.0,
         }
 
-    def run(self, wd: Path) -> HarnessRunResult:
+    def run(self, wd: Path, **kwargs: Any) -> HarnessRunResult:
         if self.expected:
             _copy_ground_truth(wd, self.repo_root, self.a, self.b)
             (wd / "result.json").write_text(
@@ -188,7 +189,7 @@ class BadAxiomHarness(DummyHarness):
 
     name = "bad_axiom"
 
-    def run(self, wd: Path) -> HarnessRunResult:
+    def run(self, wd: Path, **kwargs: Any) -> HarnessRunResult:
         result = super().run(wd)
         (wd / "compile_log.txt").write_text(
             "'reformulation' depends on axioms: [propext, Classical.choice, P1.cheat]\n"

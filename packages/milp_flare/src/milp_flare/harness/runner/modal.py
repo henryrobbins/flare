@@ -12,7 +12,9 @@ import io
 import os
 import tarfile
 import tempfile
+import threading
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -65,6 +67,17 @@ class ModalRunner(Runner):
     here — an exec'd process's output goes to the client only). Consumers read
     the agent's output from ``agent_output.jsonl`` in ``wd`` instead.
 
+    When :meth:`run` is given an ``on_output`` / ``should_cancel`` hook, the
+    exec's pipes are drained in a background thread (which also signals
+    completion) while the main thread runs the shared
+    :meth:`~milp_flare.harness.runner.base.Runner._supervise` tick loop: live
+    snapshots are read from ``agent_output.jsonl`` via the filesystem API, and
+    cancellation kills ``run-agent`` (via ``pkill``) *inside* the still-alive
+    Sandbox so
+    the post-run artifact pull can still capture partial output before the
+    Sandbox is terminated. With no hook supplied the run simply blocks until the
+    drain thread reports completion.
+
     Parameters
     ----------
     image : str, default ``"flare-agent"``
@@ -101,7 +114,15 @@ class ModalRunner(Runner):
     def image(self) -> str:
         return self._image
 
-    def run(self, wd: Path, auth: AuthSpec) -> float:
+    def run(
+        self,
+        wd: Path,
+        auth: AuthSpec,
+        *,
+        on_output: Callable[[str], None] | None = None,
+        should_cancel: Callable[[], bool] | None = None,
+        poll_interval: float = 2.0,
+    ) -> float:
         modal = _require_modal()
 
         app = modal.App.lookup(self.app, create_if_missing=True)
@@ -152,14 +173,50 @@ class ModalRunner(Runner):
                 "exec /usr/local/bin/run-agent < /dev/null",
                 workdir=REMOTE_WD,
             )
-            # Drain the agent exec's own pipes — mostly empty (agent.sh writes
-            # the stream to the file, not stdout), but if the buffer fills the
-            # agent blocks and proc.wait() hangs. Persist stderr for diagnostics
-            # (parity with DockerRunner).
-            for _ in proc.stdout:
-                pass
-            stderr = proc.stderr.read()
-            proc.wait()
+
+            # Drain the agent exec's own pipes in a background thread — mostly
+            # empty (agent.sh writes the stream to the file, not stdout), but if
+            # the buffer fills the agent blocks and proc.wait() hangs. Draining
+            # off the main thread *and* signaling completion via `done` lets the
+            # main thread run the supervision tick loop concurrently. Persist
+            # stderr for diagnostics (parity with DockerRunner).
+            done = threading.Event()
+            captured: dict[str, str] = {}
+
+            def _drain() -> None:
+                try:
+                    for _ in proc.stdout:
+                        pass
+                    captured["stderr"] = proc.stderr.read()
+                    proc.wait()
+                finally:
+                    done.set()
+
+            drain = threading.Thread(target=_drain, daemon=True)
+            drain.start()
+
+            if on_output is None and should_cancel is None:
+                # No-hooks fast path: just block until the drain thread is done.
+                done.wait()
+            else:
+                self._supervise(
+                    is_running=lambda: not done.is_set(),
+                    read_output=lambda: self._read_remote_output(sb),
+                    # Kill the agent process *inside* the sandbox, leaving the
+                    # sandbox alive so _pull_wd can still capture partial
+                    # artifacts. ContainerProcess has no per-exec kill, and
+                    # sb.terminate() here would destroy the sandbox before the
+                    # pull. Killing run-agent makes the drain thread's
+                    # proc.wait() return, so the loop exits and cancel looks
+                    # exactly like normal completion.
+                    terminate=lambda: self._kill_agent(sb),
+                    on_output=on_output,
+                    should_cancel=should_cancel,
+                    poll_interval=poll_interval,
+                )
+                drain.join()
+
+            stderr = captured.get("stderr", "")
             if stderr:
                 (wd / "modal_stderr.txt").write_text(stderr)
 
@@ -169,6 +226,35 @@ class ModalRunner(Runner):
             sb.detach()
 
         return time.time() - start
+
+    def _read_remote_output(self, sb: modal.Sandbox) -> str:
+        """Return the current ``agent_output.jsonl`` from the Sandbox, or ``""``.
+
+        Reads via the filesystem API; the file may not exist yet early in a run
+        (and a transient read against the live Sandbox may fail), in which case
+        an empty snapshot is returned — the next tick self-heals.
+        """
+        try:
+            f = sb.open(f"{REMOTE_WD}/agent_output.jsonl", "r")
+        except Exception:
+            return ""
+        try:
+            data = f.read()
+        finally:
+            f.close()
+        return data if isinstance(data, str) else data.decode()
+
+    def _kill_agent(self, sb: modal.Sandbox) -> None:
+        """Stop the agent process inside the Sandbox, leaving the Sandbox alive.
+
+        ``ContainerProcess`` has no per-exec kill, so the running ``run-agent``
+        (and its agent.sh child) is terminated with ``pkill`` (from ``procps``,
+        baked into the image). The Sandbox itself stays *Started* so the
+        post-loop ``_pull_wd`` can still capture partial artifacts; the
+        ``finally: sb.terminate()`` in :meth:`run` nukes any lingering
+        grandchild afterward. Idempotent and safe to re-issue.
+        """
+        sb.exec("pkill", "-TERM", "-f", "run-agent").wait()
 
     def _push_wd(self, sb: modal.Sandbox, wd: Path, auth: AuthSpec) -> None:
         """Copy the populated ``wd`` (and any auth home dirs) into the Sandbox."""

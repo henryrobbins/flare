@@ -36,7 +36,7 @@ class _StubRunner(Runner):
     def image(self) -> str:
         return "stub-image"
 
-    def run(self, wd: Path, auth: AuthSpec) -> float:
+    def run(self, wd: Path, auth: AuthSpec, **kwargs: Any) -> float:
         self.last_auth = auth
         if self.output is not None:
             (wd / "agent_output.jsonl").write_text(self.output)

@@ -2,6 +2,7 @@ import dataclasses
 import json
 import re
 import shutil
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -157,6 +158,10 @@ class FLARE:
         a: FormulationInput,
         b: FormulationInput,
         output_path: Path,
+        *,
+        on_output: Callable[[str], None] | None = None,
+        should_cancel: Callable[[], bool] | None = None,
+        poll_interval: float = 2.0,
     ) -> FLAREResult:
         """Run FLARE on a pair of MILP formulations.
 
@@ -200,6 +205,17 @@ class FLARE:
             Inputs for formulation B (the candidate reformulation of A).
         output_path : pathlib.Path
             Directory to populate with run artifacts.
+        on_output : Callable[[str], None], optional
+            Live-output hook forwarded to the harness/runner. Called each tick
+            with the full current ``agent_output.jsonl`` snapshot (a complete
+            snapshot, not a delta); consumers must be idempotent. With no hook
+            supplied, the run is a single blocking call as before.
+        should_cancel : Callable[[], bool], optional
+            Cancellation hook forwarded to the harness/runner. Polled each tick;
+            returning ``True`` stops the agent mid-flight, captures partial
+            artifacts, and returns promptly.
+        poll_interval : float, default ``2.0``
+            Seconds between supervision ticks (only relevant with a hook).
 
         Returns
         -------
@@ -238,7 +254,12 @@ class FLARE:
         self._setup_wd(wd, a, b)
 
         # Run the agent harness
-        run_result = self.harness.run(wd)
+        run_result = self.harness.run(
+            wd,
+            on_output=on_output,
+            should_cancel=should_cancel,
+            poll_interval=poll_interval,
+        )
 
         # Evaluate the agent's output to obtain final result and write metadata
         meta = self._evaluate(wd)

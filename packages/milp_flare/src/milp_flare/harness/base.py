@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
@@ -141,7 +142,14 @@ class Harness(ABC):
         # See milp_flare/assets/docker/entrypoint.sh
         (wd / "agent.sh").write_text(self._agent_command())
 
-    def run(self, wd: Path) -> HarnessRunResult:
+    def run(
+        self,
+        wd: Path,
+        *,
+        on_output: Callable[[str], None] | None = None,
+        should_cancel: Callable[[], bool] | None = None,
+        poll_interval: float = 2.0,
+    ) -> HarnessRunResult:
         """Run the agent on the configured compute backend.
 
         Delegates execution to :attr:`runner` (Docker or Modal), then parses
@@ -154,6 +162,15 @@ class Harness(ABC):
         wd : pathlib.Path
             The agent working directory, already configured via
             :meth:`configure_wd`.
+        on_output : Callable[[str], None], optional
+            Live-output hook forwarded to :meth:`Runner.run`. Called each tick
+            with the full current ``agent_output.jsonl`` snapshot. See
+            :meth:`Runner.run` for the full-snapshot contract.
+        should_cancel : Callable[[], bool], optional
+            Cancellation hook forwarded to :meth:`Runner.run`. Polled each tick;
+            returning ``True`` stops the agent and returns promptly.
+        poll_interval : float, default ``2.0``
+            Seconds between supervision ticks (only relevant with a hook).
 
         Returns
         -------
@@ -166,7 +183,13 @@ class Harness(ABC):
         print(f"  [flare] monitor: tail -f {jsonl_path}")
 
         # Execute the agent on the compute backend (docker / modal).
-        duration = self.runner.run(wd, self.auth_spec())
+        duration = self.runner.run(
+            wd,
+            self.auth_spec(),
+            on_output=on_output,
+            should_cancel=should_cancel,
+            poll_interval=poll_interval,
+        )
 
         parsed = self._parse_stream(jsonl_path)
         # Codex doesn't surface per-turn USD; fill from token totals.

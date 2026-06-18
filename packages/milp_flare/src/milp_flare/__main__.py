@@ -77,7 +77,7 @@ def build_modal_image(name: str, app_name: str, force: bool) -> int:
             .run_commands(
                 "apt-get update && apt-get install -y --no-install-recommends "
                 "ca-certificates curl git unzip build-essential python3 "
-                "python3-pip pipx ripgrep && rm -rf /var/lib/apt/lists/*",
+                "python3-pip pipx ripgrep procps && rm -rf /var/lib/apt/lists/*",
                 force_build=force,
             )
             # Node 20 + agent CLIs (Claude Code, Codex, OpenCode), installed
