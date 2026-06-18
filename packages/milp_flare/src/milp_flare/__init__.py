@@ -1,6 +1,15 @@
 from milp_flare.flare import FLARE, FLAREResult, FLARERun, FormulationInput
 from milp_flare.flare_nl import FLARENLPrompt, flare_nl_prompt
-from milp_flare.harness import HARNESSES, Harness, HarnessRun, HarnessRunResult
+from milp_flare.harness import (
+    HARNESSES,
+    RUNNERS,
+    AuthSpec,
+    DockerRunner,
+    Harness,
+    HarnessRun,
+    HarnessRunResult,
+    Runner,
+)
 
 __all__ = [
     "FLARE",
@@ -9,8 +18,12 @@ __all__ = [
     "FLARERun",
     "FormulationInput",
     "HARNESSES",
+    "RUNNERS",
+    "AuthSpec",
+    "DockerRunner",
     "Harness",
     "HarnessRun",
     "HarnessRunResult",
+    "Runner",
     "flare_nl_prompt",
 ]

@@ -1,17 +1,10 @@
-import os
-import subprocess
-import time
-import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import IO, Any, ClassVar
+from typing import Any, ClassVar
 
 from milp_flare.harness.cost import compute_cost_usd
-
-#: The name of the Docker image containing the agent environment. This image is
-#: expected to be built prior to running FLARE. See :doc:`/installation`.
-IMAGE = "flare-agent:latest"
+from milp_flare.harness.runner import AuthSpec, DockerRunner, Runner, RunnerRun
 
 
 @dataclass
@@ -46,37 +39,25 @@ class HarnessRunResult:
 
 
 class HarnessRun:
-    """Handle for a single in-flight Docker agent run."""
+    """Handle for a single in-flight agent run."""
 
     def __init__(
         self,
         harness: "Harness",
-        proc: "subprocess.Popen[bytes]",
-        name: str,
+        runner_run: RunnerRun,
         wd: Path,
-        stderr_file: IO[bytes],
-        start_time: float,
     ) -> None:
         self._harness = harness
-        self._proc = proc
-        self._container = name
+        self._runner_run = runner_run
         self._wd = wd
-        self._stderr_file = stderr_file
-        self._start_time = start_time
 
     def cancel(self) -> None:
-        """Stop the run by killing its container; idempotent and thread-safe."""
-        subprocess.run(
-            ["docker", "kill", self._container],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
+        """Stop the run by cancelling the underlying compute; idempotent."""
+        self._runner_run.cancel()
 
     def result(self) -> HarnessRunResult:
-        """Block until the container exits, then parse and return its result."""
-        self._proc.wait()
-        self._stderr_file.close()
-        duration = time.time() - self._start_time
+        """Block until the agent exits, then parse and return its result."""
+        duration = self._runner_run.wait()
 
         parsed = self._harness._parse_stream(self._wd / "agent_output.jsonl")
         # Codex doesn't surface per-turn USD; fill from token totals.
@@ -104,6 +85,9 @@ class Harness(ABC):
     effort : str, default ``"medium"``
         Reasoning effort level (``"low"``, ``"medium"``, ``"high"``). See
         harness subclasses for supported effort levels.
+    runner : Runner, optional
+        Compute backend used to launch the agent container. Defaults to
+        :class:`~milp_flare.harness.runner.docker.DockerRunner`.
 
     Attributes
     ----------
@@ -113,13 +97,18 @@ class Harness(ABC):
         Model identifier this harness is configured to use.
     effort : str
         Reasoning effort level this harness is configured to use.
+    runner : Runner
+        Compute backend used to launch the agent container.
     """
 
     name: ClassVar[str]
 
-    def __init__(self, model: str, effort: str = "medium") -> None:
+    def __init__(
+        self, model: str, effort: str = "medium", runner: Runner | None = None
+    ) -> None:
         self.model = model
         self.effort = effort
+        self.runner = runner or DockerRunner()
 
     def get_config_dict(self) -> dict[str, Any]:
         """Return a dictionary with the harness configuration.
@@ -127,11 +116,12 @@ class Harness(ABC):
         Returns
         -------
         config : dict[str, Any]
-            Harness name, Docker image, model, and effort.
+            Harness name, compute backend, image, model, and effort.
         """
         return {
             "harness": self.name,
-            "image": IMAGE,
+            "compute": self.runner.name,
+            "image": self.runner.image,
             "model": self.model,
             "effort": self.effort,
         }
@@ -168,20 +158,16 @@ class Harness(ABC):
         (wd / "agent.sh").write_text(self._agent_command())
 
     def start(self, wd: Path) -> HarnessRun:
-        """Launch the agent in a Docker container and return a run handle.
+        """Launch the agent on the configured compute backend and return a handle.
 
-        Spawns a Docker container with the image specified by :const:`IMAGE` and
-        bind-mounts ``wd`` into the container. The container entrypoint calls the
-        agent command script which launches the agent. Agent output is written to
+        Prepare the populated agent working directory and configure necessary
+        agent credentials. Then launch the agent and write output to
         ``wd/agent_output.jsonl``.
-
-        The Docker image is expected to be built (see :doc:`/installation`).
 
         Parameters
         ----------
         wd : pathlib.Path
-            The agent working directory to bind-mount at
-            ``/workspace/wd`` in the container.
+            The agent working directory the runner launches against.
 
         Returns
         -------
@@ -192,59 +178,16 @@ class Harness(ABC):
         jsonl_path = wd / "agent_output.jsonl"
         print(f"  [flare] monitor: tail -f {jsonl_path}")
 
-        name = f"flare-{uuid.uuid4().hex[:12]}"
-        stderr_file = open(wd / f"{self.name}_stderr.txt", "wb")
-        start = time.time()
-        proc = subprocess.Popen(
-            self._build_docker_cmd(wd=wd, name=name),
-            stdout=subprocess.DEVNULL,
-            stderr=stderr_file,
-            # Without start_new_session, Ctrl+C in the terminal sends SIGINT to both
-            # the driver and the agent container, which can cause the container to
-            # terminate prematurely. start_new_session=True detaches the subprocess
-            # from the terminal's process group.
-            start_new_session=True,
-        )
-        return HarnessRun(
-            harness=self,
-            proc=proc,
-            name=name,
-            wd=wd,
-            stderr_file=stderr_file,
-            start_time=start,
-        )
+        runner_run = self.runner.start(wd, self.auth_spec())
+        return HarnessRun(harness=self, runner_run=runner_run, wd=wd)
 
     def run(self, wd: Path) -> HarnessRunResult:
-        """Run the agent in a Docker container and block for the result.
-
-        Convenience wrapper over :meth:`start`: launches the run and waits for
-        it to finish. Equivalent to ``self.start(wd).result()``.
-        """
+        """Run the agent on the compute backend and block for the result."""
         return self.start(wd).result()
 
-    def _build_docker_cmd(self, wd: Path, name: str) -> list[str]:
-        """Assemble the full ``docker run`` command for this harness."""
-        cmd = ["docker", "run"]
-        # Automatically remove the container when it exits
-        cmd += ["--rm"]
-        # A unique per-run name enables per-run cancel (`docker kill <name>`)
-        # without affecting other containers in the same batch.
-        cmd += ["--name", name]
-        # Bind mount the agent's working directory to /workspace/wd in the container
-        cmd += ["-v", f"{wd.resolve()}:/workspace/wd"]
-        # Label the container with the FLARE run ID (if present)
-        run_id = os.environ.get("FLARE_RUN_ID")
-        if run_id:
-            cmd += ["--label", f"flare-run={run_id}"]
-        # Add any agent-specific docker args (env vars, additional mounts, etc.)
-        cmd += self._agent_docker_args()
-        # Finally, specify the image to run
-        cmd += [IMAGE]
-        return cmd
-
     @abstractmethod
-    def _agent_docker_args(self) -> list[str]:
-        """Agent-specific ``docker run`` args (env vars, additional mounts, etc.)."""
+    def auth_spec(self) -> AuthSpec:
+        """Return the credential-forwarding spec for this harness."""
         ...
 
     @abstractmethod
