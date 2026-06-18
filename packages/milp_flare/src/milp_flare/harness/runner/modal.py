@@ -12,6 +12,7 @@ import io
 import os
 import tarfile
 import tempfile
+import threading
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -23,11 +24,6 @@ if TYPE_CHECKING:
 
 #: Working directory inside the Sandbox (mirrors the Docker bind-mount target).
 REMOTE_WD = "/workspace/wd"
-
-#: Sentinel the runner drops once ``wd`` is pushed, releasing the Sandbox's main
-#: process from its wait loop (kept out of ``REMOTE_WD`` so it isn't pulled back
-#: as an artifact).
-READY_FLAG = "/tmp/flare.ready"
 
 
 def _require_modal() -> Any:
@@ -56,12 +52,15 @@ class ModalRunner(Runner):
     The image bakes ``run-agent`` at ``/usr/local/bin/run-agent`` but **not**
     as its ``ENTRYPOINT`` (a Sandbox runs the entrypoint at creation time,
     before the working directory is populated). Instead the runner sets the
-    Sandbox's CMD to a wrapper that blocks on a ready sentinel, then runs
-    ``run-agent`` as the Sandbox's **main process** — only the main process's
-    stdout/stderr is captured to the Modal dashboard Logs view, so the wrapper
-    live-tails ``agent_output.jsonl`` onto it. The runner pushes ``wd`` in,
-    drops the sentinel to release the wrapper, then pulls the artifacts back
-    out.
+    Sandbox's CMD to ``tail -F agent_output.jsonl``. That main process serves
+    two purposes: it streams the agent's output to the Modal dashboard Logs
+    view (only the main process's stdout reaches the dashboard — an exec'd
+    process's output goes to the client only), and, by never exiting, it keeps
+    the Sandbox in the *Started* state. The latter matters because the agent
+    runs via ``sb.exec`` and the artifacts are tarred back out via another
+    ``sb.exec``: once the main process exits the Sandbox is *Finished* and no
+    further commands can run. The runner pushes ``wd`` in, runs ``run-agent``
+    via ``exec``, pulls the artifacts, then terminates the Sandbox.
 
     Parameters
     ----------
@@ -110,37 +109,21 @@ class ModalRunner(Runner):
         secret_dict["IS_SANDBOX"] = "1"
         secret = modal.Secret.from_dict(secret_dict)
 
-        # Run the agent as the Sandbox's MAIN process (the CMD passed to
-        # create), NOT via sb.exec: only the entrypoint process's stdout/stderr
-        # is captured to the Modal dashboard Logs view — an exec'd process's
-        # output streams to the client only. The agent can't run at create time
-        # though (wd isn't populated yet), so the main process blocks on a ready
-        # sentinel that the runner drops once _push_wd has finished.
-        #
-        # Redirect run-agent's stdin from /dev/null: Modal leaves stdin an open
-        # pipe with no EOF, so the agent CLIs block reading it — claude waits 3s
-        # then proceeds, but codex/opencode hang until the Sandbox times out.
-        # `docker run` (no -i) gives stdin immediate EOF, which is why the Docker
-        # backend never hit this.
-        #
-        # Live-tail agent_output.jsonl onto the main process's stdout so the
-        # agent's stream-json reaches the dashboard (agent.sh writes the stream
-        # to that file, not to stdout). The file is still pulled back by
-        # _pull_wd as the authoritative artifact; the tail is a best-effort live
-        # mirror, so a dropped trailing line is harmless.
+        # The Sandbox's MAIN process is `tail -F agent_output.jsonl`. Only the
+        # main process's stdout reaches the Modal dashboard Logs view (an exec'd
+        # process's output streams to the client only), so tailing the agent's
+        # stream-json file onto it is what surfaces the agent's output there.
+        # Because `tail -F` never exits, it also keeps the Sandbox *Started* so
+        # the run-agent exec below — and the tar exec in _pull_wd afterward —
+        # can run: once the main process exits the Sandbox is *Finished* and any
+        # further sb.exec raises NotFoundError. `tail -F` (capital) follows by
+        # name, tolerating the file being created/truncated after launch.
         agent_log = f"{REMOTE_WD}/agent_output.jsonl"
-        main_cmd = (
-            f"while [ ! -f {READY_FLAG} ]; do sleep 0.2; done; "
-            f"touch {agent_log}; "
-            f"tail -n +1 -f {agent_log} & TAIL=$!; "
-            "/usr/local/bin/run-agent < /dev/null; RC=$?; "
-            # Brief pause so tail flushes trailing lines before kill.
-            'sleep 0.5; kill "$TAIL" 2>/dev/null; exit $RC'
-        )
         sb = modal.Sandbox.create(
             "bash",
             "-c",
-            main_cmd,
+            f"mkdir -p {REMOTE_WD} && touch {agent_log} && "
+            f"exec tail -n +1 -F {agent_log}",
             app=app,
             image=image,
             secrets=[secret],
@@ -148,6 +131,20 @@ class ModalRunner(Runner):
             memory=self.memory,
             timeout=self.timeout,
         )
+
+        # Drain the main process's stdout in the background so the client-side
+        # buffer can't grow unbounded over a long run (the tailed stream-json
+        # can be many MB). Dashboard capture is server-side and independent of
+        # this drain; the thread ends when terminate() closes the stream.
+        def _drain_dashboard_stream() -> None:
+            try:
+                for _ in sb.stdout:
+                    pass
+            except Exception:
+                pass
+
+        drain = threading.Thread(target=_drain_dashboard_stream, daemon=True)
+        drain.start()
 
         start = time.time()
         try:
@@ -157,17 +154,32 @@ class ModalRunner(Runner):
                 sb.set_tags({"flare-run": run_id})
 
             self._push_wd(sb, wd, auth)
-            # Release the main process now that wd is populated.
-            sb.exec("bash", "-c", f"touch {READY_FLAG}").wait()
 
-            # Drain the main process's stdout (consumed line by line so its
-            # output buffer can't fill and stall the agent) and capture stderr
-            # for diagnostics (parity with DockerRunner). The dashboard capture
-            # is server-side and independent of this client-side drain.
-            for _ in sb.stdout:
+            # Run the baked entrypoint (agent.sh + post-hoc compile) via exec so
+            # the `tail -F` main process stays alive and the Sandbox remains
+            # execable for _pull_wd. No PTY: agent.sh writes stream-json to
+            # agent_output.jsonl, which a PTY would corrupt.
+            #
+            # Redirect run-agent's stdin from /dev/null. Modal's exec leaves
+            # stdin an open pipe with no EOF, so the agent CLIs block reading
+            # it — claude waits 3s then proceeds, but codex/opencode hang
+            # indefinitely until the Sandbox times out. `docker run` (no -i)
+            # gives stdin immediate EOF, which is why the Docker backend never
+            # hit this.
+            proc = sb.exec(
+                "bash",
+                "-c",
+                "exec /usr/local/bin/run-agent < /dev/null",
+                workdir=REMOTE_WD,
+            )
+            # Drain the agent exec's own pipes — mostly empty (agent.sh writes
+            # the stream to the file, not stdout), but if the buffer fills the
+            # agent blocks and proc.wait() hangs. Persist stderr for diagnostics
+            # (parity with DockerRunner).
+            for _ in proc.stdout:
                 pass
-            stderr = sb.stderr.read()
-            sb.wait(raise_on_termination=False)
+            stderr = proc.stderr.read()
+            proc.wait()
             if stderr:
                 (wd / "modal_stderr.txt").write_text(stderr)
 
