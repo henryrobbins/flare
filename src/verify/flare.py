@@ -12,7 +12,7 @@ from src.verify.base import (
 
 
 class FLAREVerifierRun(ReformulationRun):
-    """Run handle adapting a :class:`milp_flare.FLARERun` to the verifier API."""
+    """Adapts `milp_flare.FLARERun` to `ReformulationRun` API."""
 
     def __init__(self, inner: FLARERun, output_path: Path, name: str) -> None:
         self._inner = inner
@@ -35,7 +35,7 @@ class FLAREVerifierRun(ReformulationRun):
 
 
 class FLAREVerifier(ReformulationVerifier):
-    """Adapter exposing the milp_flare verifier as a ReformulationVerifier."""
+    """Adapts `milp_flare.FLARE` to `ReformulationVerifier` API."""
 
     def __init__(self, harness: Harness) -> None:
         self._inner = FLARE(harness=harness)

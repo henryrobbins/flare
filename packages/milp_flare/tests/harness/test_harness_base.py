@@ -99,10 +99,10 @@ def test_run_parses_stream_and_writes_stderr(
     assert (wd / "stub_stderr.txt").read_text() == "boom\n"
 
 
-def test_run_skips_stderr_file_when_empty(
+def test_run_keeps_empty_stderr_file(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """No stderr file is written when the subprocess produced no stderr."""
+    """The stderr file is kept even when the subprocess produced no stderr."""
     wd = tmp_path / "wd"
     wd.mkdir()
     harness = _StubHarness(model="claude-opus-4-7")
@@ -112,7 +112,7 @@ def test_run_skips_stderr_file_when_empty(
 
     monkeypatch.setattr(harness_base.subprocess, "Popen", _fake_popen_factory(_launch))
     harness.run(wd)
-    assert not (wd / "stub_stderr.txt").exists()
+    assert (wd / "stub_stderr.txt").read_text() == ""
 
 
 def test_run_fills_cost_from_tokens_when_unset(

@@ -93,14 +93,7 @@ class FLAREResult:
 
 
 class FLARERun:
-    """Handle for a single in-flight FLARE verification.
-
-    Returned by :meth:`FLARE.start`. Wraps the underlying :class:`HarnessRun`:
-    :meth:`cancel` forwards to it (stopping the agent's container), and
-    :meth:`result` blocks until the agent finishes, then evaluates the produced
-    Lean artifacts and returns the :class:`FLAREResult`. ``cancel`` is safe to
-    call from another thread while ``result`` is blocking, and is idempotent.
-    """
+    """Handle for an in-flight FLARE verification; wraps :class:`HarnessRun`."""
 
     def __init__(
         self,
@@ -276,12 +269,11 @@ class FLARE:
     ) -> FLARERun:
         """Start a FLARE run on a pair of MILP formulations and return a handle.
 
-        Does the same setup as :meth:`verify` (writes ``config.json``, populates
-        the agent working directory, launches the agent harness) but returns a
-        :class:`FLARERun` immediately instead of blocking. Call
-        :meth:`FLARERun.result` to block for the verdict (which evaluates the
-        agent's Lean artifacts and writes ``result.json``) or
-        :meth:`FLARERun.cancel` to stop the run.
+        Does the same setup as :meth:`verify` but returns a :class:`FLARERun`
+        immediately instead of blocking. The class:`FLARERun` handle exposes
+        a :meth:`FLARERun.cancel` method to gracefully stop a run while it's
+        in-flight. E.g., CTRL+C with meth:`FLARE.verify` will *not* fetch the
+        latest working directory state and the container will continue running.
 
         Parameters
         ----------
@@ -295,7 +287,7 @@ class FLARE:
         Returns
         -------
         run : FLARERun
-            Handle to the in-flight run (cancel / await its result).
+            Handle to the in-flight run.
         """
         # Create the artifacts directory at the output path and write config
         artifacts_dir = output_path

@@ -18,14 +18,7 @@ from src.verify.base import ReformulationRun, ReformulationVerifier
 
 
 class RunRegistry:
-    """Thread-safe set of in-flight :class:`ReformulationRun` handles.
-
-    The batch runner registers each run as it starts and removes it when it
-    finishes, so the Ctrl+C handler can cancel every live run by handle (each
-    one tears down its own container). This gives run-level, 1-1 cancellation;
-    ``kill_run_containers`` remains as a label-scoped backstop for anything a
-    handle can't reach (e.g. a worker that died before registering).
-    """
+    """Thread-safe set of in-flight :class:`ReformulationRun` handles."""
 
     def __init__(self) -> None:
         self._lock = Lock()
@@ -129,13 +122,7 @@ def drain_with_interrupt(
 ) -> None:
     """Iterate `as_completed(futures)` calling `on_result(future)` for each;
     on KeyboardInterrupt, cancel in-flight runs, cancel pending futures, and
-    shut down the executor.
-
-    Every live run in `registry` is cancelled by its handle first (run-level,
-    1-1: each handle kills its own container). `kill_run_containers` then runs
-    as a label-scoped backstop for anything a handle can't reach. Either way
-    the killed containers make the workers' blocked `docker` calls return, so
-    `wait=True` drains them promptly."""
+    shut down the executor."""
     futures = list(futures)
     try:
         for future in as_completed(futures):
@@ -143,6 +130,8 @@ def drain_with_interrupt(
     except KeyboardInterrupt:
         print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
         registry.cancel_all()
+        # Kill every Docker container with a FLARE label as a final backstop in
+        # case any runs didn't respond to individual cancellation calls.
         kill_run_containers(run_id)
         for f in futures:
             f.cancel()
@@ -191,10 +180,7 @@ def run_verification(
     model: str | None = None,
     mode: str | None = None,
 ) -> dict[str, Any]:
-    """Verify one pair, returning a row dict (errors captured in row['error']).
-
-    The run handle is registered in `registry` for the duration of the call so
-    a batch Ctrl+C can cancel it (see :class:`RunRegistry`)."""
+    """Verify one pair, returning a row dict (errors captured in row['error'])."""
     pid = pair_id(pair.a, pair.b)
     pa, fa = pid.split("__")[0].split("_", 1)
     pb, fb = pid.split("__")[1].split("_", 1)
