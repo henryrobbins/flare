@@ -12,7 +12,6 @@ import io
 import os
 import tarfile
 import tempfile
-import threading
 import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -51,16 +50,20 @@ class ModalRunner(Runner):
 
     The image bakes ``run-agent`` at ``/usr/local/bin/run-agent`` but **not**
     as its ``ENTRYPOINT`` (a Sandbox runs the entrypoint at creation time,
-    before the working directory is populated). Instead the runner sets the
-    Sandbox's CMD to ``tail -F agent_output.jsonl``. That main process serves
-    two purposes: it streams the agent's output to the Modal dashboard Logs
-    view (only the main process's stdout reaches the dashboard — an exec'd
-    process's output goes to the client only), and, by never exiting, it keeps
-    the Sandbox in the *Started* state. The latter matters because the agent
-    runs via ``sb.exec`` and the artifacts are tarred back out via another
-    ``sb.exec``: once the main process exits the Sandbox is *Finished* and no
-    further commands can run. The runner pushes ``wd`` in, runs ``run-agent``
-    via ``exec``, pulls the artifacts, then terminates the Sandbox.
+    before the working directory is populated). The runner instead creates an
+    **idle**, command-less Sandbox: with no main process to exit, the Sandbox
+    stays in the *Started* state on its own until ``timeout`` or
+    ``terminate()`` — which is what keeps it execable for the steps below.
+
+    The runner then pushes ``wd`` in via the filesystem API, runs ``run-agent``
+    via ``sb.exec``, pulls the artifacts back out via the filesystem API, and
+    terminates the Sandbox. An ``sb.exec`` child finishing does not end the
+    Sandbox, so the artifact pull runs against the still-live (idle) Sandbox.
+
+    Agent output is **not** mirrored to the Modal dashboard Logs view (only a
+    main process's stdout reaches the dashboard, and there is no main process
+    here — an exec'd process's output goes to the client only). Consumers read
+    the agent's output from ``agent_output.jsonl`` in ``wd`` instead.
 
     Parameters
     ----------
@@ -109,21 +112,12 @@ class ModalRunner(Runner):
         secret_dict["IS_SANDBOX"] = "1"
         secret = modal.Secret.from_dict(secret_dict)
 
-        # The Sandbox's MAIN process is `tail -F agent_output.jsonl`. Only the
-        # main process's stdout reaches the Modal dashboard Logs view (an exec'd
-        # process's output streams to the client only), so tailing the agent's
-        # stream-json file onto it is what surfaces the agent's output there.
-        # Because `tail -F` never exits, it also keeps the Sandbox *Started* so
-        # the run-agent exec below — and the tar exec in _pull_wd afterward —
-        # can run: once the main process exits the Sandbox is *Finished* and any
-        # further sb.exec raises NotFoundError. `tail -F` (capital) follows by
-        # name, tolerating the file being created/truncated after launch.
-        agent_log = f"{REMOTE_WD}/agent_output.jsonl"
+        # Create an idle, command-less Sandbox. With no main process to exit, it
+        # stays *Started* until terminate()/timeout, which keeps it execable for
+        # the run-agent exec below and the tar exec in _pull_wd afterward. (An
+        # sb.exec child finishing does not end the Sandbox; only the main process
+        # exiting does — and there is none.) _push_wd creates REMOTE_WD.
         sb = modal.Sandbox.create(
-            "bash",
-            "-c",
-            f"mkdir -p {REMOTE_WD} && touch {agent_log} && "
-            f"exec tail -n +1 -F {agent_log}",
             app=app,
             image=image,
             secrets=[secret],
@@ -131,20 +125,6 @@ class ModalRunner(Runner):
             memory=self.memory,
             timeout=self.timeout,
         )
-
-        # Drain the main process's stdout in the background so the client-side
-        # buffer can't grow unbounded over a long run (the tailed stream-json
-        # can be many MB). Dashboard capture is server-side and independent of
-        # this drain; the thread ends when terminate() closes the stream.
-        def _drain_dashboard_stream() -> None:
-            try:
-                for _ in sb.stdout:
-                    pass
-            except Exception:
-                pass
-
-        drain = threading.Thread(target=_drain_dashboard_stream, daemon=True)
-        drain.start()
 
         start = time.time()
         try:
@@ -155,10 +135,10 @@ class ModalRunner(Runner):
 
             self._push_wd(sb, wd, auth)
 
-            # Run the baked entrypoint (agent.sh + post-hoc compile) via exec so
-            # the `tail -F` main process stays alive and the Sandbox remains
-            # execable for _pull_wd. No PTY: agent.sh writes stream-json to
-            # agent_output.jsonl, which a PTY would corrupt.
+            # Run the baked entrypoint (agent.sh + post-hoc compile) via exec.
+            # The idle Sandbox stays *Started* across the exec, so it remains
+            # execable for _pull_wd afterward. No PTY: agent.sh writes stream-json
+            # to agent_output.jsonl, which a PTY would corrupt.
             #
             # Redirect run-agent's stdin from /dev/null. Modal's exec leaves
             # stdin an open pipe with no EOF, so the agent CLIs block reading
