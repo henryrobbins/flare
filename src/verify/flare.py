@@ -13,16 +13,7 @@ from src.verify.base import (
 
 
 class FLAREVerifierRun(ReformulationRun):
-    """In-flight FLARE run, cancellable from another thread.
-
-    A thin adapter over :class:`milp_flare.flare.FLARERun`. The underlying run
-    has already started (the agent is live) by the time this handle exists, so
-    :meth:`cancel` simply forwards to the live :class:`~milp_flare.AgentRun`
-    (``docker kill`` / ``pkill`` inside the Sandbox) with no flag, lock, or
-    callback: the cancel-before-start race is gone because provisioning happens
-    in :meth:`FLAREVerifier.start`, not in :meth:`result`. A canceled run keeps
-    its partial output on either backend.
-    """
+    """Adapts `milp_flare.FLAREVerifierRun` to `ReformulationRun` API."""
 
     def __init__(self, run: FLARERun, output_path: Path, name: str) -> None:
         self._run = run

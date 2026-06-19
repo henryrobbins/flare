@@ -19,7 +19,7 @@ def build_verifier(spec: dict[str, Any]) -> ReformulationVerifier:
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
       - {type: flare, harness: claude_code|codex|opencode,
-         compute?: docker|modal, modal?: {...}, docker?: {...},
+         compute?: docker, docker?: {...},
          client: {model: <str>, effort?: <str>, provider?: <str>}}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
@@ -70,7 +70,7 @@ def _build_harness(spec: dict[str, Any]) -> Harness:
 
 def _build_runner(spec: dict[str, Any]) -> Runner:
     # Select the compute backend (default docker; existing YAMLs unchanged).
-    # The per-backend config block (`modal:` / `docker:`) is optional.
+    # The per-backend config block (e.g. `docker:`) is optional.
     compute = spec.pop("compute", "docker")
     cls = RUNNERS.get(compute)
     if cls is None:
