@@ -91,35 +91,6 @@ whether each `Formulation.lean` was written and compiled, whether
 `Reformulation.lean` contains a `def : MILPReformulation`, whether it
 compiled, and whether it is `sorry`-free.
 
-## Live output and cancellation
-
-By default `FLARE.verify` is a single blocking call. For long-running agents
-an external consumer (e.g. a dashboard) can observe the agent's output **live**
-and **cancel** an individual run mid-flight by passing two optional hooks. They
-are plumbed unchanged through `FLARE.verify` → `Harness.run` → `Runner.run`, so
-they behave identically on the Docker and Modal backends.
-
-```python
-flare.verify(
-    a_in,
-    b_in,
-    output_path=Path("runs/p1_a_b"),
-    # Called roughly every `poll_interval` seconds with the FULL current
-    # contents of agent_output.jsonl (a complete snapshot, not a delta).
-    # Parse the whole file each call; the hook must be idempotent.
-    on_output=lambda text: my_sink(text),
-    # Polled once per tick. Returning True stops the agent, captures whatever
-    # partial artifacts exist, and returns promptly.
-    should_cancel=lambda: my_cancel_flag(),
-    poll_interval=2.0,
-)
-```
-
-With neither hook supplied the run is byte-for-byte identical to the historical
-blocking path — no polling overhead. A canceled run is not flagged as such in
-the result; it simply looks like a short normal run with whatever partial
-artifacts the agent had written.
-
 ## Using FLARE on a non-dataset pair
 
 `FormulationInput` does not depend on `formulation_bench` — build the
