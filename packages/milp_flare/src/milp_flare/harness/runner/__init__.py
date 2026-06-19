@@ -6,7 +6,6 @@ from milp_flare.harness.runner.base import AuthSpec, Runner
 from milp_flare.harness.runner.docker import DockerRunner
 from milp_flare.harness.runner.modal import ModalRunner
 
-#: Registry of compute backends by ``Runner.name``. Mirrors ``HARNESSES``.
 RUNNERS: dict[str, type[Runner]] = {
     "docker": DockerRunner,
     "modal": ModalRunner,

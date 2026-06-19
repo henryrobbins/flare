@@ -31,9 +31,5 @@ SCRIPTS_DIR = _ASSETS_DIR / "scripts"
 DOCKER_DIR = _ASSETS_DIR / "docker"
 DOCKERFILE = DOCKER_DIR / "Dockerfile"
 
-# The Modal compute backend builds its image programmatically (see
-# `milp_flare.__main__:build_modal_image`) rather than from a Dockerfile, so
-# there is no Modal-specific Dockerfile asset.
-
 # Build context for `docker build` — the parent of `lean/` and `docker/`.
 BUILD_CONTEXT = _ASSETS_DIR

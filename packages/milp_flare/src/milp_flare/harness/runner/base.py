@@ -1,20 +1,3 @@
-"""Compute-backend abstraction for executing the FLARE agent container.
-
-A :class:`Runner` owns the *compute* concern: given a populated agent working
-directory, execute the agent container (sourcing ``agent.sh`` and running the
-post-hoc Lean compile) and return the wall-clock duration. This is orthogonal
-to the *agent* concern owned by :class:`~milp_flare.harness.base.Harness`
-(which CLI to launch, how to parse its output). A harness holds a runner and
-delegates execution to it, so the same parsing/cost logic works on any backend.
-
-Two implementations ship with the package:
-
-- :class:`~milp_flare.harness.runner.docker.DockerRunner` — local Docker
-  container (the default; behaves exactly as FLARE always has).
-- :class:`~milp_flare.harness.runner.modal.ModalRunner` — a
-  `Modal <https://modal.com>`_ Sandbox from a pre-built named image.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -30,22 +13,15 @@ log = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class AuthSpec:
-    """Compute-agnostic description of how to forward agent credentials.
-
-    A harness builds an :class:`AuthSpec` describing what the agent CLI needs;
-    each runner knows how to satisfy it for its own backend (Docker ``-e`` /
-    ``-v`` flags, a Modal secret / file push, etc.).
+    """Compute-agnostic description for forwarding agent credentials.
 
     Attributes
     ----------
     env : list[str]
-        Host environment-variable names to forward into the container. The
-        harness has already validated that any required names are present.
+        Host environment-variable names to forward into the container.
     home_dirs : list[tuple[pathlib.Path, str]]
         Host directories to make available under the container's ``$HOME``, as
         ``(host_dir, dest_basename)`` pairs (e.g. ``(~/.codex, ".codex")``).
-        The runner knows its own container ``HOME``, so the same spec works for
-        Docker (``/home/agent``) and Modal (``/root``).
     """
 
     env: list[str]
@@ -58,12 +34,9 @@ class Runner(ABC):
     Attributes
     ----------
     name : str
-        Compute backend identifier (``"docker"`` | ``"modal"``); surfaced in
-        the run config as ``config["compute"]``.
+        Compute backend identifier (e.g. ``"docker"``).
     home : str
-        Absolute path of the container ``HOME`` for this backend
-        (``"/home/agent"`` for Docker, ``"/root"`` for Modal); used to place
-        :attr:`AuthSpec.home_dirs`.
+        Absolute path of the container ``HOME`` for this backend.
     """
 
     name: ClassVar[str]
@@ -72,7 +45,7 @@ class Runner(ABC):
     @property
     @abstractmethod
     def image(self) -> str:
-        """Image identifier for this runner (for run-config reporting)."""
+        """Image identifier for this runner."""
         ...
 
     @abstractmethod
