@@ -1,14 +1,11 @@
 from __future__ import annotations
 
-import logging
-import time
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Iterator
+from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
-
-log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -26,6 +23,44 @@ class AuthSpec:
 
     env: list[str]
     home_dirs: list[tuple[Path, str]]
+
+
+class AgentRun(ABC):
+    """Live handle to a running agent, yielded by :meth:`Runner.run`.
+
+    The handle is the single streaming primitive shared by every backend:
+
+    - **Iterate it** to consume the agent's ``stdout`` line by line as it is
+      produced (the agent CLIs emit ``stream-json``). Iteration ends when the
+      agent process exits (EOF).
+    - **Call** :meth:`cancel` (from any thread) to stop the agent mid-flight.
+      Iteration then ends promptly, and whatever partial artifacts exist are
+      still captured when the enclosing :meth:`Runner.run` context exits.
+
+    Attributes
+    ----------
+    duration_s : float
+        Wall-clock duration of the run, in seconds. ``0.0`` until the enclosing
+        :meth:`Runner.run` context manager exits and sets it.
+    """
+
+    duration_s: float = 0.0
+
+    @abstractmethod
+    def __iter__(self) -> Iterator[str]:
+        """Yield the agent's ``stdout`` lines (``stream-json``) as produced."""
+        ...
+
+    @abstractmethod
+    def cancel(self) -> None:
+        """Stop the agent process. Idempotent and thread-safe.
+
+        Stopping the agent makes the consumer's iteration end (EOF). Partial
+        artifacts are still synced back into ``wd`` by the enclosing
+        :meth:`Runner.run` context exit, so a canceled run looks like a short
+        normal run with whatever output the agent had produced.
+        """
+        ...
 
 
 class Runner(ABC):
@@ -49,25 +84,19 @@ class Runner(ABC):
         ...
 
     @abstractmethod
-    def run(
-        self,
-        wd: Path,
-        auth: AuthSpec,
-        *,
-        on_output: Callable[[str], None] | None = None,
-        should_cancel: Callable[[], bool] | None = None,
-        poll_interval: float = 2.0,
-    ) -> float:
-        """Execute the agent in ``wd``; return wall-clock duration in seconds.
+    def run(self, wd: Path, auth: AuthSpec) -> AbstractContextManager[AgentRun]:
+        """Populate ``wd`` into the container, start the agent, and stream it.
 
-        Writes the same artifacts the image entrypoint always writes
-        (``agent_output.jsonl``, ``result.json``, ``compile_log.txt``, and the
-        agent's Lean files) back into ``wd``.
+        Returns a context manager yielding a live :class:`AgentRun`. The caller
+        iterates the handle for the agent's ``stdout`` and may
+        :meth:`~AgentRun.cancel` it. When the context exits, the runner stops
+        the agent if it is still running, syncs the container's working
+        directory back into ``wd`` (the agent's Lean files, ``result.json``,
+        ``compile_log.txt``), sets :attr:`AgentRun.duration_s`, and tears down
+        the compute.
 
-        Two optional callback hooks let an external consumer observe the agent's
-        output **live** and **cancel** the run mid-flight. With neither supplied,
-        ``run`` behaves exactly as it always has — a single blocking call with no
-        polling overhead.
+        Note that ``agent_output.jsonl`` is *not* produced by the container; the
+        caller rebuilds it on the host from the streamed ``stdout`` lines.
 
         Parameters
         ----------
@@ -76,70 +105,5 @@ class Runner(ABC):
             skills, MCP config, Lake skeleton).
         auth : AuthSpec
             Credential-forwarding spec from the harness.
-        on_output : Callable[[str], None], optional
-            Called roughly every ``poll_interval`` seconds with the **full**
-            current contents of ``agent_output.jsonl`` (a complete snapshot, not
-            a delta). Consumers parse the whole file each call and must be
-            idempotent; a skipped snapshot self-heals on the next tick. A final
-            snapshot fires once after the agent finishes. Hook errors are logged
-            and swallowed so a failing sink never aborts the run.
-        should_cancel : Callable[[], bool], optional
-            Polled once per tick. Returning ``True`` makes the runner stop the
-            agent compute, capture whatever partial artifacts exist, and return
-            promptly. The caller owns the cancel decision, so the runner does not
-            signal "this was a cancellation" back — a canceled run looks like a
-            short normal run. A hook error is treated as "do not cancel this
-            tick."
-        poll_interval : float, default ``2.0``
-            Seconds between supervision ticks. Only relevant when at least one
-            hook is supplied.
-
-        Returns
-        -------
-        float
-            Measured wall-clock duration of the agent run, in seconds.
         """
         ...
-
-    def _supervise(
-        self,
-        *,
-        is_running: Callable[[], bool],
-        read_output: Callable[[], str],
-        terminate: Callable[[], None],
-        on_output: Callable[[str], None] | None,
-        should_cancel: Callable[[], bool] | None,
-        poll_interval: float,
-    ) -> None:
-        """Drive the shared output/cancel tick loop for a running agent.
-
-        Backends supply three primitives — ``is_running`` (has the agent
-        compute exited?), ``read_output`` (full current ``agent_output.jsonl``
-        contents, ``""`` if absent) and ``terminate`` (stop the agent compute;
-        idempotent and safe to re-issue) — and this method handles the common
-        cadence, final-flush, and hook error-guarding so the two backends stay
-        in lockstep. Returns once the agent compute has exited.
-        """
-        canceled = False
-        while is_running():
-            time.sleep(poll_interval)
-            if on_output:
-                try:
-                    on_output(read_output())
-                except Exception:
-                    log.exception("on_output hook failed; continuing")
-            if canceled:
-                # Re-issue until the process actually exits.
-                terminate()
-            elif should_cancel:
-                try:
-                    if should_cancel():
-                        canceled = True
-                        terminate()
-                except Exception:
-                    log.exception("should_cancel hook failed; treating as no-cancel")
-        if on_output:  # final snapshot after the agent has exited
-            try:
-                on_output(read_output())
-            except Exception:
-                log.exception("final on_output hook failed")

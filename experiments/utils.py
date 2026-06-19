@@ -148,45 +148,37 @@ def drain_with_interrupt(
     registry: RunRegistry,
 ) -> None:
     """Iterate `as_completed(futures)` calling `on_result(future)` for each;
-    on KeyboardInterrupt, cancel in-flight runs, kill any run containers, cancel
-    pending futures, shut down the executor, then sweep leaked Modal Sandboxes.
+    on KeyboardInterrupt, cancel in-flight runs, drain the executor, then sweep
+    any leaked containers / Modal Sandboxes.
 
-    `registry.cancel_all()` runs first to flip each in-flight run's cooperative
-    cancel flag. For FLARE that flag is polled by the run's `should_cancel`
-    hook, which stops the agent — on the Docker *and* Modal backends — within
-    one poll interval and lets the worker return. The cooperative path owns
-    in-flight runs: each worker stops its own agent, captures partial artifacts,
-    and tears down its own container/Sandbox.
+    `registry.cancel_all()` stops each in-flight run by canceling its live agent
+    handle directly — `docker kill` on Docker, `pkill` inside the Sandbox on
+    Modal. Either way the worker's streaming loop ends promptly and its `verify`
+    unwinds, capturing partial artifacts and tearing down its own
+    container/Sandbox. The cancellation path is symmetric across backends, so
+    this owns in-flight runs on both.
 
-    `kill_run_containers` runs *before* the drain because the Docker bind mount
-    means artifacts are already local — an immediate hard-kill loses nothing and
-    promptly unblocks any worker parked in `popen.wait`. `kill_run_sandboxes`
-    runs *after* the drain: a Modal run must pull partial artifacts off the live
-    Sandbox before it dies, so terminating Sandboxes out from under in-flight
-    workers would both lose those artifacts and crash the pull. By the time the
-    executor has drained, healthy Modal workers have already terminated their
-    own Sandboxes, so the sweep only reaps genuine leaks (a worker that died
-    before its `finally`). Both reapers are tag-scoped no-ops when their backend
-    isn't in use."""
+    `kill_run_containers` / `kill_run_sandboxes` then run *after* the drain as
+    pure leak backstops: a healthy worker has already torn down its own compute,
+    so the tag-scoped sweep only reaps genuine leaks (a worker that died before
+    its `finally`). Both reapers are no-ops when their backend isn't in use."""
     futures = list(futures)
     try:
         for future in as_completed(futures):
             on_result(future)
     except KeyboardInterrupt:
         print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
-        # Flip each in-flight run's cooperative cancel flag (Docker + Modal).
+        # Stop each in-flight run by canceling its live agent handle (Docker +
+        # Modal). Workers end their stream, capture partial artifacts, and tear
+        # down their own container/Sandbox.
         registry.cancel_all()
-        # Docker: hard-kill now (bind mount => no artifacts lost; frees workers
-        # blocked in popen.wait). Modal sweep is deferred until after the drain.
-        kill_run_containers(run_id)
         for f in futures:
             f.cancel()
-        # In-flight workers observe the cancel flag within a poll interval,
-        # stop their agent, capture partial artifacts, and return; wait=True
-        # then drains them promptly.
+        # wait=True drains the now-canceled workers promptly.
         executor.shutdown(wait=True, cancel_futures=True)
-        # Backstop: reap any Modal Sandbox the cooperative path left behind
-        # (e.g. a worker that died before its own terminate()).
+        # Backstops: reap any container/Sandbox the cooperative path left behind
+        # (e.g. a worker that died before its own teardown).
+        kill_run_containers(run_id)
         kill_run_sandboxes(run_id)
         raise SystemExit(130)
 

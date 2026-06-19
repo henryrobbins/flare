@@ -1,10 +1,10 @@
 """Unit tests for the compute backends (runners) — no network/daemon needed.
 
 `DockerRunner` arg construction is exercised by inspecting the assembled
-`docker run` command; its `run` is exercised with `subprocess.run`
+`docker run` command; its `run` is exercised with `subprocess.Popen`
 monkeypatched. `ModalRunner` network behavior is covered by `modal`-marked
-tests elsewhere; here we only check its static config surface and the
-`RUNNERS` registry.
+tests elsewhere; here we only check its static config surface, the
+`RUNNERS` registry, and the no-network streaming/cancel primitives.
 """
 
 from __future__ import annotations
@@ -13,17 +13,14 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-import pytest
-
 from milp_flare.harness.runner import (
     RUNNERS,
     AuthSpec,
     DockerRunner,
     ModalRunner,
-    Runner,
 )
 from milp_flare.harness.runner import docker as docker_module
-from milp_flare.harness.runner import modal as modal_module
+from milp_flare.harness.runner.modal import ModalAgentRun
 
 
 def test_docker_cmd_includes_mount_and_image(tmp_path: Path) -> None:
@@ -45,9 +42,7 @@ def test_docker_cmd_forwards_env_and_home_dirs(tmp_path: Path) -> None:
     assert f"{tmp_path / '.codex'}:/home/agent/.codex" in cmd
 
 
-def test_docker_cmd_labels_with_run_id(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_docker_cmd_labels_with_run_id(tmp_path: Path, monkeypatch: Any) -> None:
     """A FLARE_RUN_ID in the env tags the container with a flare-run label."""
     monkeypatch.setenv("FLARE_RUN_ID", "run-123")
     cmd = DockerRunner()._build_docker_cmd(tmp_path, AuthSpec(env=[], home_dirs=[]))
@@ -55,36 +50,13 @@ def test_docker_cmd_labels_with_run_id(
     assert "flare-run=run-123" in cmd
 
 
-def test_docker_run_writes_stderr(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """`DockerRunner.run` invokes docker and persists any stderr."""
-    wd = tmp_path / "wd"
-    wd.mkdir()
-
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
-        assert cmd[0] == "docker"
-        return SimpleNamespace(stderr="boom\n")
-
-    monkeypatch.setattr(docker_module.subprocess, "run", _fake_run)
-    duration = DockerRunner().run(wd, AuthSpec(env=[], home_dirs=[]))
-    assert duration >= 0.0
-    assert (wd / "docker_stderr.txt").read_text() == "boom\n"
-
-
-def test_docker_run_skips_stderr_when_empty(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """No stderr file is written when the docker subprocess produced none."""
-    wd = tmp_path / "wd"
-    wd.mkdir()
-    monkeypatch.setattr(
-        docker_module.subprocess,
-        "run",
-        lambda cmd, **kw: SimpleNamespace(stderr=""),
+def test_docker_cmd_includes_unique_name(tmp_path: Path) -> None:
+    """A supplied name becomes a unique `--name` for per-run cancel."""
+    cmd = DockerRunner()._build_docker_cmd(
+        tmp_path, AuthSpec(env=[], home_dirs=[]), name="flare-abc123"
     )
-    DockerRunner().run(wd, AuthSpec(env=[], home_dirs=[]))
-    assert not (wd / "docker_stderr.txt").exists()
+    assert "--name" in cmd
+    assert "flare-abc123" in cmd
 
 
 def test_docker_runner_config_surface() -> None:
@@ -111,259 +83,79 @@ def test_registry_keys_match_names() -> None:
     }
 
 
-# --- _supervise: backend-agnostic tick loop -------------------------------
+# --- DockerRunner streaming + cancel (no daemon) --------------------------
 
 
-class _FakeRunner(Runner):
-    """Minimal Runner exposing `_supervise` over an in-memory fake process."""
+class _FakePopen:
+    """Minimal Popen stand-in: a fixed stdout line iterator that can EOF."""
 
-    name = "fake"
-    home = "/root"
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.stdout = iter(["line1\n", "line2\n"])
+        self.waited = False
 
-    @property
-    def image(self) -> str:
-        return "fake"
-
-    def run(self, wd: Path, auth: AuthSpec, **kwargs: Any) -> float:  # pragma: no cover
-        return 0.0
+    def wait(self) -> int:
+        self.waited = True
+        return 0
 
 
-def test_supervise_streams_growing_snapshots_then_final(
-    monkeypatch: pytest.MonkeyPatch,
+def test_docker_run_streams_lines_and_sets_duration(
+    tmp_path: Path, monkeypatch: Any
 ) -> None:
-    """on_output fires each tick with growing content, plus a final snapshot."""
-    from milp_flare.harness.runner import base as base_module
-
-    monkeypatch.setattr(base_module.time, "sleep", lambda _s: None)
-
-    # Process "runs" for 3 ticks; output grows by one line per read.
-    ticks = {"running": 3, "lines": 0}
-
-    def is_running() -> bool:
-        if ticks["running"] > 0:
-            ticks["running"] -= 1
-            return True
-        return False
-
-    def read_output() -> str:
-        ticks["lines"] += 1
-        return "x\n" * ticks["lines"]
-
-    snapshots: list[str] = []
-    _FakeRunner()._supervise(
-        is_running=is_running,
-        read_output=read_output,
-        terminate=lambda: None,
-        on_output=snapshots.append,
-        should_cancel=None,
-        poll_interval=0.0,
-    )
-
-    # Snapshots are monotonically growing and a final one fires after exit:
-    # 3 in-loop ticks + 1 final snapshot = 4 reads.
-    assert len(snapshots) == 4
-    assert all(len(b) >= len(a) for a, b in zip(snapshots, snapshots[1:], strict=False))
-
-
-def test_supervise_cancel_calls_terminate_and_returns(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Flipping should_cancel true calls terminate and ends the loop promptly."""
-    from milp_flare.harness.runner import base as base_module
-
-    monkeypatch.setattr(base_module.time, "sleep", lambda _s: None)
-
-    terminated = {"running": True, "calls": 0}
-
-    def is_running() -> bool:
-        return terminated["running"]
-
-    def terminate() -> None:
-        terminated["calls"] += 1
-        terminated["running"] = False  # process exits after being killed
-
-    _FakeRunner()._supervise(
-        is_running=is_running,
-        read_output=lambda: "",
-        terminate=terminate,
-        on_output=None,
-        should_cancel=lambda: True,
-        poll_interval=0.0,
-    )
-    assert terminated["calls"] >= 1
-    assert terminated["running"] is False
-
-
-def test_supervise_guards_hook_exceptions(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """A throwing on_output / should_cancel never aborts the run."""
-    from milp_flare.harness.runner import base as base_module
-
-    monkeypatch.setattr(base_module.time, "sleep", lambda _s: None)
-
-    ticks = {"n": 2}
-
-    def is_running() -> bool:
-        if ticks["n"] > 0:
-            ticks["n"] -= 1
-            return True
-        return False
-
-    def boom_output(_s: str) -> None:
-        raise RuntimeError("sink failed")
-
-    def boom_cancel() -> bool:
-        raise RuntimeError("cancel failed")
-
-    # Should complete without propagating either exception.
-    _FakeRunner()._supervise(
-        is_running=is_running,
-        read_output=lambda: "data",
-        terminate=lambda: None,
-        on_output=boom_output,
-        should_cancel=boom_cancel,
-        poll_interval=0.0,
-    )
-
-
-# --- DockerRunner supervised path -----------------------------------------
-
-
-def test_docker_run_supervised_streams_and_returns(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """With a hook, DockerRunner uses Popen + _supervise and streams the file."""
+    """`run` yields a handle whose iteration streams the container's stdout,
+    creates the stderr file, and sets duration_s on exit."""
     wd = tmp_path / "wd"
     wd.mkdir()
-    jsonl = wd / "agent_output.jsonl"
-    jsonl.write_text("line1\n")
-
-    class _FakePopen:
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            self._polls = 0
-
-        def poll(self) -> int | None:
-            # Append more output, then exit on the 3rd poll.
-            self._polls += 1
-            jsonl.write_text("line1\nline2\n" * self._polls)
-            return None if self._polls < 3 else 0
-
-        def wait(self) -> int:
-            return 0
-
     monkeypatch.setattr(docker_module.subprocess, "Popen", _FakePopen)
-    monkeypatch.setattr(docker_module.time, "sleep", lambda _s: None)
-
-    snapshots: list[str] = []
-    duration = DockerRunner().run(
-        wd,
-        AuthSpec(env=[], home_dirs=[]),
-        on_output=snapshots.append,
-        poll_interval=0.0,
-    )
-    assert duration >= 0.0
-    assert snapshots  # at least one live snapshot fired
-    assert "line2" in snapshots[-1]
-
-
-def test_docker_run_skips_launch_when_already_canceled(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A cancel pending before launch returns without spawning the container."""
-    wd = tmp_path / "wd"
-    wd.mkdir()
-
-    def _boom(*args: Any, **kwargs: Any) -> None:
-        raise AssertionError("Popen should not be called when already canceled")
-
-    monkeypatch.setattr(docker_module.subprocess, "Popen", _boom)
-
-    duration = DockerRunner().run(
-        wd,
-        AuthSpec(env=[], home_dirs=[]),
-        on_output=lambda _s: None,
-        should_cancel=lambda: True,
-        poll_interval=0.0,
-    )
-    assert duration >= 0.0
-
-
-def test_docker_cmd_includes_unique_name(tmp_path: Path) -> None:
-    """A supplied name becomes a unique `--name` for per-run cancel."""
-    cmd = DockerRunner()._build_docker_cmd(
-        tmp_path, AuthSpec(env=[], home_dirs=[]), name="flare-abc123"
-    )
-    assert "--name" in cmd
-    assert "flare-abc123" in cmd
-
-
-# --- ModalRunner supervision primitives (no network) ----------------------
-
-
-def test_modal_read_remote_output_returns_contents() -> None:
-    """`_read_remote_output` reads the remote file via the filesystem API."""
-    sb = SimpleNamespace(filesystem=SimpleNamespace(read_text=lambda path: "snap\n"))
-    assert ModalRunner()._read_remote_output(sb) == "snap\n"
-
-
-def test_modal_read_remote_output_missing_file_is_empty() -> None:
-    """A not-yet-created output file yields an empty snapshot, not an error."""
-
-    def _read_text(path: str) -> str:
-        raise FileNotFoundError(path)
-
-    sb = SimpleNamespace(filesystem=SimpleNamespace(read_text=_read_text))
-    assert ModalRunner()._read_remote_output(sb) == ""
-
-
-def test_modal_run_canceled_during_setup_terminates_without_launch(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A cancel during the setup window terminates the Sandbox and never execs
-    the agent — closing the leak the supervise loop can't reach yet."""
-    wd = tmp_path / "wd"
-    wd.mkdir()
-
-    events: list[str] = []
-
-    class _FakeSandbox:
-        def set_tags(self, tags: dict[str, str]) -> None:
-            events.append("set_tags")
-
-        def exec(self, *args: Any, **kwargs: Any) -> None:
-            raise AssertionError("agent must not be exec'd after a setup cancel")
-
-        def terminate(self) -> None:
-            events.append("terminate")
-
-        def detach(self) -> None:
-            events.append("detach")
-
-    fake_modal = SimpleNamespace(
-        App=SimpleNamespace(lookup=lambda *a, **k: object()),
-        Image=SimpleNamespace(from_name=lambda *a, **k: object()),
-        Secret=SimpleNamespace(from_dict=lambda *a, **k: object()),
-        Sandbox=SimpleNamespace(create=lambda *a, **k: _FakeSandbox()),
-    )
-    monkeypatch.setattr(modal_module, "_require_modal", lambda: fake_modal)
-    # Cancel is already pending: the first setup checkpoint (right after
-    # tagging) trips before _push_wd / exec.
+    kills: list[list[str]] = []
     monkeypatch.setattr(
-        ModalRunner, "_push_wd", lambda *a, **k: events.append("push_wd")
+        docker_module.subprocess, "run", lambda cmd, **kw: kills.append(cmd)
     )
 
-    duration = ModalRunner().run(
-        wd,
-        AuthSpec(env=[], home_dirs=[]),
-        should_cancel=lambda: True,
-        poll_interval=0.0,
+    lines: list[str] = []
+    with DockerRunner().run(wd, AuthSpec(env=[], home_dirs=[])) as agent:
+        for line in agent:
+            lines.append(line)
+
+    assert lines == ["line1", "line2"]
+    assert agent.duration_s >= 0.0
+    assert (wd / "docker_stderr.txt").exists()
+    # Teardown always issues an idempotent `docker kill` to ensure the
+    # container is stopped (a no-op when it already exited).
+    assert any(cmd[:2] == ["docker", "kill"] for cmd in kills)
+
+
+def test_docker_cancel_kills_container_by_name(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    """`AgentRun.cancel()` issues `docker kill <unique-name>`."""
+    wd = tmp_path / "wd"
+    wd.mkdir()
+    monkeypatch.setattr(docker_module.subprocess, "Popen", _FakePopen)
+    kills: list[list[str]] = []
+    monkeypatch.setattr(
+        docker_module.subprocess, "run", lambda cmd, **kw: kills.append(cmd)
     )
-    assert duration >= 0.0
-    # Tagged (so a reaper could find it), then torn down via the finally —
-    # without pushing wd or launching the agent.
-    assert "push_wd" not in events
-    assert events[-2:] == ["terminate", "detach"]
+
+    with DockerRunner().run(wd, AuthSpec(env=[], home_dirs=[])) as agent:
+        agent.cancel()
+
+    # The kill targets a single unique container name (flare-<hex>).
+    killed_names = [cmd[2] for cmd in kills if cmd[:2] == ["docker", "kill"]]
+    assert killed_names
+    assert all(name.startswith("flare-") for name in killed_names)
+
+
+# --- ModalRunner primitives (no network) ----------------------------------
+
+
+def test_modal_agent_run_streams_and_cancels() -> None:
+    """ModalAgentRun decodes str/bytes stdout lines and forwards cancel()."""
+    proc = SimpleNamespace(stdout=iter(["a\n", b"b\n"]))
+    killed: list[bool] = []
+    agent = ModalAgentRun(proc, lambda: killed.append(True))
+    assert list(agent) == ["a", "b"]
+    agent.cancel()
+    assert killed == [True]
 
 
 def test_modal_kill_agent_pkills_run_agent() -> None:

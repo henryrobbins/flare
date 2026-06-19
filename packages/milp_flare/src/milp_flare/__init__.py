@@ -3,6 +3,7 @@ from milp_flare.flare_nl import FLARENLPrompt, flare_nl_prompt
 from milp_flare.harness import (
     HARNESSES,
     RUNNERS,
+    AgentRun,
     AuthSpec,
     DockerRunner,
     Harness,
@@ -18,6 +19,7 @@ __all__ = [
     "FormulationInput",
     "HARNESSES",
     "RUNNERS",
+    "AgentRun",
     "AuthSpec",
     "DockerRunner",
     "Harness",

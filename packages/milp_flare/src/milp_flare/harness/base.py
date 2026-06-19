@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from milp_flare.harness.cost import compute_cost_usd
-from milp_flare.harness.runner import AuthSpec, DockerRunner, Runner
+from milp_flare.harness.runner import AgentRun, AuthSpec, DockerRunner, Runner
 
 
 @dataclass
@@ -142,31 +142,26 @@ class Harness(ABC):
         self,
         wd: Path,
         *,
-        on_output: Callable[[str], None] | None = None,
-        should_cancel: Callable[[], bool] | None = None,
-        poll_interval: float = 2.0,
+        on_start: Callable[[AgentRun], None] | None = None,
     ) -> HarnessRunResult:
         """Run the agent on the configured compute backend.
 
-        Delegates execution to :attr:`runner` (Docker or Modal), then parses
-        the agent's ``agent_output.jsonl`` (agent-specific) for tokens, cost,
-        and stop reason. The runner is responsible for populating ``wd`` with
-        ``agent_output.jsonl`` and the other entrypoint artifacts.
+        Delegates execution to :attr:`runner` (Docker or Modal): it populates
+        ``wd`` into the container and yields a live :class:`AgentRun`. This
+        method streams the agent's ``stdout`` into ``wd/agent_output.jsonl`` on
+        the host (so ``tail -f`` works the same for every backend), then parses
+        that file (agent-specific) for tokens, cost, and stop reason.
 
         Parameters
         ----------
         wd : pathlib.Path
             The agent working directory, already configured via
             :meth:`configure_wd`.
-        on_output : Callable[[str], None], optional
-            Live-output hook forwarded to :meth:`Runner.run`. Called each tick
-            with the full current ``agent_output.jsonl`` snapshot. See
-            :meth:`Runner.run` for the full-snapshot contract.
-        should_cancel : Callable[[], bool], optional
-            Cancellation hook forwarded to :meth:`Runner.run`. Polled each tick;
-            returning ``True`` stops the agent and returns promptly.
-        poll_interval : float, default ``2.0``
-            Seconds between supervision ticks (only relevant with a hook).
+        on_start : Callable[[AgentRun], None], optional
+            Called once with the live :class:`AgentRun` as soon as the agent has
+            started. Lets an external owner (e.g. a cancellable run handle)
+            capture the handle so it can :meth:`~AgentRun.cancel` the run from
+            another thread.
 
         Returns
         -------
@@ -178,14 +173,17 @@ class Harness(ABC):
         jsonl_path = wd / "agent_output.jsonl"
         print(f"  [flare] monitor: tail -f {jsonl_path}")
 
-        # Execute the agent on the compute backend (docker / modal).
-        duration = self.runner.run(
-            wd,
-            self.auth_spec(),
-            on_output=on_output,
-            should_cancel=should_cancel,
-            poll_interval=poll_interval,
-        )
+        # Execute the agent on the compute backend (docker / modal). The host
+        # rebuilds agent_output.jsonl live from the streamed stdout lines, so the
+        # file exists and grows the same way on every backend.
+        with self.runner.run(wd, self.auth_spec()) as agent:
+            if on_start is not None:
+                on_start(agent)
+            with jsonl_path.open("w") as f:
+                for line in agent:
+                    f.write(line)
+                    f.write("\n")
+                    f.flush()
 
         parsed = self._parse_stream(jsonl_path)
         # Codex doesn't surface per-turn USD; fill from token totals.
@@ -194,7 +192,7 @@ class Harness(ABC):
                 self.model, parsed["input_tokens"], parsed["output_tokens"]
             )
 
-        return HarnessRunResult(duration_s=round(duration, 1), **parsed)
+        return HarnessRunResult(duration_s=round(agent.duration_s, 1), **parsed)
 
     @abstractmethod
     def _agent_command(self) -> str:

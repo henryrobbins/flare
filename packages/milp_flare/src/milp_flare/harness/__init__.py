@@ -4,6 +4,7 @@ from milp_flare.harness.codex import CodexHarness
 from milp_flare.harness.opencode import OpenCodeHarness
 from milp_flare.harness.runner import (
     RUNNERS,
+    AgentRun,
     AuthSpec,
     DockerRunner,
     ModalRunner,
@@ -19,6 +20,7 @@ HARNESSES: dict[str, type[Harness]] = {
 __all__ = [
     "HARNESSES",
     "RUNNERS",
+    "AgentRun",
     "AuthSpec",
     "ClaudeCodeHarness",
     "CodexHarness",

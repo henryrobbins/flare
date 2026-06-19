@@ -9,7 +9,7 @@ from typing import Any
 
 from milp_flare._assets import LEAN_DIR
 from milp_flare._prompts import render_flare_agent_prompt
-from milp_flare.harness import Harness
+from milp_flare.harness import AgentRun, Harness
 
 #: Axioms permitted in a verified reformulation proof. All of Mathlib is built on
 #: these three; a proof depending on anything else is not trusted by FLARE.
@@ -159,9 +159,7 @@ class FLARE:
         b: FormulationInput,
         output_path: Path,
         *,
-        on_output: Callable[[str], None] | None = None,
-        should_cancel: Callable[[], bool] | None = None,
-        poll_interval: float = 2.0,
+        on_start: Callable[[AgentRun], None] | None = None,
     ) -> FLAREResult:
         """Run FLARE on a pair of MILP formulations.
 
@@ -205,17 +203,11 @@ class FLARE:
             Inputs for formulation B (the candidate reformulation of A).
         output_path : pathlib.Path
             Directory to populate with run artifacts.
-        on_output : Callable[[str], None], optional
-            Live-output hook forwarded to the harness/runner. Called each tick
-            with the full current ``agent_output.jsonl`` snapshot (a complete
-            snapshot, not a delta); consumers must be idempotent. With no hook
-            supplied, the run is a single blocking call as before.
-        should_cancel : Callable[[], bool], optional
-            Cancellation hook forwarded to the harness/runner. Polled each tick;
-            returning ``True`` stops the agent mid-flight, captures partial
-            artifacts, and returns promptly.
-        poll_interval : float, default ``2.0``
-            Seconds between supervision ticks (only relevant with a hook).
+        on_start : Callable[[AgentRun], None], optional
+            Forwarded to :meth:`Harness.run`. Called once with the live
+            :class:`~milp_flare.harness.AgentRun` as soon as the agent starts, so
+            an external owner can :meth:`~milp_flare.harness.AgentRun.cancel` the
+            run from another thread (capturing partial artifacts on teardown).
 
         Returns
         -------
@@ -254,12 +246,7 @@ class FLARE:
         self._setup_wd(wd, a, b)
 
         # Run the agent harness
-        run_result = self.harness.run(
-            wd,
-            on_output=on_output,
-            should_cancel=should_cancel,
-            poll_interval=poll_interval,
-        )
+        run_result = self.harness.run(wd, on_start=on_start)
 
         # Evaluate the agent's output to obtain final result and write metadata
         meta = self._evaluate(wd)

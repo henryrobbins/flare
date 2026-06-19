@@ -1,10 +1,9 @@
 import threading
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 from formulation_bench import Formulation
-from milp_flare import FLARE, FormulationInput, Harness
+from milp_flare import FLARE, AgentRun, FormulationInput, Harness
 
 from src.verify.base import (
     ReformulationResult,
@@ -14,20 +13,21 @@ from src.verify.base import (
 
 
 class FLAREVerifierRun(ReformulationRun):
-    """In-flight FLARE run, cancellable via a cooperative flag.
+    """In-flight FLARE run, cancellable from another thread.
 
-    FLARE's agent runs on either the Docker or Modal backend; both honor a
-    cooperative ``should_cancel`` hook polled each tick. :meth:`cancel` flips a
-    per-run flag that the in-flight :meth:`milp_flare.FLARE.verify` observes
-    within one poll interval, stopping the agent, capturing partial artifacts,
-    and tearing down its container/Sandbox. This unwinds gracefully on both
-    backends — a force-kill would lose the Modal run's partial artifacts — so it
-    is preferred over killing the container outright.
+    FLARE's agent runs on either the Docker or Modal backend. :meth:`cancel`
+    stops the live :class:`~milp_flare.AgentRun` directly (``docker kill`` /
+    ``pkill`` inside the Sandbox); the in-flight :meth:`milp_flare.FLARE.verify`
+    then unwinds, capturing whatever partial artifacts exist before tearing down
+    its container/Sandbox. The same cooperative path is used on both backends, so
+    a canceled run keeps its partial output everywhere.
 
     The work runs synchronously inside :meth:`result`; :meth:`start` only
     captures the inputs. In the batch path, ``start()`` and ``result()`` are
     called back-to-back on the same worker thread, while the experiment runner
-    holds the handle so it can :meth:`cancel` the run from another thread.
+    holds the handle so it can :meth:`cancel` the run from another thread. A
+    cancel that arrives before the agent has started is recorded and applied the
+    instant the handle is published via :meth:`_on_start`.
     """
 
     def __init__(
@@ -43,33 +43,31 @@ class FLAREVerifierRun(ReformulationRun):
         self._b_in = b_in
         self._output_path = output_path
         self._name = name
-        self._cancel = threading.Event()
+        self._lock = threading.Lock()
+        self._agent: AgentRun | None = None
+        self._canceled = False
 
     def cancel(self) -> None:
-        self._cancel.set()
+        with self._lock:
+            self._canceled = True
+            if self._agent is not None:
+                self._agent.cancel()
+
+    def _on_start(self, agent: AgentRun) -> None:
+        # Publish the live handle so cancel() can reach it; if a cancel already
+        # arrived during setup, apply it now (kills the agent just after it
+        # started, capturing whatever partial artifacts exist on teardown).
+        with self._lock:
+            self._agent = agent
+            if self._canceled:
+                agent.cancel()
 
     def result(self) -> ReformulationResult:
-        # On the Docker backend the bind mount already makes
-        # wd/agent_output.jsonl live locally, so we leave it alone. On a remote
-        # backend (e.g. Modal) the file only lands at the end of the run, so we
-        # mirror the agent's output snapshot into the local working directory
-        # each tick — making `tail -f wd/agent_output.jsonl` live there too.
-        on_output: Callable[[str], None] | None = None
-        if self._inner.harness.runner.name != "docker":
-            local_jsonl = self._output_path / "wd" / "agent_output.jsonl"
-
-            def _mirror(text: str) -> None:
-                local_jsonl.parent.mkdir(parents=True, exist_ok=True)
-                local_jsonl.write_text(text)
-
-            on_output = _mirror
-
         r = self._inner.verify(
             self._a_in,
             self._b_in,
             self._output_path,
-            on_output=on_output,
-            should_cancel=self._cancel.is_set,
+            on_start=self._on_start,
         )
         return ReformulationResult(
             is_reformulation=r.is_reformulation,
