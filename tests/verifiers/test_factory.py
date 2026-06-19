@@ -58,4 +58,4 @@ def test_flare_modal_without_config_uses_defaults() -> None:
         }
     )
     assert isinstance(harness.runner, ModalRunner)
-    assert harness.runner.image == "flare-agent"
+    assert harness.runner.image == "flare-agent:latest"

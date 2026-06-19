@@ -10,7 +10,7 @@ import tempfile
 from pathlib import Path
 
 from milp_flare._assets import BUILD_CONTEXT, DOCKER_DIR, DOCKERFILE, LEAN_DIR
-from milp_flare.harness.runner.docker import IMAGE
+from milp_flare.harness.runner.base import IMAGE
 
 
 def build_image(tag: str, no_cache: bool) -> int:

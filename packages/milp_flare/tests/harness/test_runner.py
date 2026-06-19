@@ -150,9 +150,9 @@ def test_docker_cancel_kills_container_by_name(
 
 
 def test_modal_agent_run_streams_and_cancels() -> None:
-    """ModalAgentRun decodes str/bytes stdout lines and forwards cancel() to the
-    runner's `_kill_agent` against the durable Sandbox address."""
-    proc = SimpleNamespace(stdout=iter(["a\n", b"b\n"]))
+    """ModalAgentRun strips stdout lines and forwards cancel() to the runner's
+    `_kill_agent` against the durable Sandbox address."""
+    proc = SimpleNamespace(stdout=iter(["a\n", "b\n"]))
     killed: list[str] = []
     runner = SimpleNamespace(_kill_agent=lambda sb: killed.append(sb))
     agent = ModalAgentRun(proc, sb="SB", wd=Path("."), runner=runner, start=0.0)

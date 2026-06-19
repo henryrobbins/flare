@@ -1,5 +1,3 @@
-"""Local-Docker compute backend for the FLARE agent container."""
-
 from __future__ import annotations
 
 import os
@@ -10,21 +8,22 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import IO, ClassVar
 
-from milp_flare.harness.runner.base import AgentRun, AuthSpec, Runner
-
-#: The default name of the Docker image containing the agent environment. This
-#: image is expected to be built prior to running FLARE. See :doc:`/installation`.
-IMAGE = "flare-agent:latest"
+from milp_flare.harness.runner.base import IMAGE, AgentRun, AuthSpec, Runner
 
 
 class DockerAgentRun(AgentRun):
-    """Live handle over a ``docker run`` container's ``stdout``.
+    """Live handle for a single in-flight Docker agent run.
 
-    The container is launched with a unique ``--name`` so :meth:`cancel` can
-    stop just this run (``docker kill <name>``) without touching other
-    containers in the same batch. The agent's working directory is bind-mounted,
-    so the container's writes (Lean files, ``result.json``, ``compile_log.txt``)
-    are already visible on the host — there is nothing to pull back.
+    Parameters
+    ----------
+    popen : subprocess.Popen[str]
+        The Popen handle for the ``docker run`` running container process.
+    name : str
+        The unique container name for this run, used to target cancellation.
+    stderr_f : IO[bytes]
+        The file where the container's stderr is being redirected.
+    start : float
+        The wall-clock time when the container was launched, for duration tracking.
     """
 
     def __init__(
@@ -41,17 +40,13 @@ class DockerAgentRun(AgentRun):
 
     @property
     def stdout(self) -> Iterator[str]:
-        # The bind mount means the container's stdout pipe is the live agent
-        # stream; yield it line by line until the container exits (EOF).
         assert self._popen.stdout is not None
         for line in self._popen.stdout:
             yield line.rstrip("\n")
 
     def cancel(self) -> None:
-        # Kill the container by name (the durable address), not the Popen
-        # client. Idempotent and safe to re-issue from any thread; ignore
-        # failures (e.g. already exited). The agent's partial Lean files are
-        # already on the host via the bind mount.
+        # The agent working directory is bind-mounted into the container, so all
+        # partial artifacts are already on the host. Just kill the container.
         subprocess.run(
             ["docker", "kill", self._name],
             stdout=subprocess.DEVNULL,
@@ -59,10 +54,9 @@ class DockerAgentRun(AgentRun):
         )
 
     def _teardown(self) -> None:
-        # Ensure the container is stopped (a no-op if it already exited), reap
-        # it, and close the stderr sink. The bind mount means artifacts are
-        # already on the host, so there is nothing to pull back.
-        self.cancel()
+        super()._teardown()
+        # Killing the Docker container kills the process and the stdout pipe
+        # which should release the wait() below.
         self._popen.wait()
         self._stderr_f.close()
 
@@ -70,17 +64,11 @@ class DockerAgentRun(AgentRun):
 class DockerRunner(Runner):
     """Run the agent in a local Docker container.
 
-    Bind-mounts the agent working directory into the container at
-    ``/workspace/wd`` and relies on the image's ``ENTRYPOINT`` (``run-agent``)
-    to source ``agent.sh`` and run the post-hoc Lean compile. The agent CLI
-    writes its ``stream-json`` event log to ``stdout``, which :meth:`run`
-    exposes as the live :class:`DockerAgentRun` stream; the caller rebuilds
-    ``agent_output.jsonl`` on the host from it.
-
     Parameters
     ----------
-    image : str, default ``"flare-agent:latest"``
-        The Docker image tag to run.
+    image : str, default :const:`IMAGE`
+        The Docker image tag to run. Built via ``milp-flare build-docker-image``;
+        see :doc:`/installation`.
     """
 
     name: ClassVar[str] = "docker"
@@ -95,7 +83,7 @@ class DockerRunner(Runner):
 
     def start(self, wd: Path, auth: AuthSpec) -> AgentRun:
         # A unique per-run name lets cancel() stop just this container.
-        container = f"flare-{uuid.uuid4().hex[:12]}"
+        name = f"flare-{uuid.uuid4().hex[:12]}"
         start = time.time()
         # Redirect stderr straight to a file so the undrained pipe can't deadlock
         # the run; stdout stays a pipe we stream line by line. The handle owns
@@ -103,7 +91,7 @@ class DockerRunner(Runner):
         stderr_f = open(wd / "docker_stderr.txt", "wb")
         try:
             popen = subprocess.Popen(
-                self._build_docker_cmd(wd, auth, name=container),
+                self._build_docker_cmd(wd, auth, name=name),
                 stdout=subprocess.PIPE,
                 stderr=stderr_f,
                 text=True,
@@ -116,7 +104,7 @@ class DockerRunner(Runner):
         except BaseException:
             stderr_f.close()
             raise
-        return DockerAgentRun(popen, container, stderr_f, start)
+        return DockerAgentRun(popen, name, stderr_f, start)
 
     def _build_docker_cmd(
         self, wd: Path, auth: AuthSpec, name: str | None = None
