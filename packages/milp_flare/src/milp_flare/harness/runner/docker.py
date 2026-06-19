@@ -32,7 +32,8 @@ class DockerAgentRun(AgentRun):
         self._popen = popen
         self._name = name
 
-    def __iter__(self) -> Iterator[str]:
+    @property
+    def stdout(self) -> Iterator[str]:
         # The bind mount means the container's stdout pipe is the live agent
         # stream; yield it line by line until the container exits (EOF).
         assert self._popen.stdout is not None

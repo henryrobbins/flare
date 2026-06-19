@@ -180,7 +180,7 @@ class Harness(ABC):
             if on_start is not None:
                 on_start(agent)
             with jsonl_path.open("w") as f:
-                for line in agent:
+                for line in agent.stdout:
                     f.write(line)
                     f.write("\n")
                     f.flush()

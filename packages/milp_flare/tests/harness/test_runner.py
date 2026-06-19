@@ -113,7 +113,7 @@ def test_docker_run_streams_lines_and_sets_duration(
 
     lines: list[str] = []
     with DockerRunner().run(wd, AuthSpec(env=[], home_dirs=[])) as agent:
-        for line in agent:
+        for line in agent.stdout:
             lines.append(line)
 
     assert lines == ["line1", "line2"]
@@ -153,7 +153,7 @@ def test_modal_agent_run_streams_and_cancels() -> None:
     proc = SimpleNamespace(stdout=iter(["a\n", b"b\n"]))
     killed: list[bool] = []
     agent = ModalAgentRun(proc, lambda: killed.append(True))
-    assert list(agent) == ["a", "b"]
+    assert list(agent.stdout) == ["a", "b"]
     agent.cancel()
     assert killed == [True]
 

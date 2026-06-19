@@ -26,7 +26,8 @@ class _StubAgentRun(AgentRun):
         self._lines = lines
         self.canceled = False
 
-    def __iter__(self) -> Iterator[str]:
+    @property
+    def stdout(self) -> Iterator[str]:
         yield from self._lines
 
     def cancel(self) -> None:

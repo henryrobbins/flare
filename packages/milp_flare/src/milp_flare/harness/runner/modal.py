@@ -53,8 +53,8 @@ def _tar_dir(src: Path) -> bytes:
 class ModalAgentRun(AgentRun):
     """Live handle over a Sandbox exec's ``stdout``.
 
-    Iterating drains the ``run-agent`` exec's ``stdout`` line by line (the agent
-    stream) until the process exits. :meth:`cancel` ``pkill``\\ s the agent
+    Iterating :attr:`stdout` drains the ``run-agent`` exec's output line by line
+    (the agent stream) until the process exits. :meth:`cancel` ``pkill``\\ s the agent
     *inside* the still-alive Sandbox, so the post-run artifact pull (done by the
     enclosing :meth:`ModalRunner.run` context exit) can still capture partial
     output before the Sandbox is terminated.
@@ -64,7 +64,8 @@ class ModalAgentRun(AgentRun):
         self._proc = proc
         self._cancel_fn = cancel_fn
 
-    def __iter__(self) -> Iterator[str]:
+    @property
+    def stdout(self) -> Iterator[str]:
         for line in self._proc.stdout:
             if isinstance(line, bytes):
                 line = line.decode("utf-8", errors="replace")

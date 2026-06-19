@@ -30,9 +30,9 @@ class AgentRun(ABC):
 
     The handle is the single streaming primitive shared by every backend:
 
-    - **Iterate it** to consume the agent's ``stdout`` line by line as it is
-      produced (the agent CLIs emit ``stream-json``). Iteration ends when the
-      agent process exits (EOF).
+    - **Iterate** :attr:`stdout` to consume the agent's output line by line as
+      it is produced (the agent CLIs emit ``stream-json``). Iteration ends when
+      the agent process exits (EOF).
     - **Call** :meth:`cancel` (from any thread) to stop the agent mid-flight.
       Iteration then ends promptly, and whatever partial artifacts exist are
       still captured when the enclosing :meth:`Runner.run` context exits.
@@ -46,8 +46,9 @@ class AgentRun(ABC):
 
     duration_s: float = 0.0
 
+    @property
     @abstractmethod
-    def __iter__(self) -> Iterator[str]:
+    def stdout(self) -> Iterator[str]:
         """Yield the agent's ``stdout`` lines (``stream-json``) as produced."""
         ...
 
