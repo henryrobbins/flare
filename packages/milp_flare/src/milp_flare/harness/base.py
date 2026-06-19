@@ -98,12 +98,7 @@ class Harness(ABC):
         }
 
     def auth_spec(self) -> AuthSpec:
-        """Return the credential-forwarding spec for this harness.
-
-        The default forwards nothing. Subclasses override this to forward the
-        env vars / host config dirs their agent CLI needs; the spec is
-        compute-agnostic and applied by the configured :attr:`runner`.
-        """
+        """Return the credential-forwarding spec for this harness."""
         return AuthSpec(env=[], home_dirs=[])
 
     def configure_wd(self, wd: Path) -> None:
@@ -140,31 +135,31 @@ class Harness(ABC):
     def start(self, wd: Path) -> AgentRun:
         """Provision the compute and start the agent, returning a live handle.
 
-        Delegates to :attr:`runner` (Docker or Modal), which populates ``wd``
-        into the container and starts the agent. The returned :class:`AgentRun`
-        owns the run's lifecycle: the caller streams it (typically via
-        :meth:`collect`), may :meth:`~AgentRun.cancel` it from another thread,
-        and is responsible for :meth:`~AgentRun.close`-ing it once.
+        Provision the compute, populate the agent working directory in the
+        container, and configure necessary agent credentials. Then, launch the
+        agent and return a live handle to the in-flight run.
+
+        The caller is responsible for draining the :meth:`AgentRun.stdout` stream,
+        otherwise the agent may block on a full stdout buffer. Additionally, the
+        caller should :meth:`~AgentRun.close` the run once done to release the
+        compute and capture any partial output. It is recommended to use
+        :meth:`collect` which handles both of these responsibilities.
 
         Parameters
         ----------
         wd : pathlib.Path
-            The agent working directory, already configured via
-            :meth:`configure_wd`.
+            The agent working directory on the host.
         """
         # Print the path to the agent's JSONL output for easy monitoring in real time
         print(f"  [flare] monitor: tail -f {wd / 'agent_output.jsonl'}")
         return self.runner.start(wd, self.auth_spec())
 
     def collect(self, agent: AgentRun, wd: Path) -> HarnessRunResult:
-        """Drive a started ``agent`` to completion and parse its result.
+        """Collect agent output until completion, then parse it and return the result.
 
-        Streams the agent's ``stdout`` into ``wd/agent_output.jsonl`` on the host
-        (so ``tail -f`` works the same for every backend), tears the run down via
-        :meth:`~AgentRun.close` (capturing partial artifacts), then parses the
-        JSONL (agent-specific) for tokens, cost, and stop reason. A
-        :meth:`~AgentRun.cancel` from another thread ends the stream early; the
-        partial output is collected exactly the same way.
+        Agent output is written to ``agent_output.jsonl`` in the working directory
+        as a stream of JSON lines. When the agent process exits, the agent run is
+        closed, and the final results are parsed and returned.
 
         Returns
         -------
@@ -193,10 +188,11 @@ class Harness(ABC):
         return HarnessRunResult(duration_s=round(agent.duration_s, 1), **parsed)
 
     def run(self, wd: Path) -> HarnessRunResult:
-        """Blocking convenience: :meth:`start` the agent and :meth:`collect` it.
+        """Start the agent and collect the results.
 
-        Use the :meth:`start` / :meth:`collect` pair directly when an external
-        owner needs to hold the :class:`AgentRun` handle to cancel it.
+        If the called needs direct access to the live AgentRun handle in order
+        to cancel the run from another thread, it can call :meth:`start` and
+        :meth:`collect` separately.
         """
         return self.collect(self.start(wd), wd)
 

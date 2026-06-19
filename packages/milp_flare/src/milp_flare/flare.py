@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import dataclasses
 import json
 import re
@@ -94,6 +92,53 @@ class FLAREResult:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+class FLARERun:
+    """Handle to an in-flight :class:`FLARE` run.
+
+    Parameters
+    ----------
+    flare : FLARE
+        The parent FLARE instance.
+    wd : pathlib.Path
+        The agent working directory on the host.
+    artifacts_dir : pathlib.Path
+        The directory where FLARE artifacts (config, result) are written.
+    agent : AgentRun
+        The live agent run handle returned by the harness.
+    """
+
+    def __init__(
+        self,
+        flare: "FLARE",
+        wd: Path,
+        artifacts_dir: Path,
+        agent: AgentRun,
+    ) -> None:
+        self._flare = flare
+        self._wd = wd
+        self._artifacts_dir = artifacts_dir
+        self._agent = agent
+
+    def cancel(self) -> None:
+        """Cancel the run, unblocking :meth:`result` with partial output."""
+        self._agent.cancel()
+
+    def result(self) -> FLAREResult:
+        """Block until the run completes, evaluate it, and write artifacts."""
+        run_result = self._flare.harness.collect(self._agent, self._wd)
+
+        meta = self._flare._evaluate(self._wd)
+        meta.update(dataclasses.asdict(run_result))
+        (self._artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
+
+        return FLAREResult(
+            is_reformulation=meta["is_reformulation"],
+            duration_s=meta.get("duration_s"),
+            cost_usd=meta.get("cost_usd"),
+            metadata=meta,
+        )
+
+
 class FLARE:
     """Agentic MILP reformulation verifier.
 
@@ -166,9 +211,7 @@ class FLARE:
         formulation ``a`` according to the :fb:`/definitions.html` definition of
         reformulation. This method creates the agent working directory (see
         below) and *starts* the agent, returning a :class:`FLARERun` the caller
-        drives to completion with :meth:`FLARERun.result` (which evaluates the
-        output and populates ``output_path``) or stops with
-        :meth:`FLARERun.cancel`.
+        drives to completion with :meth:`FLARERun.result`.
 
         ``output_path`` is populated (by :meth:`FLARERun.result`) with:
 
@@ -416,50 +459,3 @@ class FLARE:
         axioms = [a.strip() for a in match.group(1).split(",") if a.strip()]
         no_new_axioms = all(a in STANDARD_AXIOMS for a in axioms)
         return no_new_axioms, axioms
-
-
-class FLARERun:
-    """Handle to an in-flight :class:`FLARE` run, cancellable from any thread.
-
-    Returned by :meth:`FLARE.start`. The agent is already running when the handle
-    exists, so :meth:`cancel` reaches it directly — there is no callback wiring
-    or cancel-before-start race. The work is driven to completion in
-    :meth:`result`; cancellation captures whatever partial artifacts exist.
-    """
-
-    def __init__(
-        self,
-        flare: FLARE,
-        wd: Path,
-        artifacts_dir: Path,
-        agent: AgentRun,
-    ) -> None:
-        self._flare = flare
-        self._wd = wd
-        self._artifacts_dir = artifacts_dir
-        self._agent = agent
-
-    def cancel(self) -> None:
-        """Stop the run. Idempotent and thread-safe.
-
-        Forwards to :meth:`AgentRun.cancel`, which acts purely on the backend's
-        durable address (container name / Sandbox). A concurrent :meth:`result`
-        then ends its stream early and captures the partial artifacts on
-        teardown.
-        """
-        self._agent.cancel()
-
-    def result(self) -> FLAREResult:
-        """Block until the run completes, evaluate it, and write artifacts."""
-        run_result = self._flare.harness.collect(self._agent, self._wd)
-
-        meta = self._flare._evaluate(self._wd)
-        meta.update(dataclasses.asdict(run_result))
-        (self._artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-
-        return FLAREResult(
-            is_reformulation=meta["is_reformulation"],
-            duration_s=meta.get("duration_s"),
-            cost_usd=meta.get("cost_usd"),
-            metadata=meta,
-        )

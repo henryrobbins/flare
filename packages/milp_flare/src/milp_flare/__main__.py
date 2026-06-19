@@ -31,22 +31,16 @@ def build_image(tag: str, no_cache: bool) -> int:
 
 
 def build_modal_image(name: str, app_name: str, force: bool) -> int:
-    """Build the root-based agent image on Modal and publish it as `name`.
+    """Build and publish the Modal image via Modal's builder methods.
 
-    Defines the image programmatically with Modal's builder methods rather than
-    via a Dockerfile. Modal caches one layer per builder call, so the expensive
-    system-setup steps (apt, the Node agent CLIs, elan, pipx) depend on no local
-    files and stay cached across builds; only the layers that bake in the Lean
-    skeleton and entrypoint re-run when those files actually change.
+    The image is built with Modal's Python SDK to achieve better caching and
+    faster iteration than the :meth:`Modal.Image.from_dockerfile` method
+    provides. This should be kept in sync with the Dockerfile at
+    ``assets/docker/Dockerfile``.
 
-    Modal builds (and runs) as root and ignores ``USER``, which is exactly the
-    root-only design this backend needs: every tool is installed to a global
-    location on root's PATH. The published named image is referenced by Sandboxes
-    via ``modal.Image.from_name(name)``.
-
-    The Lean skeleton under ``assets/lean/`` is symlinked into the repo's
-    ``dataset/`` in a dev checkout, so it is staged into a temp dir with symlinks
-    dereferenced before being baked in (mirrors :func:`build_image`).
+    There are two notable differences to the Dockerfile:
+    - The Modal image runs as root and installs all tools globally.
+    - The Modal image does not have an ENTRYPOINT.
     """
     try:
         import modal
@@ -62,8 +56,7 @@ def build_modal_image(name: str, app_name: str, force: bool) -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         # Stage only the Lean skeleton, dereferencing symlinks so the COPY-into
-        # the image resolves in a dev checkout. The entrypoint is a real file and
-        # is baked in directly from the package.
+        # the image resolves in a dev checkout.
         lean_ctx = Path(tmp) / "lean"
         shutil.copytree(LEAN_DIR, lean_ctx, symlinks=False)
 
@@ -119,9 +112,9 @@ def build_modal_image(name: str, app_name: str, force: bool) -> int:
             .run_commands("lake exe cache get")
             # Pre-build Common so its olean is warm in /workspace/.lake/build/.
             .run_commands("lake build Common")
-            # The runner script: NOT set as the ENTRYPOINT (a Modal Sandbox runs
-            # the entrypoint at creation time, before wd is populated). The
-            # sandbox runner invokes /usr/local/bin/run-agent explicitly instead.
+            # There is no ENTRYPOINT. The sandbox runner invokes
+            # /usr/local/bin/run-agent explicitly after the working directory
+            # has been populated.
             .add_local_file(str(entrypoint), "/usr/local/bin/run-agent", copy=True)
             .run_commands("chmod +x /usr/local/bin/run-agent")
         )
