@@ -114,14 +114,7 @@ def kill_run_containers(run_id: str) -> None:
 
 
 def kill_run_sandboxes(run_id: str) -> None:
-    """`terminate` every Modal Sandbox tagged flare-run=<run_id>.
-
-    The Modal analogue of :func:`kill_run_containers`: the Modal backend tags
-    each Sandbox with its ``flare-run`` run ID, so on Ctrl+C we can reap the
-    whole batch by tag. This is the backstop the per-run cooperative cancel
-    can't cover — Sandboxes whose driving thread is wedged, or any leaked
-    during the long ``Sandbox.create`` / push setup window. ``modal`` is an
-    optional dependency, so a missing install is silently a no-op."""
+    """`terminate` every Modal Sandbox tagged flare-run=<run_id>."""
     try:
         import modal
     except ModuleNotFoundError:
@@ -147,37 +140,24 @@ def drain_with_interrupt(
     on_result: Callable[[Future[Any]], None],
     registry: RunRegistry,
 ) -> None:
-    """Iterate `as_completed(futures)` calling `on_result(future)` for each;
-    on KeyboardInterrupt, cancel in-flight runs, drain the executor, then sweep
+    """Iterate through the task futures, calling `on_result` as each completed.
+
+    On KeyboardInterrupt, cancel in-flight runs, drain the executor, then sweep
     any leaked containers / Modal Sandboxes.
-
-    `registry.cancel_all()` stops each in-flight run by canceling its live agent
-    handle directly — `docker kill` on Docker, `pkill` inside the Sandbox on
-    Modal. Either way the worker's streaming loop ends promptly and its `verify`
-    unwinds, capturing partial artifacts and tearing down its own
-    container/Sandbox. The cancellation path is symmetric across backends, so
-    this owns in-flight runs on both.
-
-    `kill_run_containers` / `kill_run_sandboxes` then run *after* the drain as
-    pure leak backstops: a healthy worker has already torn down its own compute,
-    so the tag-scoped sweep only reaps genuine leaks (a worker that died before
-    its `finally`). Both reapers are no-ops when their backend isn't in use."""
+    """
     futures = list(futures)
     try:
         for future in as_completed(futures):
             on_result(future)
     except KeyboardInterrupt:
         print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
-        # Stop each in-flight run by canceling its live agent handle (Docker +
-        # Modal). Workers end their stream, capture partial artifacts, and tear
-        # down their own container/Sandbox.
+        # Cancel each in-flight run (captures partial artifacts and tears down)
         registry.cancel_all()
         for f in futures:
             f.cancel()
         # wait=True drains the now-canceled workers promptly.
         executor.shutdown(wait=True, cancel_futures=True)
         # Backstops: reap any container/Sandbox the cooperative path left behind
-        # (e.g. a worker that died before its own teardown).
         kill_run_containers(run_id)
         kill_run_sandboxes(run_id)
         raise SystemExit(130)
