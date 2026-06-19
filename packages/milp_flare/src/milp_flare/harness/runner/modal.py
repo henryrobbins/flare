@@ -183,7 +183,7 @@ class ModalRunner(Runner):
                 "-c",
                 "exec /usr/local/bin/run-agent "
                 "< /dev/null "  # redirect stdin from /dev/null
-                "2> {REMOTE_WD}/modal_stderr.txt",  # redirect stderr to a file
+                f"2> {REMOTE_WD}/modal_stderr.txt",  # redirect stderr to a file
                 workdir=REMOTE_WD,
             )
         except BaseException:
