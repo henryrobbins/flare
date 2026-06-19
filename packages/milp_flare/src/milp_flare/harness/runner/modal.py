@@ -137,16 +137,6 @@ class ModalRunner(Runner):
     def image(self) -> str:
         return self._image
 
-    def _modal_secret(self, auth: AuthSpec) -> modal.Secret:
-        """Create a Modal Secret from the AuthSpec environment variables."""
-        secret_dict: dict[str, str | None] = {
-            name: os.environ[name] for name in auth.env
-        }
-        # IS_SANDBOX=1 lets Claude's bypassPermissions mode run as root (Modal
-        # ignores the image's USER and runs everything as root).
-        secret_dict["IS_SANDBOX"] = "1"
-        return modal.Secret.from_dict(secret_dict)
-
     def start(self, wd: Path, auth: AuthSpec) -> AgentRun:
         _require_modal()
         import modal
@@ -154,12 +144,21 @@ class ModalRunner(Runner):
         app = modal.App.lookup(self.app, create_if_missing=True)
         image = modal.Image.from_name(self._image)
 
+        # Create a Modal Secret from the AuthSpec environment variables.
+        secret_dict: dict[str, str | None] = {
+            name: os.environ[name] for name in auth.env
+        }
+        # IS_SANDBOX=1 lets Claude's bypassPermissions mode run as root (Modal
+        # ignores the image's USER and runs everything as root).
+        secret_dict["IS_SANDBOX"] = "1"
+        secret = modal.Secret.from_dict(secret_dict)
+
         # Create an idle Sandbox with no main process. We must push the working
         # directory before start the agent with exec.
         sb = modal.Sandbox.create(
             app=app,
             image=image,
-            secrets=[self._modal_secret(auth)],
+            secrets=[secret],
             cpu=self.cpu,
             memory=self.memory,
             timeout=self.timeout,
