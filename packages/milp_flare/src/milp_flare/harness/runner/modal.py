@@ -151,6 +151,10 @@ class ModalRunner(Runner):
         # IS_SANDBOX=1 lets Claude's bypassPermissions mode run as root (Modal
         # ignores the image's USER and runs everything as root).
         secret_dict["IS_SANDBOX"] = "1"
+        # Pin Lean's thread pool to the reserved core count to ensure Lean
+        # doesn't oversubscribe causing thrashing from thread count exceeding
+        # the available core capacity.
+        secret_dict["LEAN_NUM_THREADS"] = str(max(1, int(self.cpu)))
         secret = modal.Secret.from_dict(secret_dict)
 
         # Create an idle Sandbox with no main process. We must push the working
@@ -164,7 +168,6 @@ class ModalRunner(Runner):
             timeout=self.timeout,
         )
 
-        start = time.time()
         try:
             # Tag with the FLARE run ID for easy identification.
             run_id = os.environ.get("FLARE_RUN_ID")
@@ -173,6 +176,20 @@ class ModalRunner(Runner):
 
             # Push the agent working directory
             self._push_wd(sb, wd, auth)
+
+            # Warm the Lean build cache before the agent starts. Modal lazily
+            # pages image layers in on first read, so the first `lake build`
+            # inside the Sandbox pays a large cold-read penalty.
+            # This requires setting up the .lake symlink inside the Sandbox.
+            sb.exec(
+                "bash",
+                "-c",
+                f"ln -sfn /workspace/.lake {REMOTE_WD}/.lake && lake build",
+                workdir=REMOTE_WD,
+            ).wait()
+
+            # Start the agent-duration clock after push + warmup
+            start = time.time()
 
             # Redirect run-agent's stdin from /dev/null. Modal's exec leaves
             # stdin an open pipe with no EOF, so the agent CLIs block reading
