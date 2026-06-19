@@ -43,6 +43,9 @@ class AgentRun(AbstractContextManager["AgentRun"]):
 
     Attributes
     ----------
+    stdout : Iterator[str]
+        Iterator yielding the agent's ``stdout`` lines until the process exits
+        (EOF).
     duration_s : float
         Wall-clock duration of the run, in seconds. ``0.0`` until :meth:`close`
         runs and sets it.
@@ -63,9 +66,7 @@ class AgentRun(AbstractContextManager["AgentRun"]):
 
     @property
     @abstractmethod
-    def stdout(self) -> Iterator[str]:
-        """Yield the agent's ``stdout`` lines until the process exits (EOF)."""
-        ...
+    def stdout(self) -> Iterator[str]: ...
 
     @abstractmethod
     def cancel(self) -> None:
@@ -111,6 +112,8 @@ class Runner(ABC):
         Compute backend identifier (e.g. ``"docker"``).
     home : str
         Absolute path of the container ``HOME`` for this backend.
+    image : str
+        Image identifier for this runner.
     """
 
     name: ClassVar[str]
@@ -118,9 +121,7 @@ class Runner(ABC):
 
     @property
     @abstractmethod
-    def image(self) -> str:
-        """Image identifier for this runner."""
-        ...
+    def image(self) -> str: ...
 
     @abstractmethod
     def start(self, wd: Path, auth: AuthSpec) -> AgentRun:

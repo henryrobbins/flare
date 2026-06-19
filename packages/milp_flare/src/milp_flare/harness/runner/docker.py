@@ -66,9 +66,9 @@ class DockerRunner(Runner):
 
     Parameters
     ----------
-    image : str, default :const:`IMAGE`
+    image : str, default :const:`~milp_flare.harness.runner.base.IMAGE`
         The Docker image tag to run. Built via ``milp-flare build-docker-image``;
-        see :doc:`/installation`.
+        see :doc:`/user_guide/docker`.
     """
 
     name: ClassVar[str] = "docker"

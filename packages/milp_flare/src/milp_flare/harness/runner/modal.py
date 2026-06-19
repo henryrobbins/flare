@@ -103,9 +103,9 @@ class ModalRunner(Runner):
 
     Parameters
     ----------
-    image : str, default :const:`IMAGE`
+    image : str, default :const:`~milp_flare.harness.runner.base.IMAGE`
         The Modal named image to launch. Built via ``milp-flare build-modal-image``;
-        see :doc:`/installation`.
+        see :doc:`/user_guide/modal`.
     app : str, default ``"flare"``
         The Modal app the Sandbox is associated with.
     cpu : float, default ``4.0``
