@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import dataclasses
 import json
 import re
 import shutil
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -153,21 +154,23 @@ class FLARE:
         """
         return self.harness.get_config_dict()
 
-    def verify(
+    def start(
         self,
         a: FormulationInput,
         b: FormulationInput,
         output_path: Path,
-        *,
-        on_start: Callable[[AgentRun], None] | None = None,
-    ) -> FLAREResult:
-        """Run FLARE on a pair of MILP formulations.
+    ) -> FLARERun:
+        """Start a FLARE run on a pair of MILP formulations and return a handle.
 
-        Run FLARE to determine if formulation ``b`` is a reformulation of
-        formulation ``a`` according to the :fb:`/definitions.html`
-        definition of reformulation. This method creates the agent working
-        directory (see below), triggers the agent, and evaluates the
-        agent output. Finally, it populates ``output_path`` with:
+        Determines (asynchronously) if formulation ``b`` is a reformulation of
+        formulation ``a`` according to the :fb:`/definitions.html` definition of
+        reformulation. This method creates the agent working directory (see
+        below) and *starts* the agent, returning a :class:`FLARERun` the caller
+        drives to completion with :meth:`FLARERun.result` (which evaluates the
+        output and populates ``output_path``) or stops with
+        :meth:`FLARERun.cancel`.
+
+        ``output_path`` is populated (by :meth:`FLARERun.result`) with:
 
         - The agent working directory (``wd/``)
         - The FLARE configuration (``config.json``)
@@ -203,16 +206,42 @@ class FLARE:
             Inputs for formulation B (the candidate reformulation of A).
         output_path : pathlib.Path
             Directory to populate with run artifacts.
-        on_start : Callable[[AgentRun], None], optional
-            Forwarded to :meth:`Harness.run`. Called once with the live
-            :class:`~milp_flare.harness.AgentRun` as soon as the agent starts, so
-            an external owner can :meth:`~milp_flare.harness.AgentRun.cancel` the
-            run from another thread (capturing partial artifacts on teardown).
 
         Returns
         -------
-        result : FLAREResult
-            The verdict, duration, cost, and per-check metadata.
+        run : FLARERun
+            A handle to the in-flight run. Call :meth:`~FLARERun.result` to block
+            for the verdict, or :meth:`~FLARERun.cancel` to stop it.
+
+        See :doc:`/user_guide/run_flare` for more example usage.
+        """
+        # Create the artifacts directory at the output path and write config
+        artifacts_dir = output_path
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+        (artifacts_dir / "config.json").write_text(
+            json.dumps(self.get_config_dict(), indent=2)
+        )
+
+        # Setup the agent's working directory and start the agent. Provisioning
+        # the compute happens here, so the returned handle's AgentRun already
+        # exists — cancel() can reach it with no callback or race.
+        wd = artifacts_dir / "wd"
+        self._setup_wd(wd, a, b)
+        agent = self.harness.start(wd)
+        return FLARERun(self, wd, artifacts_dir, agent)
+
+    def verify(
+        self,
+        a: FormulationInput,
+        b: FormulationInput,
+        output_path: Path,
+    ) -> FLAREResult:
+        """Run FLARE on a pair of formulations and block for the result.
+
+        Blocking convenience equivalent to ``start(a, b, output_path).result()``.
+        Use :meth:`start` directly when an external owner needs to hold the
+        :class:`FLARERun` handle to :meth:`~FLARERun.cancel` it from another
+        thread.
 
         Examples
         --------
@@ -231,34 +260,8 @@ class FLARE:
             1.49
             result.duration_s
             322
-
-        See :doc:`/user_guide/run_flare` for more example usage.
         """
-        # Create the artifacts directory at the output path and write config
-        artifacts_dir = output_path
-        artifacts_dir.mkdir(parents=True, exist_ok=True)
-        (artifacts_dir / "config.json").write_text(
-            json.dumps(self.get_config_dict(), indent=2)
-        )
-
-        # Setup the agent's working directory
-        wd = artifacts_dir / "wd"
-        self._setup_wd(wd, a, b)
-
-        # Run the agent harness
-        run_result = self.harness.run(wd, on_start=on_start)
-
-        # Evaluate the agent's output to obtain final result and write metadata
-        meta = self._evaluate(wd)
-        meta.update(dataclasses.asdict(run_result))
-        (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-
-        return FLAREResult(
-            is_reformulation=meta["is_reformulation"],
-            duration_s=meta.get("duration_s"),
-            cost_usd=meta.get("cost_usd"),
-            metadata=meta,
-        )
+        return self.start(a, b, output_path).result()
 
     def _setup_wd(
         self,
@@ -413,3 +416,50 @@ class FLARE:
         axioms = [a.strip() for a in match.group(1).split(",") if a.strip()]
         no_new_axioms = all(a in STANDARD_AXIOMS for a in axioms)
         return no_new_axioms, axioms
+
+
+class FLARERun:
+    """Handle to an in-flight :class:`FLARE` run, cancellable from any thread.
+
+    Returned by :meth:`FLARE.start`. The agent is already running when the handle
+    exists, so :meth:`cancel` reaches it directly — there is no callback wiring
+    or cancel-before-start race. The work is driven to completion in
+    :meth:`result`; cancellation captures whatever partial artifacts exist.
+    """
+
+    def __init__(
+        self,
+        flare: FLARE,
+        wd: Path,
+        artifacts_dir: Path,
+        agent: AgentRun,
+    ) -> None:
+        self._flare = flare
+        self._wd = wd
+        self._artifacts_dir = artifacts_dir
+        self._agent = agent
+
+    def cancel(self) -> None:
+        """Stop the run. Idempotent and thread-safe.
+
+        Forwards to :meth:`AgentRun.cancel`, which acts purely on the backend's
+        durable address (container name / Sandbox). A concurrent :meth:`result`
+        then ends its stream early and captures the partial artifacts on
+        teardown.
+        """
+        self._agent.cancel()
+
+    def result(self) -> FLAREResult:
+        """Block until the run completes, evaluate it, and write artifacts."""
+        run_result = self._flare.harness.collect(self._agent, self._wd)
+
+        meta = self._flare._evaluate(self._wd)
+        meta.update(dataclasses.asdict(run_result))
+        (self._artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
+
+        return FLAREResult(
+            is_reformulation=meta["is_reformulation"],
+            duration_s=meta.get("duration_s"),
+            cost_usd=meta.get("cost_usd"),
+            metadata=meta,
+        )

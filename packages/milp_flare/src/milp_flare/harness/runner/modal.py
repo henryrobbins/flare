@@ -14,8 +14,7 @@ import os
 import tarfile
 import tempfile
 import time
-from collections.abc import Callable, Iterator
-from contextlib import contextmanager
+from collections.abc import Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
@@ -60,9 +59,19 @@ class ModalAgentRun(AgentRun):
     output before the Sandbox is terminated.
     """
 
-    def __init__(self, proc: Any, cancel_fn: Callable[[], None]) -> None:
+    def __init__(
+        self,
+        proc: Any,
+        sb: Any,
+        wd: Path,
+        runner: ModalRunner,
+        start: float,
+    ) -> None:
+        super().__init__(start)
         self._proc = proc
-        self._cancel_fn = cancel_fn
+        self._sb = sb
+        self._wd = wd
+        self._runner = runner
 
     @property
     def stdout(self) -> Iterator[str]:
@@ -72,7 +81,19 @@ class ModalAgentRun(AgentRun):
             yield line.rstrip("\n")
 
     def cancel(self) -> None:
-        self._cancel_fn()
+        # Stop the agent via the durable address (the Sandbox), leaving the
+        # Sandbox alive so _teardown can still pull partial artifacts.
+        self._runner._kill_agent(self._sb)
+
+    def _teardown(self) -> None:
+        # Stop the agent (no-op if it already exited), then pull whatever
+        # artifacts exist off the still-live Sandbox and terminate it. The pull
+        # goes through the Sandbox filesystem API, independent of the agent
+        # process, so it works the same whether the run finished or was canceled.
+        self.cancel()
+        self._proc.wait()
+        self._runner._pull_wd(self._sb, self._wd)
+        self._runner._terminate(self._sb)
 
 
 class ModalRunner(Runner):
@@ -133,8 +154,7 @@ class ModalRunner(Runner):
     def image(self) -> str:
         return self._image
 
-    @contextmanager
-    def run(self, wd: Path, auth: AuthSpec) -> Iterator[AgentRun]:
+    def start(self, wd: Path, auth: AuthSpec) -> AgentRun:
         modal = _require_modal()
 
         app = modal.App.lookup(self.app, create_if_missing=True)
@@ -164,6 +184,8 @@ class ModalRunner(Runner):
             # Tag with the FLARE run ID first thing, so a batch-level reaper
             # (experiments' kill_run_sandboxes) can find and terminate this
             # Sandbox by tag even if the worker dies before its own teardown.
+            # This also covers a cancel that arrives during provisioning, before
+            # the handle is returned.
             run_id = os.environ.get("FLARE_RUN_ID")
             if run_id:
                 sb.set_tags({"flare-run": run_id})
@@ -190,28 +212,25 @@ class ModalRunner(Runner):
                 f"< /dev/null 2> {REMOTE_WD}/modal_stderr.txt",
                 workdir=REMOTE_WD,
             )
-            agent = ModalAgentRun(proc, lambda: self._kill_agent(sb))
-            try:
-                yield agent
-            finally:
-                # Ensure the agent is stopped (a no-op if it already exited),
-                # then pull whatever artifacts exist off the still-live Sandbox.
-                agent.cancel()
-                proc.wait()
-                self._pull_wd(sb, wd)
-                agent.duration_s = time.time() - start
-        finally:
-            # Tear down the Sandbox. Tolerate it being already gone (an external
-            # batch reaper may have terminated it) so cleanup never masks the
-            # original control flow.
-            try:
-                sb.terminate()
-            except Exception:
-                log.debug("terminate: Sandbox already gone")
-            try:
-                sb.detach()
-            except Exception:
-                log.debug("detach: Sandbox already gone")
+        except BaseException:
+            # Provisioning failed after the Sandbox was created; release it
+            # before propagating so a failed start never leaks compute.
+            self._terminate(sb)
+            raise
+        return ModalAgentRun(proc, sb, wd, self, start)
+
+    def _terminate(self, sb: modal.Sandbox) -> None:
+        """Tear down the Sandbox. Tolerate it being already gone (an external
+        batch reaper may have terminated it) so cleanup never masks the original
+        control flow."""
+        try:
+            sb.terminate()
+        except Exception:
+            log.debug("terminate: Sandbox already gone")
+        try:
+            sb.detach()
+        except Exception:
+            log.debug("detach: Sandbox already gone")
 
     def _kill_agent(self, sb: modal.Sandbox) -> None:
         """Stop the agent process inside the Sandbox, leaving the Sandbox alive.

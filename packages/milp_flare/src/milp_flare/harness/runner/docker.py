@@ -7,9 +7,8 @@ import subprocess
 import time
 import uuid
 from collections.abc import Iterator
-from contextlib import contextmanager
 from pathlib import Path
-from typing import ClassVar
+from typing import IO, ClassVar
 
 from milp_flare.harness.runner.base import AgentRun, AuthSpec, Runner
 
@@ -28,9 +27,17 @@ class DockerAgentRun(AgentRun):
     are already visible on the host — there is nothing to pull back.
     """
 
-    def __init__(self, popen: subprocess.Popen[str], name: str) -> None:
+    def __init__(
+        self,
+        popen: subprocess.Popen[str],
+        name: str,
+        stderr_f: IO[bytes],
+        start: float,
+    ) -> None:
+        super().__init__(start)
         self._popen = popen
         self._name = name
+        self._stderr_f = stderr_f
 
     @property
     def stdout(self) -> Iterator[str]:
@@ -41,18 +48,23 @@ class DockerAgentRun(AgentRun):
             yield line.rstrip("\n")
 
     def cancel(self) -> None:
-        # Kill the container by name (not the Popen client). Idempotent and safe
-        # to re-issue; ignore failures (e.g. already exited). The agent's
-        # partial Lean files are already on the host via the bind mount.
+        # Kill the container by name (the durable address), not the Popen
+        # client. Idempotent and safe to re-issue from any thread; ignore
+        # failures (e.g. already exited). The agent's partial Lean files are
+        # already on the host via the bind mount.
         subprocess.run(
             ["docker", "kill", self._name],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
-    def _wait(self) -> None:
-        """Block until the container has fully exited (idempotent)."""
+    def _teardown(self) -> None:
+        # Ensure the container is stopped (a no-op if it already exited), reap
+        # it, and close the stderr sink. The bind mount means artifacts are
+        # already on the host, so there is nothing to pull back.
+        self.cancel()
         self._popen.wait()
+        self._stderr_f.close()
 
 
 class DockerRunner(Runner):
@@ -81,14 +93,15 @@ class DockerRunner(Runner):
     def image(self) -> str:
         return self._image
 
-    @contextmanager
-    def run(self, wd: Path, auth: AuthSpec) -> Iterator[AgentRun]:
+    def start(self, wd: Path, auth: AuthSpec) -> AgentRun:
         # A unique per-run name lets cancel() stop just this container.
         container = f"flare-{uuid.uuid4().hex[:12]}"
         start = time.time()
         # Redirect stderr straight to a file so the undrained pipe can't deadlock
-        # the run; stdout stays a pipe we stream line by line.
-        with open(wd / "docker_stderr.txt", "wb") as stderr_f:
+        # the run; stdout stays a pipe we stream line by line. The handle owns
+        # the file and closes it on teardown.
+        stderr_f = open(wd / "docker_stderr.txt", "wb")
+        try:
             popen = subprocess.Popen(
                 self._build_docker_cmd(wd, auth, name=container),
                 stdout=subprocess.PIPE,
@@ -100,16 +113,10 @@ class DockerRunner(Runner):
                 # detaches the subprocess from the terminal's process group.
                 start_new_session=True,
             )
-            agent = DockerAgentRun(popen, container)
-            try:
-                yield agent
-            finally:
-                # Ensure the container is stopped (a no-op if it already exited),
-                # then wait for it to fully reap. The bind mount means artifacts
-                # are already on the host, so there is nothing to pull back.
-                agent.cancel()
-                agent._wait()
-                agent.duration_s = time.time() - start
+        except BaseException:
+            stderr_f.close()
+            raise
+        return DockerAgentRun(popen, container, stderr_f, start)
 
     def _build_docker_cmd(
         self, wd: Path, auth: AuthSpec, name: str | None = None

@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, ClassVar
@@ -138,52 +137,51 @@ class Harness(ABC):
         # See milp_flare/assets/docker/entrypoint.sh
         (wd / "agent.sh").write_text(self._agent_command())
 
-    def run(
-        self,
-        wd: Path,
-        *,
-        on_start: Callable[[AgentRun], None] | None = None,
-    ) -> HarnessRunResult:
-        """Run the agent on the configured compute backend.
+    def start(self, wd: Path) -> AgentRun:
+        """Provision the compute and start the agent, returning a live handle.
 
-        Delegates execution to :attr:`runner` (Docker or Modal): it populates
-        ``wd`` into the container and yields a live :class:`AgentRun`. This
-        method streams the agent's ``stdout`` into ``wd/agent_output.jsonl`` on
-        the host (so ``tail -f`` works the same for every backend), then parses
-        that file (agent-specific) for tokens, cost, and stop reason.
+        Delegates to :attr:`runner` (Docker or Modal), which populates ``wd``
+        into the container and starts the agent. The returned :class:`AgentRun`
+        owns the run's lifecycle: the caller streams it (typically via
+        :meth:`collect`), may :meth:`~AgentRun.cancel` it from another thread,
+        and is responsible for :meth:`~AgentRun.close`-ing it once.
 
         Parameters
         ----------
         wd : pathlib.Path
             The agent working directory, already configured via
             :meth:`configure_wd`.
-        on_start : Callable[[AgentRun], None], optional
-            Called once with the live :class:`AgentRun` as soon as the agent has
-            started. Lets an external owner (e.g. a cancellable run handle)
-            capture the handle so it can :meth:`~AgentRun.cancel` the run from
-            another thread.
+        """
+        # Print the path to the agent's JSONL output for easy monitoring in real time
+        print(f"  [flare] monitor: tail -f {wd / 'agent_output.jsonl'}")
+        return self.runner.start(wd, self.auth_spec())
+
+    def collect(self, agent: AgentRun, wd: Path) -> HarnessRunResult:
+        """Drive a started ``agent`` to completion and parse its result.
+
+        Streams the agent's ``stdout`` into ``wd/agent_output.jsonl`` on the host
+        (so ``tail -f`` works the same for every backend), tears the run down via
+        :meth:`~AgentRun.close` (capturing partial artifacts), then parses the
+        JSONL (agent-specific) for tokens, cost, and stop reason. A
+        :meth:`~AgentRun.cancel` from another thread ends the stream early; the
+        partial output is collected exactly the same way.
 
         Returns
         -------
         result : HarnessRunResult
             Duration, cost, token counts, and stop reason.
         """
-
-        # Print the path to the agent's JSONL output for easy monitoring in real time
         jsonl_path = wd / "agent_output.jsonl"
-        print(f"  [flare] monitor: tail -f {jsonl_path}")
-
-        # Execute the agent on the compute backend (docker / modal). The host
-        # rebuilds agent_output.jsonl live from the streamed stdout lines, so the
-        # file exists and grows the same way on every backend.
-        with self.runner.run(wd, self.auth_spec()) as agent:
-            if on_start is not None:
-                on_start(agent)
+        # The host rebuilds agent_output.jsonl live from the streamed stdout
+        # lines, so the file exists and grows the same way on every backend.
+        try:
             with jsonl_path.open("w") as f:
                 for line in agent.stdout:
                     f.write(line)
                     f.write("\n")
                     f.flush()
+        finally:
+            agent.close()
 
         parsed = self._parse_stream(jsonl_path)
         # Codex doesn't surface per-turn USD; fill from token totals.
@@ -193,6 +191,14 @@ class Harness(ABC):
             )
 
         return HarnessRunResult(duration_s=round(agent.duration_s, 1), **parsed)
+
+    def run(self, wd: Path) -> HarnessRunResult:
+        """Blocking convenience: :meth:`start` the agent and :meth:`collect` it.
+
+        Use the :meth:`start` / :meth:`collect` pair directly when an external
+        owner needs to hold the :class:`AgentRun` handle to cancel it.
+        """
+        return self.collect(self.start(wd), wd)
 
     @abstractmethod
     def _agent_command(self) -> str:

@@ -9,7 +9,6 @@ writes a synthetic `agent_output.jsonl` instead of executing any container.
 from __future__ import annotations
 
 from collections.abc import Iterator
-from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -37,10 +36,10 @@ class _StubAgentRun(AgentRun):
 class _StubRunner(Runner):
     """Runner that streams a caller-supplied agent output (no real backend).
 
-    ``output`` is the text the agent "writes" to stdout; :class:`Harness.run`
+    ``output`` is the text the agent "writes" to stdout; :meth:`Harness.collect`
     rebuilds ``wd/agent_output.jsonl`` from it. ``None`` streams nothing,
     simulating an agent that produced no output. The last :class:`AuthSpec` it
-    received is recorded on ``last_auth``, and the last published handle on
+    received is recorded on ``last_auth``, and the last started handle on
     ``last_agent``.
     """
 
@@ -56,16 +55,12 @@ class _StubRunner(Runner):
     def image(self) -> str:
         return "stub-image"
 
-    @contextmanager
-    def run(self, wd: Path, auth: AuthSpec) -> Iterator[AgentRun]:
+    def start(self, wd: Path, auth: AuthSpec) -> AgentRun:
         self.last_auth = auth
         lines = self.output.splitlines() if self.output is not None else []
         agent = _StubAgentRun(lines)
         self.last_agent = agent
-        try:
-            yield agent
-        finally:
-            agent.duration_s = 0.0
+        return agent
 
 
 class _StubHarness(Harness):
@@ -167,17 +162,20 @@ def test_run_streams_stdout_into_agent_output(tmp_path: Path) -> None:
     assert (wd / "agent_output.jsonl").read_text() == '{"a": 1}\n{"b": 2}\n'
 
 
-def test_run_publishes_handle_via_on_start(tmp_path: Path) -> None:
-    """`run` calls on_start once with the live AgentRun handle."""
+def test_start_returns_live_handle(tmp_path: Path) -> None:
+    """`start` hands back the runner's live AgentRun directly — no callback.
+
+    The handle exists the moment `start` returns, which is what lets an external
+    owner cancel it from another thread without any `on_start` plumbing.
+    """
     wd = tmp_path / "wd"
     wd.mkdir()
     runner = _StubRunner()
     harness = _StubHarness(model="claude-opus-4-7", runner=runner)
 
-    seen: list[AgentRun] = []
-    harness.run(wd, on_start=seen.append)
+    agent = harness.start(wd)
 
-    assert seen == [runner.last_agent]
+    assert agent is runner.last_agent
 
 
 def test_run_defaults_to_docker_runner() -> None:

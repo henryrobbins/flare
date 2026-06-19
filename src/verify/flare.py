@@ -1,9 +1,9 @@
-import threading
 from pathlib import Path
 from typing import Any
 
 from formulation_bench import Formulation
-from milp_flare import FLARE, AgentRun, FormulationInput, Harness
+from milp_flare import FLARE, FormulationInput, Harness
+from milp_flare.flare import FLARERun
 
 from src.verify.base import (
     ReformulationResult,
@@ -15,60 +15,25 @@ from src.verify.base import (
 class FLAREVerifierRun(ReformulationRun):
     """In-flight FLARE run, cancellable from another thread.
 
-    FLARE's agent runs on either the Docker or Modal backend. :meth:`cancel`
-    stops the live :class:`~milp_flare.AgentRun` directly (``docker kill`` /
-    ``pkill`` inside the Sandbox); the in-flight :meth:`milp_flare.FLARE.verify`
-    then unwinds, capturing whatever partial artifacts exist before tearing down
-    its container/Sandbox. The same cooperative path is used on both backends, so
-    a canceled run keeps its partial output everywhere.
-
-    The work runs synchronously inside :meth:`result`; :meth:`start` only
-    captures the inputs. In the batch path, ``start()`` and ``result()`` are
-    called back-to-back on the same worker thread, while the experiment runner
-    holds the handle so it can :meth:`cancel` the run from another thread. A
-    cancel that arrives before the agent has started is recorded and applied the
-    instant the handle is published via :meth:`_on_start`.
+    A thin adapter over :class:`milp_flare.flare.FLARERun`. The underlying run
+    has already started (the agent is live) by the time this handle exists, so
+    :meth:`cancel` simply forwards to the live :class:`~milp_flare.AgentRun`
+    (``docker kill`` / ``pkill`` inside the Sandbox) with no flag, lock, or
+    callback: the cancel-before-start race is gone because provisioning happens
+    in :meth:`FLAREVerifier.start`, not in :meth:`result`. A canceled run keeps
+    its partial output on either backend.
     """
 
-    def __init__(
-        self,
-        inner: FLARE,
-        a_in: FormulationInput,
-        b_in: FormulationInput,
-        output_path: Path,
-        name: str,
-    ) -> None:
-        self._inner = inner
-        self._a_in = a_in
-        self._b_in = b_in
+    def __init__(self, run: FLARERun, output_path: Path, name: str) -> None:
+        self._run = run
         self._output_path = output_path
         self._name = name
-        self._lock = threading.Lock()
-        self._agent: AgentRun | None = None
-        self._canceled = False
 
     def cancel(self) -> None:
-        with self._lock:
-            self._canceled = True
-            if self._agent is not None:
-                self._agent.cancel()
-
-    def _on_start(self, agent: AgentRun) -> None:
-        # Publish the live handle so cancel() can reach it; if a cancel already
-        # arrived during setup, apply it now (kills the agent just after it
-        # started, capturing whatever partial artifacts exist on teardown).
-        with self._lock:
-            self._agent = agent
-            if self._canceled:
-                agent.cancel()
+        self._run.cancel()
 
     def result(self) -> ReformulationResult:
-        r = self._inner.verify(
-            self._a_in,
-            self._b_in,
-            self._output_path,
-            on_start=self._on_start,
-        )
+        r = self._run.result()
         return ReformulationResult(
             is_reformulation=r.is_reformulation,
             method=self._name,
@@ -101,4 +66,5 @@ class FLAREVerifier(ReformulationVerifier):
         b_in = FormulationInput(
             formulation_md=b.render_markdown(), solve_py=b.gen_solve_py()
         )
-        return FLAREVerifierRun(self._inner, a_in, b_in, output_path, self.name)
+        run = self._inner.start(a_in, b_in, output_path)
+        return FLAREVerifierRun(run, output_path, self.name)

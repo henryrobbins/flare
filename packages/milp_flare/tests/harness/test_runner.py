@@ -101,8 +101,9 @@ class _FakePopen:
 def test_docker_run_streams_lines_and_sets_duration(
     tmp_path: Path, monkeypatch: Any
 ) -> None:
-    """`run` yields a handle whose iteration streams the container's stdout,
-    creates the stderr file, and sets duration_s on exit."""
+    """`start` returns a handle whose iteration streams the container's stdout,
+    creates the stderr file, and sets duration_s when the `with` block closes
+    it."""
     wd = tmp_path / "wd"
     wd.mkdir()
     monkeypatch.setattr(docker_module.subprocess, "Popen", _FakePopen)
@@ -112,7 +113,7 @@ def test_docker_run_streams_lines_and_sets_duration(
     )
 
     lines: list[str] = []
-    with DockerRunner().run(wd, AuthSpec(env=[], home_dirs=[])) as agent:
+    with DockerRunner().start(wd, AuthSpec(env=[], home_dirs=[])) as agent:
         for line in agent.stdout:
             lines.append(line)
 
@@ -136,7 +137,7 @@ def test_docker_cancel_kills_container_by_name(
         docker_module.subprocess, "run", lambda cmd, **kw: kills.append(cmd)
     )
 
-    with DockerRunner().run(wd, AuthSpec(env=[], home_dirs=[])) as agent:
+    with DockerRunner().start(wd, AuthSpec(env=[], home_dirs=[])) as agent:
         agent.cancel()
 
     # The kill targets a single unique container name (flare-<hex>).
@@ -149,13 +150,15 @@ def test_docker_cancel_kills_container_by_name(
 
 
 def test_modal_agent_run_streams_and_cancels() -> None:
-    """ModalAgentRun decodes str/bytes stdout lines and forwards cancel()."""
+    """ModalAgentRun decodes str/bytes stdout lines and forwards cancel() to the
+    runner's `_kill_agent` against the durable Sandbox address."""
     proc = SimpleNamespace(stdout=iter(["a\n", b"b\n"]))
-    killed: list[bool] = []
-    agent = ModalAgentRun(proc, lambda: killed.append(True))
+    killed: list[str] = []
+    runner = SimpleNamespace(_kill_agent=lambda sb: killed.append(sb))
+    agent = ModalAgentRun(proc, sb="SB", wd=Path("."), runner=runner, start=0.0)
     assert list(agent.stdout) == ["a", "b"]
     agent.cancel()
-    assert killed == [True]
+    assert killed == ["SB"]
 
 
 def test_modal_kill_agent_pkills_run_agent() -> None:
