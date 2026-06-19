@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         python3-pip \
         pipx \
         ripgrep \
+        procps \
     && rm -rf /var/lib/apt/lists/*
 
 # Node 20 + agent CLIs (Claude Code, Codex, OpenCode)

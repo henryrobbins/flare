@@ -7,11 +7,11 @@ from typing import Any
 from formulation_bench import Formulation
 
 from src.llm_client import LLMClient, compute_cost_usd
-from src.verify.base import ReformulationResult, ReformulationVerifier
+from src.verify.base import ReformulationResult, SynchronousVerifier
 from src.verify.llm.prompts import REFORMULATION_SCHEMA, render_reformulation
 
 
-class LLMVerifier(ReformulationVerifier):
+class LLMVerifier(SynchronousVerifier):
     def __init__(
         self,
         client: LLMClient,
@@ -35,7 +35,7 @@ class LLMVerifier(ReformulationVerifier):
             "include_implicit": self.include_implicit,
         }
 
-    def verify(
+    def _verify(
         self, a: Formulation, b: Formulation, output_path: Path
     ) -> ReformulationResult:
         artifacts_dir = output_path

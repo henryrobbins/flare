@@ -3,12 +3,40 @@ from typing import Any
 
 from formulation_bench import Formulation
 from milp_flare import FLARE, FormulationInput, Harness
+from milp_flare.flare import FLARERun
 
-from src.verify.base import ReformulationResult, ReformulationVerifier
+from src.verify.base import (
+    ReformulationResult,
+    ReformulationRun,
+    ReformulationVerifier,
+)
+
+
+class FLAREVerifierRun(ReformulationRun):
+    """Adapts `milp_flare.FLAREVerifierRun` to `ReformulationRun` API."""
+
+    def __init__(self, run: FLARERun, output_path: Path, name: str) -> None:
+        self._run = run
+        self._output_path = output_path
+        self._name = name
+
+    def cancel(self) -> None:
+        self._run.cancel()
+
+    def result(self) -> ReformulationResult:
+        r = self._run.result()
+        return ReformulationResult(
+            is_reformulation=r.is_reformulation,
+            method=self._name,
+            artifacts_dir=self._output_path,
+            duration_s=r.duration_s,
+            cost_usd=r.cost_usd,
+            metadata=r.metadata,
+        )
 
 
 class FLAREVerifier(ReformulationVerifier):
-    """Adapter exposing the milp_flare verifier as a ReformulationVerifier."""
+    """Adapts `milp_flare.FLARE` to `ReformulationVerifier` API."""
 
     def __init__(self, harness: Harness) -> None:
         self._inner = FLARE(harness=harness)
@@ -20,21 +48,14 @@ class FLAREVerifier(ReformulationVerifier):
     def get_config_dict(self) -> dict[str, Any]:
         return self._inner.get_config_dict()
 
-    def verify(
+    def start(
         self, a: Formulation, b: Formulation, output_path: Path
-    ) -> ReformulationResult:
+    ) -> FLAREVerifierRun:
         a_in = FormulationInput(
             formulation_md=a.render_markdown(), solve_py=a.gen_solve_py()
         )
         b_in = FormulationInput(
             formulation_md=b.render_markdown(), solve_py=b.gen_solve_py()
         )
-        r = self._inner.verify(a_in, b_in, output_path)
-        return ReformulationResult(
-            is_reformulation=r.is_reformulation,
-            method=self.name,
-            artifacts_dir=output_path,
-            duration_s=r.duration_s,
-            cost_usd=r.cost_usd,
-            metadata=r.metadata,
-        )
+        run = self._inner.start(a_in, b_in, output_path)
+        return FLAREVerifierRun(run, output_path, self.name)

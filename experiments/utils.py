@@ -14,7 +14,32 @@ from typing import Any
 
 from formulation_bench import Formulation, Reformulation
 
-from src.verify.base import ReformulationVerifier
+from src.verify.base import ReformulationRun, ReformulationVerifier
+
+
+class RunRegistry:
+    """Thread-safe set of in-flight :class:`ReformulationRun` handles."""
+
+    def __init__(self) -> None:
+        self._lock = Lock()
+        self._runs: set[ReformulationRun] = set()
+
+    def add(self, run: ReformulationRun) -> None:
+        with self._lock:
+            self._runs.add(run)
+
+    def remove(self, run: ReformulationRun) -> None:
+        with self._lock:
+            self._runs.discard(run)
+
+    def cancel_all(self) -> None:
+        with self._lock:
+            runs = list(self._runs)
+        for run in runs:
+            try:
+                run.cancel()
+            except Exception:
+                pass
 
 
 def pair_id(a: Formulation, b: Formulation) -> str:
@@ -88,29 +113,53 @@ def kill_run_containers(run_id: str) -> None:
     subprocess.run(["docker", "kill", *ids], check=False, capture_output=True)
 
 
+def kill_run_sandboxes(run_id: str) -> None:
+    """`terminate` every Modal Sandbox tagged flare-run=<run_id>."""
+    try:
+        import modal
+    except ModuleNotFoundError:
+        return
+    try:
+        sandboxes = list(modal.Sandbox.list(tags={"flare-run": run_id}))
+    except Exception:
+        return
+    if not sandboxes:
+        return
+    print(f"  Stopping {len(sandboxes)} sandbox(es)...")
+    for sb in sandboxes:
+        try:
+            sb.terminate()
+        except Exception:
+            pass
+
+
 def drain_with_interrupt(
     executor: ThreadPoolExecutor,
     futures: Iterable[Future[Any]],
     run_id: str,
     on_result: Callable[[Future[Any]], None],
+    registry: RunRegistry,
 ) -> None:
-    """Iterate `as_completed(futures)` calling `on_result(future)` for each;
-    on KeyboardInterrupt, kill all run containers, cancel pending futures,
-    and shut down the executor without waiting for the (now-dying) workers
-    to drain naturally."""
+    """Iterate through the task futures, calling `on_result` as each completed.
+
+    On KeyboardInterrupt, cancel in-flight runs, drain the executor, then sweep
+    any leaked containers / Modal Sandboxes.
+    """
     futures = list(futures)
     try:
         for future in as_completed(futures):
             on_result(future)
     except KeyboardInterrupt:
-        print("\n  Interrupted. Killing containers and shutting down...")
-        kill_run_containers(run_id)
+        print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
+        # Cancel each in-flight run (captures partial artifacts and tears down)
+        registry.cancel_all()
         for f in futures:
             f.cancel()
-        # Workers are blocked in subprocess.run waiting for docker; once
-        # docker kill lands, those calls return and threads exit. wait=True
-        # is still safe (and quick) after the kill.
+        # wait=True drains the now-canceled workers promptly.
         executor.shutdown(wait=True, cancel_futures=True)
+        # Backstops: reap any container/Sandbox the cooperative path left behind
+        kill_run_containers(run_id)
+        kill_run_sandboxes(run_id)
         raise SystemExit(130)
 
 
@@ -151,6 +200,7 @@ def run_verification(
     artifacts_dir: Path,
     name: str,
     run_idx: int | None,
+    registry: RunRegistry,
     model: str | None = None,
     mode: str | None = None,
 ) -> dict[str, Any]:
@@ -180,7 +230,12 @@ def run_verification(
         "error": None,
     }
     try:
-        result = verifier.verify(pair.a, pair.b, artifacts_dir)
+        run = verifier.start(pair.a, pair.b, artifacts_dir)
+        registry.add(run)
+        try:
+            result = run.result()
+        finally:
+            registry.remove(run)
         row["is_reformulation"] = result.is_reformulation
         row["duration_s"] = result.duration_s
         row["cost_usd"] = result.cost_usd

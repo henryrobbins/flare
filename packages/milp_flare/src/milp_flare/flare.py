@@ -8,7 +8,7 @@ from typing import Any
 
 from milp_flare._assets import LEAN_DIR
 from milp_flare._prompts import render_flare_agent_prompt
-from milp_flare.harness import Harness
+from milp_flare.harness import AgentRun, Harness
 
 #: Axioms permitted in a verified reformulation proof. All of Mathlib is built on
 #: these three; a proof depending on anything else is not trusted by FLARE.
@@ -92,6 +92,53 @@ class FLAREResult:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+class FLARERun:
+    """Handle to an in-flight :class:`FLARE` run.
+
+    Parameters
+    ----------
+    flare : FLARE
+        The parent FLARE instance.
+    wd : pathlib.Path
+        The agent working directory on the host.
+    artifacts_dir : pathlib.Path
+        The directory where FLARE artifacts (config, result) are written.
+    agent : AgentRun
+        The live agent run handle returned by the harness.
+    """
+
+    def __init__(
+        self,
+        flare: "FLARE",
+        wd: Path,
+        artifacts_dir: Path,
+        agent: AgentRun,
+    ) -> None:
+        self._flare = flare
+        self._wd = wd
+        self._artifacts_dir = artifacts_dir
+        self._agent = agent
+
+    def cancel(self) -> None:
+        """Cancel the run, unblocking :meth:`result` with partial output."""
+        self._agent.cancel()
+
+    def result(self) -> FLAREResult:
+        """Block until the run completes, evaluate it, and write artifacts."""
+        run_result = self._flare.harness.collect(self._agent, self._wd)
+
+        meta = self._flare._evaluate(self._wd)
+        meta.update(dataclasses.asdict(run_result))
+        (self._artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
+
+        return FLAREResult(
+            is_reformulation=meta["is_reformulation"],
+            duration_s=meta.get("duration_s"),
+            cost_usd=meta.get("cost_usd"),
+            metadata=meta,
+        )
+
+
 class FLARE:
     """Agentic MILP reformulation verifier.
 
@@ -152,19 +199,21 @@ class FLARE:
         """
         return self.harness.get_config_dict()
 
-    def verify(
+    def start(
         self,
         a: FormulationInput,
         b: FormulationInput,
         output_path: Path,
-    ) -> FLAREResult:
-        """Run FLARE on a pair of MILP formulations.
+    ) -> FLARERun:
+        """Start a FLARE run on a pair of MILP formulations and return a handle.
 
-        Run FLARE to determine if formulation ``b`` is a reformulation of
-        formulation ``a`` according to the :fb:`/definitions.html`
-        definition of reformulation. This method creates the agent working
-        directory (see below), triggers the agent, and evaluates the
-        agent output. Finally, it populates ``output_path`` with:
+        Determines (asynchronously) if formulation ``b`` is a reformulation of
+        formulation ``a`` according to the :fb:`/definitions.html` definition of
+        reformulation. This method creates the agent working directory (see
+        below) and *starts* the agent, returning a :class:`FLARERun` the caller
+        drives to completion with :meth:`FLARERun.result`.
+
+        ``output_path`` is populated (by :meth:`FLARERun.result`) with:
 
         - The agent working directory (``wd/``)
         - The FLARE configuration (``config.json``)
@@ -203,8 +252,39 @@ class FLARE:
 
         Returns
         -------
-        result : FLAREResult
-            The verdict, duration, cost, and per-check metadata.
+        run : FLARERun
+            A handle to the in-flight run. Call :meth:`~FLARERun.result` to block
+            for the verdict, or :meth:`~FLARERun.cancel` to stop it.
+
+        See :doc:`/user_guide/run_flare` for more example usage.
+        """
+        # Create the artifacts directory at the output path and write config
+        artifacts_dir = output_path
+        artifacts_dir.mkdir(parents=True, exist_ok=True)
+        (artifacts_dir / "config.json").write_text(
+            json.dumps(self.get_config_dict(), indent=2)
+        )
+
+        # Setup the agent's working directory and start the agent. Provisioning
+        # the compute happens here, so the returned handle's AgentRun already
+        # exists — cancel() can reach it with no callback or race.
+        wd = artifacts_dir / "wd"
+        self._setup_wd(wd, a, b)
+        agent = self.harness.start(wd)
+        return FLARERun(self, wd, artifacts_dir, agent)
+
+    def verify(
+        self,
+        a: FormulationInput,
+        b: FormulationInput,
+        output_path: Path,
+    ) -> FLAREResult:
+        """Run FLARE on a pair of formulations and block for the result.
+
+        Blocking convenience equivalent to ``start(a, b, output_path).result()``.
+        Use :meth:`start` directly when an external owner needs to hold the
+        :class:`FLARERun` handle to :meth:`~FLARERun.cancel` it from another
+        thread.
 
         Examples
         --------
@@ -223,34 +303,8 @@ class FLARE:
             1.49
             result.duration_s
             322
-
-        See :doc:`/user_guide/run_flare` for more example usage.
         """
-        # Create the artifacts directory at the output path and write config
-        artifacts_dir = output_path
-        artifacts_dir.mkdir(parents=True, exist_ok=True)
-        (artifacts_dir / "config.json").write_text(
-            json.dumps(self.get_config_dict(), indent=2)
-        )
-
-        # Setup the agent's working directory
-        wd = artifacts_dir / "wd"
-        self._setup_wd(wd, a, b)
-
-        # Run the agent harness
-        run_result = self.harness.run(wd)
-
-        # Evaluate the agent's output to obtain final result and write metadata
-        meta = self._evaluate(wd)
-        meta.update(dataclasses.asdict(run_result))
-        (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-
-        return FLAREResult(
-            is_reformulation=meta["is_reformulation"],
-            duration_s=meta.get("duration_s"),
-            cost_usd=meta.get("cost_usd"),
-            metadata=meta,
-        )
+        return self.start(a, b, output_path).result()
 
     def _setup_wd(
         self,

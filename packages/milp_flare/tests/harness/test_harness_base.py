@@ -1,29 +1,74 @@
-"""Unit tests for `milp_flare.harness.base` — Docker-independent logic.
+"""Unit tests for `milp_flare.harness.base` — compute-independent logic.
 
 `test_docker.py` spins up real containers and is otherwise the only thing
 exercising the harness layer. This module covers `Harness.run`'s
-post-processing and the base `configure_wd`, with `subprocess.run`
-monkeypatched so no Docker daemon or image is involved.
+post-processing and the base `configure_wd` using a stub `Runner` that
+writes a synthetic `agent_output.jsonl` instead of executing any container.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import pytest
 
-from milp_flare.harness import base as harness_base
 from milp_flare.harness.base import Harness, HarnessRunResult
+from milp_flare.harness.runner import AgentRun, AuthSpec, Runner
+
+
+class _StubAgentRun(AgentRun):
+    """In-memory AgentRun that streams a fixed list of stdout lines."""
+
+    def __init__(self, lines: list[str]) -> None:
+        self._lines = lines
+        self.canceled = False
+
+    @property
+    def stdout(self) -> Iterator[str]:
+        yield from self._lines
+
+    def cancel(self) -> None:
+        self.canceled = True
+
+
+class _StubRunner(Runner):
+    """Runner that streams a caller-supplied agent output (no real backend).
+
+    ``output`` is the text the agent "writes" to stdout; :meth:`Harness.collect`
+    rebuilds ``wd/agent_output.jsonl`` from it. ``None`` streams nothing,
+    simulating an agent that produced no output. The last :class:`AuthSpec` it
+    received is recorded on ``last_auth``, and the last started handle on
+    ``last_agent``.
+    """
+
+    name = "stub"
+    home = "/stub"
+
+    def __init__(self, output: str | None = "x\n") -> None:
+        self.output = output
+        self.last_auth: AuthSpec | None = None
+        self.last_agent: _StubAgentRun | None = None
+
+    @property
+    def image(self) -> str:
+        return "stub-image"
+
+    def start(self, wd: Path, auth: AuthSpec) -> AgentRun:
+        self.last_auth = auth
+        lines = self.output.splitlines() if self.output is not None else []
+        agent = _StubAgentRun(lines)
+        self.last_agent = agent
+        return agent
 
 
 class _StubHarness(Harness):
-    """Minimal concrete Harness for exercising `run` without Docker.
+    """Minimal concrete Harness for exercising `run` without a real backend.
 
-    ``_parse_lines`` returns ``self.parsed`` so individual tests can control
-    the parsed-stream result; the abstract Docker hooks return trivial values
-    since ``subprocess.run`` is monkeypatched away.
+    ``_parse_lines`` returns ``self.parsed`` when the stream had any lines, and
+    zeroed defaults for an empty stream (mirroring how the real harnesses parse
+    an empty ``agent_output.jsonl``).
     """
 
     name = "stub"
@@ -36,35 +81,31 @@ class _StubHarness(Harness):
         "cost_usd": 0.5,
     }
 
-    def _agent_docker_args(self) -> list[str]:
-        return ["-e", "STUB"]
-
     def _agent_command(self) -> str:
         return "echo stub"
 
     def _parse_lines(self, lines: list[str]) -> dict[str, Any]:
+        if not lines:
+            return {
+                "stop_reason": None,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cost_usd": None,
+            }
         return dict(self.parsed)
 
 
 # ---------------------------------------------------------------------------
-# Harness.run — exercised without Docker
+# Harness.run — exercised against a stub runner
 # ---------------------------------------------------------------------------
 
 
-def test_run_parses_stream_and_writes_stderr(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """`run` builds a `docker` command, parses the JSONL, and saves stderr."""
+def test_run_delegates_to_runner_and_parses_stream(tmp_path: Path) -> None:
+    """`run` delegates to the runner, then parses the produced JSONL."""
     wd = tmp_path / "wd"
     wd.mkdir()
-    harness = _StubHarness(model="claude-opus-4-7")
-
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
-        assert cmd[0] == "docker"
-        (wd / "agent_output.jsonl").write_text("synthetic agent output\n")
-        return SimpleNamespace(stderr="boom\n")
-
-    monkeypatch.setattr(harness_base.subprocess, "run", _fake_run)
+    runner = _StubRunner(output="synthetic agent output\n")
+    harness = _StubHarness(model="claude-opus-4-7", runner=runner)
 
     result = harness.run(wd)
 
@@ -74,34 +115,15 @@ def test_run_parses_stream_and_writes_stderr(
     assert result.output_tokens == 200
     assert result.cost_usd == 0.5
     assert result.duration_s >= 0.0
-    # stderr is persisted next to the agent output, namespaced by harness name
-    assert (wd / "stub_stderr.txt").read_text() == "boom\n"
+    # The runner received the harness's (default empty) auth spec.
+    assert runner.last_auth == AuthSpec(env=[], home_dirs=[])
 
 
-def test_run_skips_stderr_file_when_empty(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """No stderr file is written when the subprocess produced no stderr."""
-    wd = tmp_path / "wd"
-    wd.mkdir()
-    harness = _StubHarness(model="claude-opus-4-7")
-
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
-        (wd / "agent_output.jsonl").write_text("x\n")
-        return SimpleNamespace(stderr="")
-
-    monkeypatch.setattr(harness_base.subprocess, "run", _fake_run)
-    harness.run(wd)
-    assert not (wd / "stub_stderr.txt").exists()
-
-
-def test_run_fills_cost_from_tokens_when_unset(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_run_fills_cost_from_tokens_when_unset(tmp_path: Path) -> None:
     """When the parsed stream has no `cost_usd`, it is estimated from tokens."""
     wd = tmp_path / "wd"
     wd.mkdir()
-    harness = _StubHarness(model="claude-opus-4-7")
+    harness = _StubHarness(model="claude-opus-4-7", runner=_StubRunner())
     harness.parsed = {
         "stop_reason": "end_turn",
         "input_tokens": 1_000_000,
@@ -109,35 +131,60 @@ def test_run_fills_cost_from_tokens_when_unset(
         "cost_usd": None,
     }
 
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
-        (wd / "agent_output.jsonl").write_text("x\n")
-        return SimpleNamespace(stderr="")
-
-    monkeypatch.setattr(harness_base.subprocess, "run", _fake_run)
     result = harness.run(wd)
     # claude-opus-4-7 is priced at (5.0, 25.0) per Mtok -> 5 + 25 = 30.0
     assert result.cost_usd == pytest.approx(30.0)
 
 
-def test_run_handles_missing_agent_output(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    """A missing `agent_output.jsonl` yields zeroed defaults, not a crash."""
+def test_run_handles_empty_agent_output(tmp_path: Path) -> None:
+    """An agent that streams nothing yields zeroed defaults, not a crash."""
     wd = tmp_path / "wd"
     wd.mkdir()
-    harness = _StubHarness(model="claude-opus-4-7")
+    harness = _StubHarness(model="claude-opus-4-7", runner=_StubRunner(output=None))
 
-    def _fake_run(cmd: list[str], **kwargs: Any) -> SimpleNamespace:
-        # The agent produced no output file at all.
-        return SimpleNamespace(stderr="")
-
-    monkeypatch.setattr(harness_base.subprocess, "run", _fake_run)
     result = harness.run(wd)
     assert result.stop_reason is None
     assert result.input_tokens == 0
     assert result.output_tokens == 0
     # compute_cost_usd("claude-opus-4-7", 0, 0) == 0.0
     assert result.cost_usd == 0.0
+
+
+def test_run_streams_stdout_into_agent_output(tmp_path: Path) -> None:
+    """`run` rebuilds wd/agent_output.jsonl from the streamed stdout lines."""
+    wd = tmp_path / "wd"
+    wd.mkdir()
+    runner = _StubRunner(output='{"a": 1}\n{"b": 2}\n')
+    harness = _StubHarness(model="claude-opus-4-7", runner=runner)
+
+    harness.run(wd)
+
+    assert (wd / "agent_output.jsonl").read_text() == '{"a": 1}\n{"b": 2}\n'
+
+
+def test_start_returns_live_handle(tmp_path: Path) -> None:
+    """`start` hands back the runner's live AgentRun directly — no callback.
+
+    The handle exists the moment `start` returns, which is what lets an external
+    owner cancel it from another thread without any `on_start` plumbing.
+    """
+    wd = tmp_path / "wd"
+    wd.mkdir()
+    runner = _StubRunner()
+    harness = _StubHarness(model="claude-opus-4-7", runner=runner)
+
+    agent = harness.start(wd)
+
+    assert agent is runner.last_agent
+
+
+def test_run_defaults_to_docker_runner() -> None:
+    """A harness constructed without a runner uses the local Docker backend."""
+    from milp_flare.harness.runner import DockerRunner
+
+    harness = _StubHarness(model="claude-opus-4-7")
+    assert isinstance(harness.runner, DockerRunner)
+    assert harness.get_config_dict()["compute"] == "docker"
 
 
 # ---------------------------------------------------------------------------

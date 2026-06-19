@@ -33,6 +33,7 @@ Repository = "https://github.com/henryrobbins/flare"
 Issues = "https://github.com/henryrobbins/flare/issues"
 
 [project.optional-dependencies]
+modal = ["modal>=1.5"]
 docs = [
     "sphinx>=7",
     "myst-parser>=3",
@@ -81,4 +82,5 @@ testpaths = ["tests", "src/milp_flare"]
 addopts = "-n 5 --doctest-modules"
 markers = [
     "docker: tests that require Docker (opt-out: -m 'not docker')",
+    "modal: tests that launch a Modal Sandbox (opt-out: -m 'not modal')",
 ]

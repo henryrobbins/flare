@@ -26,6 +26,7 @@ load_dotenv()
 from formulation_bench import Dataset, Reformulation  # noqa: E402
 
 from experiments.utils import (  # noqa: E402
+    RunRegistry,
     add_common_args,
     drain_with_interrupt,
     filter_pairs,
@@ -54,13 +55,16 @@ def process_task(
     run_idx: int | None,
     results_path: Path,
     write_lock: Lock,
+    registry: RunRegistry,
 ) -> None:
     pid = pair_id(pair.a, pair.b)
     artifacts_base = results_path.parent / "pairs" / pid / entry.name
     artifacts_dir = (
         artifacts_base / str(run_idx) if run_idx is not None else artifacts_base
     )
-    row = run_verification(entry.verifier, pair, artifacts_dir, entry.name, run_idx)
+    row = run_verification(
+        entry.verifier, pair, artifacts_dir, entry.name, run_idx, registry=registry
+    )
     write_and_log(
         row, results_path, write_lock, entry.name, run_idx, pair.is_reformulation
     )
@@ -116,9 +120,12 @@ def main() -> None:
             else:
                 tasks.append((pair, entry, None))
 
+    registry = RunRegistry()
     executor = ThreadPoolExecutor(max_workers=workers)
     futures = {
-        executor.submit(process_task, pair, entry, run_idx, results_path, write_lock): (
+        executor.submit(
+            process_task, pair, entry, run_idx, results_path, write_lock, registry
+        ): (
             pair,
             entry,
             run_idx,
@@ -135,7 +142,9 @@ def main() -> None:
             print(f"  FATAL [{entry.name}{suffix}] [{pid}]: {exc}")
 
     try:
-        drain_with_interrupt(executor, futures, run_dir.name, on_result)
+        drain_with_interrupt(
+            executor, futures, run_dir.name, on_result, registry=registry
+        )
     finally:
         executor.shutdown(wait=True)
 

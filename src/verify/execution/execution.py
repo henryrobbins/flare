@@ -6,12 +6,12 @@ from typing import Any
 
 from formulation_bench import Formulation
 
-from src.verify.base import ReformulationResult, ReformulationVerifier
+from src.verify.base import ReformulationResult, SynchronousVerifier
 
 TOLERANCE = 1e-6
 
 
-class ExecutionVerifier(ReformulationVerifier):
+class ExecutionVerifier(SynchronousVerifier):
     @property
     def name(self) -> str:
         return "execution"
@@ -19,7 +19,7 @@ class ExecutionVerifier(ReformulationVerifier):
     def get_config_dict(self) -> dict[str, Any]:
         return {"tolerance": TOLERANCE}
 
-    def verify(
+    def _verify(
         self, a: Formulation, b: Formulation, output_path: Path
     ) -> ReformulationResult:
         artifacts_dir = output_path
