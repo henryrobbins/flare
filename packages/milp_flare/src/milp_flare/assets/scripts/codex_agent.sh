@@ -6,8 +6,7 @@
 # Supply model using dedicated flag and template with src/verify/flare/harness/codex.py
 # Supply effort using -c override and template with src/verify/flare/harness/codex.py
 # Provide MCP configuration via -c overrides since codex doesn't auto-discover .mcp.json
-# The event stream goes to stdout; the runner streams it and persists it as
-# agent_output.jsonl on the host.
+# The event stream goes to stdout
 #
 # https://developers.openai.com/codex/cli/reference
 # https://developers.openai.com/codex/noninteractive#permissions-and-safety

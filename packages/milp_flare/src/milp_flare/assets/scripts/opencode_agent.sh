@@ -4,8 +4,7 @@
 # Use `opencode run` to run the agent in non-interactive mode
 # `opencode.json` configures model provider and MCP server: src/verify/flare/harness/opencode.py
 # <<PROVIDER>> and <<MODEL>> are templated by src/verify/flare/harness/opencode.py
-# The event stream goes to stdout; the runner streams it and persists it as
-# agent_output.jsonl on the host.
+# The event stream goes to stdout
 
 # https://opencode.ai/docs/cli/#run-1
 
