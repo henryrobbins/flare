@@ -1,13 +1,14 @@
 # Common dev commands for the milp-flare package.
 # Run from this directory (packages/milp_flare/).
 
-.PHONY: help install test test-docker cov cov-open cov-clean lint format typecheck check build-image docs docs-serve docs-clean clean
+.PHONY: help install test test-docker test-modal cov cov-open cov-clean lint format typecheck check build-image build-modal-image docs docs-serve docs-clean clean
 
 help:
 	@echo "Targets:"
 	@echo "  install      Sync workspace deps with uv"
-	@echo "  test         Run pytest, skipping docker-marked tests"
+	@echo "  test         Run pytest, skipping docker- and modal-marked tests"
 	@echo "  test-docker  Run docker-marked tests (requires Docker)"
+	@echo "  test-modal   Run modal-marked tests (requires a Modal token + built image)"
 	@echo "  cov          Run pytest with coverage (excluding docker tests); writes HTML to htmlcov/ and XML to coverage.xml"
 	@echo "  cov-open     Open the HTML coverage report"
 	@echo "  cov-clean    Remove coverage artifacts"
@@ -16,6 +17,7 @@ help:
 	@echo "  typecheck    Run mypy"
 	@echo "  check        Run lint + typecheck + test"
 	@echo "  build-image  Build the flare-agent Docker image"
+	@echo "  build-modal-image  Build + publish the flare-agent Modal image"
 	@echo "  docs         Build the Sphinx docs once"
 	@echo "  docs-serve   Live-reload docs in browser"
 	@echo "  docs-clean   Remove built docs"
@@ -25,13 +27,16 @@ install:
 	uv sync
 
 test:
-	uv run --package milp-flare pytest -m 'not docker'
+	uv run --package milp-flare pytest -m 'not docker and not modal'
 
 test-docker:
 	uv run --package milp-flare pytest -m 'docker'
 
+test-modal:
+	uv run --package milp-flare pytest -m 'modal'
+
 cov:
-	uv run --package milp-flare pytest -m 'not docker' \
+	uv run --package milp-flare pytest -m 'not docker and not modal' \
 		--cov=milp_flare \
 		--cov-report=term-missing \
 		--cov-report=html \
@@ -57,6 +62,9 @@ check: lint typecheck test
 
 build-image:
 	uv run --package milp-flare milp-flare build-image
+
+build-modal-image:
+	uv run --package milp-flare milp-flare build-modal-image
 
 docs:
 	uv run --package milp-flare --extra docs sphinx-build -W -b html docs docs/_build/html

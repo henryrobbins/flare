@@ -113,6 +113,26 @@ def kill_run_containers(run_id: str) -> None:
     subprocess.run(["docker", "kill", *ids], check=False, capture_output=True)
 
 
+def kill_run_sandboxes(run_id: str) -> None:
+    """`terminate` every Modal Sandbox tagged flare-run=<run_id>."""
+    try:
+        import modal
+    except ModuleNotFoundError:
+        return
+    try:
+        sandboxes = list(modal.Sandbox.list(tags={"flare-run": run_id}))
+    except Exception:
+        return
+    if not sandboxes:
+        return
+    print(f"  Stopping {len(sandboxes)} sandbox(es)...")
+    for sb in sandboxes:
+        try:
+            sb.terminate()
+        except Exception:
+            pass
+
+
 def drain_with_interrupt(
     executor: ThreadPoolExecutor,
     futures: Iterable[Future[Any]],
@@ -120,22 +140,26 @@ def drain_with_interrupt(
     on_result: Callable[[Future[Any]], None],
     registry: RunRegistry,
 ) -> None:
-    """Iterate `as_completed(futures)` calling `on_result(future)` for each;
-    on KeyboardInterrupt, cancel in-flight runs, cancel pending futures, and
-    shut down the executor."""
+    """Iterate through the task futures, calling `on_result` as each completed.
+
+    On KeyboardInterrupt, cancel in-flight runs, drain the executor, then sweep
+    any leaked containers / Modal Sandboxes.
+    """
     futures = list(futures)
     try:
         for future in as_completed(futures):
             on_result(future)
     except KeyboardInterrupt:
         print("\n  Interrupted. Cancelling in-flight runs and shutting down...")
+        # Cancel each in-flight run (captures partial artifacts and tears down)
         registry.cancel_all()
-        # Kill every Docker container with a FLARE label as a final backstop in
-        # case any runs didn't respond to individual cancellation calls.
-        kill_run_containers(run_id)
         for f in futures:
             f.cancel()
+        # wait=True drains the now-canceled workers promptly.
         executor.shutdown(wait=True, cancel_futures=True)
+        # Backstops: reap any container/Sandbox the cooperative path left behind
+        kill_run_containers(run_id)
+        kill_run_sandboxes(run_id)
         raise SystemExit(130)
 
 

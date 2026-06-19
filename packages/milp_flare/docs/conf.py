@@ -1,5 +1,9 @@
 from importlib.metadata import version as _pkg_version
 
+from docutils import nodes
+from sphinx.application import Sphinx
+from sphinx.environment import BuildEnvironment
+
 project = "milp_flare"
 author = "Henry Robbins"
 copyright = "2026, Henry Robbins"
@@ -77,4 +81,51 @@ numpydoc_xref_aliases = {
     "CodexHarness": "milp_flare.harness.codex.CodexHarness",
     "OpenCodeHarness": "milp_flare.harness.opencode.OpenCodeHarness",
     "COST_PER_MTOK": "milp_flare.harness.cost.COST_PER_MTOK",
+    # Compute runners
+    "Runner": "milp_flare.harness.runner.base.Runner",
+    "AgentRun": "milp_flare.harness.runner.base.AgentRun",
+    "AuthSpec": "milp_flare.harness.runner.base.AuthSpec",
+    "DockerRunner": "milp_flare.harness.runner.docker.DockerRunner",
+    "ModalRunner": "milp_flare.harness.runner.modal.ModalRunner",
+    # Modal SDK types used in the ModalRunner docstrings. These resolve to the
+    # Modal docs via the ``missing-reference`` handler in ``setup`` below.
+    "Sandbox": "modal.Sandbox",
+    "Image": "modal.Image",
+    "App": "modal.App",
+    "Secret": "modal.Secret",
+    "ContainerProcess": "modal.container_process.ContainerProcess",
 }
+
+# Modal publishes no Sphinx ``objects.inv``, so intersphinx cannot resolve its
+# types. Map the Modal symbols referenced in our docstrings to their pages in
+# the Modal Python SDK reference instead. Keys are the (numpydoc-aliased) xref
+# targets; values are paths under ``_MODAL_SDK_BASE``.
+_MODAL_SDK_BASE = "https://modal.com/docs/sdk/py/latest/"
+_MODAL_OBJECTS = {
+    "modal.Sandbox": "modal.Sandbox",
+    "modal.Image": "modal.Image",
+    "modal.App": "modal.App",
+    "modal.Secret": "modal.Secret",
+    "modal.container_process.ContainerProcess": (
+        "modal.container_process#modalcontainer_processcontainerprocess"
+    ),
+}
+
+
+def _resolve_modal_xref(
+    app: Sphinx,
+    env: BuildEnvironment,
+    node: nodes.Element,
+    contnode: nodes.Element,
+) -> nodes.reference | None:
+    """Resolve unresolved Modal xrefs to the Modal Python SDK reference."""
+    path = _MODAL_OBJECTS.get(node.get("reftarget", ""))
+    if path is None:
+        return None
+    ref = nodes.reference("", "", internal=False, refuri=_MODAL_SDK_BASE + path)
+    ref.append(contnode)
+    return ref
+
+
+def setup(app: Sphinx) -> None:
+    app.connect("missing-reference", _resolve_modal_xref)

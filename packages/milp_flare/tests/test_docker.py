@@ -106,15 +106,32 @@ def _run(cli: str, repo_root: Path, pair_dir: Path, action: str) -> Path:
 
 
 def _load_events(jsonl_path: Path) -> list[dict]:
+    """Parse the agent's JSON event stream into a list of event dicts.
+
+    The stream is normally one JSON object per line, but some CLIs (e.g.
+    opencode) emit tool events whose payload contains raw, unescaped newlines,
+    so a single object can span multiple physical lines. Rather than parse
+    line-by-line (which silently drops such objects and produces false
+    negatives), accumulate physical lines until the buffer decodes as one
+    object. ``strict=False`` tolerates the embedded control characters.
+    """
+    decoder = json.JSONDecoder(strict=False)
     events: list[dict] = []
+    buf = ""
     for raw in jsonl_path.read_text().splitlines():
-        raw = raw.strip()
-        if not raw:
+        buf = raw if not buf else f"{buf}\n{raw}"
+        if not buf.strip():
+            buf = ""
             continue
         try:
-            events.append(json.loads(raw))
+            obj = decoder.decode(buf.strip())
         except json.JSONDecodeError:
+            # Likely an object that spans multiple physical lines; keep
+            # accumulating subsequent lines until it parses.
             continue
+        if isinstance(obj, dict):
+            events.append(obj)
+        buf = ""
     return events
 
 

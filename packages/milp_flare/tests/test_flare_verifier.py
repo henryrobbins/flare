@@ -16,17 +16,33 @@ import json
 import re
 import shutil
 from pathlib import Path
+from typing import Any
 
 import pytest
 from formulation_bench import Dataset, Formulation
 
 from milp_flare import (
     FLARE,
-    AuthSpec,
     FormulationInput,
     Harness,
-    HarnessRunResult,
 )
+from milp_flare.harness.runner import AgentRun
+
+
+class _NoAgentRun(AgentRun):
+    """In-process AgentRun stand-in: no stream, no compute, no-op teardown.
+
+    The fake harnesses below "run the agent" synchronously inside `start` (they
+    pre-write the Lean files), so the handle has nothing to stream or tear down.
+    """
+
+    @property
+    def stdout(self) -> Any:
+        return iter(())
+
+    def cancel(self) -> None:
+        pass
+
 
 # (problem dir name, formulation A, formulation B, expected reformulation)
 PAIRS: list[tuple[str, str, str, bool]] = [
@@ -110,24 +126,6 @@ def _copy_ground_truth(
 # ---------------------------------------------------------------------------
 
 
-class _ImmediateRun:
-    """A HarnessRun-shaped handle whose work already completed during start().
-
-    Lets the in-process dummy harnesses satisfy the ``Harness.start`` ->
-    run-handle contract without a real container: ``cancel`` is a no-op and
-    ``result`` just returns the precomputed ``HarnessRunResult``.
-    """
-
-    def __init__(self, result: HarnessRunResult) -> None:
-        self._result = result
-
-    def cancel(self) -> None:
-        pass
-
-    def result(self) -> HarnessRunResult:
-        return self._result
-
-
 class DummyHarness(Harness):
     """Harness that bypasses Docker and pre-writes ground-truth Lean files.
 
@@ -156,9 +154,6 @@ class DummyHarness(Harness):
     def configure_wd(self, wd: Path) -> None:
         return
 
-    def auth_spec(self) -> AuthSpec:
-        return AuthSpec(env=[], home_dirs=[])
-
     def _agent_command(self) -> str:
         return ""
 
@@ -170,10 +165,10 @@ class DummyHarness(Harness):
             "cost_usd": 0.0,
         }
 
-    def start(self, wd: Path) -> _ImmediateRun:
-        return _ImmediateRun(self._fake_run(wd))
-
-    def _fake_run(self, wd: Path) -> HarnessRunResult:
+    def start(self, wd: Path) -> AgentRun:
+        # The "agent" runs synchronously here: pre-write the ground-truth Lean
+        # files and a fake compile result, then hand back a no-op handle. The
+        # base `collect` streams its (empty) output and parses via _parse_lines.
         if self.expected:
             _copy_ground_truth(wd, self.repo_root, self.a, self.b)
             (wd / "result.json").write_text(
@@ -194,13 +189,7 @@ class DummyHarness(Harness):
                 "-- NOT REFORMULATION\n-- stub harness verdict\n"
             )
 
-        return HarnessRunResult(
-            duration_s=0.0,
-            cost_usd=0.0,
-            input_tokens=0,
-            output_tokens=0,
-            stop_reason="end_turn",
-        )
+        return _NoAgentRun()
 
 
 class BadAxiomHarness(DummyHarness):
@@ -213,12 +202,12 @@ class BadAxiomHarness(DummyHarness):
 
     name = "bad_axiom"
 
-    def _fake_run(self, wd: Path) -> HarnessRunResult:
-        result = super()._fake_run(wd)
+    def start(self, wd: Path) -> AgentRun:
+        agent = super().start(wd)
         (wd / "compile_log.txt").write_text(
             "'reformulation' depends on axioms: [propext, Classical.choice, P1.cheat]\n"
         )
-        return result
+        return agent
 
 
 # ---------------------------------------------------------------------------
@@ -260,9 +249,6 @@ class GroundTruthHarness(Harness):
             (wd / "Reformulation.lean").write_text(
                 "-- NOT REFORMULATION\n-- ground-truth harness verdict\n"
             )
-
-    def auth_spec(self) -> AuthSpec:
-        return AuthSpec(env=[], home_dirs=[])
 
     def _agent_command(self) -> str:
         # Build A.Formulation and B.Formulation so that the entrypoint's

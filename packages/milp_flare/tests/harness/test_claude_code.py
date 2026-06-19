@@ -134,8 +134,8 @@ def test_auth_spec_requires_oauth_token(monkeypatch: pytest.MonkeyPatch) -> None
 
 
 def test_auth_spec_forwards_oauth_token(monkeypatch: pytest.MonkeyPatch) -> None:
-    """When set, the OAuth token is forwarded into the container."""
+    """When set, the OAuth token is forwarded as an env var (no home dirs)."""
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "secret")
     spec = _claude().auth_spec()
-    assert spec.env == ["CLAUDE_CODE_OAUTH_TOKEN"]
+    assert "CLAUDE_CODE_OAUTH_TOKEN" in spec.env
     assert spec.home_dirs == []

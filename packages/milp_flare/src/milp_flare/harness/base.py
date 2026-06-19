@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from milp_flare.harness.cost import compute_cost_usd
-from milp_flare.harness.runner import AuthSpec, DockerRunner, Runner, RunnerRun
+from milp_flare.harness.runner import AgentRun, AuthSpec, DockerRunner, Runner
 
 
 @dataclass
@@ -38,44 +38,15 @@ class HarnessRunResult:
     stop_reason: str | None
 
 
-class HarnessRun:
-    """Handle for a single in-flight agent run."""
-
-    def __init__(
-        self,
-        harness: "Harness",
-        runner_run: RunnerRun,
-        wd: Path,
-    ) -> None:
-        self._harness = harness
-        self._runner_run = runner_run
-        self._wd = wd
-
-    def cancel(self) -> None:
-        """Stop the run by cancelling the underlying compute; idempotent."""
-        self._runner_run.cancel()
-
-    def result(self) -> HarnessRunResult:
-        """Block until the agent exits, then parse and return its result."""
-        duration = self._runner_run.wait()
-
-        parsed = self._harness._parse_stream(self._wd / "agent_output.jsonl")
-        # Codex doesn't surface per-turn USD; fill from token totals.
-        if parsed.get("cost_usd") is None:
-            parsed["cost_usd"] = compute_cost_usd(
-                self._harness.model, parsed["input_tokens"], parsed["output_tokens"]
-            )
-        return HarnessRunResult(duration_s=round(duration, 1), **parsed)
-
-
 class Harness(ABC):
     """Base class for FLARE agent harness.
 
     :class:`FLARE` uses an agent harness to auto-formalize MILP formulations in
     Lean and do automated formal proof synthesis (AFPS) of reformulation
-    certificates. This is the base class for a :class:`FLARE` agent
-    harness. It has methods to configure the agent working directory, run the
-    agent in a Docker container, and return a configuration dictionary.
+    certificates. A harness owns the *agent* concern (which CLI to launch, how
+    to authenticate it, how to parse its output) and delegates the *compute*
+    concern (where the container runs) to an injected
+    :class:`~milp_flare.harness.runner.Runner`.
 
     Parameters
     ----------
@@ -86,8 +57,8 @@ class Harness(ABC):
         Reasoning effort level (``"low"``, ``"medium"``, ``"high"``). See
         harness subclasses for supported effort levels.
     runner : Runner, optional
-        Compute backend used to launch the agent container. Defaults to
-        :class:`~milp_flare.harness.runner.docker.DockerRunner`.
+        The compute backend to execute the agent container. Defaults to
+        :class:`~milp_flare.harness.runner.DockerRunner` (local Docker).
 
     Attributes
     ----------
@@ -98,7 +69,7 @@ class Harness(ABC):
     effort : str
         Reasoning effort level this harness is configured to use.
     runner : Runner
-        Compute backend used to launch the agent container.
+        The compute backend this harness runs on.
     """
 
     name: ClassVar[str]
@@ -125,6 +96,10 @@ class Harness(ABC):
             "model": self.model,
             "effort": self.effort,
         }
+
+    def auth_spec(self) -> AuthSpec:
+        """Return the credential-forwarding spec for this harness."""
+        return AuthSpec(env=[], home_dirs=[])
 
     def configure_wd(self, wd: Path) -> None:
         """Configure the agent working directory with necessary files for the harness.
@@ -157,38 +132,69 @@ class Harness(ABC):
         # See milp_flare/assets/docker/entrypoint.sh
         (wd / "agent.sh").write_text(self._agent_command())
 
-    def start(self, wd: Path) -> HarnessRun:
-        """Launch the agent on the configured compute backend and return a handle.
+    def start(self, wd: Path) -> AgentRun:
+        """Provision the compute and start the agent, returning a live handle.
 
-        Prepare the populated agent working directory and configure necessary
-        agent credentials. Then launch the agent and write output to
-        ``wd/agent_output.jsonl``.
+        Provision the compute, populate the agent working directory in the
+        container, and configure necessary agent credentials. Then, launch the
+        agent and return a live handle to the in-flight run.
+
+        The caller is responsible for draining the :meth:`AgentRun.stdout` stream,
+        otherwise the agent may block on a full stdout buffer. Additionally, the
+        caller should :meth:`~AgentRun.close` the run once done to release the
+        compute and capture any partial output. It is recommended to use
+        :meth:`collect` which handles both of these responsibilities.
 
         Parameters
         ----------
         wd : pathlib.Path
-            The agent working directory the runner launches against.
+            The agent working directory on the host.
+        """
+        # Print the path to the agent's JSONL output for easy monitoring in real time
+        print(f"  [flare] monitor: tail -f {wd / 'agent_output.jsonl'}")
+        return self.runner.start(wd, self.auth_spec())
+
+    def collect(self, agent: AgentRun, wd: Path) -> HarnessRunResult:
+        """Collect agent output until completion, then parse it and return the result.
+
+        Agent output is written to ``agent_output.jsonl`` in the working directory
+        as a stream of JSON lines. When the agent process exits, the agent run is
+        closed, and the final results are parsed and returned.
 
         Returns
         -------
-        run : HarnessRun
-            Handle to the in-flight run.
+        result : HarnessRunResult
+            Duration, cost, token counts, and stop reason.
         """
-        # Print the path to the agent's JSONL output for easy monitoring in real time
         jsonl_path = wd / "agent_output.jsonl"
-        print(f"  [flare] monitor: tail -f {jsonl_path}")
+        # The host rebuilds agent_output.jsonl live from the streamed stdout
+        # lines, so the file exists and grows the same way on every backend.
+        try:
+            with jsonl_path.open("w") as f:
+                for line in agent.stdout:
+                    f.write(line)
+                    f.write("\n")
+                    f.flush()
+        finally:
+            agent.close()
 
-        runner_run = self.runner.start(wd, self.auth_spec())
-        return HarnessRun(harness=self, runner_run=runner_run, wd=wd)
+        parsed = self._parse_stream(jsonl_path)
+        # Codex doesn't surface per-turn USD; fill from token totals.
+        if parsed.get("cost_usd") is None:
+            parsed["cost_usd"] = compute_cost_usd(
+                self.model, parsed["input_tokens"], parsed["output_tokens"]
+            )
+
+        return HarnessRunResult(duration_s=round(agent.duration_s, 1), **parsed)
 
     def run(self, wd: Path) -> HarnessRunResult:
-        """Run the agent on the compute backend and block for the result."""
-        return self.start(wd).result()
+        """Start the agent and collect the results.
 
-    @abstractmethod
-    def auth_spec(self) -> AuthSpec:
-        """Return the credential-forwarding spec for this harness."""
-        ...
+        If the called needs direct access to the live AgentRun handle in order
+        to cancel the run from another thread, it can call :meth:`start` and
+        :meth:`collect` separately.
+        """
+        return self.collect(self.start(wd), wd)
 
     @abstractmethod
     def _agent_command(self) -> str:

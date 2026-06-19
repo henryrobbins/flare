@@ -12,8 +12,6 @@ tocdepth: 3
 
 .. autoclass:: milp_flare.harness.base.HarnessRunResult
    :no-members:
-
-.. autodata:: milp_flare.harness.base.IMAGE
 ```
 
 (agent-harnesses)=

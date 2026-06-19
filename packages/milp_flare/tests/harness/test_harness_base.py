@@ -1,58 +1,75 @@
 """Unit tests for `milp_flare.harness.base` — compute-independent logic.
 
-These cover the *agent* concern owned by `Harness`: delegating to its
-injected `Runner`, parsing the agent stream, and estimating cost. A fake
-`Runner` stands in for the compute backend so no Docker daemon or image is
-involved. The Docker compute backend itself is covered by `test_runner.py`.
+`test_docker.py` spins up real containers and is otherwise the only thing
+exercising the harness layer. This module covers `Harness.run`'s
+post-processing and the base `configure_wd` using a stub `Runner` that
+writes a synthetic `agent_output.jsonl` instead of executing any container.
 """
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 import pytest
 
 from milp_flare.harness.base import Harness, HarnessRunResult
-from milp_flare.harness.runner import AuthSpec, DockerRunner, Runner, RunnerRun
+from milp_flare.harness.runner import AgentRun, AuthSpec, Runner
 
 
-class _FakeRun(RunnerRun):
-    """RunnerRun stand-in recording cancels and returning a fixed duration."""
+class _StubAgentRun(AgentRun):
+    """In-memory AgentRun that streams a fixed list of stdout lines."""
 
-    def __init__(self, cancels: list[bool]) -> None:
-        self._cancels = cancels
+    def __init__(self, lines: list[str]) -> None:
+        self._lines = lines
+        self.canceled = False
+
+    @property
+    def stdout(self) -> Iterator[str]:
+        yield from self._lines
 
     def cancel(self) -> None:
-        self._cancels.append(True)
-
-    def wait(self) -> float:
-        return 0.0
+        self.canceled = True
 
 
-class _FakeRunner(Runner):
-    """Runner stand-in: runs `on_launch` at start, never touches Docker."""
+class _StubRunner(Runner):
+    """Runner that streams a caller-supplied agent output (no real backend).
 
-    name = "fake"
-    home = "/home/agent"
+    ``output`` is the text the agent "writes" to stdout; :meth:`Harness.collect`
+    rebuilds ``wd/agent_output.jsonl`` from it. ``None`` streams nothing,
+    simulating an agent that produced no output. The last :class:`AuthSpec` it
+    received is recorded on ``last_auth``, and the last started handle on
+    ``last_agent``.
+    """
 
-    def __init__(self, on_launch: Any) -> None:
-        self._on_launch = on_launch
-        self.cancels: list[bool] = []
+    name = "stub"
+    home = "/stub"
+
+    def __init__(self, output: str | None = "x\n") -> None:
+        self.output = output
         self.last_auth: AuthSpec | None = None
+        self.last_agent: _StubAgentRun | None = None
 
     @property
     def image(self) -> str:
-        return "fake-image:latest"
+        return "stub-image"
 
-    def start(self, wd: Path, auth: AuthSpec) -> _FakeRun:
+    def start(self, wd: Path, auth: AuthSpec) -> AgentRun:
         self.last_auth = auth
-        self._on_launch(wd, auth)
-        return _FakeRun(self.cancels)
+        lines = self.output.splitlines() if self.output is not None else []
+        agent = _StubAgentRun(lines)
+        self.last_agent = agent
+        return agent
 
 
 class _StubHarness(Harness):
-    """Minimal concrete Harness for exercising `run` without a real backend."""
+    """Minimal concrete Harness for exercising `run` without a real backend.
+
+    ``_parse_lines`` returns ``self.parsed`` when the stream had any lines, and
+    zeroed defaults for an empty stream (mirroring how the real harnesses parse
+    an empty ``agent_output.jsonl``).
+    """
 
     name = "stub"
 
@@ -64,30 +81,32 @@ class _StubHarness(Harness):
         "cost_usd": 0.5,
     }
 
-    def auth_spec(self) -> AuthSpec:
-        return AuthSpec(env=["STUB"], home_dirs=[])
-
     def _agent_command(self) -> str:
         return "echo stub"
 
     def _parse_lines(self, lines: list[str]) -> dict[str, Any]:
+        if not lines:
+            return {
+                "stop_reason": None,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cost_usd": None,
+            }
         return dict(self.parsed)
 
 
 # ---------------------------------------------------------------------------
-# Harness.run / start — exercised with a fake Runner
+# Harness.run — exercised against a stub runner
 # ---------------------------------------------------------------------------
 
 
-def test_run_parses_stream(tmp_path: Path) -> None:
-    """`run` delegates to the runner and parses the JSONL it leaves behind."""
+def test_run_delegates_to_runner_and_parses_stream(tmp_path: Path) -> None:
+    """`run` delegates to the runner, then parses the produced JSONL."""
     wd = tmp_path / "wd"
     wd.mkdir()
+    runner = _StubRunner(output="synthetic agent output\n")
+    harness = _StubHarness(model="claude-opus-4-7", runner=runner)
 
-    def _launch(launch_wd: Path, auth: AuthSpec) -> None:
-        (launch_wd / "agent_output.jsonl").write_text("synthetic agent output\n")
-
-    harness = _StubHarness(model="claude-opus-4-7", runner=_FakeRunner(_launch))
     result = harness.run(wd)
 
     assert isinstance(result, HarnessRunResult)
@@ -96,35 +115,33 @@ def test_run_parses_stream(tmp_path: Path) -> None:
     assert result.output_tokens == 200
     assert result.cost_usd == 0.5
     assert result.duration_s >= 0.0
+    # The runner received the harness's (default empty) auth spec.
+    assert runner.last_auth == AuthSpec(env=[], home_dirs=[])
 
 
 def test_run_fills_cost_from_tokens_when_unset(tmp_path: Path) -> None:
     """When the parsed stream has no `cost_usd`, it is estimated from tokens."""
     wd = tmp_path / "wd"
     wd.mkdir()
-
-    def _launch(launch_wd: Path, auth: AuthSpec) -> None:
-        (launch_wd / "agent_output.jsonl").write_text("x\n")
-
-    harness = _StubHarness(model="claude-opus-4-7", runner=_FakeRunner(_launch))
+    harness = _StubHarness(model="claude-opus-4-7", runner=_StubRunner())
     harness.parsed = {
         "stop_reason": "end_turn",
         "input_tokens": 1_000_000,
         "output_tokens": 1_000_000,
         "cost_usd": None,
     }
+
     result = harness.run(wd)
     # claude-opus-4-7 is priced at (5.0, 25.0) per Mtok -> 5 + 25 = 30.0
     assert result.cost_usd == pytest.approx(30.0)
 
 
-def test_run_handles_missing_agent_output(tmp_path: Path) -> None:
-    """A missing `agent_output.jsonl` yields zeroed defaults, not a crash."""
+def test_run_handles_empty_agent_output(tmp_path: Path) -> None:
+    """An agent that streams nothing yields zeroed defaults, not a crash."""
     wd = tmp_path / "wd"
     wd.mkdir()
-    harness = _StubHarness(
-        model="claude-opus-4-7", runner=_FakeRunner(lambda w, a: None)
-    )
+    harness = _StubHarness(model="claude-opus-4-7", runner=_StubRunner(output=None))
+
     result = harness.run(wd)
     assert result.stop_reason is None
     assert result.input_tokens == 0
@@ -133,33 +150,41 @@ def test_run_handles_missing_agent_output(tmp_path: Path) -> None:
     assert result.cost_usd == 0.0
 
 
-def test_start_passes_auth_spec_and_cancel_delegates(tmp_path: Path) -> None:
-    """`start` hands the harness's auth_spec to the runner; cancel delegates."""
+def test_run_streams_stdout_into_agent_output(tmp_path: Path) -> None:
+    """`run` rebuilds wd/agent_output.jsonl from the streamed stdout lines."""
     wd = tmp_path / "wd"
     wd.mkdir()
-    runner = _FakeRunner(lambda w, a: None)
+    runner = _StubRunner(output='{"a": 1}\n{"b": 2}\n')
     harness = _StubHarness(model="claude-opus-4-7", runner=runner)
 
-    run = harness.start(wd)
-    assert runner.last_auth == AuthSpec(env=["STUB"], home_dirs=[])
+    harness.run(wd)
 
-    run.cancel()
-    assert runner.cancels == [True]
+    assert (wd / "agent_output.jsonl").read_text() == '{"a": 1}\n{"b": 2}\n'
 
 
-def test_defaults_to_docker_runner() -> None:
-    """A harness with no explicit runner uses a DockerRunner."""
+def test_start_returns_live_handle(tmp_path: Path) -> None:
+    """`start` hands back the runner's live AgentRun directly — no callback.
+
+    The handle exists the moment `start` returns, which is what lets an external
+    owner cancel it from another thread without any `on_start` plumbing.
+    """
+    wd = tmp_path / "wd"
+    wd.mkdir()
+    runner = _StubRunner()
+    harness = _StubHarness(model="claude-opus-4-7", runner=runner)
+
+    agent = harness.start(wd)
+
+    assert agent is runner.last_agent
+
+
+def test_run_defaults_to_docker_runner() -> None:
+    """A harness constructed without a runner uses the local Docker backend."""
+    from milp_flare.harness.runner import DockerRunner
+
     harness = _StubHarness(model="claude-opus-4-7")
     assert isinstance(harness.runner, DockerRunner)
-
-
-def test_config_dict_reports_compute_and_image() -> None:
-    """get_config_dict surfaces the runner's compute name and image."""
-    runner = _FakeRunner(lambda w, a: None)
-    cfg = _StubHarness(model="claude-opus-4-7", runner=runner).get_config_dict()
-    assert cfg["compute"] == "fake"
-    assert cfg["image"] == "fake-image:latest"
-    assert cfg["harness"] == "stub"
+    assert harness.get_config_dict()["compute"] == "docker"
 
 
 # ---------------------------------------------------------------------------

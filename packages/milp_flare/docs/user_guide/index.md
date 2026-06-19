@@ -6,6 +6,7 @@ We provide user guides for common workflows. Each guide assumes you have already
 :maxdepth: 1
 
 docker
+modal
 run_flare
 ```
 

@@ -4,44 +4,61 @@ import os
 import subprocess
 import time
 import uuid
+from collections.abc import Iterator
 from pathlib import Path
 from typing import IO, ClassVar
 
-from milp_flare.harness.runner.base import AuthSpec, Runner, RunnerRun
-
-#: The default name of the Docker image containing the agent environment. This
-#: image is expected to be built prior to running FLARE. See :doc:`/installation`.
-IMAGE = "flare-agent:latest"
+from milp_flare.harness.runner.base import IMAGE, AgentRun, AuthSpec, Runner
 
 
-class DockerRun(RunnerRun):
-    """Handle for a single in-flight Docker agent run."""
+class DockerAgentRun(AgentRun):
+    """Live handle for a single in-flight Docker agent run.
+
+    Parameters
+    ----------
+    popen : subprocess.Popen[str]
+        The Popen handle for the ``docker run`` running container process.
+    name : str
+        The unique container name for this run, used to target cancellation.
+    stderr_f : IO[bytes]
+        The file where the container's stderr is being redirected.
+    start : float
+        The wall-clock time when the container was launched, for duration tracking.
+    """
 
     def __init__(
         self,
-        proc: subprocess.Popen[bytes],
+        popen: subprocess.Popen[str],
         name: str,
-        stderr_file: IO[bytes],
-        start_time: float,
+        stderr_f: IO[bytes],
+        start: float,
     ) -> None:
-        self._proc = proc
-        self._container = name
-        self._stderr_file = stderr_file
-        self._start_time = start_time
+        super().__init__(start)
+        self._popen = popen
+        self._name = name
+        self._stderr_f = stderr_f
+
+    @property
+    def stdout(self) -> Iterator[str]:
+        assert self._popen.stdout is not None
+        for line in self._popen.stdout:
+            yield line.rstrip("\n")
 
     def cancel(self) -> None:
-        """Stop the run by killing its container; idempotent and thread-safe."""
+        # The agent working directory is bind-mounted into the container, so all
+        # partial artifacts are already on the host. Just kill the container.
         subprocess.run(
-            ["docker", "kill", self._container],
+            ["docker", "kill", self._name],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
 
-    def wait(self) -> float:
-        """Block until the container exits; return wall-clock duration in seconds."""
-        self._proc.wait()
-        self._stderr_file.close()
-        return time.time() - self._start_time
+    def _teardown(self) -> None:
+        super()._teardown()
+        # Killing the Docker container kills the process and the stdout pipe
+        # which should release the wait() below.
+        self._popen.wait()
+        self._stderr_f.close()
 
 
 class DockerRunner(Runner):
@@ -49,8 +66,9 @@ class DockerRunner(Runner):
 
     Parameters
     ----------
-    image : str, default :const:`IMAGE`
-        The Docker image tag to run.
+    image : str, default :const:`~milp_flare.harness.runner.base.IMAGE`
+        The Docker image tag to run. Built via ``milp-flare build-docker-image``;
+        see :doc:`/user_guide/docker`.
     """
 
     name: ClassVar[str] = "docker"
@@ -63,31 +81,30 @@ class DockerRunner(Runner):
     def image(self) -> str:
         return self._image
 
-    def start(self, wd: Path, auth: AuthSpec) -> DockerRun:
-        """Launch the agent in a Docker container and return a run handle.
-
-        Spawns a Docker container with the image specified by :const:`IMAGE`,
-        bind-mounts ``wd`` into the container, and forwards credentials per
-        ``auth``. The container entrypoint calls the agent command script which
-        launches the agent. Agent output is written to ``wd/agent_output.jsonl``.
-        """
-
+    def start(self, wd: Path, auth: AuthSpec) -> AgentRun:
+        # A unique per-run name lets cancel() stop just this container.
         name = f"flare-{uuid.uuid4().hex[:12]}"
-        stderr_file = open(wd / "docker_stderr.txt", "wb")
         start = time.time()
-        proc = subprocess.Popen(
-            self._build_docker_cmd(wd, auth, name=name),
-            stdout=subprocess.DEVNULL,
-            stderr=stderr_file,
-            # Without start_new_session, Ctrl+C in the terminal sends SIGINT to
-            # both the driver and the agent container, which can cause the
-            # container to terminate prematurely. start_new_session=True detaches
-            # the subprocess from the terminal's process group.
-            start_new_session=True,
-        )
-        return DockerRun(
-            proc=proc, name=name, stderr_file=stderr_file, start_time=start
-        )
+        # Redirect stderr straight to a file so the undrained pipe can't deadlock
+        # the run; stdout stays a pipe we stream line by line. The handle owns
+        # the file and closes it on teardown.
+        stderr_f = open(wd / "docker_stderr.txt", "wb")
+        try:
+            popen = subprocess.Popen(
+                self._build_docker_cmd(wd, auth, name=name),
+                stdout=subprocess.PIPE,
+                stderr=stderr_f,
+                text=True,
+                # Without start_new_session, Ctrl+C in the terminal sends SIGINT
+                # to both the driver and the agent container, which can cause the
+                # container to terminate prematurely. start_new_session=True
+                # detaches the subprocess from the terminal's process group.
+                start_new_session=True,
+            )
+        except BaseException:
+            stderr_f.close()
+            raise
+        return DockerAgentRun(popen, name, stderr_f, start)
 
     def _build_docker_cmd(
         self, wd: Path, auth: AuthSpec, name: str | None = None
@@ -102,14 +119,13 @@ class DockerRunner(Runner):
             cmd += ["--name", name]
         # Bind mount the agent's working directory to /workspace/wd in the container
         cmd += ["-v", f"{wd.resolve()}:/workspace/wd"]
-        # Label the container with the FLARE run ID (if present) as a batch-wide
-        # cancellation backstop.
+        # Label the container with the FLARE run ID (if present)
         run_id = os.environ.get("FLARE_RUN_ID")
         if run_id:
             cmd += ["--label", f"flare-run={run_id}"]
         # Forward agent credentials (env vars and host config dirs).
-        for env_name in auth.env:
-            cmd += ["-e", env_name]
+        for name in auth.env:
+            cmd += ["-e", name]
         for host_dir, dest in auth.home_dirs:
             # Mount rw so e.g. codex can refresh its access token mid-session.
             cmd += ["-v", f"{host_dir}:{self.home}/{dest}"]

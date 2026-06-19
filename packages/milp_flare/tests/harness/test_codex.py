@@ -132,10 +132,10 @@ def test_auth_spec_requires_codex_login(
         _codex().auth_spec()
 
 
-def test_auth_spec_mounts_codex_dir(
+def test_auth_spec_maps_codex_dir(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """When ~/.codex exists, it is exposed under the container HOME."""
+    """When ~/.codex exists, it is offered as a home dir (no env vars)."""
     (tmp_path / ".codex").mkdir()
     monkeypatch.setattr(codex_module.Path, "home", lambda: tmp_path)
     spec = _codex().auth_spec()
