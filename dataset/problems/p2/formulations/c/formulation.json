@@ -95,7 +95,7 @@
     "constraints": [
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
-            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot (j\\_0_i \\cdot 10^0 + j\\_1_i \\cdot 10^1) \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\times (j\\_0_i \\times 10^0 + j\\_1_i \\times 10^1) \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * (j_0[i]*10**0 + j_1[i]*10**1) for i in range(M)) <= Y[k] for k in range(N))"
@@ -136,7 +136,7 @@
     ],
     "objective": {
         "description": "Increase the overall electrical output by conducting the experiments to their full potential.",
-        "formulation": "Max \\sum_{i=1}^{M} (j\\_0_i \\cdot 10^0 + j\\_1_i \\cdot 10^1) \\times A_{i}",
+        "formulation": "Max \\sum_{i=1}^{M} (j\\_0_i \\times 10^0 + j\\_1_i \\times 10^1) \\times A_{i}",
         "code": {
             "gurobipy": "model.setObjective(quicksum((j_0[i]*10**0 + j_1[i]*10**1) * A[i] for i in range(M)), GRB.MAXIMIZE)"
         }

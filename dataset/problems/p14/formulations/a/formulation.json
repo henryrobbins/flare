@@ -116,7 +116,7 @@
         },
         {
             "description": "Hospitals can only be allocated to active DCs, bounded by the number of feasibly reachable hospitals.",
-            "formulation": "\\sum_{j \\in \\mathcal{H}} \\delta_{ij}\\, y_{ij} \\leq x_i \\cdot \\sum_{j \\in \\mathcal{H}} \\delta_{ij} \\quad \\forall i \\in \\mathcal{S}",
+            "formulation": "\\sum_{j \\in \\mathcal{H}} \\delta_{ij}\\, y_{ij} \\leq x_i \\times \\sum_{j \\in \\mathcal{H}} \\delta_{ij} \\quad \\forall i \\in \\mathcal{S}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(delta[i][j] * y[i, j] for j in range(nH)) <= x[i] * sum(delta[i][j] for j in range(nH)) for i in range(nS))"

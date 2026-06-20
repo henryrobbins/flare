@@ -118,7 +118,7 @@
         },
         {
             "description": "A minimum of J employees need to be transported.",
-            "formulation": "J \\leq m \\cdot K + h \\cdot D",
+            "formulation": "J \\leq m \\times K + h \\times D",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(m * K + h * D >= J)"

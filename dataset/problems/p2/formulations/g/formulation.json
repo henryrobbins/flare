@@ -88,7 +88,7 @@
     "constraints": [
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
-            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot  j_i \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\times  j_i \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * j[i] for i in range(M)) <= Y[k] for k in range(N))"
@@ -105,7 +105,7 @@
     ],
     "objective": {
         "description": "Increase the overall electrical output by conducting the experiments to their full potential.",
-        "formulation": "Max 2 \\cdot \\sum_{i=1}^{M} j_{i} \\times A_{i}",
+        "formulation": "Max 2 \\times \\sum_{i=1}^{M} j_{i} \\times A_{i}",
         "code": {
             "gurobipy": "model.setObjective(2 * quicksum(j[i] * A[i] for i in range(M)), GRB.MAXIMIZE)"
         }

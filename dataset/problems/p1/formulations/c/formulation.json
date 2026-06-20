@@ -107,7 +107,7 @@
     "constraints": [
         {
             "description": "The minimum number of individuals handled within an hour by machines accepting both cash and cards must be U.",
-            "formulation": "U \\leq A \\cdot (s_0*10^0 + s_1*10^1) + K \\cdot (r_0*10^0 + r_1*10^1)",
+            "formulation": "U \\leq A \\times (s_0*10^0 + s_1*10^1) + K \\times (r_0*10^0 + r_1*10^1)",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(A*(s_0*10**0 + s_1*10**1)+K*(r_0*10**0 + r_1*10**1)>=U)"
@@ -210,7 +210,7 @@
         "notes": [
             "Substitute integer variables with base-10 representations.",
             "This formulation is marked invalid because it is only a reformulation at the instance-level, not the formulation-level.",
-            "Source typo $U \\leq A \\cdot K + (s_0*10^0 + s_1*10^1) \\cdot (r_0*10^0 + r_1*10^1)$ corrected to $U \\leq A \\cdot (s_0*10^0 + s_1*10^1) + K \\cdot (r_0*10^0 + r_1*10^1)$ to match Gurobi code and problem description."
+            "Source typo $U \\leq A \\times K + (s_0*10^0 + s_1*10^1) \\times (r_0*10^0 + r_1*10^1)$ corrected to $U \\leq A \\times (s_0*10^0 + s_1*10^1) + K \\times (r_0*10^0 + r_1*10^1)$ to match Gurobi code and problem description."
         ]
     }
 }

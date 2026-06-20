@@ -115,7 +115,7 @@
         },
         {
             "description": "A minimum of J employees need to be transported.",
-            "formulation": "J \\leq (m1_{index} + m2_{index})\\cdot K + (h1_{index} + h2_{index})\\cdot D",
+            "formulation": "J \\leq (m1_{index} + m2_{index})\\times K + (h1_{index} + h2_{index})\\times D",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr((m1 + m2)* K + (h1 + h2)* D >= J)"

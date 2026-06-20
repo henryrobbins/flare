@@ -84,7 +84,7 @@
         },
         {
             "description": "Hospitals can only be allocated to active DCs, using the loose big-M bound of |H|.",
-            "formulation": "\\sum_{j \\in \\mathcal{H}} y_{ij} \\leq x_i \\cdot |\\mathcal{H}| \\quad \\forall i \\in \\mathcal{S}",
+            "formulation": "\\sum_{j \\in \\mathcal{H}} y_{ij} \\leq x_i \\times |\\mathcal{H}| \\quad \\forall i \\in \\mathcal{S}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(y[i, j] for j in range(nH)) <= x[i] * nH for i in range(nS))"
@@ -100,7 +100,7 @@
         },
         {
             "description": "Travel time limit: a hospital may only be assigned to a DC within the time limit.",
-            "formulation": "T_{ij} \\cdot y_{ij} \\leq T_{\\text{limit}} \\quad \\forall i \\in \\mathcal{S},\\, j \\in \\mathcal{H}",
+            "formulation": "T_{ij} \\times y_{ij} \\leq T_{\\text{limit}} \\quad \\forall i \\in \\mathcal{S},\\, j \\in \\mathcal{H}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(T[i][j] * y[i, j] <= T_limit for i in range(nS) for j in range(nH))"

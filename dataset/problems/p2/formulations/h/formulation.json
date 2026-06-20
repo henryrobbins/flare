@@ -105,7 +105,7 @@
         },
         {
             "description": "The combined weight of gold shark snacks in the two mixes should not go over W kilograms, which is determined as the sum of ((100 - F) multiplied by n) and ((100 - M) multiplied by v).",
-            "formulation": "W \\geq \\frac{(100 - F)}{100} \\cdot n + \\frac{(100 - M)}{100} \\cdot v",
+            "formulation": "W \\geq \\frac{(100 - F)}{100} \\times n + \\frac{(100 - M)}{100} \\times v",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(((100 - F) / 100) * n + ((100 - M) / 100) * v <= W)"

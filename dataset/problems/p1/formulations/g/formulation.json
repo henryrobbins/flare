@@ -97,7 +97,7 @@
     "constraints": [
         {
             "description": "The minimum number of individuals handled within an hour by machines accepting both cash and cards must be U.",
-            "formulation": "U \\leq A \\cdot s + K \\cdot r",
+            "formulation": "U \\leq A \\times s + K \\times r",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(A * s + K * r >= U)"
@@ -138,7 +138,7 @@
     ],
     "objective": {
         "description": "Reduce the overall quantity of machines at the park.",
-        "formulation": "Min \\ 2 \\cdot (r + s)",
+        "formulation": "Min \\ 2 \\times (r + s)",
         "code": {
             "gurobipy": "model.setObjective(2 * (s + r), GRB.MINIMIZE)"
         }

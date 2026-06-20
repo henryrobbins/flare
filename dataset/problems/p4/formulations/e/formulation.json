@@ -107,7 +107,7 @@
     "constraints": [
         {
             "description": "A minimum of J employees need to be transported. (Modified to include slack variable slack_0)",
-            "formulation": "m \\cdot K + h \\cdot D - slack_0 = J",
+            "formulation": "m \\times K + h \\times D - slack_0 = J",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(m * K + h * D - slack_0 == J)"

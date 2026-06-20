@@ -88,7 +88,7 @@
     "constraints": [
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
-            "formulation": "\\sum_{i=1}^{NumExperiments} ResourceRequired_{j,i} \\cdot ConductExperiment_i \\leq ResourceAvailable_j \\quad \\forall j \\in \\{1, \\ldots, NumResources\\}",
+            "formulation": "\\sum_{i=1}^{NumExperiments} ResourceRequired_{j,i} \\times ConductExperiment_i \\leq ResourceAvailable_j \\quad \\forall j \\in \\{1, \\ldots, NumResources\\}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(ResourceRequired[j][i] * ConductExperiment[i] for i in range(NumExperiments)) <= ResourceAvailable[j] for j in range(NumResources))"
