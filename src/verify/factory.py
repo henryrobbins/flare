@@ -19,7 +19,9 @@ def build_verifier(spec: dict[str, Any]) -> ReformulationVerifier:
       - {type: execution}
       - {type: equivamap, client: {<LLMConfig fields, optional provider>}}
       - {type: flare, harness: claude_code|codex|opencode,
-         compute?: docker, docker?: {...},
+         compute?: docker|modal,
+         docker?: {image?: <str>},
+         modal?: {cpu?: <float>, memory?: <int>, timeout?: <int>, ...},
          client: {model: <str>, effort?: <str>, provider?: <str>}}
       - {type: llm, name: <str>, client: {...}, template?: <str>,
          include_implicit?: <bool>}
