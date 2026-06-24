@@ -8,6 +8,14 @@ open BigOperators Finset
 
 namespace P21.a
 
+-- Two distinct vertices are adjacent iff some edge of E connects them
+def Adjacent {n m : ℕ} (E : Fin m → Fin n × Fin n) (i j : Fin n) : Prop :=
+  (∃ e : Fin m, E e = (i, j)) ∨ (∃ e : Fin m, E e = (j, i))
+
+-- A finite vertex set is a clique iff every pair of distinct vertices is adjacent
+def IsClique {n m : ℕ} (E : Fin m → Fin n × Fin n) (S : Finset (Fin n)) : Prop :=
+  ∀ i ∈ S, ∀ j ∈ S, i ≠ j → Adjacent E i j
+
 structure Params where
   -- Dimensions
   n : ℕ -- number of vertices in the perfect graph
@@ -27,6 +35,13 @@ structure Params where
   hpartition_unique : ∀ p1 p2 : Fin P, ∀ s1 : Fin (clusterSize p1), ∀ s2 : Fin (clusterSize p2),
     clusters p1 s1 = clusters p2 s2 → p1 = p2
   hedge_lt : ∀ e : Fin m, (E e).1 < (E e).2
+  -- The graph is perfect: every induced subgraph has chromatic number equal to its clique
+  -- number, i.e. if every clique within S has at most k vertices, S admits a proper coloring
+  -- (w.r.t. the edges of the full graph) using fewer than k colors
+  hperfect : ∀ (S : Finset (Fin n)) (k : ℕ),
+    (∀ C : Finset (Fin n), C ⊆ S → IsClique E C → C.card ≤ k) →
+    ∃ c : Fin n → ℕ, (∀ i ∈ S, c i < k) ∧
+      ∀ i ∈ S, ∀ j ∈ S, i ≠ j → Adjacent E i j → c i ≠ c j
 
 structure Vars (p : Params) where
   y : Fin p.P → ℤ -- equals 1 if color k is used

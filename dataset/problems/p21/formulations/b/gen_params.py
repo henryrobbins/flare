@@ -35,8 +35,10 @@ def main(data_path: str, output_path: str) -> None:
 
     params = {
         "n": n,
+        "m": len(edges),
         "P": data["P"],
         "clusterSize": data["clusterSize"],
+        "E": edges,
         "clusters": data["clusters"],
         "q": len(cliques),
         "cliqueSize": [len(c) for c in cliques],
