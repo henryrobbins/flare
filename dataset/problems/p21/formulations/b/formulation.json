@@ -1,0 +1,160 @@
+{
+    "valid": true,
+    "parameters": {
+        "n": {
+            "description": "Number of vertices in the perfect graph",
+            "type": "integer",
+            "shape": []
+        },
+        "P": {
+            "description": "Number of disjoint clusters partitioning the vertex set",
+            "type": "integer",
+            "shape": []
+        },
+        "clusterSize": {
+            "description": "Number of vertices in each cluster",
+            "type": "integer",
+            "shape": [
+                "P"
+            ]
+        },
+        "clusters": {
+            "description": "Vertex indices belonging to each cluster",
+            "type": "integer",
+            "shape": [
+                "P",
+                "clusterSize[P]"
+            ]
+        },
+        "q": {
+            "description": "Number of maximal cliques of the graph",
+            "type": "integer",
+            "shape": []
+        },
+        "cliqueSize": {
+            "description": "Number of vertices in each maximal clique",
+            "type": "integer",
+            "shape": [
+                "q"
+            ]
+        },
+        "K": {
+            "description": "Vertex indices belonging to each maximal clique of the graph",
+            "type": "integer",
+            "shape": [
+                "q",
+                "cliqueSize[q]"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "The number of vertices is positive.",
+            "formulation": "n > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert n > 0"
+            }
+        },
+        {
+            "description": "The number of clusters is positive.",
+            "formulation": "P > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert P > 0"
+            }
+        },
+        {
+            "description": "Each cluster contains at least one vertex.",
+            "formulation": "\\text{clusterSize}_p \\geq 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "assert all(clusterSize[p] >= 1 for p in range(P))"
+            }
+        },
+        {
+            "description": "The clusters partition the vertex set: every vertex belongs to exactly one cluster.",
+            "formulation": "\\sum_{p=0}^{P-1} \\text{clusterSize}_p = n",
+            "explicit": true,
+            "code": {
+                "python": "assert sum(clusterSize) == n and sorted(i for cluster in clusters for i in cluster) == list(range(n))"
+            }
+        },
+        {
+            "description": "The number of maximal cliques is positive.",
+            "formulation": "q > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert q > 0"
+            }
+        },
+        {
+            "description": "Each maximal clique contains at least one vertex with a valid vertex index.",
+            "formulation": "1 \\leq \\text{cliqueSize}_l \\ \\wedge\\ 0 \\leq i \\leq n-1 \\ \\forall i \\in K_l, \\ \\forall l \\in \\{0,\\ldots,q-1\\}",
+            "explicit": false,
+            "code": {
+                "python": "assert all(cliqueSize[l] >= 1 and all(0 <= i <= n - 1 for i in K[l]) for l in range(q))"
+            }
+        }
+    ],
+    "variables": {
+        "x": {
+            "description": "Equals 1 if vertex i is selected, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "n"
+            ]
+        },
+        "t": {
+            "description": "Estimate of the number of colors needed to color the selected vertices",
+            "type": "continuous",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Exactly one vertex is selected from each cluster.",
+            "formulation": "\\sum_{i \\in \\text{clusters}_p} x_i = 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(gp.quicksum(x[i] for i in clusters[p]) == 1)"
+            }
+        },
+        {
+            "description": "t is at least the number of selected vertices within any maximal clique of the graph; since the graph is perfect, the largest such count over all maximal cliques equals the chromatic number of the induced subgraph on the selected vertices.",
+            "formulation": "t \\geq \\sum_{i \\in K_l} x_i \\quad \\forall l \\in \\{0,\\ldots,q-1\\}",
+            "explicit": false,
+            "code": {
+                "gurobipy": "for l in range(q):\n    model.addConstr(t >= gp.quicksum(x[i] for i in K[l]))"
+            }
+        },
+        {
+            "description": "t is non-negative.",
+            "formulation": "t \\geq 0",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(t >= 0)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the number of colors needed to color the selected vertices.",
+        "formulation": "\\min \\ t",
+        "code": {
+            "gurobipy": "model.setObjective(t, GRB.MINIMIZE)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "FrontierOR",
+            "instance_id": "seker2021",
+            "variation_id": "model2"
+        },
+        "notes": [
+            "Reformulates Model 2 of Seker, Ekim, and Taskin (2021) as a static MILP.",
+            "The paper's Model 2 bounds t below by chi(G[x]), the chromatic number of the subgraph induced by the selection x; this is not a linear expression, so the paper resolves it with cutting planes t >= sum_{i in K^(j)} x_i generated iteratively from a maximum clique K^(j) of G[x^(j)] found at each step of a cutting-plane algorithm, rather than a single static formulation.",
+            "Since the input graph is perfect, chi(G[x]) = omega(G[x]) (clique number) for every selection x, and omega(G[x]) equals the size of the largest maximal clique of the full graph G that lies entirely within the selection. We therefore replace the paper's dynamically generated cuts with the full, static set of constraints t >= sum_{i in K_l} x_i for every maximal clique K_l of G, precomputed once from the input graph in gen_params.py.",
+            "q, cliqueSize, and K are derived parameters computed from the base graph parameters (n, m, E) via maximal-clique enumeration; they are not part of problem.json since they are specific to this formulation."
+        ]
+    }
+}
