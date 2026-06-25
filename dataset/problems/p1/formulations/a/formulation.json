@@ -97,7 +97,7 @@
     "constraints": [
         {
             "description": "The total number of people processed per hour by cash-based and card-only machines must be at least MinPeopleProcessed.",
-            "formulation": "CashMachineProcessingRate \\cdot NumCashMachines + CardMachineProcessingRate \\cdot NumCardMachines \\geq MinPeopleProcessed",
+            "formulation": "CashMachineProcessingRate \\times NumCashMachines + CardMachineProcessingRate \\times NumCardMachines \\geq MinPeopleProcessed",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(CashMachineProcessingRate * NumCashMachines + CardMachineProcessingRate * NumCardMachines >= MinPeopleProcessed)"

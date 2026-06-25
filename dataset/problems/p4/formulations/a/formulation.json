@@ -97,7 +97,7 @@
     "constraints": [
         {
             "description": "At least MinEmployeesToTransport employees must be transported.",
-            "formulation": "xCars \\cdot CarCapacity + xBuses \\cdot BusCapacity \\geq MinEmployeesToTransport",
+            "formulation": "xCars \\times CarCapacity + xBuses \\times BusCapacity \\geq MinEmployeesToTransport",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(xCars * CarCapacity + xBuses * BusCapacity >= MinEmployeesToTransport)"

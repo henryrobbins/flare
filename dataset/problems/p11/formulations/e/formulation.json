@@ -624,7 +624,7 @@
             "name": "EC2c"
         },
         "notes": [
-            "Generator $g$'s maximum available output above its minimum is reduced by both the startup derating at period $t$ and the shutdown derating at $t+1$, with a recovery term $b_{g,t} = v_{g,t} \\cdot w_{g,t+1}$ that adds back the smaller of the two when startup and shutdown occur in consecutive periods (so the derating is not double-counted).",
+            "Generator $g$'s maximum available output above its minimum is reduced by both the startup derating at period $t$ and the shutdown derating at $t+1$, with a recovery term $b_{g,t} = v_{g,t} \\times w_{g,t+1}$ that adds back the smaller of the two when startup and shutdown occur in consecutive periods (so the derating is not double-counted).",
             "This inequality relies on the auxiliary variable $b_{g,t}$, so the three inequalities that define it (see `p11.b`) are also included."
         ]
     }

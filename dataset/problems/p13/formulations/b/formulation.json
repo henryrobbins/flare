@@ -105,7 +105,7 @@
         },
         {
             "description": "Movements are only allowed between adjacent locations.",
-            "formulation": "f_{a,a',t} \\leq nP \\cdot \\text{adj}_{a,a'} \\quad \\forall a, a' \\in A, t \\in T",
+            "formulation": "f_{a,a',t} \\leq nP \\times \\text{adj}_{a,a'} \\quad \\forall a, a' \\in A, t \\in T",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(f[a, a2, t] <= nP * adj[a][a2] for a in range(nA) for a2 in range(nA) for t in range(nT))"
@@ -146,7 +146,7 @@
     ],
     "objective": {
         "description": "Maximize total reward for all flights across all locations and time periods.",
-        "formulation": "\\max \\sum_{a \\in A} \\sum_{t \\in T} r_{a,t} \\cdot n_{a,t}",
+        "formulation": "\\max \\sum_{a \\in A} \\sum_{t \\in T} r_{a,t} \\times n_{a,t}",
         "code": {
             "gurobipy": "model.setObjective(gp.quicksum(r[a][t] * n[a, t] for a in range(nA) for t in range(nT)), GRB.MAXIMIZE)"
         }

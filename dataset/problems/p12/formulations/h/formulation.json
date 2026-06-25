@@ -61,7 +61,7 @@
         },
         {
             "description": "MTZ subtour elimination constraint.",
-            "formulation": "u_i - u_j + n \\cdot x_{ij} \\leq n - 1 \\quad \\forall i, j \\in V \\setminus \\{0\\},\\; i \\neq j",
+            "formulation": "u_i - u_j + n \\times x_{ij} \\leq n - 1 \\quad \\forall i, j \\in V \\setminus \\{0\\},\\; i \\neq j",
             "code": {
                 "gurobipy": "model.addConstrs(u[i] - u[j] + n * x[i, j] <= n - 1 for i in range(1, n) for j in range(1, n) if i != j)"
             },
@@ -110,7 +110,7 @@
     ],
     "objective": {
         "description": "Minimize the total travel cost of the Hamiltonian cycle.",
-        "formulation": "\\min \\sum_{i \\in V} \\sum_{j \\in V,\\, j \\neq i} c_{ij} \\cdot x_{ij}",
+        "formulation": "\\min \\sum_{i \\in V} \\sum_{j \\in V,\\, j \\neq i} c_{ij} \\times x_{ij}",
         "code": {
             "gurobipy": "model.setObjective(gp.quicksum(c[i][j] * x[i, j] for i in range(n) for j in range(n) if i != j), GRB.MINIMIZE)"
         }

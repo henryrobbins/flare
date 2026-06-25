@@ -115,7 +115,7 @@
         },
         {
             "description": "A hospital can only receive household assignments if it is open.",
-            "formulation": "\\sum_{i \\in I} y_{ij} \\leq |I| \\cdot x_j \\quad \\forall j \\in J",
+            "formulation": "\\sum_{i \\in I} y_{ij} \\leq |I| \\times x_j \\quad \\forall j \\in J",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(y[i, j] for i in range(nI)) <= nI * x[j] for j in range(M))"

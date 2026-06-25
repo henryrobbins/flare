@@ -274,7 +274,7 @@
         },
         {
             "description": "Minimum average floor area for sector i.",
-            "formulation": "\\sum_{k,v,h,a \\in A_v} \\text{area}_{j_{va}} \\cdot y_{kvhia} \\geq s_i \\sum_{k,v,h,a \\in A_v} y_{kvhia} \\quad \\forall i \\in I",
+            "formulation": "\\sum_{k,v,h,a \\in A_v} \\text{area}_{j_{va}} \\times y_{kvhia} \\geq s_i \\sum_{k,v,h,a \\in A_v} y_{kvhia} \\quad \\forall i \\in I",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(area[jApt[v][a]] * y[k, v, h, i, a] for k in range(nK) for v in range(nV) for h in range(nH) for a in range(cap[v])) >= s[i] * gp.quicksum(y[k, v, h, i, a] for k in range(nK) for v in range(nV) for h in range(nH) for a in range(cap[v])) for i in range(nI))"
@@ -298,7 +298,7 @@
         },
         {
             "description": "Minimum ownership fraction: total apartments assigned to owner h meets o_h times all apartments.",
-            "formulation": "\\sum_{k,v} x_{kvh} \\cdot |A_v| \\geq o_h \\sum_{k,v,h'} x_{kvh'} \\cdot |A_v| \\quad \\forall h \\in H",
+            "formulation": "\\sum_{k,v} x_{kvh} \\times |A_v| \\geq o_h \\sum_{k,v,h'} x_{kvh'} \\times |A_v| \\quad \\forall h \\in H",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(x[k, v, h] * cap[v] for k in range(nK) for v in range(nV)) >= o[h] * gp.quicksum(x[k, v, hp] * cap[v] for k in range(nK) for v in range(nV) for hp in range(nH)) for h in range(nH))"
@@ -307,7 +307,7 @@
     ],
     "objective": {
         "description": "Maximize total profit from apartment assignments.",
-        "formulation": "\\max \\sum_{k,v,h,i,a \\in A_v} p_{i\\,j_{va}\\,h} \\cdot y_{kvhia}",
+        "formulation": "\\max \\sum_{k,v,h,i,a \\in A_v} p_{i\\,j_{va}\\,h} \\times y_{kvhia}",
         "code": {
             "gurobipy": "model.setObjective(\n    gp.quicksum(pProfit[i][jApt[v][a]][h] * y[k, v, h, i, a]\n                for k in range(nK) for v in range(nV) for h in range(nH)\n                for i in range(nI) for a in range(cap[v])),\n    GRB.MAXIMIZE\n)"
         }

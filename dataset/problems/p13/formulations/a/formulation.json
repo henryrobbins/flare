@@ -132,7 +132,7 @@
     ],
     "objective": {
         "description": "Maximize total reward for all flights across all locations and time periods.",
-        "formulation": "\\max \\sum_{p \\in P} \\sum_{a \\in A} \\sum_{t \\in T} r_{a,t} \\cdot y_{p,a,t}",
+        "formulation": "\\max \\sum_{p \\in P} \\sum_{a \\in A} \\sum_{t \\in T} r_{a,t} \\times y_{p,a,t}",
         "code": {
             "gurobipy": "model.setObjective(gp.quicksum(r[a][t] * y[p, a, t] for p in range(nP) for a in range(nA) for t in range(nT)), GRB.MAXIMIZE)"
         }

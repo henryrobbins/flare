@@ -97,7 +97,7 @@
     "constraints": [
         {
             "description": "The minimum number of individuals handled within an hour by machines accepting both cash and cards must be U.",
-            "formulation": "U \\leq A \\cdot s + K \\cdot r",
+            "formulation": "U \\leq A \\times s + K \\times r",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(A * s + K * r >= U)"
@@ -151,7 +151,7 @@
         },
         "notes": [
             "Change the names of parameters and variables.",
-            "Source typo $U \\leq A \\cdot K + s \\cdot r$ corrected to $U \\leq A \\cdot s + K \\cdot r$ to match Gurobi code and problem description."
+            "Source typo $U \\leq A \\times K + s \\times r$ corrected to $U \\leq A \\times s + K \\times r$ to match Gurobi code and problem description."
         ]
     }
 }

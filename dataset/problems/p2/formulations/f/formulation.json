@@ -95,7 +95,7 @@
     "constraints": [
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
-            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot (j1_i + j2_i) \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\times (j1_i + j2_i) \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * (j1[i] + j2[i]) for i in range(M)) <= Y[k] for k in range(N))"

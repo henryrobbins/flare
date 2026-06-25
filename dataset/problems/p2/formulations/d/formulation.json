@@ -93,7 +93,7 @@
     "constraints": [
         {
             "description": "Constraint defining zed in terms of original variables.",
-            "formulation": "zed = \\sum_{i=1}^{M} A_i \\cdot j_i",
+            "formulation": "zed = \\sum_{i=1}^{M} A_i \\times j_i",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(zed == quicksum(j[i] * A[i] for i in range(M)))"
@@ -101,7 +101,7 @@
         },
         {
             "description": "For each resource, the total amount required across all experiments does not exceed the available amount.",
-            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot j_i \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\times j_i \\leq Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * j[i] for i in range(M)) <= Y[k] for k in range(N))"

@@ -123,7 +123,7 @@
     "constraints": [
         {
             "description": "The combined heating time needed to create Regular and Tempered glass panes does not go beyond D.",
-            "formulation": "D \\geq C \\cdot e + P \\cdot h",
+            "formulation": "D \\geq C \\times e + P \\times h",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(C * e + P * h <= D, name=\"HeatingTime\")"

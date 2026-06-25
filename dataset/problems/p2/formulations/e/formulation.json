@@ -95,7 +95,7 @@
     "constraints": [
         {
             "description": "For each resource, the total amount required across all experiments plus slack equals the available amount.",
-            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\cdot j_i + s_k = Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
+            "formulation": "\\sum_{i=1}^{M} I_{k,i} \\times j_i + s_k = Y_k \\quad \\forall k \\in \\{1, \\ldots, N\\}",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(quicksum(I[k][i] * j[i] for i in range(M)) + s[k] == Y[k] for k in range(N))"

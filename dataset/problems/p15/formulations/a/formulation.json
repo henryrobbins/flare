@@ -234,7 +234,7 @@
         },
         {
             "description": "Minimum average floor area for sector i.",
-            "formulation": "\\sum_{j \\in J} \\sum_{h \\in H} \\text{area}_j \\cdot y_{ijh} \\geq s_i \\sum_{j \\in J} \\sum_{h \\in H} y_{ijh} \\quad \\forall i \\in I",
+            "formulation": "\\sum_{j \\in J} \\sum_{h \\in H} \\text{area}_j \\times y_{ijh} \\geq s_i \\sum_{j \\in J} \\sum_{h \\in H} y_{ijh} \\quad \\forall i \\in I",
             "explicit": true,
             "code": {
                 "gurobipy": "model.addConstrs(gp.quicksum(area[j] * y[i, j, h] for j in range(nJ) for h in range(nH)) >= s[i] * gp.quicksum(y[i, j, h] for j in range(nJ) for h in range(nH)) for i in range(nI))"
