@@ -25,7 +25,7 @@
             "shape": []
         },
         "C": {
-            "description": "Binary cluster membership matrix: C[i][p] is 1 if vertex i belongs to cluster p, 0 otherwise",
+            "description": "Binary cluster membership matrix: $C_{i,p}$ is 1 if vertex i belongs to cluster p, 0 otherwise",
             "type": "integer",
             "shape": [
                 "n",

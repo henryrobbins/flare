@@ -29,7 +29,6 @@ structure Params where
   K : ∀ q : Fin Q, Fin (L q) → Fin n -- vertex indices belonging to each maximal clique
   -- Implicit Assumptions
   hn_pos : NeZero n
-  hP_pos : NeZero P
   hQ_pos : NeZero Q
   hL_pos : ∀ q : Fin Q, 1 ≤ L q
   -- C is binary

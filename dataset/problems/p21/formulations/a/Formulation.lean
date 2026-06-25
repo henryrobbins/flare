@@ -26,7 +26,6 @@ structure Params where
   C : Fin n → Fin P → ℤ -- binary cluster membership matrix: C[i][p] = 1 iff vertex i is in cluster p
   -- Implicit Assumptions
   hn_pos : NeZero n
-  hP_pos : NeZero P
   hC_bin : ∀ i : Fin n, ∀ p : Fin P, C i p = 0 ∨ C i p = 1
   -- Assumptions
   -- Every vertex belongs to exactly one cluster
