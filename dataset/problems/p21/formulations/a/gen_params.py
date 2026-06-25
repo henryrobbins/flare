@@ -11,8 +11,7 @@ def main(data_path: str, output_path: str) -> None:
         "m": data["m"],
         "E": data["E"],
         "P": data["P"],
-        "clusterSize": data["clusterSize"],
-        "clusters": data["clusters"],
+        "C": data["C"],
     }
 
     with open(output_path, "w") as f:

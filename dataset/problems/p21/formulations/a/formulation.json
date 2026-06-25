@@ -24,19 +24,12 @@
             "type": "integer",
             "shape": []
         },
-        "clusterSize": {
-            "description": "Number of vertices in each cluster",
+        "C": {
+            "description": "Binary cluster membership matrix: C_{i,p} is 1 if vertex i belongs to cluster p, 0 otherwise",
             "type": "integer",
             "shape": [
+                "n",
                 "P"
-            ]
-        },
-        "clusters": {
-            "description": "Vertex indices belonging to each cluster",
-            "type": "integer",
-            "shape": [
-                "P",
-                "clusterSize[P]"
             ]
         }
     },
@@ -58,27 +51,19 @@
             }
         },
         {
-            "description": "The number of clusters is positive.",
-            "formulation": "P > 0",
-            "explicit": false,
-            "code": {
-                "python": "assert P > 0"
-            }
-        },
-        {
             "description": "Each cluster contains at least one vertex.",
-            "formulation": "\\text{clusterSize}_p \\geq 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "formulation": "\\sum_{i=0}^{n-1} C_{i,p} \\geq 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
             "explicit": true,
             "code": {
-                "python": "assert all(clusterSize[p] >= 1 for p in range(P))"
+                "python": "assert all(sum(C[i][p] for i in range(n)) >= 1 for p in range(P))"
             }
         },
         {
             "description": "The clusters partition the vertex set: every vertex belongs to exactly one cluster.",
-            "formulation": "\\sum_{p=0}^{P-1} \\text{clusterSize}_p = n",
+            "formulation": "\\sum_{p=0}^{P-1} C_{i,p} = 1 \\quad \\forall i \\in \\{0,\\ldots,n-1\\}",
             "explicit": true,
             "code": {
-                "python": "assert sum(clusterSize) == n and sorted(i for cluster in clusters for i in cluster) == list(range(n))"
+                "python": "assert all(sum(C[i][p] for p in range(P)) == 1 for i in range(n))"
             }
         },
         {
@@ -94,7 +79,7 @@
             "formulation": "\\chi(G[S]) = \\omega(G[S]) \\quad \\forall S \\subseteq \\{0,\\ldots,n-1\\}",
             "explicit": true,
             "code": {
-                "python": "from itertools import combinations\nadj = [[False] * n for _ in range(n)]\nfor i, j in E:\n    adj[i][j] = adj[j][i] = True\ndef is_clique(S):\n    return all(adj[i][j] for i in S for j in S if i != j)\ndef clique_number(S):\n    for size in range(len(S), 0, -1):\n        for C in combinations(S, size):\n            if is_clique(C):\n                return size\n    return 0\ndef chromatic_number(S):\n    k = 0\n    while True:\n        color = {}\n        def backtrack(idx):\n            if idx == len(S):\n                return True\n            v = S[idx]\n            for c in range(k):\n                if all(color.get(u) != c for u in S[:idx] if adj[v][u]):\n                    color[v] = c\n                    if backtrack(idx + 1):\n                        return True\n                    del color[v]\n            return False\n        if backtrack(0):\n            return k\n        k += 1\nfor size in range(n + 1):\n    for S in combinations(range(n), size):\n        assert chromatic_number(list(S)) == clique_number(list(S))"
+                "python": "G = nx.Graph()\nG.add_nodes_from(range(n))\nG.add_edges_from(E)\nassert nx.is_perfect_graph(G)"
             }
         }
     ],
@@ -134,10 +119,10 @@
         },
         {
             "description": "Exactly one vertex is selected and colored from each cluster.",
-            "formulation": "\\sum_{i \\in \\text{clusters}_p} \\sum_{k=0}^{P-1} w_{i,k} = 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "formulation": "\\sum_{i=0}^{n-1} \\sum_{k=0}^{P-1} C_{i,p} \\cdot w_{i,k} = 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
             "explicit": true,
             "code": {
-                "gurobipy": "for p in range(P):\n    model.addConstr(gp.quicksum(w[i, k] for i in clusters[p] for k in range(P)) == 1)"
+                "gurobipy": "for p in range(P):\n    model.addConstr(gp.quicksum(C[i][p] * w[i, k] for i in range(n) for k in range(P)) == 1)"
             }
         }
     ],
@@ -148,6 +133,9 @@
             "gurobipy": "model.setObjective(gp.quicksum(y[k] for k in range(P)), GRB.MINIMIZE)"
         }
     },
+    "imports": [
+        "import networkx as nx"
+    ],
     "metadata": {
         "source": {
             "dataset": "FrontierOR",

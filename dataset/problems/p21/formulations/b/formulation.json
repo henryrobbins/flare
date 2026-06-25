@@ -24,39 +24,32 @@
             "type": "integer",
             "shape": []
         },
-        "clusterSize": {
-            "description": "Number of vertices in each cluster",
+        "C": {
+            "description": "Binary cluster membership matrix: C_{i,p} is 1 if vertex i belongs to cluster p, 0 otherwise",
             "type": "integer",
             "shape": [
+                "n",
                 "P"
             ]
         },
-        "clusters": {
-            "description": "Vertex indices belonging to each cluster",
-            "type": "integer",
-            "shape": [
-                "P",
-                "clusterSize[P]"
-            ]
-        },
-        "q": {
+        "Q": {
             "description": "Number of maximal cliques of the graph",
             "type": "integer",
             "shape": []
         },
-        "cliqueSize": {
+        "L": {
             "description": "Number of vertices in each maximal clique",
             "type": "integer",
             "shape": [
-                "q"
+                "Q"
             ]
         },
         "K": {
             "description": "Vertex indices belonging to each maximal clique of the graph",
             "type": "integer",
             "shape": [
-                "q",
-                "cliqueSize[q]"
+                "Q",
+                "L[Q]"
             ]
         }
     },
@@ -70,43 +63,27 @@
             }
         },
         {
-            "description": "The number of clusters is positive.",
-            "formulation": "P > 0",
+            "description": "The number of edges is non-negative.",
+            "formulation": "m \\geq 0",
             "explicit": false,
             "code": {
-                "python": "assert P > 0"
+                "python": "assert m >= 0"
             }
         },
         {
             "description": "Each cluster contains at least one vertex.",
-            "formulation": "\\text{clusterSize}_p \\geq 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "formulation": "\\sum_{i=0}^{n-1} C_{i,p} \\geq 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
             "explicit": true,
             "code": {
-                "python": "assert all(clusterSize[p] >= 1 for p in range(P))"
+                "python": "assert all(sum(C[i][p] for i in range(n)) >= 1 for p in range(P))"
             }
         },
         {
             "description": "The clusters partition the vertex set: every vertex belongs to exactly one cluster.",
-            "formulation": "\\sum_{p=0}^{P-1} \\text{clusterSize}_p = n",
+            "formulation": "\\sum_{p=0}^{P-1} C_{i,p} = 1 \\quad \\forall i \\in \\{0,\\ldots,n-1\\}",
             "explicit": true,
             "code": {
-                "python": "assert sum(clusterSize) == n and sorted(i for cluster in clusters for i in cluster) == list(range(n))"
-            }
-        },
-        {
-            "description": "The number of maximal cliques is positive.",
-            "formulation": "q > 0",
-            "explicit": false,
-            "code": {
-                "python": "assert q > 0"
-            }
-        },
-        {
-            "description": "Each maximal clique contains at least one vertex with a valid vertex index.",
-            "formulation": "1 \\leq \\text{cliqueSize}_l \\ \\wedge\\ 0 \\leq i \\leq n-1 \\ \\forall i \\in K_l, \\ \\forall l \\in \\{0,\\ldots,q-1\\}",
-            "explicit": false,
-            "code": {
-                "python": "assert all(cliqueSize[l] >= 1 and all(0 <= i <= n - 1 for i in K[l]) for l in range(q))"
+                "python": "assert all(sum(C[i][p] for p in range(P)) == 1 for i in range(n))"
             }
         },
         {
@@ -118,19 +95,43 @@
             }
         },
         {
-            "description": "Each K_l lists distinct vertices and forms a clique of the graph: every pair of distinct vertices in K_l is connected by an edge.",
-            "formulation": "K_{l,a} \\neq K_{l,b} \\ \\wedge\\ \\{K_{l,a}, K_{l,b}\\} \\in E \\quad \\forall l \\in \\{0,\\ldots,q-1\\}, \\ a \\neq b",
-            "explicit": false,
+            "description": "The graph is perfect: every induced subgraph has chromatic number equal to its clique number.",
+            "formulation": "\\chi(G[S]) = \\omega(G[S]) \\quad \\forall S \\subseteq \\{0,\\ldots,n-1\\}",
+            "explicit": true,
             "code": {
-                "python": "adj = [[False] * n for _ in range(n)]\nfor i, j in E:\n    adj[i][j] = adj[j][i] = True\nfor l in range(q):\n    assert len(set(K[l])) == cliqueSize[l]\n    assert all(adj[K[l][a]][K[l][b]] for a in range(cliqueSize[l]) for b in range(cliqueSize[l]) if a != b)"
+                "python": "G = nx.Graph()\nG.add_nodes_from(range(n))\nG.add_edges_from(E)\nassert nx.is_perfect_graph(G)"
             }
         },
         {
-            "description": "K covers every clique of the graph: since K enumerates all maximal cliques, every clique (maximal or not) is a subset of the vertex set of some K_l.",
-            "formulation": "\\forall S \\subseteq \\{0,\\ldots,n-1\\} \\text{ a clique}, \\ \\exists l \\in \\{0,\\ldots,q-1\\}: S \\subseteq K_l",
+            "description": "All vertex indices in K are valid.",
+            "formulation": "0 \\leq K_{q,i} \\leq n-1 \\quad \\forall q \\in \\{0,\\ldots,Q-1\\}, \\ i \\in \\{0,\\ldots,L_q - 1\\}",
             "explicit": false,
             "code": {
-                "python": "from itertools import combinations\nadj = [[False] * n for _ in range(n)]\nfor i, j in E:\n    adj[i][j] = adj[j][i] = True\ndef is_clique(S):\n    return all(adj[i][j] for i in S for j in S if i != j)\nfor size in range(n + 1):\n    for S in combinations(range(n), size):\n        if is_clique(S):\n            assert any(set(S) <= set(K[l]) for l in range(q))"
+                "python": "assert all(0 <= i <= n - 1 for q in range(Q) for i in K[q])"
+            }
+        },
+        {
+            "description": "Each K_q lists distinct vertices.",
+            "formulation": "K_{q,i} \\neq K_{q,j} \\quad \\forall q \\in \\{0,\\ldots,Q-1\\}, \\ i \\neq j \\in \\{0,\\ldots,L_q-1\\}",
+            "explicit": false,
+            "code": {
+                "python": "assert all(len(set(K[q])) == L[q] for q in range(Q))"
+            }
+        },
+        {
+            "description": "Each K_q forms a clique: every pair of distinct vertices in K_q is connected by an edge.",
+            "formulation": "\\{K_{q,i}, K_{q,j}\\} \\in E \\quad \\forall q \\in \\{0,\\ldots,Q-1\\}, \\ i \\neq j \\in \\{0,\\ldots,L_q-1\\}",
+            "explicit": false,
+            "code": {
+                "python": "adj = [[False] * n for _ in range(n)]\nfor i, j in E:\n    adj[i][j] = adj[j][i] = True\nassert all(adj[K[q][a]][K[q][b]] for q in range(Q) for a in range(L[q]) for b in range(L[q]) if a != b)"
+            }
+        },
+        {
+            "description": "K covers every clique of the graph: since K enumerates all maximal cliques, every clique (maximal or not) is a subset of the vertex set of some K_q.",
+            "formulation": "\\forall S \\subseteq \\{0,\\ldots,n-1\\} \\text{ a clique}, \\ \\exists q \\in \\{0,\\ldots,Q-1\\}: S \\subseteq K_q",
+            "explicit": false,
+            "code": {
+                "python": "from itertools import combinations\nadj = [[False] * n for _ in range(n)]\nfor i, j in E:\n    adj[i][j] = adj[j][i] = True\ndef is_clique(S):\n    return all(adj[i][j] for i in S for j in S if i != j)\nfor size in range(n + 1):\n    for S in combinations(range(n), size):\n        if is_clique(S):\n            assert any(set(S) <= set(K[q]) for q in range(Q))"
             }
         }
     ],
@@ -151,18 +152,18 @@
     "constraints": [
         {
             "description": "Exactly one vertex is selected from each cluster.",
-            "formulation": "\\sum_{i \\in \\text{clusters}_p} x_i = 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "formulation": "\\sum_{i=0}^{n-1} C_{i,p} \\cdot x_i = 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
             "explicit": true,
             "code": {
-                "gurobipy": "for p in range(P):\n    model.addConstr(gp.quicksum(x[i] for i in clusters[p]) == 1)"
+                "gurobipy": "for p in range(P):\n    model.addConstr(gp.quicksum(C[i][p] * x[i] for i in range(n)) == 1)"
             }
         },
         {
             "description": "t is at least the number of selected vertices within any maximal clique of the graph; since the graph is perfect, the largest such count over all maximal cliques equals the chromatic number of the induced subgraph on the selected vertices.",
-            "formulation": "t \\geq \\sum_{i \\in K_l} x_i \\quad \\forall l \\in \\{0,\\ldots,q-1\\}",
+            "formulation": "t \\geq \\sum_{i \\in K_q} x_i \\quad \\forall q \\in \\{0,\\ldots,Q-1\\}",
             "explicit": false,
             "code": {
-                "gurobipy": "for l in range(q):\n    model.addConstr(t >= gp.quicksum(x[i] for i in K[l]))"
+                "gurobipy": "for q in range(Q):\n    model.addConstr(t >= gp.quicksum(x[i] for i in K[q]))"
             }
         },
         {
@@ -181,17 +182,19 @@
             "gurobipy": "model.setObjective(t, GRB.MINIMIZE)"
         }
     },
+    "imports": [
+        "import networkx as nx"
+    ],
     "metadata": {
         "source": {
-            "dataset": "FrontierOR",
-            "instance_id": "seker2021",
+            "dataset": "Seker2021",
             "variation_id": "model2"
         },
         "notes": [
             "Reformulates Model 2 of Seker, Ekim, and Taskin (2021) as a static MILP.",
             "The paper's Model 2 bounds t below by chi(G[x]), the chromatic number of the subgraph induced by the selection x; this is not a linear expression, so the paper resolves it with cutting planes t >= sum_{i in K^(j)} x_i generated iteratively from a maximum clique K^(j) of G[x^(j)] found at each step of a cutting-plane algorithm, rather than a single static formulation.",
-            "Since the input graph is perfect, chi(G[x]) = omega(G[x]) (clique number) for every selection x, and omega(G[x]) equals the size of the largest maximal clique of the full graph G that lies entirely within the selection. We therefore replace the paper's dynamically generated cuts with the full, static set of constraints t >= sum_{i in K_l} x_i for every maximal clique K_l of G, precomputed once from the input graph in gen_params.py.",
-            "q, cliqueSize, and K are derived parameters computed from the base graph parameters (n, m, E) via maximal-clique enumeration; m and E are carried through from problem.json unchanged, while q, cliqueSize, and K are specific to this formulation and not part of problem.json."
+            "Since the input graph is perfect, chi(G[x]) = omega(G[x]) (clique number) for every selection x, and omega(G[x]) equals the size of the largest maximal clique of the full graph G that lies entirely within the selection. We therefore replace the paper's dynamically generated cuts with the full, static set of constraints t >= sum_{i in K_q} x_i for every maximal clique K_q of G, precomputed once from the input graph in gen_params.py.",
+            "Q, L, and K are derived parameters computed from the base graph parameters (n, m, E) via maximal-clique enumeration; m and E are carried through from problem.json unchanged, while Q, L, and K are specific to this formulation and not part of problem.json."
         ]
     }
 }
