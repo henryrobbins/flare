@@ -104,7 +104,7 @@
         {
             "description": "A vertex can only be assigned color k if color k is used.",
             "formulation": "w_{i,k} \\leq y_k \\quad \\forall i \\in \\{0,\\ldots,n-1\\}, \\ k \\in \\{0,\\ldots,P-1\\}",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "gurobipy": "for i in range(n):\n    for k in range(P):\n        model.addConstr(w[i, k] <= y[k])"
             }

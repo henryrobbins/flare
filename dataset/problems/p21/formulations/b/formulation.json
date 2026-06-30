@@ -31,26 +31,6 @@
                 "n",
                 "P"
             ]
-        },
-        "Q": {
-            "description": "Number of maximal cliques of the graph",
-            "type": "integer",
-            "shape": []
-        },
-        "L": {
-            "description": "Number of vertices in each maximal clique",
-            "type": "integer",
-            "shape": [
-                "Q"
-            ]
-        },
-        "K": {
-            "description": "Vertex indices belonging to each maximal clique of the graph",
-            "type": "integer",
-            "shape": [
-                "Q",
-                "L[Q]"
-            ]
         }
     },
     "assumptions": [
@@ -101,38 +81,6 @@
             "code": {
                 "python": "G = nx.Graph()\nG.add_nodes_from(range(n))\nG.add_edges_from(E)\nassert nx.is_perfect_graph(G)"
             }
-        },
-        {
-            "description": "All vertex indices in K are valid.",
-            "formulation": "0 \\leq K_{q,i} \\leq n-1 \\quad \\forall q \\in \\{0,\\ldots,Q-1\\}, \\ i \\in \\{0,\\ldots,L_q - 1\\}",
-            "explicit": false,
-            "code": {
-                "python": "assert all(0 <= i <= n - 1 for q in range(Q) for i in K[q])"
-            }
-        },
-        {
-            "description": "Each K_q lists distinct vertices.",
-            "formulation": "K_{q,i} \\neq K_{q,j} \\quad \\forall q \\in \\{0,\\ldots,Q-1\\}, \\ i \\neq j \\in \\{0,\\ldots,L_q-1\\}",
-            "explicit": false,
-            "code": {
-                "python": "assert all(len(set(K[q])) == L[q] for q in range(Q))"
-            }
-        },
-        {
-            "description": "Each K_q forms a clique: every pair of distinct vertices in K_q is connected by an edge.",
-            "formulation": "\\{K_{q,i}, K_{q,j}\\} \\in E \\quad \\forall q \\in \\{0,\\ldots,Q-1\\}, \\ i \\neq j \\in \\{0,\\ldots,L_q-1\\}",
-            "explicit": false,
-            "code": {
-                "python": "adj = [[False] * n for _ in range(n)]\nfor i, j in E:\n    adj[i][j] = adj[j][i] = True\nassert all(adj[K[q][a]][K[q][b]] for q in range(Q) for a in range(L[q]) for b in range(L[q]) if a != b)"
-            }
-        },
-        {
-            "description": "K covers every clique of the graph: since K enumerates all maximal cliques, every clique (maximal or not) is a subset of the vertex set of some K_q.",
-            "formulation": "\\forall S \\subseteq \\{0,\\ldots,n-1\\} \\text{ a clique}, \\ \\exists q \\in \\{0,\\ldots,Q-1\\}: S \\subseteq K_q",
-            "explicit": false,
-            "code": {
-                "python": "from itertools import combinations\nadj = [[False] * n for _ in range(n)]\nfor i, j in E:\n    adj[i][j] = adj[j][i] = True\ndef is_clique(S):\n    return all(adj[i][j] for i in S for j in S if i != j)\nfor size in range(n + 1):\n    for S in combinations(range(n), size):\n        if is_clique(S):\n            assert any(set(S) <= set(K[q]) for q in range(Q))"
-            }
         }
     ],
     "variables": {
@@ -159,17 +107,17 @@
             }
         },
         {
-            "description": "t is at least the number of selected vertices within any maximal clique of the graph; since the graph is perfect, the largest such count over all maximal cliques equals the chromatic number of the induced subgraph on the selected vertices.",
-            "formulation": "t \\geq \\sum_{i \\in K_q} x_i \\quad \\forall q \\in \\{0,\\ldots,Q-1\\}",
-            "explicit": false,
+            "description": "t is at least the number of selected vertices within any clique of the graph; since the graph is perfect, the largest such count over all cliques equals the chromatic number of the induced subgraph on the selected vertices.",
+            "formulation": "t \\geq \\sum_{i \\in S} x_i \\quad \\forall \\text{ clique } S \\subseteq \\{0,\\ldots,n-1\\}",
+            "explicit": true,
             "code": {
-                "gurobipy": "for q in range(Q):\n    model.addConstr(t >= gp.quicksum(x[i] for i in K[q]))"
+                "gurobipy": "G_temp = nx.Graph()\nG_temp.add_nodes_from(range(n))\nG_temp.add_edges_from(E)\nfor clique in nx.find_cliques(G_temp):\n    model.addConstr(t >= gp.quicksum(x[i] for i in clique))"
             }
         },
         {
             "description": "t is non-negative.",
             "formulation": "t \\geq 0",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "gurobipy": "model.addConstr(t >= 0)"
             }
@@ -193,8 +141,7 @@
         "notes": [
             "Reformulates Model 2 of Seker, Ekim, and Taskin (2021) as a static MILP.",
             "The paper's Model 2 bounds t below by chi(G[x]), the chromatic number of the subgraph induced by the selection x; this is not a linear expression, so the paper resolves it with cutting planes t >= sum_{i in K^(j)} x_i generated iteratively from a maximum clique K^(j) of G[x^(j)] found at each step of a cutting-plane algorithm, rather than a single static formulation.",
-            "Since the input graph is perfect, chi(G[x]) = omega(G[x]) (clique number) for every selection x, and omega(G[x]) equals the size of the largest maximal clique of the full graph G that lies entirely within the selection. We therefore replace the paper's dynamically generated cuts with the full, static set of constraints t >= sum_{i in K_q} x_i for every maximal clique K_q of G, precomputed once from the input graph in gen_params.py.",
-            "Q, L, and K are derived parameters computed from the base graph parameters (n, m, E) via maximal-clique enumeration; m and E are carried through from problem.json unchanged, while Q, L, and K are specific to this formulation and not part of problem.json."
+            "Since the input graph is perfect, chi(G[x]) = omega(G[x]) (clique number) for every selection x, and omega(G[x]) equals the size of the largest maximal clique of the full graph G that lies entirely within the selection. We therefore replace the paper's dynamically generated cuts with the full, static set of constraints t >= sum_{i in K_q} x_i for every maximal clique K_q of G, enumerated at solve time from the input graph using networkx."
         ]
     }
 }

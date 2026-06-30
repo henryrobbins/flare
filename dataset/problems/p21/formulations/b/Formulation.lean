@@ -21,16 +21,11 @@ structure Params where
   n : ℕ -- number of vertices in the perfect graph
   m : ℕ -- number of edges in the perfect graph
   P : ℕ -- number of disjoint clusters partitioning the vertex set
-  Q : ℕ -- number of maximal cliques of the graph
-  L : Fin Q → ℕ -- number of vertices in each maximal clique
   -- Data
   E : Fin m → Fin n × Fin n -- endpoint vertices of each edge, smaller index first
   C : Fin n → Fin P → ℤ -- binary cluster membership matrix: C i p = 1 if vertex i belongs to cluster p
-  K : ∀ q : Fin Q, Fin (L q) → Fin n -- vertex indices belonging to each maximal clique
   -- Implicit Assumptions
   hn_pos : NeZero n
-  hQ_pos : NeZero Q
-  hL_pos : ∀ q : Fin Q, 1 ≤ L q
   -- C is binary
   hC_bin : ∀ i : Fin n, ∀ p : Fin P, C i p = 0 ∨ C i p = 1
   -- Every vertex belongs to exactly one cluster
@@ -39,13 +34,6 @@ structure Params where
   hC_nonempty : ∀ p : Fin P, 1 ≤ ∑ i : Fin n, C i p
   -- Every edge connects two distinct, valid vertex indices (smaller index first)
   hedge_lt : ∀ e : Fin m, (E e).1 < (E e).2
-  -- Each K q lists distinct vertices
-  hK_inj : ∀ q : Fin Q, Function.Injective (K q)
-  -- Each K q forms a clique of the graph
-  hK_clique : ∀ q : Fin Q, IsClique E (Finset.image (K q) Finset.univ)
-  -- K covers every clique of the graph: every clique is a subset of some K q
-  hK_complete : ∀ S : Finset (Fin n), IsClique E S →
-    ∃ q : Fin Q, S ⊆ Finset.image (K q) Finset.univ
   -- The graph is perfect: every induced subgraph has chromatic number equal to its clique number
   hperfect : ∀ (S : Finset (Fin n)) (k : ℕ),
     (∀ Cl : Finset (Fin n), Cl ⊆ S → IsClique E Cl → Cl.card ≤ k) →
@@ -60,9 +48,9 @@ structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Exactly one vertex is selected from each cluster
   hcluster : ∀ pp : Fin p.P,
     ∑ i : Fin p.n, p.C i pp * v.x i = 1
-  -- t is at least the number of selected vertices within any maximal clique
-  hclique : ∀ q : Fin p.Q,
-    ∑ i : Fin (p.L q), (v.x (p.K q i) : ℝ) ≤ v.t
+  -- t is at least the number of selected vertices within any clique
+  hclique : ∀ S : Finset (Fin p.n), IsClique p.E S →
+    ∑ i ∈ S, (v.x i : ℝ) ≤ v.t
   -- Non-negativity of t
   ht_nn : 0 ≤ v.t
   -- Binary variables

@@ -2,46 +2,16 @@ import argparse
 import json
 
 
-def maximal_cliques(n: int, edges: list[list[int]]) -> list[list[int]]:
-    """Enumerate all maximal cliques of a graph via Bron-Kerbosch."""
-    adj: list[set[int]] = [set() for _ in range(n)]
-    for i, j in edges:
-        adj[i].add(j)
-        adj[j].add(i)
-
-    cliques: list[list[int]] = []
-
-    def expand(r: set[int], p: set[int], x: set[int]) -> None:
-        if not p and not x:
-            cliques.append(sorted(r))
-            return
-        for v in list(p):
-            expand(r | {v}, p & adj[v], x & adj[v])
-            p.discard(v)
-            x.add(v)
-
-    expand(set(), set(range(n)), set())
-    return cliques
-
-
 def main(data_path: str, output_path: str) -> None:
     with open(data_path) as f:
         data = json.load(f)
 
-    n = data["n"]
-    edges = data["E"]
-
-    cliques = maximal_cliques(n, edges)
-
     params = {
-        "n": n,
-        "m": len(edges),
-        "E": edges,
+        "n": data["n"],
+        "m": data["m"],
+        "E": data["E"],
         "P": data["P"],
         "C": data["C"],
-        "Q": len(cliques),
-        "L": [len(c) for c in cliques],
-        "K": cliques,
     }
 
     with open(output_path, "w") as f:
