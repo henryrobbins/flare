@@ -1089,6 +1089,17 @@
                 "formulation": "b"
             },
             "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 21,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 21,
+                "formulation": "c"
+            },
+            "reformulation": true
         }
     ]
 }

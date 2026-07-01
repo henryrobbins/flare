@@ -85,14 +85,14 @@
     ],
     "variables": {
         "y": {
-            "description": "Equals 1 if color k is used, 0 otherwise",
+            "description": "y_k equals 1 if color k is used, 0 otherwise",
             "type": "binary",
             "shape": [
                 "P"
             ]
         },
         "w": {
-            "description": "Equals 1 if vertex i is selected and assigned color k, 0 otherwise",
+            "description": "w_{i,k} equals 1 if vertex i is selected and assigned color k, 0 otherwise",
             "type": "binary",
             "shape": [
                 "n",
