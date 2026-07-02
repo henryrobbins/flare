@@ -1,0 +1,155 @@
+{
+    "valid": true,
+    "parameters": {
+        "n": {
+            "description": "Number of vertices in the perfect graph",
+            "type": "integer",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of edges in the perfect graph",
+            "type": "integer",
+            "shape": []
+        },
+        "E": {
+            "description": "Edges of the graph; each row lists the two endpoint vertices of an edge, with the smaller vertex index listed first",
+            "type": "integer",
+            "shape": [
+                "m",
+                "2"
+            ]
+        },
+        "P": {
+            "description": "Number of disjoint clusters partitioning the vertex set",
+            "type": "integer",
+            "shape": []
+        },
+        "C": {
+            "description": "Binary cluster membership matrix: C_{i,p} is 1 if vertex i belongs to cluster p, 0 otherwise",
+            "type": "integer",
+            "shape": [
+                "n",
+                "P"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "The number of vertices is positive.",
+            "formulation": "n > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert n > 0"
+            }
+        },
+        {
+            "description": "The number of edges is non-negative.",
+            "formulation": "m \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert m >= 0"
+            }
+        },
+        {
+            "description": "Each cluster contains at least one vertex.",
+            "formulation": "\\sum_{i=0}^{n-1} C_{i,p} \\geq 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "assert all(sum(C[i][p] for i in range(n)) >= 1 for p in range(P))"
+            }
+        },
+        {
+            "description": "The clusters partition the vertex set: every vertex belongs to exactly one cluster.",
+            "formulation": "\\sum_{p=0}^{P-1} C_{i,p} = 1 \\quad \\forall i \\in \\{0,\\ldots,n-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "assert all(sum(C[i][p] for p in range(P)) == 1 for i in range(n))"
+            }
+        },
+        {
+            "description": "Every edge connects two distinct, valid vertex indices.",
+            "formulation": "0 \\leq i < j \\leq n-1 \\quad \\forall (i,j) \\in E",
+            "explicit": false,
+            "code": {
+                "python": "assert all(0 <= i < j <= n - 1 for i, j in E)"
+            }
+        },
+        {
+            "description": "The graph is perfect: every induced subgraph has chromatic number equal to its clique number.",
+            "formulation": "\\chi(G[S]) = \\omega(G[S]) \\quad \\forall S \\subseteq \\{0,\\ldots,n-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "G = nx.Graph()\nG.add_nodes_from(range(n))\nG.add_edges_from(E)\ndef _has_odd_hole(H):\n    nodes = list(H.nodes())\n    for k in range(5, len(nodes) + 1, 2):\n        for subset in itertools.combinations(nodes, k):\n            sub = H.subgraph(subset)\n            if sub.number_of_edges() == k and all(deg == 2 for _, deg in sub.degree()) and nx.is_connected(sub):\n                return True\n    return False\nassert not _has_odd_hole(G) and not _has_odd_hole(nx.complement(G))"
+            }
+        }
+    ],
+    "variables": {
+        "x": {
+            "description": "x_i equals 1 if vertex i is selected, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "n"
+            ]
+        },
+        "t": {
+            "description": "Estimate of the number of colors needed to color the selected vertices",
+            "type": "integer",
+            "shape": []
+        }
+    },
+    "constraints": [
+        {
+            "description": "Exactly one vertex is selected from each cluster.",
+            "formulation": "\\sum_{i=0}^{n-1} C_{i,p} \\cdot x_i = 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(gp.quicksum(C[i][p] * x[i] for i in range(n)) == 1)"
+            }
+        },
+        {
+            "description": "t is at least the number of selected vertices within any clique of the graph; since the graph is perfect, the largest such count over all cliques equals the chromatic number of the induced subgraph on the selected vertices.",
+            "formulation": "t \\geq \\sum_{i \\in S} x_i \\quad \\forall \\text{ clique } S \\subseteq \\{0,\\ldots,n-1\\}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "G_temp = nx.Graph()\nG_temp.add_nodes_from(range(n))\nG_temp.add_edges_from(E)\nfor clique in nx.find_cliques(G_temp):\n    model.addConstr(t >= gp.quicksum(x[i] for i in clique))"
+            }
+        },
+        {
+            "description": "t is non-negative.",
+            "formulation": "t \\geq 0",
+            "explicit": true,
+            "code": {
+                "gurobipy": "model.addConstr(t >= 0)"
+            }
+        },
+        {
+            "description": "t is no more than P.",
+            "formulation": "t \\leq P",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(t <= P)"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the number of colors needed to color the selected vertices.",
+        "formulation": "\\min \\ t",
+        "code": {
+            "gurobipy": "model.setObjective(t, GRB.MINIMIZE)"
+        }
+    },
+    "imports": [
+        "import networkx as nx",
+        "import itertools"
+    ],
+    "metadata": {
+        "source": {
+            "dataset": "Seker2021",
+            "variation_id": "model2"
+        },
+        "notes": [
+            "Revised version of formulation c.",
+            "Instead of having t be a continuous, only-lower-bounded relaxation variable (justified there by the iterative cutting-plane algorithm's LP relaxations), we assert that t is always driven to an integer value at any optimum, and is bounded above by P for every feasible selection (since at most P vertices are ever selected, one per cluster). We therefore additionally restrict t to be integer-valued and cap it at P; this removes only fractional or unnecessarily-large feasible values of t and does not exclude the true optimum or change the optimal objective value."
+        ]
+    }
+}

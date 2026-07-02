@@ -1,0 +1,161 @@
+{
+    "valid": true,
+    "parameters": {
+        "n": {
+            "description": "Number of vertices in the perfect graph",
+            "type": "integer",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of edges in the perfect graph",
+            "type": "integer",
+            "shape": []
+        },
+        "E": {
+            "description": "Edges of the graph; each row lists the two endpoint vertices of an edge, with the smaller vertex index listed first",
+            "type": "integer",
+            "shape": [
+                "m",
+                "2"
+            ]
+        },
+        "P": {
+            "description": "Number of disjoint clusters partitioning the vertex set",
+            "type": "integer",
+            "shape": []
+        },
+        "C": {
+            "description": "Binary cluster membership matrix: C_{i,p} is 1 if vertex i belongs to cluster p, 0 otherwise",
+            "type": "integer",
+            "shape": [
+                "n",
+                "P"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "The number of vertices is positive.",
+            "formulation": "n > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert n > 0"
+            }
+        },
+        {
+            "description": "The number of edges is non-negative.",
+            "formulation": "m \\geq 0",
+            "explicit": false,
+            "code": {
+                "python": "assert m >= 0"
+            }
+        },
+        {
+            "description": "Each cluster contains at least one vertex.",
+            "formulation": "\\sum_{i=0}^{n-1} C_{i,p} \\geq 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "assert all(sum(C[i][p] for i in range(n)) >= 1 for p in range(P))"
+            }
+        },
+        {
+            "description": "The clusters partition the vertex set: every vertex belongs to exactly one cluster.",
+            "formulation": "\\sum_{p=0}^{P-1} C_{i,p} = 1 \\quad \\forall i \\in \\{0,\\ldots,n-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "assert all(sum(C[i][p] for p in range(P)) == 1 for i in range(n))"
+            }
+        },
+        {
+            "description": "Every edge connects two distinct, valid vertex indices.",
+            "formulation": "0 \\leq i < j \\leq n-1 \\quad \\forall (i,j) \\in E",
+            "explicit": false,
+            "code": {
+                "python": "assert all(0 <= i < j <= n - 1 for i, j in E)"
+            }
+        },
+        {
+            "description": "The graph is perfect: every induced subgraph has chromatic number equal to its clique number.",
+            "formulation": "\\chi(G[S]) = \\omega(G[S]) \\quad \\forall S \\subseteq \\{0,\\ldots,n-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "G = nx.Graph()\nG.add_nodes_from(range(n))\nG.add_edges_from(E)\ndef _has_odd_hole(H):\n    nodes = list(H.nodes())\n    for k in range(5, len(nodes) + 1, 2):\n        for subset in itertools.combinations(nodes, k):\n            sub = H.subgraph(subset)\n            if sub.number_of_edges() == k and all(deg == 2 for _, deg in sub.degree()) and nx.is_connected(sub):\n                return True\n    return False\nassert not _has_odd_hole(G) and not _has_odd_hole(nx.complement(G))"
+            }
+        }
+    ],
+    "variables": {
+        "y": {
+            "description": "y_k equals 1 if color k is used, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "P"
+            ]
+        },
+        "w": {
+            "description": "w_{i,k} equals 1 if vertex i is selected and assigned color k, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "n",
+                "P"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "A vertex can only be assigned color k if color k is used.",
+            "formulation": "w_{i,k} \\leq y_k \\quad \\forall i \\in \\{0,\\ldots,n-1\\}, \\ k \\in \\{0,\\ldots,P-1\\}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "for i in range(n):\n    for k in range(P):\n        model.addConstr(w[i, k] <= y[k])"
+            }
+        },
+        {
+            "description": "No two vertices sharing an edge may receive the same color.",
+            "formulation": "w_{i,k} + w_{j,k} \\leq 1 \\quad \\forall (i,j) \\in E, \\ k \\in \\{0,\\ldots,P-1\\}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "for i, j in E:\n    for k in range(P):\n        model.addConstr(w[i, k] + w[j, k] <= 1)"
+            }
+        },
+        {
+            "description": "Exactly one vertex is selected and colored from each cluster.",
+            "formulation": "\\sum_{i=0}^{n-1} \\sum_{k=0}^{P-1} C_{i,p} \\cdot w_{i,k} = 1 \\quad \\forall p \\in \\{0,\\ldots,P-1\\}",
+            "explicit": true,
+            "code": {
+                "gurobipy": "for p in range(P):\n    model.addConstr(gp.quicksum(C[i][p] * w[i, k] for i in range(n) for k in range(P)) == 1)"
+            }
+        },
+        {
+            "description": "Clique cutting plane: for every clique of the graph, the number of colors used must be at least the number of selected vertices within that clique, since vertices in a clique are pairwise adjacent and therefore must all receive distinct colors.",
+            "formulation": "\\sum_{k=0}^{P-1} y_k \\geq \\sum_{i \\in S} \\sum_{k=0}^{P-1} w_{i,k} \\quad \\forall \\text{ maximal clique } S \\subseteq \\{0,\\ldots,n-1\\}",
+            "explicit": false,
+            "code": {
+                "gurobipy": "G_temp = nx.Graph()\nG_temp.add_nodes_from(range(n))\nG_temp.add_edges_from(E)\nfor clique in nx.find_cliques(G_temp):\n    model.addConstr(gp.quicksum(y[k] for k in range(P)) >= gp.quicksum(w[i, k] for i in clique for k in range(P)))"
+            }
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of distinct colors used across all selected vertices.",
+        "formulation": "\\min \\sum_{k=0}^{P-1} y_k",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(y[k] for k in range(P)), GRB.MINIMIZE)"
+        }
+    },
+    "imports": [
+        "import networkx as nx",
+        "import itertools"
+    ],
+    "metadata": {
+        "source": {
+            "dataset": "FrontierOR",
+            "instance_id": "seker2021",
+            "variation_id": "model1"
+        },
+        "notes": [
+            "This is formulation a (Model 1 of Seker, Ekim, and Taskin (2021)) strengthened with a static clique cutting-plane constraint.",
+            "The added constraint lower-bounds the number of colors used by the number of selected vertices within any clique, since pairwise-adjacent selected vertices must receive distinct colors; this is the standard clique-based valid inequality for graph coloring, tightening the LP relaxation of formulation a without changing its feasible integer solutions.",
+            "As in formulation c, cliques are not passed in as a parameter: the full set of maximal cliques of the graph is enumerated at solve time using networkx, rather than precomputed or generated iteratively via a cutting-plane algorithm as in the source paper.",
+            "As in formulation a, the paper's symmetry-breaking constraint y_k <= y_{k-1} is excluded: it is a solver-acceleration device that is not part of the underlying selective graph coloring problem."
+        ]
+    }
+}

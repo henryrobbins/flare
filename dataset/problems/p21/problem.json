@@ -1,0 +1,46 @@
+{
+    "name": "Selective Graph Coloring in Perfect Graphs",
+    "parameters": {
+        "n": {
+            "description": "Number of vertices in the perfect graph",
+            "type": "integer",
+            "shape": []
+        },
+        "m": {
+            "description": "Number of edges in the perfect graph",
+            "type": "integer",
+            "shape": []
+        },
+        "E": {
+            "description": "Edges of the graph; each row lists the two endpoint vertices of an edge, with the smaller vertex index listed first",
+            "type": "integer",
+            "shape": [
+                "m",
+                "2"
+            ]
+        },
+        "P": {
+            "description": "Number of disjoint clusters partitioning the vertex set",
+            "type": "integer",
+            "shape": []
+        },
+        "C": {
+            "description": "Binary cluster membership matrix: $C_{i,p}$ is 1 if vertex i belongs to cluster p, 0 otherwise",
+            "type": "integer",
+            "shape": [
+                "n",
+                "P"
+            ]
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "FrontierOR",
+            "instance_id": "seker2021"
+        },
+        "notes": [
+            "Adapted from the Selective Graph Coloring (Sel-Col) problem in Seker, Ekim, and Taskin (2021), 'An exact cutting plane algorithm to solve the selective graph coloring problem in perfect graphs', European Journal of Operational Research 291.",
+            "We add implicit assumptions that $n$, $m$ are positive, that the clusters form a valid partition of the vertex set, and that every edge connects two distinct, valid vertex indices."
+        ]
+    }
+}
