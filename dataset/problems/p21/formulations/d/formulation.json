@@ -93,7 +93,7 @@
         },
         "t": {
             "description": "Estimate of the number of colors needed to color the selected vertices",
-            "type": "continuous",
+            "type": "integer",
             "shape": []
         }
     },
@@ -121,6 +121,14 @@
             "code": {
                 "gurobipy": "model.addConstr(t >= 0)"
             }
+        },
+        {
+            "description": "t is no more than P.",
+            "formulation": "t \\leq P",
+            "explicit": false,
+            "code": {
+                "gurobipy": "model.addConstr(t <= P)"
+            }
         }
     ],
     "objective": {
@@ -140,9 +148,8 @@
             "variation_id": "model2"
         },
         "notes": [
-            "Reformulates Model 2 of Seker, Ekim, and Taskin (2021) as a static MILP.",
-            "The paper's Model 2 bounds t below by chi(G[x]), the chromatic number of the subgraph induced by the selection x; this is not a linear expression, so the paper resolves it with cutting planes t >= sum_{i in K^(j)} x_i generated iteratively from a maximum clique K^(j) of G[x^(j)] found at each step of a cutting-plane algorithm, rather than a single static formulation.",
-            "Since the input graph is perfect, chi(G[x]) = omega(G[x]) (clique number) for every selection x, and omega(G[x]) equals the size of the largest maximal clique of the full graph G that lies entirely within the selection. We therefore replace the paper's dynamically generated cuts with the full, static set of constraints t >= sum_{i in K_q} x_i for every maximal clique K_q of G, enumerated at solve time from the input graph using networkx."
+            "Revised version of formulation c.",
+            "Instead of having t be a continuous, only-lower-bounded relaxation variable (justified there by the iterative cutting-plane algorithm's LP relaxations), we assert that t is always driven to an integer value at any optimum, and is bounded above by P for every feasible selection (since at most P vertices are ever selected, one per cluster). We therefore additionally restrict t to be integer-valued and cap it at P; this removes only fractional or unnecessarily-large feasible values of t and does not exclude the true optimum or change the optimal objective value."
         ]
     }
 }

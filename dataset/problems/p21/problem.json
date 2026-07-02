@@ -16,7 +16,7 @@
             "type": "integer",
             "shape": [
                 "m",
-                2
+                "2"
             ]
         },
         "P": {

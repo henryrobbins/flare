@@ -16,7 +16,7 @@
             "type": "integer",
             "shape": [
                 "m",
-                2
+                "2"
             ]
         },
         "P": {
@@ -79,7 +79,7 @@
             "formulation": "\\chi(G[S]) = \\omega(G[S]) \\quad \\forall S \\subseteq \\{0,\\ldots,n-1\\}",
             "explicit": true,
             "code": {
-                "python": "G = nx.Graph()\nG.add_nodes_from(range(n))\nG.add_edges_from(E)\nassert nx.is_perfect_graph(G)"
+                "python": "G = nx.Graph()\nG.add_nodes_from(range(n))\nG.add_edges_from(E)\ndef _has_odd_hole(H):\n    nodes = list(H.nodes())\n    for k in range(5, len(nodes) + 1, 2):\n        for subset in itertools.combinations(nodes, k):\n            sub = H.subgraph(subset)\n            if sub.number_of_edges() == k and all(deg == 2 for _, deg in sub.degree()) and nx.is_connected(sub):\n                return True\n    return False\nassert not _has_odd_hole(G) and not _has_odd_hole(nx.complement(G))"
             }
         }
     ],
@@ -134,7 +134,8 @@
         }
     },
     "imports": [
-        "import networkx as nx"
+        "import networkx as nx",
+        "import itertools"
     ],
     "metadata": {
         "source": {

@@ -21,44 +21,51 @@ structure Params where
   n : ℕ -- number of vertices in the perfect graph
   m : ℕ -- number of edges in the perfect graph
   P : ℕ -- number of disjoint clusters partitioning the vertex set
-  -- Data
+  -- Graph and cluster data
   E : Fin m → Fin n × Fin n -- endpoint vertices of each edge, smaller index first
-  C : Fin n → Fin P → ℤ -- binary cluster membership matrix: C i p = 1 if vertex i belongs to cluster p
+  C : Fin n → Fin P → ℤ -- binary cluster membership matrix: C[i][p] = 1 iff vertex i is in cluster p
   -- Implicit Assumptions
   hn_pos : NeZero n
-  -- C is binary
   hC_bin : ∀ i : Fin n, ∀ p : Fin P, C i p = 0 ∨ C i p = 1
+  -- Assumptions
   -- Every vertex belongs to exactly one cluster
-  hC_partition : ∀ i : Fin n, ∑ p : Fin P, C i p = 1
+  hpartition : ∀ i : Fin n, ∑ p : Fin P, C i p = 1
   -- Each cluster contains at least one vertex
-  hC_nonempty : ∀ p : Fin P, 1 ≤ ∑ i : Fin n, C i p
-  -- Every edge connects two distinct, valid vertex indices (smaller index first)
+  hcluster_nonempty : ∀ p : Fin P, 1 ≤ ∑ i : Fin n, C i p
+  -- Every edge connects two distinct valid vertices with the smaller index first
   hedge_lt : ∀ e : Fin m, (E e).1 < (E e).2
-  -- The graph is perfect: every induced subgraph has chromatic number equal to its clique number
+  -- The graph is perfect: every induced subgraph has chromatic number equal to its clique number,
+  -- i.e. if every clique within S has at most k vertices, S admits a proper coloring using fewer than k colors
   hperfect : ∀ (S : Finset (Fin n)) (k : ℕ),
-    (∀ Cl : Finset (Fin n), Cl ⊆ S → IsClique E Cl → Cl.card ≤ k) →
+    (∀ Q : Finset (Fin n), Q ⊆ S → IsClique E Q → Q.card ≤ k) →
     ∃ c : Fin n → ℕ, (∀ i ∈ S, c i < k) ∧
       ∀ i ∈ S, ∀ j ∈ S, i ≠ j → Adjacent E i j → c i ≠ c j
 
 structure Vars (p : Params) where
-  x : Fin p.n → ℤ -- equals 1 if vertex i is selected, 0 otherwise
-  t : ℝ -- estimate of the number of colors needed to color the selected vertices
+  y : Fin p.P → ℤ -- equals 1 if color k is used, 0 otherwise
+  w : Fin p.n → Fin p.P → ℤ -- equals 1 if vertex i is selected and assigned color k, 0 otherwise
 
 structure Feasible (p : Params) (v : Vars p) : Prop where
-  -- Exactly one vertex is selected from each cluster
-  hcluster : ∀ pp : Fin p.P,
-    ∑ i : Fin p.n, p.C i pp * v.x i = 1
-  -- t is at least the number of selected vertices within any clique
+  -- A vertex can only be assigned color k if color k is used
+  hlink : ∀ i : Fin p.n, ∀ k : Fin p.P, v.w i k ≤ v.y k
+  -- No two vertices sharing an edge may receive the same color
+  hedge : ∀ e : Fin p.m, ∀ k : Fin p.P,
+    v.w (p.E e).1 k + v.w (p.E e).2 k ≤ 1
+  -- Exactly one vertex is selected and colored from each cluster
+  hselect : ∀ pIdx : Fin p.P,
+    ∑ i : Fin p.n, ∑ k : Fin p.P, p.C i pIdx * v.w i k = 1
+  -- Clique cutting plane: for every clique of the graph, the number of colors used must be at
+  -- least the number of selected vertices within that clique, since vertices in a clique are
+  -- pairwise adjacent and therefore must all receive distinct colors
   hclique : ∀ S : Finset (Fin p.n), IsClique p.E S →
-    ∑ i ∈ S, (v.x i : ℝ) ≤ v.t
-  -- Non-negativity of t
-  ht_nn : 0 ≤ v.t
+    ∑ i ∈ S, ∑ k : Fin p.P, v.w i k ≤ ∑ k : Fin p.P, v.y k
   -- Binary variables
-  hx_bin : ∀ i : Fin p.n, v.x i = 0 ∨ v.x i = 1
+  hy_bin : ∀ k : Fin p.P, v.y k = 0 ∨ v.y k = 1
+  hw_bin : ∀ i : Fin p.n, ∀ k : Fin p.P, v.w i k = 0 ∨ v.w i k = 1
 
--- Minimize the number of colors needed to color the selected vertices
+-- Minimize the total number of distinct colors used across all selected vertices
 def obj (p : Params) (v : Vars p) : ℝ :=
-  v.t
+  ∑ k : Fin p.P, (v.y k : ℝ)
 
 def formulation : MILPFormulation where
   Params   := Params

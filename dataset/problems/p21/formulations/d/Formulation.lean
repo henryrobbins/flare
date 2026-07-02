@@ -6,7 +6,7 @@ import Mathlib.Data.Int.Basic
 
 open BigOperators Finset
 
-namespace P21.c
+namespace P21.d
 
 -- Two distinct vertices are adjacent iff some edge of E connects them
 def Adjacent {n m : ℕ} (E : Fin m → Fin n × Fin n) (i j : Fin n) : Prop :=
@@ -42,7 +42,7 @@ structure Params where
 
 structure Vars (p : Params) where
   x : Fin p.n → ℤ -- equals 1 if vertex i is selected, 0 otherwise
-  t : ℝ -- estimate of the number of colors needed to color the selected vertices
+  t : ℤ -- number of colors used to color the selected vertices
 
 structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Exactly one vertex is selected from each cluster
@@ -50,15 +50,17 @@ structure Feasible (p : Params) (v : Vars p) : Prop where
     ∑ i : Fin p.n, p.C i pp * v.x i = 1
   -- t is at least the number of selected vertices within any clique
   hclique : ∀ S : Finset (Fin p.n), IsClique p.E S →
-    ∑ i ∈ S, (v.x i : ℝ) ≤ v.t
+    ∑ i ∈ S, v.x i ≤ v.t
   -- Non-negativity of t
   ht_nn : 0 ≤ v.t
+  -- t is capped above by P
+  ht_le_P : v.t ≤ (p.P : ℤ)
   -- Binary variables
   hx_bin : ∀ i : Fin p.n, v.x i = 0 ∨ v.x i = 1
 
 -- Minimize the number of colors needed to color the selected vertices
 def obj (p : Params) (v : Vars p) : ℝ :=
-  v.t
+  (v.t : ℝ)
 
 def formulation : MILPFormulation where
   Params   := Params
@@ -66,4 +68,4 @@ def formulation : MILPFormulation where
   feasible := Feasible
   obj      := obj
 
-end P21.c
+end P21.d

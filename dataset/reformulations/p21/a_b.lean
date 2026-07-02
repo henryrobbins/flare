@@ -1,6 +1,6 @@
 import Common
 import problems.p21.formulations.a.Formulation
-import problems.p21.formulations.c.Formulation
+import problems.p21.formulations.b.Formulation
 import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 import Mathlib.Data.Fintype.Basic
 import Mathlib.Data.Real.Basic
@@ -15,7 +15,7 @@ namespace P21
 -- § Parameter Mapping
 -- ============================================================================
 
-private def paramMap (p : P21.a.Params) : P21.c.Params :=
+private def paramMap (p : P21.a.Params) : P21.b.Params :=
   { n                 := p.n
     m                 := p.m
     P                 := p.P
@@ -43,7 +43,7 @@ color `k`: if two distinct vertices `i j ∈ S` both had `w i k = w j k = 1`,
 they would be adjacent (since `S` is a clique), and `hedge` on the connecting
 edge would force `w i k + w j k ≤ 1`, a contradiction.
 -/
-private lemma clique_card_le_one (S : Finset (Fin p.n)) (hS : P21.c.IsClique p.E S)
+private lemma clique_card_le_one (S : Finset (Fin p.n)) (hS : P21.b.IsClique p.E S)
     (k : Fin p.P) :
     (S.filter (fun i => v.w i k = 1)).card ≤ 1 := by
   rw [Finset.card_le_one]
@@ -62,7 +62,7 @@ If `y k = 0`, `hlink` forces every term to be `≤ 0`. If `y k = 1`,
 `clique_card_le_one` bounds the number of `1`-terms in the sum (over a
 binary-valued function) by `1`.
 -/
-private lemma clique_sum_le_y (S : Finset (Fin p.n)) (hS : P21.c.IsClique p.E S)
+private lemma clique_sum_le_y (S : Finset (Fin p.n)) (hS : P21.b.IsClique p.E S)
     (k : Fin p.P) :
     ∑ i ∈ S, v.w i k ≤ v.y k := by
   rcases h.hy_bin k with hy0 | hy1
@@ -90,15 +90,15 @@ private lemma clique_sum_le_y (S : Finset (Fin p.n)) (hS : P21.c.IsClique p.E S)
 
 end ForwardHelpers
 
-/-- **P21.a → P21.c**: the variables are unchanged; only the additional clique
+/-- **P21.a → P21.b**: the variables are unchanged; only the additional clique
 constraint needs to be verified in `fwd_feas`. -/
-private def fwd (p : P21.a.Params) (v : P21.a.Vars p) : P21.c.Vars (paramMap p) :=
+private def fwd (p : P21.a.Params) (v : P21.a.Vars p) : P21.b.Vars (paramMap p) :=
   { y := v.y
     w := v.w }
 
 private lemma fwd_feas (p : P21.a.Params) (v : P21.a.Vars p)
     (h : P21.a.Feasible p v) :
-    P21.c.Feasible (paramMap p) (fwd p v) := by
+    P21.b.Feasible (paramMap p) (fwd p v) := by
   refine
     { hlink := h.hlink
       hedge := h.hedge
@@ -115,15 +115,15 @@ private lemma fwd_feas (p : P21.a.Params) (v : P21.a.Vars p)
 -- § Backward Mapping and Feasibility
 -- ============================================================================
 
-/-- **P21.c → P21.a**: the variables are unchanged; `c`'s `Feasible` already
+/-- **P21.b → P21.a**: the variables are unchanged; `b`'s `Feasible` already
 contains every field of `a`'s `Feasible` (plus the extra `hclique` field), so
 the backward direction simply forgets `hclique`. -/
-private def bwd (p : P21.a.Params) (v : P21.c.Vars (paramMap p)) : P21.a.Vars p :=
+private def bwd (p : P21.a.Params) (v : P21.b.Vars (paramMap p)) : P21.a.Vars p :=
   { y := v.y
     w := v.w }
 
-private lemma bwd_feas (p : P21.a.Params) (v : P21.c.Vars (paramMap p))
-    (h : P21.c.Feasible (paramMap p) v) :
+private lemma bwd_feas (p : P21.a.Params) (v : P21.b.Vars (paramMap p))
+    (h : P21.b.Feasible (paramMap p) v) :
     P21.a.Feasible p (bwd p v) :=
   { hlink   := h.hlink
     hedge   := h.hedge
@@ -135,7 +135,7 @@ private lemma bwd_feas (p : P21.a.Params) (v : P21.c.Vars (paramMap p))
 -- § Reformulation Structure
 -- ============================================================================
 
-def aCReformulation : MILPReformulation P21.a.formulation P21.c.formulation where
+def aBReformulation : MILPReformulation P21.a.formulation P21.b.formulation where
   paramMap    := paramMap
   fwd         := fwd
   bwd         := bwd
