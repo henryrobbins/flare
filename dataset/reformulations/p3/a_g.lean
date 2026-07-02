@@ -70,6 +70,7 @@ noncomputable def aGReformulation : MILPReformulation P3.a.formulation P3.g.form
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := fun _ _ _ => rfl
   objMap      := fun x => 2 * x
   objMap_mono := (fun a b h => by simp only; linarith)
   fwd_obj     := fun _ _ _ => by

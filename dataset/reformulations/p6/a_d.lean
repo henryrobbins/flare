@@ -431,6 +431,7 @@ def aDReformulation : MILPReformulation P6.a.formulation P6.d.formulation where
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := fun _ _ _ => rfl
   objMap      := id
   objMap_mono := strictMono_id
   fwd_obj _ _ _ := rfl

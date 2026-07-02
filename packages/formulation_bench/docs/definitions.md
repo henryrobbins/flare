@@ -89,6 +89,8 @@ $p' = \Phi_{\mathrm{p}}(p)$:
   $\Phi_{\text{fwd}}(x;p) \in \mathcal{F}'(p')$.
 - **Backward feasibility.** For all $x' \in \mathcal{F}'(p')$:
   $\Phi_{\text{bwd}}(x';p) \in \mathcal{F}(p)$.
+- **Inverse consistency.** For all $x \in \mathcal{F}(p)$:
+  $\Phi_{\text{bwd}}(\Phi_{\text{fwd}}(x;p);p) = x$.
 - **Strictly monotone objective mapping.** $\Phi_{\text{obj}}$ is
   strictly monotonically increasing.
 - **Objective preservation.** For all $x \in \mathcal{F}(p)$,
@@ -103,7 +105,8 @@ construction from `F` to `G`. The fields correspond directly to the
 components above: `paramMap` is $\Phi_{\mathrm{p}}$, `fwd` and `bwd`
 are the forward and backward mappings, `objMap` is $\Phi_{\text{obj}}$
 with monotonicity witnessed by `objMap_mono`. Lastly, `fwd_feas`,
-`bwd_feas`, `fwd_obj`, and `bwd_obj` discharge the four conditions.
+`bwd_feas`, `bwd_fwd`, `fwd_obj`, and `bwd_obj` discharge the feasibility,
+inverse-consistency, and objective-preservation conditions.
 
 ```{literalinclude} ../../../dataset/Common.lean
 :language: lean

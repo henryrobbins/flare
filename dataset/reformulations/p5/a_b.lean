@@ -59,6 +59,7 @@ def aBReformulation : MILPReformulation P5.a.formulation P5.b.formulation where
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := fun _ _ _ => rfl
   objMap      := id
   objMap_mono := strictMono_id
   fwd_obj := fun p v _ => by

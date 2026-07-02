@@ -76,6 +76,7 @@ def aGReformulation : MILPReformulation P4.a.formulation P4.g.formulation where
   bwd         := bwd
   fwd_feas    := fwd_feas
   bwd_feas    := bwd_feas
+  bwd_fwd     := fun _ _ _ => rfl
   objMap      := fun x => 2 * x
   objMap_mono := (fun _ _ h => by linarith)
   fwd_obj     := fwd_obj
