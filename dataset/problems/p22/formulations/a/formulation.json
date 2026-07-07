@@ -1,0 +1,101 @@
+{
+    "valid": true,
+    "parameters": {
+        "W": {
+            "description": "Bin capacity",
+            "type": "integer",
+            "shape": []
+        },
+        "n": {
+            "description": "Number of items to be packed",
+            "type": "integer",
+            "shape": []
+        },
+        "l": {
+            "description": "Size of each item",
+            "type": "integer",
+            "shape": [
+                "n"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "Bin capacity is positive.",
+            "formulation": "W \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert W >= 1"
+            }
+        },
+        {
+            "description": "There is at least one item to pack.",
+            "formulation": "n \\geq 1",
+            "explicit": false,
+            "code": {
+                "python": "assert n >= 1"
+            }
+        },
+        {
+            "description": "Every item size is a positive integer that does not exceed the bin capacity.",
+            "formulation": "1 \\leq l_j \\leq W \\quad \\forall j \\in \\{0, \\ldots, n-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "assert all(1 <= l[j] <= W for j in range(n))"
+            }
+        }
+    ],
+    "variables": {
+        "y": {
+            "description": "1 if bin i is used, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "n"
+            ]
+        },
+        "x": {
+            "description": "1 if item j is assigned to bin i, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "n",
+                "n"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "The total size of the items assigned to a bin cannot exceed its capacity, and a bin can only hold items if it is used.",
+            "formulation": "\\sum_{j=0}^{n-1} l_j x_{ij} \\leq W y_i \\quad \\forall i \\in \\{0, \\ldots, n-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(l[j] * x[i, j] for j in range(n)) <= W * y[i]\n    for i in range(n)\n)"
+            },
+            "explicit": true
+        },
+        {
+            "description": "Every item is assigned to exactly one bin.",
+            "formulation": "\\sum_{i=0}^{n-1} x_{ij} = 1 \\quad \\forall j \\in \\{0, \\ldots, n-1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[i, j] for i in range(n)) == 1\n    for j in range(n)\n)"
+            },
+            "explicit": true
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total number of bins used.",
+        "formulation": "\\min \\sum_{i=0}^{n-1} y_i",
+        "code": {
+            "gurobipy": "model.setObjective(gp.quicksum(y[i] for i in range(n)), GRB.MINIMIZE)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "paper": "carvalho1999"
+        },
+        "notes": [
+            "This is the classical bin-packing formulation attributed to Martello and Toth, presented in Section 1 of carvalho1999 (unnumbered equations, p. 630) as the starting point before introducing the arc-flow model of formulation `c`.",
+            "The source indexes bins and items by abstract sets without specifying the number of bins; following Martello and Toth, we take the number of bins to be n (the number of items), since $n$ bins always suffice, and index both bins and items directly over $\\{0,\\ldots,n-1\\}$ rather than introducing separate named index sets.",
+            "The source works at the level of individual items (a list of $n$ item sizes), which is this dataset's canonical problem-level parametrization $(W, n, l)$ for p22; `gen_params.py` is a direct pass-through. Formulations `b` and `c` instead aggregate items by distinct size into $(m, w, b)$ via their own `gen_params.py`.",
+            "Unlike formulation `c`, binary variables $y$ and $x$ need no separate non-negativity/upper-bound constraints beyond their declared type."
+        ]
+    }
+}

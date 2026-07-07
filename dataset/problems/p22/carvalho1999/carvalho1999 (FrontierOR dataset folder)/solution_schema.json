@@ -1,0 +1,5 @@
+{
+  "objective_value": "<int> Total number of bins used to pack all demanded items.",
+  "bin_assignments": "<list[dict], length num_bins> One entry per bin used. Each entry has 'items' (a list of item sizes packed into the bin, summing to at most W) and 'total_size' (the sum of those item sizes).",
+  "num_bins": "<int> Total number of bins used to pack all demanded items."
+}

@@ -1,0 +1,35 @@
+{
+    "name": "One-Dimensional Bin Packing Problem (BPP)",
+    "parameters": {
+        "W": {
+            "description": "Bin capacity",
+            "type": "integer",
+            "shape": []
+        },
+        "n": {
+            "description": "Number of items to be packed",
+            "type": "integer",
+            "shape": []
+        },
+        "l": {
+            "description": "Size of each item",
+            "type": "integer",
+            "shape": [
+                "n"
+            ]
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "FrontierOR",
+            "paper": "carvalho1999",
+            "citation": "J.M. Valério de Carvalho, \"Exact solution of bin-packing problems using column generation and branch-and-bound,\" Annals of Operations Research 86 (1999) 629-659."
+        },
+        "notes": [
+            "carvalho1999 (Section 1) states the general bin-packing problem at the level of individual items: bins of capacity $W$ and a list of $n$ items of integer sizes $l_0,\\ldots,l_{n-1}$; this is the parametrization used here and by formulation `a` (the classical Martello-Toth formulation). Formulations `b` (Gilmore-Gomory patterns) and `c` (arc-flow) instead work with items aggregated by distinct size into $(m, w, b)$; their `gen_params.py` derives this aggregation from $(W, n, l)$.",
+            "We add implicit assumptions that W >= 1 and n >= 1.",
+            "The source paper's arc reduction criteria (Criteria 1-4) and valid inequalities (Propositions 2.2, 2.3), used in formulation `c`'s underlying arc-flow model, are solver-side optimizations and are not part of the base MILP formulation (Equations 7-11); we formulate the full, unreduced arc set there.",
+            "The FrontierOR source instances (`instance/*.json`) use a much larger bin capacity and item count than is tractable for a Lean formulation; `data.json` instead uses a small, hand-verified instance in the same schema."
+        ]
+    }
+}

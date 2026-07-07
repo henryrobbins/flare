@@ -1,0 +1,5 @@
+{
+  "bin_capacity": "<int> Maximum total size that each bin can hold.",
+  "num_items": "<int> Total number of items to be packed into bins.",
+  "items": "<list[int], length num_items> Size of each item to be packed."
+}
