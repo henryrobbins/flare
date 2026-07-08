@@ -24,60 +24,59 @@ structure Params where
   hb_pos : ∀ d : Fin m, 1 ≤ b d
 
 /-
-The graph has vertex set {0,...,W} (encoded as Fin (p.W + 1)). An item arc of
-type d starts at vertex i and ends at vertex i + w d; it exists exactly when
-i + w d ≤ W. A loss arc starts at vertex k and ends at vertex k + 1; since
-these arcs exist for exactly k = 0,...,W-1, they are indexed directly by
-`Fin p.W` rather than filtered out of a larger domain.
+The graph G = (V, A) has vertex set V = {0,...,W}, encoded as Fin (p.W + 1).
+The arc set A is a plain set of vertex pairs (i, j), formed exactly as in the
+source: the union of item arcs (i, i + w d) for every item type d and start
+vertex i with i + w d ≤ W, and loss arcs (k, k + 1) for every k = 0,...,W-1.
+Because A is a union of pairs rather than a disjoint tagged union, if some
+item type has width exactly 1, its item arc (k, k+1) coincides with the loss
+arc (k, k+1): both are the very same element (k, k+1) of A, and hence share
+the same flow variable `x k (k+1)`. This is deliberate, matching the source
+paper's Equations 7-11 exactly.
 -/
+def isArc (p : Params) (i j : Fin (p.W + 1)) : Prop :=
+  (∃ d : Fin p.m, (j : ℕ) = (i : ℕ) + p.w d) ∨ (j : ℕ) = (i : ℕ) + 1
 
--- Item-type arcs leaving vertex i (all d with an existing arc (i, i + w d, d))
-def itemArcsOut (p : Params) (i : Fin (p.W + 1)) : Finset (Fin p.m) :=
-  univ.filter (fun d => i.val + p.w d ≤ p.W)
+instance (p : Params) (i j : Fin (p.W + 1)) : Decidable (isArc p i j) := by
+  unfold isArc
+  infer_instance
 
--- Item-type arcs entering vertex v (all (i,d) pairs with i + w d = v)
-def itemArcsIn (p : Params) (v : Fin (p.W + 1)) : Finset (Fin (p.W + 1) × Fin p.m) :=
-  univ.filter (fun id => id.1.val + p.w id.2 = v.val)
+-- Outgoing arcs of vertex i (all j with (i,j) ∈ A)
+def outArcs (p : Params) (i : Fin (p.W + 1)) : Finset (Fin (p.W + 1)) :=
+  univ.filter (fun j => isArc p i j)
 
--- All item arcs of a given type d (all start vertices i with an existing arc)
+-- Incoming arcs of vertex j (all i with (i,j) ∈ A)
+def inArcs (p : Params) (j : Fin (p.W + 1)) : Finset (Fin (p.W + 1)) :=
+  univ.filter (fun i => isArc p i j)
+
+-- Item arcs of type d, viewed as their start vertices k (the arc is (k, k + w d))
 def D (p : Params) (d : Fin p.m) : Finset (Fin (p.W + 1)) :=
-  univ.filter (fun i => i.val + p.w d ≤ p.W)
+  univ.filter (fun k => (k : ℕ) + p.w d ≤ p.W)
 
--- Loss arcs leaving vertex v (the arc (v, v+1), if it exists)
-def lossArcsOut (p : Params) (v : Fin (p.W + 1)) : Finset (Fin p.W) :=
-  univ.filter (fun k => k.val = v.val)
-
--- Loss arcs entering vertex v (the arc (v-1, v), if it exists)
-def lossArcsIn (p : Params) (v : Fin (p.W + 1)) : Finset (Fin p.W) :=
-  univ.filter (fun k => k.val + 1 = v.val)
+-- The endpoint k + w d of the type-d item arc starting at k, capped at W (the
+-- cap is never active for k ∈ D p d, where k + w d ≤ W already holds).
+def endOf (p : Params) (d : Fin p.m) (k : Fin (p.W + 1)) : Fin (p.W + 1) :=
+  ⟨min (k.val + p.w d) p.W, Nat.lt_succ_of_le (min_le_right _ _)⟩
 
 structure Vars (p : Params) where
-  xItem : Fin (p.W + 1) → Fin p.m → ℤ  -- flow on the item arc starting at i with type d
-  xLoss : Fin p.W → ℤ  -- flow on the loss arc starting at k
+  x : Fin (p.W + 1) → Fin (p.W + 1) → ℤ  -- flow on arc (i,j) ∈ A
   z : ℤ  -- number of bins used
 
 structure Feasible (p : Params) (v : Vars p) : Prop where
   -- Flow conservation at vertex 0: inflow minus outflow equals the negative of the number of bins used
   hflow0 :
-    (∑ id ∈ itemArcsIn p 0, v.xItem id.1 id.2) + (∑ k ∈ lossArcsIn p 0, v.xLoss k)
-    - ((∑ d ∈ itemArcsOut p 0, v.xItem 0 d) + (∑ k ∈ lossArcsOut p 0, v.xLoss k))
-    = -v.z
+    (∑ i ∈ inArcs p 0, v.x i 0) - (∑ j ∈ outArcs p 0, v.x 0 j) = -v.z
   -- Flow conservation at every intermediate vertex: inflow equals outflow
   hflowMid : ∀ vtx : Fin (p.W + 1), 0 < vtx.val → vtx.val < p.W →
-    (∑ id ∈ itemArcsIn p vtx, v.xItem id.1 id.2) + (∑ k ∈ lossArcsIn p vtx, v.xLoss k)
-    - ((∑ d ∈ itemArcsOut p vtx, v.xItem vtx d) + (∑ k ∈ lossArcsOut p vtx, v.xLoss k))
-    = 0
+    (∑ i ∈ inArcs p vtx, v.x i vtx) - (∑ j ∈ outArcs p vtx, v.x vtx j) = 0
   -- Flow conservation at vertex W: inflow minus outflow equals the number of bins used
   hflowW :
-    (∑ id ∈ itemArcsIn p (Fin.last p.W), v.xItem id.1 id.2)
-      + (∑ k ∈ lossArcsIn p (Fin.last p.W), v.xLoss k)
-    - ((∑ d ∈ itemArcsOut p (Fin.last p.W), v.xItem (Fin.last p.W) d)
-      + (∑ k ∈ lossArcsOut p (Fin.last p.W), v.xLoss k))
-    = v.z
+    (∑ i ∈ inArcs p (Fin.last p.W), v.x i (Fin.last p.W))
+    - (∑ j ∈ outArcs p (Fin.last p.W), v.x (Fin.last p.W) j) = v.z
   -- The full demand of every item type must be packed
-  hdemand : ∀ d : Fin p.m, ∑ i ∈ D p d, v.xItem i d ≥ p.b d
-  hxItem_nn : ∀ i : Fin (p.W + 1), ∀ d : Fin p.m, 0 ≤ v.xItem i d
-  hxLoss_nn : ∀ k : Fin p.W, 0 ≤ v.xLoss k
+  hdemand : ∀ d : Fin p.m, ∑ k ∈ D p d, v.x k (endOf p d k) ≥ p.b d
+  -- Arc flows are non-negative
+  hx_nn : ∀ i j : Fin (p.W + 1), isArc p i j → 0 ≤ v.x i j
   -- The number of bins used doesn't exceed the total number of items
   htotal : v.z ≤ ∑ d : Fin p.m, p.b d
 

@@ -62,39 +62,39 @@
     ],
     "definitions": {
         "A": {
-            "description": "Arc set of the graph G=(V,A) on vertices V={0,...,W}: an item arc (i, i+w_d, d) for every item type d and start vertex i (tagged with type d), plus a loss arc (k, k+1, -1) for every k=0,...,W-1 (tagged with sentinel -1)",
-            "formulation": "A = \\{(i, i + w_d, d) : d \\in \\{0, \\ldots, m-1\\},\\; 0 \\leq i \\leq W - w_d\\} \\cup \\{(k, k+1, -1) : k \\in \\{0, \\ldots, W-1\\}\\}",
+            "description": "Arc set of the graph G=(V,A) on vertices V={0,...,W}: item arcs (i, i+w_d) for every item type d and start vertex i, plus loss arcs (k, k+1) for every k=0,...,W-1.",
+            "formulation": "A = \\{(i, i + w_d) : d \\in \\{0, \\ldots, m-1\\},\\; 0 \\leq i \\leq W - w_d\\} \\cup \\{(k, k+1) : k \\in \\{0, \\ldots, W-1\\}\\}",
             "code": {
-                "python": "A = []\nfor d in range(m):\n    for i in range(W - w[d] + 1):\n        A.append((i, i + w[d], d))\nfor k in range(W):\n    A.append((k, k + 1, -1))"
+                "python": "A = set()\nfor d in range(m):\n    for i in range(W - w[d] + 1):\n        A.add((i, i + w[d]))\nfor k in range(W):\n    A.add((k, k + 1))"
             }
         },
         "out": {
             "description": "Adjacency list of outgoing arcs (arcs leaving each vertex)",
-            "formulation": "\\delta^+(i) = \\{(i',j',d') \\in A : i' = i\\} \\quad \\forall i \\in V",
+            "formulation": "\\delta^+(i) = \\{(i',j') \\in A : i' = i\\} \\quad \\forall i \\in V",
             "code": {
-                "python": "out = [[] for _ in range(W + 1)]\nfor (i, j, d) in A:\n    out[i].append((i, j, d))"
+                "python": "out = [[] for _ in range(W + 1)]\nfor (i, j) in A:\n    out[i].append((i, j))"
             }
         },
         "inc": {
             "description": "Adjacency list of incoming arcs (arcs entering each vertex)",
-            "formulation": "\\delta^-(j) = \\{(i',j',d') \\in A : j' = j\\} \\quad \\forall j \\in V",
+            "formulation": "\\delta^-(j) = \\{(i',j') \\in A : j' = j\\} \\quad \\forall j \\in V",
             "code": {
-                "python": "inc = [[] for _ in range(W + 1)]\nfor (i, j, d) in A:\n    inc[j].append((i, j, d))"
+                "python": "inc = [[] for _ in range(W + 1)]\nfor (i, j) in A:\n    inc[j].append((i, j))"
             }
         },
         "D": {
             "description": "Item arcs of each item type",
-            "formulation": "\\delta(d) = \\{(i,j,d') \\in A : d' = d\\} \\quad \\forall d \\in \\{0, \\ldots, m-1\\}",
+            "formulation": "D_d = \\{(k, k+w_d) : k \\in \\{0, \\ldots, W - w_d\\}\\} \\quad \\forall d \\in \\{0, \\ldots, m-1\\}",
             "code": {
-                "python": "D = [[] for _ in range(m)]\nfor (i, j, d) in A:\n    if d >= 0:\n        D[d].append((i, j, d))"
+                "python": "D = [[] for _ in range(m)]\nfor d in range(m):\n    for k in range(W - w[d] + 1):\n        D[d].append((k, k + w[d]))"
             }
         }
     },
     "variables": {
         "x": {
-            "description": "Flow on arc (i,j): the number of items placed in any bin at a distance i from the beginning of the bin, on an arc of type d (or a loss arc if d = -1)",
+            "description": "Flow on arc (i,j) in A: the number of items of size j-i placed in any bin at a distance i from the beginning of the bin",
             "type": "integer",
-            "indices": "(i, j, d) for (i, j, d) in A",
+            "indices": "(i, j) for (i, j) in A",
             "shape": [
                 "|A|"
             ]
@@ -108,41 +108,41 @@
     "constraints": [
         {
             "description": "Flow conservation at vertex 0: inflow minus outflow equals the negative of the number of bins used.",
-            "formulation": "\\sum_{(i,j,d) \\in \\delta^-(0)} x_{ij} - \\sum_{(i,j,d) \\in \\delta^+(0)} x_{ij} = -z",
+            "formulation": "\\sum_{(i,j) \\in \\delta^-(0)} x_{ij} - \\sum_{(i,j) \\in \\delta^+(0)} x_{ij} = -z",
             "code": {
-                "gurobipy": "model.addConstr(\n    gp.quicksum(x[i, j, d] for (i, j, d) in inc[0])\n    - gp.quicksum(x[i, j, d] for (i, j, d) in out[0])\n    == -z\n)"
+                "gurobipy": "model.addConstr(\n    gp.quicksum(x[i, j] for (i, j) in inc[0])\n    - gp.quicksum(x[i, j] for (i, j) in out[0])\n    == -z\n)"
             },
             "explicit": true
         },
         {
             "description": "Flow conservation at every intermediate vertex: inflow equals outflow.",
-            "formulation": "\\sum_{(i,j,d) \\in \\delta^-(v)} x_{ij} - \\sum_{(i,j,d) \\in \\delta^+(v)} x_{ij} = 0 \\quad \\forall v \\in \\{1, \\ldots, W-1\\}",
+            "formulation": "\\sum_{(i,j) \\in \\delta^-(v)} x_{ij} - \\sum_{(i,j) \\in \\delta^+(v)} x_{ij} = 0 \\quad \\forall v \\in \\{1, \\ldots, W-1\\}",
             "code": {
-                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[i, j, d] for (i, j, d) in inc[v])\n    - gp.quicksum(x[i, j, d] for (i, j, d) in out[v])\n    == 0\n    for v in range(1, W)\n)"
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[i, j] for (i, j) in inc[v])\n    - gp.quicksum(x[i, j] for (i, j) in out[v])\n    == 0\n    for v in range(1, W)\n)"
             },
             "explicit": true
         },
         {
             "description": "Flow conservation at vertex W: inflow minus outflow equals the number of bins used.",
-            "formulation": "\\sum_{(i,j,d) \\in \\delta^-(W)} x_{ij} - \\sum_{(i,j,d) \\in \\delta^+(W)} x_{ij} = z",
+            "formulation": "\\sum_{(i,j) \\in \\delta^-(W)} x_{ij} - \\sum_{(i,j) \\in \\delta^+(W)} x_{ij} = z",
             "code": {
-                "gurobipy": "model.addConstr(\n    gp.quicksum(x[i, j, d] for (i, j, d) in inc[W])\n    - gp.quicksum(x[i, j, d] for (i, j, d) in out[W])\n    == z\n)"
+                "gurobipy": "model.addConstr(\n    gp.quicksum(x[i, j] for (i, j) in inc[W])\n    - gp.quicksum(x[i, j] for (i, j) in out[W])\n    == z\n)"
             },
             "explicit": true
         },
         {
             "description": "The full demand of every item type must be packed.",
-            "formulation": "\\sum_{(i,j,d) \\in \\delta(d)} x_{ij} \\geq b_d \\quad \\forall d \\in \\{0, \\ldots, m-1\\}",
+            "formulation": "\\sum_{(i,j) \\in D_d} x_{ij} \\geq b_d \\quad \\forall d \\in \\{0, \\ldots, m-1\\}",
             "code": {
-                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[i, j, d] for (i, j, d) in D[d]) >= b[d]\n    for d in range(m)\n)"
+                "gurobipy": "model.addConstrs(\n    gp.quicksum(x[i, j] for (i, j) in D[d]) >= b[d]\n    for d in range(m)\n)"
             },
             "explicit": true
         },
         {
             "description": "Arc flows are non-negative.",
-            "formulation": "x_{ij} \\geq 0 \\quad \\forall (i,j,d) \\in A",
+            "formulation": "x_{ij} \\geq 0 \\quad \\forall (i,j) \\in A",
             "code": {
-                "gurobipy": "model.addConstrs(x[i, j, d] >= 0 for (i, j, d) in A)"
+                "gurobipy": "model.addConstrs(x[i, j] >= 0 for (i, j) in A)"
             },
             "explicit": true
         },
@@ -168,9 +168,10 @@
             "paper": "carvalho1999"
         },
         "notes": [
-            "This is the arc-flow MILP formulation based on Equations 7-11 of carvalho1999 (with one added bound on z, noted below). Arcs $(i,j)$ in the paper's graph $G=(V,A)$ are indexed here by a single index and tagged with the item type they represent (or -1 for a loss arc), analogous to how p9 (MCND) encodes arcs with `tail`/`head` arrays.",
+            "This is the arc-flow MILP formulation based on Equations 7-11 of carvalho1999 (with one added bound on z, noted below). Following the source exactly, arcs $(i,j) \\in A$ are indexed directly by their vertex pair, not by a separate item-type tag: $A$ is a plain set of pairs, formed as a union of the item-arc set and the loss-arc set, so a pair belonging to both (see the next note) is a single element of $A$ with a single flow variable.",
+            "A consequence of $A$ being a set of vertex pairs (inherited directly from the source, not introduced by this dataset): if some item type has width exactly 1, its item arc $(k,k+1)$ coincides with the loss arc $(k,k+1)$, and the same flow variable $x_{k,k+1}$ represents both a possible size-1 item placement and possible wasted capacity at that position. carvalho1999 does not address this case separately; we do not either, to stay faithful to Equations 7-11.",
             "The paper writes the objective and vertex-0/vertex-W flow balance in terms of an explicit feedback arc $z = x_{W0}$; we instead treat z as a separate scalar variable equal to the number of bins used, which is equivalent and avoids adding a self-referential arc to A.",
-            "The paper's arc reduction criteria (Criteria 1-3) and valid inequalities (Propositions 2.2, 2.3) are solver-side optimizations, not part of the base formulation, and are excluded here.",
+            "The paper's arc reduction criteria (Criteria 1-4) and valid inequalities (Propositions 2.2, 2.3) are solver-side optimizations, not part of the base formulation, and are excluded here.",
             "This dataset's canonical problem-level parametrization for p22 is the individual-item list $(W, n, l)$ used by formulation `a`; `gen_params.py` derives $(m, w, b)$ by grouping items into distinct sizes (sorted in decreasing order, following the source's own convention of ordering items by decreasing width) and counting each size's multiplicity as its demand.",
             "The bound $z \\leq \\sum_d b_d$ is not present in carvalho1999's Equations 7-11; it is added here because vertex 0 has no incoming arcs and vertex W has no outgoing arcs, so a pure-loss path $0 \\to 1 \\to \\cdots \\to W$ can carry arbitrarily large flow (and hence arbitrarily large z) while satisfying every other constraint, leaving z otherwise unbounded above. The bound never excludes an optimal solution, since an optimal packing never uses more bins than there are items. This mirrors the analogous total-usage bound added to formulation `b`."
         ]
