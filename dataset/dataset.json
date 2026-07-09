@@ -1078,6 +1078,17 @@
                 "formulation": "b"
             },
             "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 22,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 22,
+                "formulation": "b"
+            },
+            "reformulation": true
         }
     ]
 }
