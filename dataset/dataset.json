@@ -19,7 +19,8 @@
         17,
         18,
         19,
-        20
+        20,
+        23
     ],
     "reformulations": [
         {
@@ -1074,6 +1075,17 @@
             },
             "b": {
                 "problem": 20,
+                "formulation": "b"
+            },
+            "reformulation": true
+        },
+        {
+            "a": {
+                "problem": 23,
+                "formulation": "a"
+            },
+            "b": {
+                "problem": 23,
                 "formulation": "b"
             },
             "reformulation": true

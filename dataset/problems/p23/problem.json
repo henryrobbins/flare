@@ -1,0 +1,36 @@
+{
+    "name": "p-Median Problem",
+    "parameters": {
+        "n": {
+            "description": "Number of nodes (customers) in the network",
+            "type": "integer",
+            "shape": []
+        },
+        "p": {
+            "description": "Number of nodes to be selected as medians (facility sites)",
+            "type": "integer",
+            "shape": []
+        },
+        "c": {
+            "description": "Service cost between every ordered pair of nodes; c_{ij} is the cost of serving node i from median j",
+            "type": "continuous",
+            "shape": [
+                "n",
+                "n"
+            ]
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "FrontierOR",
+            "paper": "garcia2011",
+            "citation": "S. García, M. Labbé, and A. Marín, \"Solving Large p-Median Problems with a Radius Formulation,\" INFORMS Journal on Computing 23(4) (2011) 546-556."
+        },
+        "notes": [
+            "garcia2011 states the p-median problem at the level of a cost matrix: n nodes, an integer p with 1 <= p <= n-1, and an n-by-n cost matrix c with c_{ii} = 0 and c_{ij} > 0 for i != j. This is the parametrization used here and by formulation `a` (the classical formulation, CF).",
+            "Formulation `b` is the radius (canonical representation) formulation CR of garcia2011. It reuses the same problem-level parameters (n, p, c); the sorted distinct cost values D_{ik} and the covering sets used by CR are derived from c as formulation-level definitions.",
+            "In typical instances the cost matrix is the rounded Euclidean distance between two-dimensional node coordinates. The FrontierOR source instances (`garcia2011/.../instance/*.json`) use up to 100 nodes, far too large for a tractable Lean formulation; `data.json` instead uses a small, hand-verified instance given directly as a cost matrix (its optimum was checked by brute force over all median subsets).",
+            "The source's constraint x_{ij} >= 0 with a binary location variable is tightened here to a fully binary assignment matrix; the two are equivalent MILPs for the p-median problem since an optimal solution assigns every node fully to its nearest open median."
+        ]
+    }
+}

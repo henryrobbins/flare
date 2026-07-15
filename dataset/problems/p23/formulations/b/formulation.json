@@ -1,0 +1,120 @@
+{
+    "valid": true,
+    "parameters": {
+        "n": {
+            "description": "Number of nodes (customers) in the network",
+            "type": "integer",
+            "shape": []
+        },
+        "p": {
+            "description": "Number of nodes to be selected as medians",
+            "type": "integer",
+            "shape": []
+        },
+        "c": {
+            "description": "Service cost between every ordered pair of nodes; c_{ij} is the cost of serving node i from median j",
+            "type": "continuous",
+            "shape": [
+                "n",
+                "n"
+            ]
+        }
+    },
+    "assumptions": [
+        {
+            "description": "The number of medians to open is at least one and strictly less than the number of nodes.",
+            "formulation": "1 \\leq p \\leq n - 1",
+            "explicit": true,
+            "code": {
+                "python": "assert 1 <= p <= n - 1"
+            }
+        },
+        {
+            "description": "The cost from any node to itself is zero.",
+            "formulation": "c_{ii} = 0 \\quad \\forall i \\in \\{0, \\ldots, n-1\\}",
+            "explicit": true,
+            "code": {
+                "python": "assert all(c[i][i] == 0 for i in range(n))"
+            }
+        },
+        {
+            "description": "The cost between any two distinct nodes is strictly positive.",
+            "formulation": "c_{ij} > 0 \\quad \\forall i, j \\in \\{0, \\ldots, n-1\\},\\ i \\neq j",
+            "explicit": true,
+            "code": {
+                "python": "assert all(c[i][j] > 0 for i in range(n) for j in range(n) if i != j)"
+            }
+        }
+    ],
+    "definitions": {
+        "G": {
+            "description": "For each node i, the number of distinct cost values c_{ij} in row i of the cost matrix.",
+            "formulation": "G_i = |\\{\\, c_{ij} : 0 \\leq j \\leq n-1 \\,\\}| \\quad \\forall i \\in \\{0, \\ldots, n-1\\}",
+            "code": {
+                "python": "G = [len(set(c[i][j] for j in range(n))) for i in range(n)]"
+            }
+        },
+        "D": {
+            "description": "For each node i, the sorted list of distinct cost values in row i of the cost matrix. 0 = D_{i0} < D_{i1} < ... < D_{i,G_i-1} = max{c_{ij}}_{j=0}^{n-1}.",
+            "formulation": "D_i = \\mathrm{sort}(\\{\\, c_{ij} : 0 \\leq j \\leq n-1 \\,\\}) \\quad \\forall i \\in \\{0, \\ldots, n-1\\}",
+            "code": {
+                "python": "D = [sorted(set(c[i][j] for j in range(n))) for i in range(n)]"
+            }
+        }
+    },
+    "variables": {
+        "y": {
+            "description": "y_j is 1 if node j is selected as a median, 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "n"
+            ]
+        },
+        "z": {
+            "description": "z_{ik} is 1 if the allocation of cost of customer i is at least D_{ik} (no matter which median it is allocated to), 0 otherwise",
+            "type": "binary",
+            "shape": [
+                "n",
+                "G[n]"
+            ]
+        }
+    },
+    "constraints": [
+        {
+            "description": "Exactly p nodes are selected as medians.",
+            "formulation": "\\sum_{j=0}^{n-1} y_j = p",
+            "code": {
+                "gurobipy": "model.addConstr(gp.quicksum(y[j] for j in range(n)) == p)"
+            },
+            "explicit": true
+        },
+        {
+            "description": "Covering constraint: if there is no median at less than distance D_{ik} from node i, then z_{ik} takes value 1.",
+            "formulation": "z_{ik} + \\sum_{j\\,:\\,c_{ij} < D_{ik}} y_j \\geq 1 \\quad \\forall i \\in \\{0, \\ldots, n-1\\},\\ \\forall k \\in \\{1, \\ldots, G_i - 1\\}",
+            "code": {
+                "gurobipy": "model.addConstrs(\n    z[i, k] + gp.quicksum(y[j] for j in range(n) if c[i][j] < D[i][k]) >= 1\n    for i in range(n)\n    for k in range(1, G[i])\n)"
+            },
+            "explicit": true
+        }
+    ],
+    "objective": {
+        "description": "Minimize the total service cost, expressed as a telescoping sum of radius increments: each node i pays D[i][k] - D[i][k-1] for every threshold k (k >= 1) up to the cost at which it is first covered by an open median.",
+        "formulation": "\\min \\sum_{i=0}^{n-1} \\sum_{k=1}^{G_i - 1} (D_{ik} - D_{i,k-1})\\, z_{ik}",
+        "code": {
+            "gurobipy": "model.setObjective(\n    gp.quicksum(\n        (D[i][k] - D[i][k-1]) * z[i, k]\n        for i in range(n)\n        for k in range(1, G[i])\n    ),\n    GRB.MINIMIZE,\n)"
+        }
+    },
+    "metadata": {
+        "source": {
+            "dataset": "FrontierOR",
+            "paper": "garcia2011"
+        },
+        "notes": [
+            "This is the canonical representation (CR) of the p-median problem, given in Section 2 of garcia2011 (whose title calls it a 'radius formulation'). CR was introduced by Cornuejols et al. (1980) for the simple plant location problem and is adapted here to the p-median problem; it is the reduced, set-covering-based formulation on which garcia2011 builds its column-and-row generation algorithm. Instead of allocation variables x_{ij}, it uses a location variable y_j per node and cumulative variables z_{ik} that accumulate the cost of serving node i in telescoping increments over the distinct cost values D_{ik} of row i.",
+            "The paper indexes the cumulative variables z_{ik} and the thresholds D_{ik} with k = 1, ..., G_i over the sorted distinct row costs 0 = D_{i1} < D_{i2} < ... < D_{i{G_i}} = max_j c_{ij}, using z_{ik} only for k = 2, ..., G_i. Here everything is 0-indexed to match the Python arrays: D[i][0] = 0, ..., D[i][G_i-1] = max_j c_{ij}, and the covering constraint and objective range over k = 1, ..., G_i-1 (the paper's k = 2, ..., G_i). The unused z[i][0] corresponds to the paper's omitted z_{i1}.",
+            "The covering set {j : c_{ij} < D[i][k]} is the set of nodes that, if opened, would serve node i at a cost strictly below the threshold D[i][k]; this is the CR analogue of the CF linking constraint x_{ij} <= x_{jj}.",
+            "The paper defines z_ik as binary but notes that, since the objective coefficients are positive in a minimization, each z_{ik} is forced to 0 unless a covering constraint requires it to be 1; hence no upper bound is needed and the z_{ik} may equivalently be relaxed to nonnegative continuous variables. This formulation keeps them binary, matching the paper's original definition.",
+            "The problem-level parametrization (n, p, c) is used directly, so gen_params.py is a pass-through; the derived quantities G and D are formulation-level definitions computed from c."
+        ]
+    }
+}
