@@ -140,8 +140,7 @@
             "variation_id": "model2"
         },
         "notes": [
-            "Reformulates Model 2 of Seker, Ekim, and Taskin (2021) as a static MILP.",
-            "The paper represents the non-linear expression t >= chi(G[x]) with t >= sum_{i in S} x_i for every clique S. This is valid because the graph is perfect. The paper provides an efficient cutting plane algorithm to generate these cuts iteratively. Our formulation considers the full set."
+            "Reformulates Model 2 of Seker, Ekim, and Taskin (2021). The paper represents the non-linear expression t >= chi(G[x]) with t >= sum_{i in S} x_i for every clique S. This is valid because the graph is perfect. The paper provides an efficient cutting plane algorithm to generate these cuts iteratively. Our formulation considers the full set."
         ]
     }
 }
