@@ -1104,11 +1104,11 @@
         {
             "a": {
                 "problem": 21,
-                "formulation": "a"
+                "formulation": "d"
             },
             "b": {
                 "problem": 21,
-                "formulation": "d"
+                "formulation": "a"
             },
             "reformulation": true
         }
