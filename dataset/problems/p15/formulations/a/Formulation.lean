@@ -31,6 +31,7 @@ structure Params where
   hnJ : NeZero nJ
   hnH : NeZero nH
   hnV : NeZero nV
+  hnK : NeZero K  -- the tower has at least one floor
   hR_nn : ∀ j v, 0 ≤ R j v
   harea_nn : ∀ j, 0 ≤ area j
   hm_nn : ∀ i h, 0 ≤ m i h

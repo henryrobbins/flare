@@ -124,6 +124,14 @@
             }
         },
         {
+            "description": "Total number of floors is positive.",
+            "formulation": "K > 0",
+            "explicit": false,
+            "code": {
+                "python": "assert K > 0"
+            }
+        },
+        {
             "description": "R is non-negative.",
             "formulation": "R_{jv} \\geq 0 \\quad \\forall j \\in J, v \\in V",
             "explicit": false,
