@@ -16,6 +16,15 @@ def Adjacent {n m : ℕ} (E : Fin m → Fin n × Fin n) (i j : Fin n) : Prop :=
 def IsClique {n m : ℕ} (E : Fin m → Fin n × Fin n) (S : Finset (Fin n)) : Prop :=
   ∀ i ∈ S, ∀ j ∈ S, i ≠ j → Adjacent E i j
 
+-- The graph is perfect: every induced subgraph has chromatic number equal to its
+-- clique number, i.e. if every clique within S has at most k vertices, S admits a
+-- proper coloring using fewer than k colors
+def IsPerfect {n m : ℕ} (E : Fin m → Fin n × Fin n) : Prop :=
+  ∀ (S : Finset (Fin n)) (k : ℕ),
+    (∀ Cl : Finset (Fin n), Cl ⊆ S → IsClique E Cl → Cl.card ≤ k) →
+    ∃ c : Fin n → ℕ, (∀ i ∈ S, c i < k) ∧
+      ∀ i ∈ S, ∀ j ∈ S, i ≠ j → Adjacent E i j → c i ≠ c j
+
 structure Params where
   -- Dimensions
   n : ℕ -- number of vertices in the perfect graph
@@ -34,11 +43,8 @@ structure Params where
   hC_nonempty : ∀ p : Fin P, 1 ≤ ∑ i : Fin n, C i p
   -- Every edge connects two distinct, valid vertex indices (smaller index first)
   hedge_lt : ∀ e : Fin m, (E e).1 < (E e).2
-  -- The graph is perfect: every induced subgraph has chromatic number equal to its clique number
-  hperfect : ∀ (S : Finset (Fin n)) (k : ℕ),
-    (∀ Cl : Finset (Fin n), Cl ⊆ S → IsClique E Cl → Cl.card ≤ k) →
-    ∃ c : Fin n → ℕ, (∀ i ∈ S, c i < k) ∧
-      ∀ i ∈ S, ∀ j ∈ S, i ≠ j → Adjacent E i j → c i ≠ c j
+  -- The graph is perfect (see `IsPerfect`)
+  hperfect : IsPerfect E
 
 structure Vars (p : Params) where
   x : Fin p.n → ℤ -- equals 1 if vertex i is selected, 0 otherwise

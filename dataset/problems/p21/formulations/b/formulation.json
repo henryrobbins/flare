@@ -43,11 +43,11 @@
             }
         },
         {
-            "description": "The number of edges is non-negative.",
-            "formulation": "m \\geq 0",
+            "description": "The number of edges is positive.",
+            "formulation": "m > 0",
             "explicit": false,
             "code": {
-                "python": "assert m >= 0"
+                "python": "assert m > 0"
             }
         },
         {
@@ -69,7 +69,7 @@
         {
             "description": "Every edge connects two distinct, valid vertex indices.",
             "formulation": "0 \\leq i < j \\leq n-1 \\quad \\forall (i,j) \\in E",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert all(0 <= i < j <= n - 1 for i, j in E)"
             }
@@ -153,8 +153,7 @@
         },
         "notes": [
             "This is formulation a (Model 1 of Seker, Ekim, and Taskin (2021)) strengthened with a static clique cutting-plane constraint.",
-            "The added constraint lower-bounds the number of colors used by the number of selected vertices within any clique, since pairwise-adjacent selected vertices must receive distinct colors; this is the standard clique-based valid inequality for graph coloring, tightening the LP relaxation of formulation a without changing its feasible integer solutions.",
-            "As in formulation c, cliques are not passed in as a parameter: the full set of maximal cliques of the graph is enumerated at solve time using networkx, rather than precomputed or generated iteratively via a cutting-plane algorithm as in the source paper.",
+            "The added constraint lower-bounds the number of colors used by the number of selected vertices within any clique, since pairwise-adjacent selected vertices must receive distinct colors.",
             "As in formulation a, the paper's symmetry-breaking constraint y_k <= y_{k-1} is excluded: it is a solver-acceleration device that is not part of the underlying selective graph coloring problem."
         ]
     }

@@ -43,11 +43,11 @@
             }
         },
         {
-            "description": "The number of edges is non-negative.",
-            "formulation": "m \\geq 0",
+            "description": "The number of edges is positive.",
+            "formulation": "m > 0",
             "explicit": false,
             "code": {
-                "python": "assert m >= 0"
+                "python": "assert m > 0"
             }
         },
         {
@@ -69,7 +69,7 @@
         {
             "description": "Every edge connects two distinct, valid vertex indices.",
             "formulation": "0 \\leq i < j \\leq n-1 \\quad \\forall (i,j) \\in E",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert all(0 <= i < j <= n - 1 for i, j in E)"
             }

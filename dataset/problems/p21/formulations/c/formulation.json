@@ -43,11 +43,11 @@
             }
         },
         {
-            "description": "The number of edges is non-negative.",
-            "formulation": "m \\geq 0",
+            "description": "The number of edges is positive.",
+            "formulation": "m > 0",
             "explicit": false,
             "code": {
-                "python": "assert m >= 0"
+                "python": "assert m > 0"
             }
         },
         {
@@ -69,7 +69,7 @@
         {
             "description": "Every edge connects two distinct, valid vertex indices.",
             "formulation": "0 \\leq i < j \\leq n-1 \\quad \\forall (i,j) \\in E",
-            "explicit": false,
+            "explicit": true,
             "code": {
                 "python": "assert all(0 <= i < j <= n - 1 for i, j in E)"
             }
@@ -141,8 +141,7 @@
         },
         "notes": [
             "Reformulates Model 2 of Seker, Ekim, and Taskin (2021) as a static MILP.",
-            "The paper's Model 2 bounds t below by chi(G[x]), the chromatic number of the subgraph induced by the selection x; this is not a linear expression, so the paper resolves it with cutting planes t >= sum_{i in K^(j)} x_i generated iteratively from a maximum clique K^(j) of G[x^(j)] found at each step of a cutting-plane algorithm, rather than a single static formulation.",
-            "Since the input graph is perfect, chi(G[x]) = omega(G[x]) (clique number) for every selection x, and omega(G[x]) equals the size of the largest maximal clique of the full graph G that lies entirely within the selection. We therefore replace the paper's dynamically generated cuts with the full, static set of constraints t >= sum_{i in K_q} x_i for every maximal clique K_q of G, enumerated at solve time from the input graph using networkx."
+            "The paper represents the non-linear expression t >= chi(G[x]) with t >= sum_{i in S} x_i for every clique S. This is valid because the graph is perfect. The paper provides an efficient cutting plane algorithm to generate these cuts iteratively. Our formulation considers the full set."
         ]
     }
 }
