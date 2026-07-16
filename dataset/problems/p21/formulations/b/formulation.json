@@ -154,7 +154,7 @@
         "notes": [
             "This is formulation a (Model 1 of Seker, Ekim, and Taskin (2021)) strengthened with a static clique cutting-plane constraint.",
             "The added constraint lower-bounds the number of colors used by the number of selected vertices within any clique, since pairwise-adjacent selected vertices must receive distinct colors.",
-            "As in formulation a, the paper's symmetry-breaking constraint y_k <= y_{k-1} is excluded: it is a solver-acceleration device that is not part of the underlying selective graph coloring problem."
+            "The full set of maximal cliques is enumerated up front, whereas the source paper generates these clique cuts iteratively via a cutting-plane algorithm."
         ]
     }
 }
