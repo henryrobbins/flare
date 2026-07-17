@@ -993,11 +993,11 @@
         {
             "a": {
                 "problem": 13,
-                "formulation": "a"
+                "formulation": "b"
             },
             "b": {
                 "problem": 13,
-                "formulation": "b"
+                "formulation": "a"
             },
             "reformulation": true
         },
