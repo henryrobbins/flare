@@ -60,18 +60,20 @@
         }
     ],
     "variables": {
-        "n": {
-            "description": "Number of flights at location a at time t",
-            "type": "integer",
+        "y": {
+            "description": "1 if flight p is at location a at time t, 0 otherwise",
+            "type": "binary",
             "shape": [
+                "nP",
                 "nA",
                 "nT"
             ]
         },
-        "f": {
-            "description": "Number of flights moving from a at time t to a' at time t+1",
-            "type": "integer",
+        "z": {
+            "description": "1 if flight p moves from a at time t to a' at time t+1, 0 otherwise",
+            "type": "binary",
             "shape": [
+                "nP",
                 "nA",
                 "nA",
                 "nT"
@@ -80,84 +82,68 @@
     },
     "constraints": [
         {
-            "description": "All flights are accounted for at every time period.",
-            "formulation": "\\sum_{a \\in A} n_{a,t} = nP \\quad \\forall t \\in T",
+            "description": "Each flight is at exactly one location at each time period.",
+            "formulation": "\\sum_{a \\in A} y_{p,a,t} = 1 \\quad \\forall p \\in P, t \\in T",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(gp.quicksum(n[a, t] for a in range(nA)) == nP for t in range(nT))"
+                "gurobipy": "model.addConstrs(gp.quicksum(y[p, a, t] for a in range(nA)) == 1 for p in range(nP) for t in range(nT))"
             }
         },
         {
             "description": "The number of flights at each location does not exceed the location capacity.",
-            "formulation": "n_{a,t} \\leq \\text{cap}_{a,t} \\quad \\forall a \\in A, t \\in T",
+            "formulation": "\\sum_{p \\in P} y_{p,a,t} \\leq \\text{cap}_{a,t} \\quad \\forall a \\in A, t \\in T",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(n[a, t] <= cap[a][t] for a in range(nA) for t in range(nT))"
+                "gurobipy": "model.addConstrs(gp.quicksum(y[p, a, t] for p in range(nP)) <= cap[a][t] for a in range(nA) for t in range(nT))"
             }
         },
         {
             "description": "Flow conservation: flights at location a at time t equal those at t-1 plus arrivals minus departures (one-step transitions).",
-            "formulation": "n_{a,t} = n_{a,t-1} + \\sum_{a' \\in A} f_{a',a,t-1} - \\sum_{a' \\in A} f_{a,a',t-1} \\quad \\forall a \\in A, t \\in T, t > 0",
+            "formulation": "y_{p,a,t} = y_{p,a,t-1} + \\sum_{a' \\in A} z_{p,a',a,t-1} - \\sum_{a' \\in A} z_{p,a,a',t-1} \\quad \\forall p \\in P, a \\in A, t \\in T, t > 0",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(n[a, t] == n[a, t-1] + gp.quicksum(f[a2, a, t-1] for a2 in range(nA)) - gp.quicksum(f[a, a2, t-1] for a2 in range(nA)) for a in range(nA) for t in range(1, nT))"
+                "gurobipy": "model.addConstrs(y[p, a, t] == y[p, a, t-1] + gp.quicksum(z[p, a2, a, t-1] for a2 in range(nA)) - gp.quicksum(z[p, a, a2, t-1] for a2 in range(nA)) for p in range(nP) for a in range(nA) for t in range(1, nT))"
             }
         },
         {
             "description": "Movements are only allowed between adjacent locations.",
-            "formulation": "f_{a,a',t} \\leq nP \\cdot \\text{adj}_{a,a'} \\quad \\forall a, a' \\in A, t \\in T",
+            "formulation": "z_{p,a,a',t} \\leq \\text{adj}_{a,a'} \\quad \\forall p \\in P, a, a' \\in A, t \\in T",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(f[a, a2, t] <= nP * adj[a][a2] for a in range(nA) for a2 in range(nA) for t in range(nT))"
+                "gurobipy": "model.addConstrs(z[p, a, a2, t] <= adj[a][a2] for p in range(nP) for a in range(nA) for a2 in range(nA) for t in range(nT))"
             }
         },
         {
             "description": "No movements out of the final time period (would arrive outside the horizon).",
-            "formulation": "f_{a,a',nT-1} = 0 \\quad \\forall a, a' \\in A",
+            "formulation": "z_{p,a,a',nT-1} = 0 \\quad \\forall p \\in P, a, a' \\in A",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(f[a, a2, nT-1] == 0 for a in range(nA) for a2 in range(nA))"
+                "gurobipy": "model.addConstrs(z[p, a, a2, nT-1] == 0 for p in range(nP) for a in range(nA) for a2 in range(nA))"
             }
         },
         {
-            "description": "Aggregate departures at time t do not exceed presence at time t (stay-flow non-negativity).",
-            "formulation": "\\sum_{a' \\in A} f_{a,a',t} \\leq n_{a,t} \\quad \\forall a \\in A, t \\in T",
+            "description": "Movements at time t require the flight to be present at time t (depart only from where you are).",
+            "formulation": "\\sum_{a' \\in A} z_{p,a,a',t} \\leq y_{p,a,t} \\quad \\forall p \\in P, a \\in A, t \\in T",
             "explicit": true,
             "code": {
-                "gurobipy": "model.addConstrs(gp.quicksum(f[a, a2, t] for a2 in range(nA)) <= n[a, t] for a in range(nA) for t in range(nT))"
-            }
-        },
-        {
-            "description": "n is non-negative.",
-            "formulation": "n_{a,t} \\geq 0 \\quad \\forall a \\in A, t \\in T",
-            "explicit": false,
-            "code": {
-                "gurobipy": "model.addConstrs(n[a, t] >= 0 for a in range(nA) for t in range(nT))"
-            }
-        },
-        {
-            "description": "f is non-negative.",
-            "formulation": "f_{a,a',t} \\geq 0 \\quad \\forall a, a' \\in A, t \\in T",
-            "explicit": false,
-            "code": {
-                "gurobipy": "model.addConstrs(f[a, a2, t] >= 0 for a in range(nA) for a2 in range(nA) for t in range(nT))"
+                "gurobipy": "model.addConstrs(gp.quicksum(z[p, a, a2, t] for a2 in range(nA)) <= y[p, a, t] for p in range(nP) for a in range(nA) for t in range(nT))"
             }
         }
     ],
     "objective": {
         "description": "Maximize total reward for all flights across all locations and time periods.",
-        "formulation": "\\max \\sum_{a \\in A} \\sum_{t \\in T} r_{a,t} \\cdot n_{a,t}",
+        "formulation": "\\max \\sum_{p \\in P} \\sum_{a \\in A} \\sum_{t \\in T} r_{a,t} \\cdot y_{p,a,t}",
         "code": {
-            "gurobipy": "model.setObjective(gp.quicksum(r[a][t] * n[a, t] for a in range(nA) for t in range(nT)), GRB.MAXIMIZE)"
+            "gurobipy": "model.setObjective(gp.quicksum(r[a][t] * y[p, a, t] for p in range(nP) for a in range(nA) for t in range(nT)), GRB.MAXIMIZE)"
         }
     },
     "metadata": {
         "source": {
             "dataset": "Ferchtandiker2025",
-            "formulation_id": "efficient"
+            "formulation_id": "inefficient"
         },
         "notes": [
-            "This is the aggregate (efficient) formulation."
+            "This is the disaggregate (inefficient) formulation."
         ]
     }
 }

@@ -25,41 +25,39 @@ structure Params where
   hcap_nn : ∀ a t, 0 ≤ cap a t
 
 structure Vars (p : Params) where
-  y : Fin p.nP → Fin p.nA → Fin p.nT → ℤ  -- 1 if flight pl is at location a at time t
-  z : Fin p.nP → Fin p.nA → Fin p.nA → Fin p.nT → ℤ  -- 1 if flight pl moves from a at time t to a' at time t+1
+  n : Fin p.nA → Fin p.nT → ℤ  -- number of flights at location a at time t
+  f : Fin p.nA → Fin p.nA → Fin p.nT → ℤ  -- number of flights moving from a at time t to a' at time t+1
 
 structure Feasible (p : Params) (v : Vars p) : Prop where
-  -- Each flight is at exactly one location at each time
-  hassign : ∀ (pl : Fin p.nP) (t : Fin p.nT), ∑ a : Fin p.nA, v.y pl a t = 1
-  -- Respect location capacity at each time
-  hcap : ∀ (a : Fin p.nA) (t : Fin p.nT), (∑ pl : Fin p.nP, (v.y pl a t : ℝ)) ≤ (p.cap a t : ℝ)
+  -- All flights are accounted for at every time period
+  hcount : ∀ t : Fin p.nT, ∑ a : Fin p.nA, v.n a t = (p.nP : ℤ)
+  -- Number of flights at each location does not exceed capacity
+  hcap : ∀ (a : Fin p.nA) (t : Fin p.nT), (v.n a t : ℝ) ≤ (p.cap a t : ℝ)
   -- Flow conservation: one-step transitions (for t > 0)
-  hflow : ∀ (pl : Fin p.nP) (a : Fin p.nA) (t : Fin p.nT), ∀ ht : 0 < t.val,
-    v.y pl a t =
-      v.y pl a ⟨t.val - 1, by omega⟩ +
-      ∑ a' : Fin p.nA, v.z pl a' a ⟨t.val - 1, by
-        have h1 : t.val < p.nT := t.isLt
+  hflow : ∀ (a : Fin p.nA) (t : Fin p.nT), ∀ ht : 0 < t.val,
+    v.n a t =
+      v.n a ⟨t.val - 1, by omega⟩ +
+      ∑ a' : Fin p.nA, v.f a' a ⟨t.val - 1, by
+        have _ : t.val < p.nT := t.isLt
         omega⟩ -
-      ∑ a' : Fin p.nA, v.z pl a a' ⟨t.val - 1, by
-        have h1 : t.val < p.nT := t.isLt
+      ∑ a' : Fin p.nA, v.f a a' ⟨t.val - 1, by
+        have _ : t.val < p.nT := t.isLt
         omega⟩
   -- Movements only between adjacent locations
-  hadj : ∀ (pl : Fin p.nP) (a a' : Fin p.nA) (t : Fin p.nT),
-    v.z pl a a' t ≤ p.adj a a'
+  hadj : ∀ (a a' : Fin p.nA) (t : Fin p.nT),
+    v.f a a' t ≤ (p.nP : ℤ) * p.adj a a'
   -- No movements out of the final time period
-  hno_depart_last : ∀ (pl : Fin p.nP) (a a' : Fin p.nA) (t : Fin p.nT),
-    t.val + 1 = p.nT → v.z pl a a' t = 0
-  -- Movements at time t require presence at time t (depart only from where you are)
-  hstay_nn : ∀ (pl : Fin p.nP) (a : Fin p.nA) (t : Fin p.nT),
-    (∑ a' : Fin p.nA, v.z pl a a' t) ≤ v.y pl a t
-  -- y_{p,a,t} ∈ {0,1}
-  hy_bin : ∀ (pl : Fin p.nP) (a : Fin p.nA) (t : Fin p.nT), v.y pl a t = 0 ∨ v.y pl a t = 1
-  -- z_{p,a,a',t} ∈ {0,1}
-  hz_bin : ∀ (pl : Fin p.nP) (a a' : Fin p.nA) (t : Fin p.nT), v.z pl a a' t = 0 ∨ v.z pl a a' t = 1
+  hno_depart_last : ∀ (a a' : Fin p.nA) (t : Fin p.nT),
+    t.val + 1 = p.nT → v.f a a' t = 0
+  -- Aggregate departures at time t do not exceed presence at time t (stay-flow ≥ 0)
+  hstay_nn : ∀ (a : Fin p.nA) (t : Fin p.nT),
+    (∑ a' : Fin p.nA, v.f a a' t) ≤ v.n a t
+  hn_nn : ∀ (a : Fin p.nA) (t : Fin p.nT), 0 ≤ v.n a t
+  hf_nn : ∀ (a a' : Fin p.nA) (t : Fin p.nT), 0 ≤ v.f a a' t
 
--- Maximize total reward for visiting locations
+-- Maximize total reward for all flights across all locations and time periods
 def obj (p : Params) (v : Vars p) : ℝ :=
-  ∑ pl : Fin p.nP, ∑ a : Fin p.nA, ∑ t : Fin p.nT, p.r a t * (v.y pl a t : ℝ)
+  ∑ a : Fin p.nA, ∑ t : Fin p.nT, p.r a t * (v.n a t : ℝ)
 
 def formulation : MILPFormulation where
   Params   := Params
