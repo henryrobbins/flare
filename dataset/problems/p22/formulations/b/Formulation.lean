@@ -37,8 +37,8 @@ structure Vars (p : Params) where
   x : (Fin p.m → Fin (p.W + 1)) → ℤ  -- number of bins cut according to pattern a
 
 structure Feasible (p : Params) (v : Vars p) : Prop where
-  -- The full demand of every item type must be satisfied by the chosen patterns
-  hdemand : ∀ d : Fin p.m, ∑ a ∈ J p, ((a d).val : ℤ) * v.x a ≥ p.b d
+  -- The full demand of every item type must be exactly satisfied by the chosen patterns
+  hdemand : ∀ d : Fin p.m, ∑ a ∈ J p, ((a d).val : ℤ) * v.x a = p.b d
   hx_nn : ∀ a ∈ J p, 0 ≤ v.x a
   -- The total number of bins used across all patterns doesn't exceed the total number of items
   htotal : ∑ a ∈ J p, v.x a ≤ ∑ d : Fin p.m, p.b d
