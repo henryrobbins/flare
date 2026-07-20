@@ -71,7 +71,7 @@
             ]
         },
         "z": {
-            "description": "z_{ik} is 1 if the allocation of cost of customer i is at least D_{ik} (no matter which median it is allocated to), 0 otherwise",
+            "description": "z_{ik} is 1 if the allocation of cost of customer i is at least D_{ik} (no matter which median it is allocated to)",
             "type": "binary",
             "shape": [
                 "n",
