@@ -10,9 +10,10 @@ description: >
 
 A reformulation proof file shows that two MILP formulations `A` and `B` are
 related under the project's `MILPReformulation` structure: it produces a
-parameter map `A.Params → B.Params`, mutually inverse feasibility-preserving
-variable maps, and a strictly monotone objective map that makes forward and
-backward objective diagrams commute.
+parameter map `A.Params → B.Params`, feasibility-preserving variable maps whose
+backward map is a left inverse of the forward map on feasible points, and a
+strictly monotone objective map that makes forward and backward objective
+diagrams commute.
 
 ## `MILPReformulation` at a glance
 
@@ -23,6 +24,7 @@ The project's common MILP module defines `MILPReformulation F G` with fields:
 - `bwd         : (p : F.Params) → G.Vars (paramMap p) → F.Vars p`
 - `fwd_feas    : ∀ p x, F.feasible p x → G.feasible (paramMap p) (fwd p x)`
 - `bwd_feas    : ∀ p x', G.feasible (paramMap p) x' → F.feasible p (bwd p x')`
+- `bwd_fwd     : ∀ p x, F.feasible p x → bwd p (fwd p x) = x`
 - `objMap      : ℝ → ℝ`
 - `objMap_mono : StrictMono objMap`
 - `fwd_obj     : ∀ p x, F.feasible p x → G.obj (paramMap p) (fwd p x) = objMap (F.obj p x)`
@@ -43,10 +45,11 @@ Every reformulation file contains, in order:
 5. Optional `paramMap` definition (inline in the structure if trivial).
 6. Optional forward-helpers section + `fwd` and `fwd_feas`.
 7. Optional backward-helpers section + `bwd` and `bwd_feas`.
-8. Optional objective-mapping section + `objMap`, `objMap_mono`, and
+8. Optional round-trip-identity section + `bwd_fwd`.
+9. Optional objective-mapping section + `objMap`, `objMap_mono`, and
    `fwd_obj` / `bwd_obj`.
-9. The final `MILPReformulation` `def`.
-10. `end <namespace>`.
+10. The final `MILPReformulation` `def`.
+11. `end <namespace>`.
 
 See `template.lean` for the canonical layout.
 
@@ -58,17 +61,17 @@ See `template.lean` for the canonical layout.
 - Helper defs/lemmas: `private`. All helpers live in the reformulation file
   itself — there is no shared-lemmas module.
 - Canonical names: `paramMap`, `fwd`, `bwd`, `fwd_feas`, `bwd_feas`,
-  `objMap`, `objMap_mono`, `fwd_obj`, `bwd_obj`.
+  `bwd_fwd`, `objMap`, `objMap_mono`, `fwd_obj`, `bwd_obj`.
 
 ## When to inline vs. extract
 
-Each of `paramMap`, `fwd`/`fwd_feas`, `bwd`/`bwd_feas`, and the objective
-mapping has a dedicated optional section. Use these rules:
+Each of `paramMap`, `fwd`/`fwd_feas`, `bwd`/`bwd_feas`, `bwd_fwd`, and the
+objective mapping has a dedicated optional section. Use these rules:
 
 - **Inline in the `MILPReformulation` structure** when the body is a single line or
   a trivial expression. Examples: `paramMap := id` (but see the pitfall
   below), `paramMap p := { c := p.c }`, `fwd _ v := { a := v.x }`,
-  `fwd_obj _ _ _ := rfl`, `objMap := id`,
+  `bwd_fwd := fun _ _ _ => rfl`, `fwd_obj _ _ _ := rfl`, `objMap := id`,
   `objMap_mono := strictMono_id`.
 - **Extract to a `private def`/`lemma` above the structure** when the body
   is multi-line or the proof is non-trivial.
