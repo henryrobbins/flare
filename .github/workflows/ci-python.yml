@@ -77,10 +77,6 @@ jobs:
       - name: Type check (mypy) — root
         run: uv run mypy
 
-      - name: Type check (mypy) — formulation_bench
-        working-directory: packages/formulation_bench
-        run: uv run mypy
-
       - name: Type check (mypy) — milp_flare
         working-directory: packages/milp_flare
         run: uv run mypy
@@ -121,19 +117,6 @@ jobs:
 
       - name: Pre-warm dataset cache
         run: uv run python -c "from formulation_bench import Dataset; Dataset.load()"
-
-      - name: Coverage — formulation_bench
-        working-directory: packages/formulation_bench
-        run: make cov
-
-      - name: Upload formulation_bench coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: packages/formulation_bench/coverage.xml
-          flags: formulation_bench
-          name: formulation_bench
-          fail_ci_if_error: false
 
       - name: Coverage — milp_flare
         working-directory: packages/milp_flare

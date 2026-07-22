@@ -20,7 +20,6 @@ resolution-markers = [
 [manifest]
 members = [
     "flare",
-    "formulation-bench",
     "milp-flare",
 ]
 
@@ -891,7 +890,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic" },
-    { name = "formulation-bench", editable = "packages/formulation_bench" },
+    { name = "formulation-bench", specifier = ">=0.3.0" },
     { name = "gurobipy" },
     { name = "jinja2" },
     { name = "matplotlib", specifier = ">=3.10.9" },
@@ -976,56 +975,13 @@ wheels = [
 [[package]]
 name = "formulation-bench"
 version = "0.3.0"
-source = { editable = "packages/formulation_bench" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
 ]
-
-[package.optional-dependencies]
-docs = [
-    { name = "furo" },
-    { name = "myst-parser", version = "4.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "myst-parser", version = "5.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "numpydoc" },
-    { name = "sphinx", version = "8.1.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "sphinx", version = "9.0.4", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "sphinx", version = "9.1.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "sphinx-autobuild", version = "2024.10.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "sphinx-autobuild", version = "2025.8.25", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-    { name = "sphinx-autodoc-typehints", version = "3.0.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "sphinx-autodoc-typehints", version = "3.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.11.*'" },
-    { name = "sphinx-autodoc-typehints", version = "3.10.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
-    { name = "sphinx-design", version = "0.6.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
-    { name = "sphinx-design", version = "0.7.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "furo", marker = "extra == 'docs'" },
-    { name = "jinja2", specifier = ">=3" },
-    { name = "myst-parser", marker = "extra == 'docs'", specifier = ">=3" },
-    { name = "numpydoc", marker = "extra == 'docs'" },
-    { name = "sphinx", marker = "extra == 'docs'", specifier = ">=7" },
-    { name = "sphinx-autobuild", marker = "extra == 'docs'" },
-    { name = "sphinx-autodoc-typehints", marker = "extra == 'docs'" },
-    { name = "sphinx-design", marker = "extra == 'docs'" },
-]
-provides-extras = ["docs"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=1.0" },
-    { name = "pytest", specifier = ">=8.0" },
-    { name = "pytest-cov", specifier = ">=5.0" },
-    { name = "ruff", specifier = ">=0.4" },
+sdist = { url = "https://files.pythonhosted.org/packages/24/5e/5ea38da7d3372526950bee342783b1c000177b568afb3a4f53a292b91840/formulation_bench-0.3.0.tar.gz", hash = "sha256:91e3498e2b49c9b9b2dd7146bc1b0cc8caab11789d6545040e5dd9a94b575b3f", size = 20043, upload-time = "2026-05-20T06:02:26.486Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/20/135f8c898008f82222381a1431c4370471491141a94be047f703e7ae8673/formulation_bench-0.3.0-py3-none-any.whl", hash = "sha256:9412a4a4910ce1c365f1a005b4ca39360b74bf28b65ef191fd6f3d97a38b8ffd", size = 20421, upload-time = "2026-05-20T06:02:27.563Z" },
 ]
 
 [[package]]
@@ -1909,7 +1865,7 @@ provides-extras = ["modal", "docs"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "formulation-bench", editable = "packages/formulation_bench" },
+    { name = "formulation-bench", specifier = ">=0.3.0" },
     { name = "mypy", specifier = ">=1.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },

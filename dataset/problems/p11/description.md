@@ -1,1 +1,0 @@
-Decide generator commitment (on/off) and dispatch levels over a sub-hour horizon to meet demand and spinning reserve requirements at minimum cost. Includes piecewise production costs, startup categories with time-dependent costs, ramping limits, and minimum up/down times. Formulated as a MILP.

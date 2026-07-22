@@ -1,21 +1,22 @@
 # FLARE Agent Guide
 
-This monorepo hosts the **FormulationBench** dataset of MILP problems,
-formulations, and Lean 4 reformulation proofs, alongside two publishable
-Python packages and the experiment code used to produce the FLARE paper's
-results.
+This repo hosts the publishable `milp-flare` Python package and the
+experiment code used to produce the FLARE paper's results. The
+**FormulationBench** dataset and its `formulation-bench` loader package
+live in a separate repo,
+[henryrobbins/formulation-bench](https://github.com/henryrobbins/formulation-bench);
+this repo consumes them as a PyPI dependency (`formulation-bench>=0.3.0`)
+and, on the Lean side, as a Lake git require.
 
 ## Top-level layout
 
 ```
 .
-├── dataset/                 # FormulationBench
 ├── packages/
-│   ├── formulation_bench/   # publishable Python package `formulation-bench`
 │   └── milp_flare/          # publishable Python package `milp-flare`
 ├── src/                     # experiment code (LLM client, prompts, verifiers)
 ├── experiments/             # experiment scripts and configs
-├── scripts/                 # utility scripts (analysis, dataset, review)
+├── scripts/                 # utility scripts (analysis, review)
 ├── site/                    # paper landing page (Astro, deployed to GitHub Pages)
 ├── lakefile.toml
 ├── lean-toolchain
@@ -28,10 +29,9 @@ results.
 Per-project development information lives next to each project. Read the
 guide for the area you are working in instead of duplicating it here:
 
-- **Dataset** — [`dataset/AGENTS.md`](dataset/AGENTS.md) (points to the
-  published [dataset schema](packages/formulation_bench/docs/schema.md)).
-- **`formulation-bench` package** —
-  [`packages/formulation_bench/AGENTS.md`](packages/formulation_bench/AGENTS.md).
+- **Dataset and `formulation-bench` package** — see the
+  [formulation-bench repo](https://github.com/henryrobbins/formulation-bench)
+  and the published [docs](https://formulation-bench.henryrobbins.com).
 - **`milp-flare` package** —
   [`packages/milp_flare/AGENTS.md`](packages/milp_flare/AGENTS.md), including
   the Docker harness setup.
@@ -107,13 +107,6 @@ traces (produced via `src/analysis/agent_jsonl.py`).
   (Read/Bash/Edit/lean-lsp) with read counts, total chars, and
   ~4-chars/token estimates.
 
-**`scripts/dataset/`** — dataset integrity checks.
-
-- `validate_solve.py` — regenerate `solve.py` for every formulation, then
-  run `gen_params` + solve and verify objectives match `solution.json`.
-- `validate_evocut_problems.py` — assert that every non-`a` formulation in
-  the EvoCut problems (p6–p12) is a prefix-superset of formulation `a`.
-
 **`scripts/review/`** — LLM-assisted FLARE result inspection.
 
 - `extract_flare_lean.py` — pull `A/Formulation.lean`, `B/Formulation.lean`,
@@ -127,8 +120,10 @@ traces (produced via `src/analysis/agent_jsonl.py`).
 The pytest config at the repo root (`pyproject.toml`) collects from:
 
 - `tests/` (root experiment tests, currently `tests/verifiers/`)
-- `packages/formulation_bench/{tests,src/formulation_bench}`
 - `packages/milp_flare/{tests,src/milp_flare}`
+
+Tests that need the dataset use the session-scoped `dataset` fixture, which
+calls `Dataset.load()` to download and cache the published release.
 
 Source-tree paths are included so `--doctest-modules` exercises docstring
 examples — keep them runnable. One marker gates an optional dependency:
@@ -144,23 +139,21 @@ make check         # lint + typecheck + test
 make check-all     # check at the root and in every package
 ```
 
-Each Python source tree (`src/`, `packages/formulation_bench/`,
-`packages/milp_flare/`) has its own `make cov` target that runs pytest with
-coverage scoped to that tree and writes `htmlcov/` + `coverage.xml`:
+Each Python source tree (`src/`, `packages/milp_flare/`) has its own `make
+cov` target that runs pytest with coverage scoped to that tree and writes
+`htmlcov/` + `coverage.xml`:
 
 ```bash
-make cov                                # coverage for src/
-make cov-open                           # open the HTML report
-make cov-clean                          # remove coverage artifacts
-make -C packages/formulation_bench cov  # coverage for formulation_bench
-make -C packages/milp_flare cov         # coverage for milp_flare
-make cov-all                            # all three trees
+make cov                         # coverage for src/
+make cov-open                    # open the HTML report
+make cov-clean                   # remove coverage artifacts
+make -C packages/milp_flare cov  # coverage for milp_flare
+make cov-all                     # both trees
 ```
 
 CI uploads each `coverage.xml` to
 [Codecov](https://codecov.io/gh/henryrobbins/flare) under separate flags
-(`src`, `formulation_bench`, `milp_flare`) so the three trees are tracked
-independently.
+(`src`, `milp_flare`) so the two trees are tracked independently.
 
 ## Lint, format, type-check
 
@@ -174,43 +167,4 @@ mypy strict mode applies to `src/`, `scripts/`, and `experiments/`; new
 code in those trees needs full annotations. Ruff's selected rule groups are
 `E`, `F`, `I`, `UP` with line length 88. Per-file ignores in
 `pyproject.toml` exempt `scripts/review/flare_formulation_reviewer.py`
-(`E501`) and the generated `gen_params.py`/`gen_data.py` files under
-`dataset/` (`E741`).
-
-## Common Workflows
-
-The repo provides a set of skills and agents for working with the dataset.
-
-**Generate a Lean MILP formulation**
-
-1. Identify the relevant source file(s) to read. E.g., the relevant source
-   files for problem 1, formulation e (p1.e) are the problem files in
-   `dataset/problems/p1` and the formulation files in
-   `dataset/problems/p1/formulations/e`. If the user requests generating
-   formulations for a problem, generate all of the problem's formulations.
-2. The output file(s) will be `Formulation.lean` in each formulation's
-   subdirectory. E.g., the formulation for p1.e goes in
-   `dataset/problems/p1/formulations/e/Formulation.lean`.
-3. Invoke the `milp-formulator` agent with the identified source/output. If
-   generating multiple formulations, invoke multiple agents in parallel.
-
-**Generate Lean MILP reformulation proof**
-
-1. Identify the relevant source file(s) to read. At minimum, read each
-   MILP's `Formulation.lean` file. E.g., for proving p1.b is a reformulation
-   of p1.a, read the problem files in `dataset/problems/p1` and the
-   formulation files in `dataset/problems/p1/formulations/a|b`. If a
-   formulation subdirectory does not yet contain `Formulation.lean`, follow
-   the steps above to generate it.
-2. The output file for proving formulation b is a reformulation of
-   formulation a (for problem X) is `dataset/reformulations/pX/a_b.lean`.
-3. Invoke the `milp-reformulation-autoformalizer` agent with the identified
-   source/output. If generating multiple proofs, invoke multiple agents in
-   parallel.
-
-**Review existing Lean MILP formulations or reformulation proofs**
-
-1. Identify the relevant file(s) to read: problem files, formulation files,
-   `Formulation.lean`, and `dataset/reformulations/pX/a_b.lean`.
-2. Invoke the `milp-reviewer` agent pointing to the relevant file locations.
-   If reviewing multiple files, invoke multiple agents in parallel.
+(`E501`).

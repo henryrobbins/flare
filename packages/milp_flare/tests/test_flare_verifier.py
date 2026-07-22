@@ -95,7 +95,7 @@ def _rewrite_reformulation_imports(text: str, a_letter: str, b_letter: str) -> s
 
 
 def _copy_ground_truth(
-    wd: Path, repo_root: Path, a: Formulation, b: Formulation
+    wd: Path, dataset_root: Path, a: Formulation, b: Formulation
 ) -> None:
     """Populate wd with the ground-truth Formulation.lean + Reformulation.lean.
 
@@ -109,11 +109,7 @@ def _copy_ground_truth(
     shutil.copy2(b.path / "Formulation.lean", wd / "B" / "Formulation.lean")
     pname = a.path.parent.parent.name  # e.g. "p1"
     reform_src = (
-        repo_root
-        / "dataset"
-        / "reformulations"
-        / pname
-        / f"{a.path.name}_{b.path.name}.lean"
+        dataset_root / "reformulations" / pname / f"{a.path.name}_{b.path.name}.lean"
     )
     rewritten = _rewrite_reformulation_imports(
         reform_src.read_text(), a.path.name, b.path.name
@@ -140,13 +136,13 @@ class DummyHarness(Harness):
 
     def __init__(
         self,
-        repo_root: Path,
+        dataset_root: Path,
         a: Formulation,
         b: Formulation,
         expected: bool,
     ) -> None:
         super().__init__(model="dummy-model")
-        self.repo_root = repo_root
+        self.dataset_root = dataset_root
         self.a = a
         self.b = b
         self.expected = expected
@@ -170,7 +166,7 @@ class DummyHarness(Harness):
         # files and a fake compile result, then hand back a no-op handle. The
         # base `collect` streams its (empty) output and parses via _parse_lines.
         if self.expected:
-            _copy_ground_truth(wd, self.repo_root, self.a, self.b)
+            _copy_ground_truth(wd, self.dataset_root, self.a, self.b)
             (wd / "result.json").write_text(
                 json.dumps(
                     {
@@ -230,13 +226,13 @@ class GroundTruthHarness(Harness):
 
     def __init__(
         self,
-        repo_root: Path,
+        dataset_root: Path,
         a: Formulation,
         b: Formulation,
         expected: bool,
     ) -> None:
         super().__init__(model="dummy-model")
-        self.repo_root = repo_root
+        self.dataset_root = dataset_root
         self.a = a
         self.b = b
         self.expected = expected
@@ -244,7 +240,7 @@ class GroundTruthHarness(Harness):
     def configure_wd(self, wd: Path) -> None:
         super().configure_wd(wd)
         if self.expected:
-            _copy_ground_truth(wd, self.repo_root, self.a, self.b)
+            _copy_ground_truth(wd, self.dataset_root, self.a, self.b)
         else:
             (wd / "Reformulation.lean").write_text(
                 "-- NOT REFORMULATION\n-- ground-truth harness verdict\n"
@@ -285,11 +281,11 @@ def _inputs(
 
 def test_flare_verifier(
     pair: tuple[Formulation, Formulation, bool],
-    repo_root: Path,
+    dataset: Dataset,
     tmp_path: Path,
 ) -> None:
     a, b, expected = pair
-    harness = DummyHarness(repo_root=repo_root, a=a, b=b, expected=expected)
+    harness = DummyHarness(dataset_root=dataset.root, a=a, b=b, expected=expected)
     verifier = FLARE(harness=harness)
     a_in, b_in = _inputs(a, b)
     result = verifier.verify(a_in, b_in, tmp_path)
@@ -297,7 +293,6 @@ def test_flare_verifier(
 
 
 def test_flare_verifier_rejects_extra_axiom(
-    repo_root: Path,
     tmp_path: Path,
     dataset: Dataset,
 ) -> None:
@@ -305,7 +300,7 @@ def test_flare_verifier_rejects_extra_axiom(
     every Lean file compiles cleanly."""
     problem = dataset.problems[1]
     a, b = problem.formulations["a"], problem.formulations["b"]
-    harness = BadAxiomHarness(repo_root=repo_root, a=a, b=b, expected=True)
+    harness = BadAxiomHarness(dataset_root=dataset.root, a=a, b=b, expected=True)
     verifier = FLARE(harness=harness)
     a_in, b_in = _inputs(a, b)
     result = verifier.verify(a_in, b_in, tmp_path)
@@ -317,7 +312,7 @@ def test_flare_verifier_rejects_extra_axiom(
 @pytest.mark.docker
 def test_flare_verifier_docker(
     pair: tuple[Formulation, Formulation, bool],
-    repo_root: Path,
+    dataset: Dataset,
     tmp_path: Path,
 ) -> None:
     """End-to-end FLARE run against the real flare-agent Docker image.
@@ -328,7 +323,7 @@ def test_flare_verifier_docker(
     credentials are consumed.
     """
     a, b, expected = pair
-    harness = GroundTruthHarness(repo_root=repo_root, a=a, b=b, expected=expected)
+    harness = GroundTruthHarness(dataset_root=dataset.root, a=a, b=b, expected=expected)
     verifier = FLARE(harness=harness)
     a_in, b_in = _inputs(a, b)
     result = verifier.verify(a_in, b_in, tmp_path)

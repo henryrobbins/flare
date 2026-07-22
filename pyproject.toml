@@ -7,7 +7,7 @@ dependencies = [
     "gurobipy",
     "jinja2",
     "matplotlib>=3.10.9",
-    "formulation-bench",
+    "formulation-bench>=0.3.0",
     "milp-flare",
     "openai",
     "pandas>=2.3.3",
@@ -26,10 +26,9 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [tool.uv.workspace]
-members = ["packages/formulation_bench", "packages/milp_flare"]
+members = ["packages/milp_flare"]
 
 [tool.uv.sources]
-formulation-bench = { workspace = true }
 milp-flare = { workspace = true }
 
 [dependency-groups]
@@ -46,8 +45,6 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = [
     "tests",
-    "packages/formulation_bench/tests",
-    "packages/formulation_bench/src/formulation_bench",
     "packages/milp_flare/tests",
     "packages/milp_flare/src/milp_flare",
 ]
@@ -65,8 +62,6 @@ select = ["E", "F", "I", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/review/flare_formulation_reviewer.py" = ["E501"]
-"dataset/**/gen_params.py" = ["E741"]  # single letter names for math notation
-"dataset/**/gen_data.py" = ["E741"]  # single letter names for math notation
 
 [tool.mypy]
 strict = true
