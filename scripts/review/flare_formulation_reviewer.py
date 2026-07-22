@@ -17,6 +17,8 @@ from pathlib import Path
 from typing import Any, ClassVar
 from urllib.parse import parse_qs, urlparse
 
+from formulation_bench import download_dataset
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
@@ -342,6 +344,7 @@ init();
 
 class Handler(BaseHTTPRequestHandler):
     results_dir: ClassVar[Path]
+    dataset_root: ClassVar[Path]
 
     def log_message(self, fmt: str, *args: Any) -> None:
         pass  # silence access logs
@@ -375,8 +378,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.results_dir / problem / pair / artifact / "B" / "Formulation.lean"
             )
             gt_a = (
-                REPO_ROOT
-                / "dataset"
+                self.dataset_root
                 / "problems"
                 / problem
                 / "formulations"
@@ -384,8 +386,7 @@ class Handler(BaseHTTPRequestHandler):
                 / "Formulation.lean"
             )
             gt_b = (
-                REPO_ROOT
-                / "dataset"
+                self.dataset_root
                 / "problems"
                 / problem
                 / "formulations"
@@ -399,9 +400,9 @@ class Handler(BaseHTTPRequestHandler):
                     "res_a": read_file(res_a),
                     "gt_b": read_file(gt_b),
                     "res_b": read_file(res_b),
-                    "path_gt_a": str(gt_a.relative_to(REPO_ROOT)),
+                    "path_gt_a": str(gt_a.relative_to(self.dataset_root)),
                     "path_res_a": str(res_a.relative_to(REPO_ROOT)),
-                    "path_gt_b": str(gt_b.relative_to(REPO_ROOT)),
+                    "path_gt_b": str(gt_b.relative_to(self.dataset_root)),
                     "path_res_b": str(res_b.relative_to(REPO_ROOT)),
                 }
             )
@@ -431,6 +432,7 @@ def main() -> None:
         return
 
     Handler.results_dir = results_dir
+    Handler.dataset_root = download_dataset(cache_dir=REPO_ROOT / "dataset")
 
     print(f"Serving {results_dir.name} at http://localhost:{args.port}")
     HTTPServer(("", args.port), Handler).serve_forever()

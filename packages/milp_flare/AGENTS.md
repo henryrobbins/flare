@@ -5,11 +5,12 @@
 ## Monorepo context
 
 This package currently lives inside the [FLARE
-monorepo](https://github.com/henryrobbins/flare) as a uv workspace member
-under `packages/milp_flare/`. The other workspace member,
-[`formulation-bench`](../formulation_bench/), provides the dataset loader
-and is a dev dependency here. The package owns its own `pyproject.toml`,
-`LICENSE.md`, and `docs/` tree, and is published independently to PyPI.
+monorepo](https://github.com/henryrobbins/flare) as its sole uv workspace
+member, under `packages/milp_flare/`.
+[`formulation-bench`](https://github.com/henryrobbins/formulation-bench)
+provides the dataset loader and is a dev dependency here, consumed from
+PyPI. The package owns its own `pyproject.toml`, `LICENSE.md`, and `docs/`
+tree, and is published independently to PyPI.
 
 ## Tooling
 
