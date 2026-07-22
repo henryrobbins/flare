@@ -1,1 +1,0 @@
-The Capacitated Warehouse Location Problem (CWLP) involves selecting a subset of candidate warehouse locations to open and assigning each customer to one open warehouse. The problem is subjected to capacity constraints at each facility, with the goal of minimizing total fixed opening and transportation costs.

@@ -4,11 +4,6 @@ coverage:
       default:
         target: auto
         threshold: 1%
-      formulation_bench:
-        target: auto
-        threshold: 1%
-        flags:
-          - formulation_bench
       milp_flare:
         target: auto
         threshold: 1%
@@ -24,10 +19,6 @@ coverage:
         target: auto
 
 flags:
-  formulation_bench:
-    paths:
-      - packages/formulation_bench/src/formulation_bench
-    carryforward: true
   milp_flare:
     paths:
       - packages/milp_flare/src/milp_flare

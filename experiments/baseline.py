@@ -98,7 +98,7 @@ def main() -> None:
     problem_filter = resolve_problem_filter(args.problems, cfg)
 
     run_dir = make_run_dir()
-    dataset = Dataset(Path("dataset"))
+    dataset = Dataset.load(cache_dir="dataset")
 
     # Per-harness concurrency caps: {harness_name: max_concurrent}. Verifiers
     # sharing a harness type share one semaphore (e.g. to respect claude_code's

@@ -7,20 +7,19 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 > [!NOTE]
-> This monorepo hosts the dataset, packages, and experiment code accompanying
-> *[FLARE: Verifying MILP Reformulations with LLM-Based Formal Proof
-> Synthesis](https://flare.henryrobbins.com/)*.
+> This repository hosts the `milp-flare` package and the experiment code
+> accompanying *[FLARE: Verifying MILP Reformulations with LLM-Based Formal
+> Proof Synthesis](https://flare.henryrobbins.com/)*.
 
 `FLARE` (Formulation-Level Automated Reformulation Evaluation) uses an
 LLM-based agent and the Lean 4 proof assistant to verify mixed-integer linear
-program (MILP) reformulations. `FLARE` is implemented in the `milp-flare` Python package and evaluated on the **FormulationBench** dataset using the `formulation-bench` Python package. This repository is a monorepo hosting the FormulationBench dataset, both Python packages, and all of the experimental code used to produce the paper's results.
+program (MILP) reformulations. `FLARE` is implemented in the `milp-flare` Python package and evaluated on the **FormulationBench** dataset using the `formulation-bench` Python package. This repository hosts `milp-flare` and all of the experimental code used to produce the paper's results. The dataset and the `formulation-bench` package live in the [formulation-bench](https://github.com/henryrobbins/formulation-bench) repository.
 
 ## Sub-Projects
 
 | Project | Path | Description | Links |
 | --- | --- | --- | --- |
-| **FormulationBench** | [`dataset/`](dataset/) | 20 problems, 116 MILP formulations, 96 labelled reformulation pairs. | [![Docs](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com) |
-| **`formulation-bench`** | [`packages/formulation_bench/`](packages/formulation_bench/) | Utilities for loading and working with the FormulationBench dataset. | [![PyPI](https://img.shields.io/pypi/v/formulation-bench)](https://pypi.org/project/formulation-bench/) [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=formulation_bench)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=formulation_bench) [![Docs](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com) |
+| **FormulationBench** | [henryrobbins/formulation-bench](https://github.com/henryrobbins/formulation-bench) | 20 problems, 116 MILP formulations, 96 labelled reformulation pairs, plus the `formulation-bench` loader package. | [![PyPI](https://img.shields.io/pypi/v/formulation-bench)](https://pypi.org/project/formulation-bench/) [![Docs](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com) |
 | **`milp-flare`** | [`packages/milp_flare/`](packages/milp_flare/) | Official implementation of FLARE and FLARE-NL. | [![PyPI](https://img.shields.io/pypi/v/milp-flare)](https://pypi.org/project/milp-flare/) [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=milp_flare)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=milp_flare) [![Docs](https://readthedocs.org/projects/milp-flare/badge/?version=latest)](https://milp-flare.henryrobbins.com/en/latest) |
 | **Experiments** | [`src/`](src/), [`experiments/`](experiments/), [`scripts/`](scripts/) | Paper experiment code: alternative verifiers, prompt templates, and experiment/analysis scripts. | [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=src)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=src) |
 | **Paper site** | [`site/`](site/) | Astro landing page for the paper, deployed to GitHub Pages on pushes to the `site` branch. | [Live site](https://flare.henryrobbins.com/) |
@@ -41,6 +40,11 @@ The two scripts in [`experiments/`](experiments/) reproduce every quantitative r
    ```
 3. Populate all necessary API keys for the LLM-based verifiers (Anthropic, OpenAI, DeepSeek). The relevant secrets go in a top-level `.env` file (see `.env.example`).
 4. Install a [Gurobi](https://www.gurobi.com/) license (required by the `execution` baseline and the dataset's `solve.py` scripts). A free [academic license](https://www.gurobi.com/academia/academic-program-and-licenses/) works.
+
+The experiment scripts fetch the FormulationBench dataset on first use via
+`Dataset.load()`, caching it under a git-ignored `dataset/` directory at the
+repo root. The test suite uses the package default,
+`$XDG_CACHE_HOME/formulation_bench`.
 
 See the `milp-flare` [installation guide](https://milp-flare.henryrobbins.com/en/latest/installation.html) for more details.
 

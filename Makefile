@@ -2,7 +2,7 @@
 # Covers experiment trees (src/ + experiments/ + scripts/).
 # For per-package commands, see packages/*/Makefile.
 
-PACKAGES := packages/formulation_bench packages/milp_flare
+PACKAGES := packages/milp_flare
 
 .PHONY: help install test cov cov-open cov-clean lint format typecheck check \
         cov-all check-all clean

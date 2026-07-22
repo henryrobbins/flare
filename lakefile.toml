@@ -4,7 +4,9 @@ defaultTargets = []
 
 [[require]]
 name = "FormulationBench"
-path = "dataset"
+git = "https://github.com/henryrobbins/formulation-bench"
+subDir = "dataset"
+rev = "main"
 
 [[lean_lib]]
 name = "Results"

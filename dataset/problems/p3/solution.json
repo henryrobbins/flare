@@ -1,9 +1,0 @@
-{
-    "variables": {
-        "NumBeakersUsed": [
-            0.0,
-            15.0
-        ]
-    },
-    "objective": 45.0
-}
