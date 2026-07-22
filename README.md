@@ -42,8 +42,7 @@ The two scripts in [`experiments/`](experiments/) reproduce every quantitative r
 4. Install a [Gurobi](https://www.gurobi.com/) license (required by the `execution` baseline and the dataset's `solve.py` scripts). A free [academic license](https://www.gurobi.com/academia/academic-program-and-licenses/) works.
 
 The experiment scripts fetch the FormulationBench dataset on first use via
-`Dataset.load()`, caching it under a git-ignored `dataset/` directory at the
-repo root.
+`Dataset.load()`, caching it under `$XDG_CACHE_HOME/formulation_bench`.
 
 See the `milp-flare` [installation guide](https://milp-flare.henryrobbins.com/en/latest/installation.html) for more details.
 

@@ -27,4 +27,4 @@ def repo_root() -> Path:
 
 @pytest.fixture(scope="session")
 def dataset() -> Dataset:
-    return Dataset.load(cache_dir=REPO_ROOT / "dataset")
+    return Dataset.load()

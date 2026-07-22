@@ -432,7 +432,7 @@ def main() -> None:
         return
 
     Handler.results_dir = results_dir
-    Handler.dataset_root = download_dataset(cache_dir=REPO_ROOT / "dataset")
+    Handler.dataset_root = download_dataset()
 
     print(f"Serving {results_dir.name} at http://localhost:{args.port}")
     HTTPServer(("", args.port), Handler).serve_forever()

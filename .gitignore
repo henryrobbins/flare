@@ -227,8 +227,5 @@ __marimo__/
 runs/
 results/
 
-# FormulationBench dataset, downloaded on demand by `Dataset.load()`
-/dataset/
-
 # Integration test artifacts (per-case wd + stream.jsonl)
 tests/.runs/

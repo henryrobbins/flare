@@ -123,10 +123,7 @@ The pytest config at the repo root (`pyproject.toml`) collects from:
 - `packages/milp_flare/{tests,src/milp_flare}`
 
 Tests that need the dataset use the session-scoped `dataset` fixture, which
-calls `Dataset.load()` to download and cache the published release. The
-cache is the git-ignored `dataset/` directory at the repo root, so the
-dataset root is `dataset/<version>/dataset/`; experiment scripts and
-`scripts/review/` use the same location.
+calls `Dataset.load()` to download and cache the published release.
 
 Source-tree paths are included so `--doctest-modules` exercises docstring
 examples — keep them runnable. One marker gates an optional dependency:
