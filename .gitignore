@@ -227,5 +227,8 @@ __marimo__/
 runs/
 results/
 
+# Dataset cache used by the experiment scripts
+/dataset/
+
 # Integration test artifacts (per-case wd + stream.jsonl)
 tests/.runs/
