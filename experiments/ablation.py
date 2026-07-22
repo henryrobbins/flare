@@ -78,7 +78,7 @@ def main() -> None:
     problem_filter = resolve_problem_filter(args.problems, cfg)
 
     run_dir = make_run_dir()
-    dataset = Dataset.load()
+    dataset = Dataset.load(cache_dir="dataset")
 
     # Expand the (models × modes) cross product into llm verifier specs.
     verifiers: list[tuple[ReformulationVerifier, str, str]] = []

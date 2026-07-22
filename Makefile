@@ -4,12 +4,13 @@
 
 PACKAGES := packages/milp_flare
 
-.PHONY: help install test cov cov-open cov-clean lint format typecheck check \
-        cov-all check-all clean
+.PHONY: help install dataset test cov cov-open cov-clean lint format typecheck \
+        check cov-all check-all clean
 
 help:
 	@echo "Targets (root — experiment code under src/, experiments/, scripts/):"
 	@echo "  install     Sync workspace deps with uv"
+	@echo "  dataset     Download the FormulationBench dataset into ./dataset"
 	@echo "  test        Run pytest (excluding docker + modal marked tests)"
 	@echo "  cov         Run pytest with coverage scoped to src/; writes htmlcov/ and coverage.xml"
 	@echo "  cov-open    Open the HTML coverage report"
@@ -29,10 +30,15 @@ help:
 install:
 	uv sync
 
-test:
+# Fetch the dataset serially up front: the test suite runs under xdist and a
+# cold cache would have every worker download into ./dataset at once.
+dataset:
+	@uv run python -c "from formulation_bench import Dataset; Dataset.load(cache_dir='dataset')"
+
+test: dataset
 	uv run pytest -m 'not docker and not modal'
 
-cov:
+cov: dataset
 	uv run pytest -m 'not docker and not modal' \
 		--cov=src \
 		--cov-report=term-missing \

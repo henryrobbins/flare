@@ -1,7 +1,7 @@
 # Common dev commands for the milp-flare package.
 # Run from this directory (packages/milp_flare/).
 
-.PHONY: help install test test-docker test-modal cov cov-open cov-clean lint format typecheck check build-image build-modal-image docs docs-serve docs-clean clean
+.PHONY: help install dataset test test-docker test-modal cov cov-open cov-clean lint format typecheck check build-image build-modal-image docs docs-serve docs-clean clean
 
 help:
 	@echo "Targets:"
@@ -26,7 +26,12 @@ help:
 install:
 	uv sync
 
-test:
+# The dataset fixture reads from the monorepo root, whose Makefile owns the
+# download. Fetching it here keeps a cold cache from racing across xdist workers.
+dataset:
+	@$(MAKE) -C ../.. dataset
+
+test: dataset
 	uv run --package milp-flare pytest -m 'not docker and not modal'
 
 test-docker:
@@ -35,7 +40,7 @@ test-docker:
 test-modal:
 	uv run --package milp-flare pytest -m 'modal'
 
-cov:
+cov: dataset
 	uv run --package milp-flare pytest -m 'not docker and not modal' \
 		--cov=milp_flare \
 		--cov-report=term-missing \

@@ -96,7 +96,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Pre-warm dataset cache
-        run: uv run python -c "from formulation_bench import Dataset; Dataset.load()"
+        run: uv run python -c "from formulation_bench import Dataset; Dataset.load(cache_dir='dataset')"
 
       - name: Run unit tests (no docker)
         run: uv run pytest -m 'not docker'
@@ -116,7 +116,7 @@ jobs:
         run: uv sync --all-extras
 
       - name: Pre-warm dataset cache
-        run: uv run python -c "from formulation_bench import Dataset; Dataset.load()"
+        run: uv run python -c "from formulation_bench import Dataset; Dataset.load(cache_dir='dataset')"
 
       - name: Coverage — milp_flare
         working-directory: packages/milp_flare
