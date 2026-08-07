@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from formulation_bench import Dataset, Formulation, Reformulation
+from formulation_bench import Dataset, Reformulation
 
 from milp_flare import (
     FLARE,
@@ -100,9 +100,7 @@ def _rewrite_reformulation_imports(text: str, a_letter: str, b_letter: str) -> s
     return _FORM_IMPORT.sub(repl, text)
 
 
-def _copy_ground_truth(
-    wd: Path, dataset_root: Path, a: Formulation, b: Formulation
-) -> None:
+def _copy_ground_truth(wd: Path, reform: Reformulation) -> None:
     """Populate wd with the ground-truth Formulation.lean + Reformulation.lean.
 
     The dataset's reformulation file imports the formulations by their
@@ -111,14 +109,12 @@ def _copy_ground_truth(
     to the local `A.Formulation` / `B.Formulation` modules served by the
     docker lakefile.
     """
+    a, b = reform.a, reform.b
     shutil.copy2(a.path / "Formulation.lean", wd / "A" / "Formulation.lean")
     shutil.copy2(b.path / "Formulation.lean", wd / "B" / "Formulation.lean")
-    pname = a.path.parent.parent.name  # e.g. "p1"
-    reform_src = (
-        dataset_root / "reformulations" / pname / f"{a.path.name}_{b.path.name}.lean"
-    )
+    assert reform.lean_proof_path is not None
     rewritten = _rewrite_reformulation_imports(
-        reform_src.read_text(), a.path.name, b.path.name
+        reform.lean_proof_path.read_text(), a.path.name, b.path.name
     )
     (wd / "Reformulation.lean").write_text(rewritten)
 
@@ -132,7 +128,7 @@ class DummyHarness(Harness):
     """Harness that bypasses Docker and pre-writes ground-truth Lean files.
 
     For True pairs, the harness copies the dataset's ``Formulation.lean``
-    files and the matching ``reformulations/pX/<a>_<b>.lean`` into the
+    files and the pair's ground-truth ``Reformulation.lean`` into the
     agent working directory and writes a fake ``result.json`` reporting a
     successful compile. For False pairs, it writes a ``NOT REFORMULATION``
     marker, which FLARE picks up via its agent-decision check.
@@ -140,17 +136,9 @@ class DummyHarness(Harness):
 
     name = "dummy"
 
-    def __init__(
-        self,
-        dataset_root: Path,
-        a: Formulation,
-        b: Formulation,
-        expected: bool,
-    ) -> None:
+    def __init__(self, reform: Reformulation, expected: bool) -> None:
         super().__init__(model="dummy-model")
-        self.dataset_root = dataset_root
-        self.a = a
-        self.b = b
+        self.reform = reform
         self.expected = expected
 
     def configure_wd(self, wd: Path) -> None:
@@ -172,7 +160,7 @@ class DummyHarness(Harness):
         # files and a fake compile result, then hand back a no-op handle. The
         # base `collect` streams its (empty) output and parses via _parse_lines.
         if self.expected:
-            _copy_ground_truth(wd, self.dataset_root, self.a, self.b)
+            _copy_ground_truth(wd, self.reform)
             (wd / "result.json").write_text(
                 json.dumps(
                     {
@@ -230,23 +218,15 @@ class GroundTruthHarness(Harness):
 
     name = "ground_truth"
 
-    def __init__(
-        self,
-        dataset_root: Path,
-        a: Formulation,
-        b: Formulation,
-        expected: bool,
-    ) -> None:
+    def __init__(self, reform: Reformulation, expected: bool) -> None:
         super().__init__(model="dummy-model")
-        self.dataset_root = dataset_root
-        self.a = a
-        self.b = b
+        self.reform = reform
         self.expected = expected
 
     def configure_wd(self, wd: Path) -> None:
         super().configure_wd(wd)
         if self.expected:
-            _copy_ground_truth(wd, self.dataset_root, self.a, self.b)
+            _copy_ground_truth(wd, self.reform)
         else:
             (wd / "Reformulation.lean").write_text(
                 "-- NOT REFORMULATION\n-- ground-truth harness verdict\n"
@@ -287,14 +267,11 @@ def _inputs(
 
 
 def test_flare_verifier(
-    pair: tuple[Formulation, Formulation, bool],
-    dataset: Dataset,
+    pair: tuple[Reformulation, bool],
     tmp_path: Path,
 ) -> None:
     reform, expected = pair
-    harness = DummyHarness(
-        dataset_root=dataset.root, a=reform.a, b=reform.b, expected=expected
-    )
+    harness = DummyHarness(reform=reform, expected=expected)
     verifier = FLARE(harness=harness)
     a_in, b_in, map_in = _inputs(reform)
     result = verifier.verify(a_in, b_in, map_in, tmp_path)
@@ -308,9 +285,7 @@ def test_flare_verifier_rejects_extra_axiom(
     """A proof depending on an axiom outside the standard set fails, even when
     every Lean file compiles cleanly."""
     reform = dataset.reformulations[0]  # p1.a -> p1.b
-    harness = BadAxiomHarness(
-        dataset_root=dataset.root, a=reform.a, b=reform.b, expected=True
-    )
+    harness = BadAxiomHarness(reform=reform, expected=True)
     verifier = FLARE(harness=harness)
     a_in, b_in, map_in = _inputs(reform)
     result = verifier.verify(a_in, b_in, map_in, tmp_path)
@@ -321,8 +296,7 @@ def test_flare_verifier_rejects_extra_axiom(
 
 @pytest.mark.docker
 def test_flare_verifier_docker(
-    pair: tuple[Formulation, Formulation, bool],
-    dataset: Dataset,
+    pair: tuple[Reformulation, bool],
     tmp_path: Path,
 ) -> None:
     """End-to-end FLARE run against the real flare-agent Docker image.
@@ -333,9 +307,7 @@ def test_flare_verifier_docker(
     credentials are consumed.
     """
     reform, expected = pair
-    harness = GroundTruthHarness(
-        dataset_root=dataset.root, a=reform.a, b=reform.b, expected=expected
-    )
+    harness = GroundTruthHarness(reform=reform, expected=expected)
     verifier = FLARE(harness=harness)
     a_in, b_in, map_in = _inputs(reform)
     result = verifier.verify(a_in, b_in, map_in, tmp_path)

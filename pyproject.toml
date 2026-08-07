@@ -7,7 +7,7 @@ dependencies = [
     "gurobipy",
     "jinja2",
     "matplotlib>=3.10.9",
-    "formulation-bench>=0.3.0",
+    "formulation-bench>=0.4.0",
     "milp-flare",
     "openai",
     "pandas>=2.3.3",
