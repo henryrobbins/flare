@@ -147,20 +147,23 @@ The combination of `milp-flare` and `formulation-bench` make it easy to run `FLA
 from pathlib import Path
 
 from formulation_bench import Dataset
-from milp_flare import FLARE, FormulationInput
+from milp_flare import FLARE, FormulationInput, ParameterMapInput
 from milp_flare.harness import ClaudeCodeHarness
 
 ds = Dataset.load()
-p1 = ds.problems[1]
-a, b = p1.formulations["a"], p1.formulations["b"]
+pair = ds.reformulations[0]  # p1.a -> p1.b
+a, b = pair.a, pair.b
 
 harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
 flare = FLARE(harness=harness)
 
 a_in = FormulationInput(formulation_md=a.render_markdown(), solve_py=a.gen_solve_py())
 b_in = FormulationInput(formulation_md=b.render_markdown(), solve_py=b.gen_solve_py())
+map_in = ParameterMapInput(
+    map_md=pair.parameter_map.render_markdown(), map_py=pair.gen_map_py()
+)
 
-result = flare.verify(a_in, b_in, output_path=Path("runs/p1_a_b"))
+result = flare.verify(a_in, b_in, map_in, output_path=Path("runs/p1_a_b"))
 ```
 
 Building a `FLARE-NL` prompt for the same pair:
@@ -168,7 +171,9 @@ Building a `FLARE-NL` prompt for the same pair:
 ```python
 from milp_flare import flare_nl_prompt
 
-prompt = flare_nl_prompt(a.render_markdown(), b.render_markdown())
+prompt = flare_nl_prompt(
+    a.render_markdown(), b.render_markdown(), pair.parameter_map.render_markdown()
+)
 ```
 
 See the [documentation](https://milp-flare.henryrobbins.com) for user guides, prompts, skills, and the package API reference.

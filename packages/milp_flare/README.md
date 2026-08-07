@@ -35,13 +35,12 @@ Furthermore, each agent harness has different requirements for authentication. S
 from pathlib import Path
 
 from formulation_bench import Dataset
-from milp_flare import FLARE, FormulationInput
+from milp_flare import FLARE, FormulationInput, ParameterMapInput
 from milp_flare.harness import ClaudeCodeHarness
 
 ds = Dataset.load()
-p1 = ds.problems[1]
-a = p1.formulations["a"]
-b = p1.formulations["b"]
+pair = ds.reformulations[0]  # p1.a -> p1.b
+a, b = pair.a, pair.b
 
 harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
 flare = FLARE(harness=harness)
@@ -52,8 +51,11 @@ a_in = FormulationInput(
 b_in = FormulationInput(
     formulation_md=b.render_markdown(), solve_py=b.gen_solve_py()
 )
+map_in = ParameterMapInput(
+    map_md=pair.parameter_map.render_markdown(), map_py=pair.gen_map_py()
+)
 
-result = flare.verify(a_in, b_in, output_path=Path("runs/p1_a_b"))
+result = flare.verify(a_in, b_in, map_in, output_path=Path("runs/p1_a_b"))
 ```
 
 ## Development

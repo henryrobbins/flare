@@ -8,6 +8,9 @@
 .. autoclass:: milp_flare.flare.FormulationInput
    :no-members:
 
+.. autoclass:: milp_flare.flare.ParameterMapInput
+   :no-members:
+
 .. autoclass:: milp_flare.flare.FLAREResult
    :no-members:
 

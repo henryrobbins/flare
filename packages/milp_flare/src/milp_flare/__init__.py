@@ -1,4 +1,9 @@
-from milp_flare.flare import FLARE, FLAREResult, FormulationInput
+from milp_flare.flare import (
+    FLARE,
+    FLAREResult,
+    FormulationInput,
+    ParameterMapInput,
+)
 from milp_flare.flare_nl import FLARENLPrompt, flare_nl_prompt
 from milp_flare.harness import (
     HARNESSES,
@@ -25,6 +30,7 @@ __all__ = [
     "Harness",
     "HarnessRunResult",
     "ModalRunner",
+    "ParameterMapInput",
     "Runner",
     "flare_nl_prompt",
 ]

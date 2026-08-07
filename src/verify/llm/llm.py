@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from formulation_bench import Formulation
+from formulation_bench import Reformulation
 
 from src.llm_client import LLMClient, compute_cost_usd
 from src.verify.base import ReformulationResult, SynchronousVerifier
@@ -35,9 +35,7 @@ class LLMVerifier(SynchronousVerifier):
             "include_implicit": self.include_implicit,
         }
 
-    def _verify(
-        self, a: Formulation, b: Formulation, output_path: Path
-    ) -> ReformulationResult:
+    def _verify(self, pair: Reformulation, output_path: Path) -> ReformulationResult:
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
 
@@ -46,7 +44,7 @@ class LLMVerifier(SynchronousVerifier):
         )
 
         rendered = render_reformulation(
-            a, b, template=self.template, include_implicit=self.include_implicit
+            pair, template=self.template, include_implicit=self.include_implicit
         )
         (artifacts_dir / "prompt.txt").write_text(rendered.user)
 

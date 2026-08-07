@@ -63,6 +63,55 @@ class FormulationInput:
     solve_py: str
 
 
+@dataclass(frozen=True)
+class ParameterMapInput:
+    """Parameter-map input for the FLARE agent.
+
+    The parameter map fixes the parameter mapping :math:`\\Phi_p` of the
+    reformulation construction, so the agent proves the reformulation against a
+    given mapping rather than searching for one.
+
+    Attributes
+    ----------
+    map_md : str
+        Markdown description of the map from formulation A's parameters to
+        formulation B's. Typically produced by
+        ``Reformulation.parameter_map.render_markdown()`` from
+        :fb:`/api/reformulation.html`.
+    map_py : str
+        Python script computing formulation B's parameters from formulation A's.
+        :class:`FLARE` does not execute this script; it is only used as an
+        additional reference for the agent. Typically produced by
+        ``Reformulation.gen_map_py()`` from :fb:`/api/reformulation.html`.
+
+    Examples
+    --------
+
+    Construct a ``ParameterMapInput`` for the ``a`` to ``b`` pair of ``p1`` from
+    :fb:`/problems/p1.html`::
+
+        >>> from formulation_bench import Dataset
+        >>> from milp_flare import ParameterMapInput
+        >>> ds = Dataset.load()
+        >>> pair = ds.reformulations[0]
+        >>> inp = ParameterMapInput(
+        ...     pair.parameter_map.render_markdown(), pair.gen_map_py()
+        ... )
+
+        >>> print(inp.map_md)
+        # Parameter Map
+        ...
+
+        >>> print(inp.map_py)
+        import argparse
+        import json
+        ...
+    """
+
+    map_md: str
+    map_py: str
+
+
 @dataclass
 class FLAREResult:
     """Result from FLARE.
@@ -169,18 +218,21 @@ class FLARE:
 
         from pathlib import Path
         from formulation_bench import Dataset
-        from milp_flare import FLARE, FormulationInput
+        from milp_flare import FLARE, FormulationInput, ParameterMapInput
         from milp_flare.harness import ClaudeCodeHarness
 
         ds = Dataset.load()
-        a = ds.problems[1].formulations["a"]
-        b = ds.problems[1].formulations["b"]
+        pair = ds.reformulations[0]  # p1.a -> p1.b
+        a, b = pair.a, pair.b
 
         harness = ClaudeCodeHarness(model="claude-opus-4-7")
         flare = FLARE(harness=harness)
         result = flare.verify(
             FormulationInput(a.render_markdown(), a.gen_solve_py()),
             FormulationInput(b.render_markdown(), b.gen_solve_py()),
+            ParameterMapInput(
+                pair.parameter_map.render_markdown(), pair.gen_map_py()
+            ),
             output_path=Path("runs/p1_a_b"),
         )
     """
@@ -203,15 +255,17 @@ class FLARE:
         self,
         a: FormulationInput,
         b: FormulationInput,
+        parameter_map: ParameterMapInput,
         output_path: Path,
     ) -> FLARERun:
         """Start a FLARE run on a pair of MILP formulations and return a handle.
 
         Determines (asynchronously) if formulation ``b`` is a reformulation of
-        formulation ``a`` according to the :fb:`/definitions.html` definition of
-        reformulation. This method creates the agent working directory (see
-        below) and *starts* the agent, returning a :class:`FLARERun` the caller
-        drives to completion with :meth:`FLARERun.result`.
+        formulation ``a`` under the given parameter map, according to the
+        :fb:`/definitions.html` definition of reformulation. This method creates
+        the agent working directory (see below) and *starts* the agent, returning
+        a :class:`FLARERun` the caller drives to completion with
+        :meth:`FLARERun.result`.
 
         ``output_path`` is populated (by :meth:`FLARERun.result`) with:
 
@@ -220,8 +274,9 @@ class FLARE:
         - The result dictionary (``result.json``)
 
         The agent working directory contains descriptions of each formulation,
-        the agent prompt ``prompt.txt`` (see :doc:`/prompts`), and the necessary
-        Lake environment files.
+        the parameter map carrying A's parameters to B's, the agent prompt
+        ``prompt.txt`` (see :doc:`/prompts`), and the necessary Lake environment
+        files.
 
         .. code-block::
 
@@ -234,6 +289,8 @@ class FLARE:
             │   ├── formulation.md
             │   ├── solve.py
             │   └── Formulation.lean   # written by agent
+            ├── map.md
+            ├── map.py
             ├── Reformulation.lean     # written by agent
             ├── prompt.txt
             ├── Common.lean
@@ -247,6 +304,9 @@ class FLARE:
             Inputs for formulation A.
         b : FormulationInput
             Inputs for formulation B (the candidate reformulation of A).
+        parameter_map : ParameterMapInput
+            The parameter mapping the agent must use for the reformulation
+            construction.
         output_path : pathlib.Path
             Directory to populate with run artifacts.
 
@@ -269,7 +329,7 @@ class FLARE:
         # the compute happens here, so the returned handle's AgentRun already
         # exists — cancel() can reach it with no callback or race.
         wd = artifacts_dir / "wd"
-        self._setup_wd(wd, a, b)
+        self._setup_wd(wd, a, b, parameter_map)
         agent = self.harness.start(wd)
         return FLARERun(self, wd, artifacts_dir, agent)
 
@@ -277,14 +337,15 @@ class FLARE:
         self,
         a: FormulationInput,
         b: FormulationInput,
+        parameter_map: ParameterMapInput,
         output_path: Path,
     ) -> FLAREResult:
         """Run FLARE on a pair of formulations and block for the result.
 
-        Blocking convenience equivalent to ``start(a, b, output_path).result()``.
-        Use :meth:`start` directly when an external owner needs to hold the
-        :class:`FLARERun` handle to :meth:`~FLARERun.cancel` it from another
-        thread.
+        Blocking convenience equivalent to
+        ``start(a, b, parameter_map, output_path).result()``. Use :meth:`start`
+        directly when an external owner needs to hold the :class:`FLARERun`
+        handle to :meth:`~FLARERun.cancel` it from another thread.
 
         Examples
         --------
@@ -294,7 +355,7 @@ class FLARE:
         .. code-block:: python
 
             flare = FLARE(harness=harness)
-            result = flare.verify(a, b, output_path=Path("runs/a_b"))
+            result = flare.verify(a, b, pmap, output_path=Path("runs/a_b"))
             result.is_reformulation
             True
             result.metadata["form_a_written"]
@@ -304,13 +365,14 @@ class FLARE:
             result.duration_s
             322
         """
-        return self.start(a, b, output_path).result()
+        return self.start(a, b, parameter_map, output_path).result()
 
     def _setup_wd(
         self,
         wd: Path,
         a: FormulationInput,
         b: FormulationInput,
+        parameter_map: ParameterMapInput,
     ) -> None:
         """Populate the agent working directory with all necessary files."""
 
@@ -326,6 +388,10 @@ class FLARE:
             (form_dir / "formulation.md").write_text(inp.formulation_md)
             (form_dir / "solve.py").write_text(inp.solve_py)
             (form_dir / "Formulation.lean").write_text("")
+
+        # Populate the parameter map carrying A's parameters to B's
+        (wd / "map.md").write_text(parameter_map.map_md)
+        (wd / "map.py").write_text(parameter_map.map_py)
 
         # Create empty Reformulation.lean
         (wd / "Reformulation.lean").write_text("")

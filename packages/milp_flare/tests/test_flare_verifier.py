@@ -19,12 +19,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from formulation_bench import Dataset, Formulation
+from formulation_bench import Dataset, Formulation, Reformulation
 
 from milp_flare import (
     FLARE,
     FormulationInput,
     Harness,
+    ParameterMapInput,
 )
 from milp_flare.harness.runner import AgentRun
 
@@ -57,11 +58,16 @@ PAIR_IDS = [f"{p}_{a}_{b}_{exp}" for p, a, b, exp in PAIRS]
 
 
 @pytest.fixture(params=PAIRS, ids=PAIR_IDS)
-def pair(request, dataset: Dataset) -> tuple[Formulation, Formulation, bool]:
+def pair(request, dataset: Dataset) -> tuple[Reformulation, bool]:
     pname, a_letter, b_letter, expected = request.param
-    pid = int(pname[1:])
-    problem = dataset.problems[pid]
-    return problem.formulations[a_letter], problem.formulations[b_letter], expected
+    reform = next(
+        r
+        for r in dataset.reformulations
+        if r.a.problem.path.name == pname
+        and r.a.path.name == a_letter
+        and r.b.path.name == b_letter
+    )
+    return reform, expected
 
 
 # ---------------------------------------------------------------------------
@@ -269,13 +275,14 @@ class GroundTruthHarness(Harness):
 
 
 # The DummyHarness / GroundTruthHarness pre-write the Lean files and never
-# read formulation.md, so any markdown is fine.
+# read formulation.md or map.md, so any markdown is fine.
 def _inputs(
-    a: Formulation, b: Formulation
-) -> tuple[FormulationInput, FormulationInput]:
+    reform: Reformulation,
+) -> tuple[FormulationInput, FormulationInput, ParameterMapInput]:
     return (
-        FormulationInput(formulation_md="", solve_py=a.gen_solve_py()),
-        FormulationInput(formulation_md="", solve_py=b.gen_solve_py()),
+        FormulationInput(formulation_md="", solve_py=reform.a.gen_solve_py()),
+        FormulationInput(formulation_md="", solve_py=reform.b.gen_solve_py()),
+        ParameterMapInput(map_md="", map_py=reform.gen_map_py()),
     )
 
 
@@ -284,11 +291,13 @@ def test_flare_verifier(
     dataset: Dataset,
     tmp_path: Path,
 ) -> None:
-    a, b, expected = pair
-    harness = DummyHarness(dataset_root=dataset.root, a=a, b=b, expected=expected)
+    reform, expected = pair
+    harness = DummyHarness(
+        dataset_root=dataset.root, a=reform.a, b=reform.b, expected=expected
+    )
     verifier = FLARE(harness=harness)
-    a_in, b_in = _inputs(a, b)
-    result = verifier.verify(a_in, b_in, tmp_path)
+    a_in, b_in, map_in = _inputs(reform)
+    result = verifier.verify(a_in, b_in, map_in, tmp_path)
     assert result.is_reformulation is expected
 
 
@@ -298,12 +307,13 @@ def test_flare_verifier_rejects_extra_axiom(
 ) -> None:
     """A proof depending on an axiom outside the standard set fails, even when
     every Lean file compiles cleanly."""
-    problem = dataset.problems[1]
-    a, b = problem.formulations["a"], problem.formulations["b"]
-    harness = BadAxiomHarness(dataset_root=dataset.root, a=a, b=b, expected=True)
+    reform = dataset.reformulations[0]  # p1.a -> p1.b
+    harness = BadAxiomHarness(
+        dataset_root=dataset.root, a=reform.a, b=reform.b, expected=True
+    )
     verifier = FLARE(harness=harness)
-    a_in, b_in = _inputs(a, b)
-    result = verifier.verify(a_in, b_in, tmp_path)
+    a_in, b_in, map_in = _inputs(reform)
+    result = verifier.verify(a_in, b_in, map_in, tmp_path)
     assert result.is_reformulation is False
     assert result.metadata["no_new_axioms"] is False
     assert "P1.cheat" in result.metadata["axioms"]
@@ -322,9 +332,11 @@ def test_flare_verifier_docker(
     real compilation. Requires the ``flare-agent:latest`` image. No model
     credentials are consumed.
     """
-    a, b, expected = pair
-    harness = GroundTruthHarness(dataset_root=dataset.root, a=a, b=b, expected=expected)
+    reform, expected = pair
+    harness = GroundTruthHarness(
+        dataset_root=dataset.root, a=reform.a, b=reform.b, expected=expected
+    )
     verifier = FLARE(harness=harness)
-    a_in, b_in = _inputs(a, b)
-    result = verifier.verify(a_in, b_in, tmp_path)
+    a_in, b_in, map_in = _inputs(reform)
+    result = verifier.verify(a_in, b_in, map_in, tmp_path)
     assert result.is_reformulation is expected

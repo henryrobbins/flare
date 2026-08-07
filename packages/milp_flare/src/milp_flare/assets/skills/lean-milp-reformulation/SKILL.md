@@ -14,6 +14,9 @@ parameter map `A.Params → B.Params`, mutually inverse feasibility-preserving
 variable maps, and a strictly monotone objective map that makes forward and
 backward objective diagrams commute.
 
+The parameter map is given, not derived: `paramMap` must implement the mapping
+stated in `map.md`. The variable maps and objective map are yours to find.
+
 ## `MILPReformulation` at a glance
 
 The project's common MILP module defines `MILPReformulation F G` with fields:
@@ -67,7 +70,8 @@ mapping has a dedicated optional section. Use these rules:
 
 - **Inline in the `MILPReformulation` structure** when the body is a single line or
   a trivial expression. Examples: `paramMap := id` (but see the pitfall
-  below), `paramMap p := { c := p.c }`, `fwd _ v := { a := v.x }`,
+  below), `paramMap p := { c := p.c }` (transcribed from `map.md`),
+  `fwd _ v := { a := v.x }`,
   `fwd_obj _ _ _ := rfl`, `objMap := id`,
   `objMap_mono := strictMono_id`.
 - **Extract to a `private def`/`lemma` above the structure** when the body

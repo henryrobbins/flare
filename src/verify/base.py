@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from formulation_bench import Formulation
+from formulation_bench import Reformulation
 
 
 @dataclass
@@ -40,21 +40,20 @@ class ReformulationVerifier(ABC):
     def get_config_dict(self) -> dict[str, Any]: ...
 
     @abstractmethod
-    def start(
-        self, a: Formulation, b: Formulation, output_path: Path
-    ) -> ReformulationRun:
-        """Start verifying whether ``b`` reformulates ``a`` and return a handle.
+    def start(self, pair: Reformulation, output_path: Path) -> ReformulationRun:
+        """Start verifying whether ``pair.b`` reformulates ``pair.a``.
+
+        Implementations must not read ``pair.is_reformulation`` — it is the
+        ground-truth label.
 
         Returns a :class:`ReformulationRun` the caller can cancel or await.
         :meth:`verify` offers blocking convenience.
         """
         ...
 
-    def verify(
-        self, a: Formulation, b: Formulation, output_path: Path
-    ) -> ReformulationResult:
+    def verify(self, pair: Reformulation, output_path: Path) -> ReformulationResult:
         """Start the run and wait for its result."""
-        return self.start(a, b, output_path).result()
+        return self.start(pair, output_path).result()
 
 
 class _SyncRun(ReformulationRun):
@@ -75,10 +74,8 @@ class SynchronousVerifier(ReformulationVerifier):
 
     @abstractmethod
     def _verify(
-        self, a: Formulation, b: Formulation, output_path: Path
+        self, pair: Reformulation, output_path: Path
     ) -> ReformulationResult: ...
 
-    def start(
-        self, a: Formulation, b: Formulation, output_path: Path
-    ) -> ReformulationRun:
-        return _SyncRun(lambda: self._verify(a, b, output_path))
+    def start(self, pair: Reformulation, output_path: Path) -> ReformulationRun:
+        return _SyncRun(lambda: self._verify(pair, output_path))

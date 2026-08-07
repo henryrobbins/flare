@@ -22,13 +22,12 @@ easiest way to drive FLARE end-to-end.
 from pathlib import Path
 
 from formulation_bench import Dataset
-from milp_flare import FLARE, FormulationInput
+from milp_flare import FLARE, FormulationInput, ParameterMapInput
 from milp_flare.harness import ClaudeCodeHarness
 
 ds = Dataset.load()
-p1 = ds.problem("p1")
-a = p1.formulation("a")
-b = p1.formulation("b")
+pair = ds.reformulations[0]  # p1.a -> p1.b
+a, b = pair.a, pair.b
 
 harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
 flare = FLARE(harness=harness)
@@ -39,18 +38,28 @@ a_in = FormulationInput(
 b_in = FormulationInput(
     formulation_md=b.render_markdown(), solve_py=b.gen_solve_py()
 )
+map_in = ParameterMapInput(
+    map_md=pair.parameter_map.render_markdown(), map_py=pair.gen_map_py()
+)
 
-result = flare.verify(a_in, b_in, output_path=Path("runs/p1_a_b"))
+result = flare.verify(a_in, b_in, map_in, output_path=Path("runs/p1_a_b"))
 
 print("is_reformulation:", result.is_reformulation)
 print("duration_s:", result.duration_s)
 print("cost_usd:", result.cost_usd)
 ```
 
-`FormulationInput` carries the two artifacts the agent needs.
-`Formulation.render_markdown()` and `Formulation.gen_solve_py()`
-produce them directly from the dataset — see the
-{fb}`FormulationBench API reference </api/formulation.html>`.
+`FormulationInput` carries the two artifacts the agent needs per
+formulation; `Formulation.render_markdown()` and
+`Formulation.gen_solve_py()` produce them directly from the dataset — see
+the {fb}`FormulationBench API reference </api/formulation.html>`.
+
+`ParameterMapInput` carries the parameter mapping the agent must use for
+the reformulation construction. Fixing it means FLARE asks whether B is a
+reformulation of A *under that mapping* rather than under any mapping the
+agent happens to find. `ParameterMap.render_markdown()` and
+`Reformulation.gen_map_py()` produce it from the dataset — see the
+{fb}`FormulationBench API reference </api/reformulation.html>`.
 
 ## Lean definitions
 
@@ -93,8 +102,8 @@ compiled, and whether it is `sorry`-free.
 
 ## Using FLARE on a non-dataset pair
 
-`FormulationInput` does not depend on `formulation_bench` — build the
-two inputs yourself from any markdown + `solve.py` pair and pass them
-to `FLARE.verify`. The markdown should follow the formulation template
-documented in
-{fb}`/en/latest/schema.html`.
+`FormulationInput` and `ParameterMapInput` do not depend on
+`formulation_bench` — build the inputs yourself from any markdown +
+`solve.py` pair plus a markdown description of the parameter mapping, and
+pass them to `FLARE.verify`. The markdown should follow the formulation
+template documented in {fb}`/en/latest/schema.html`.

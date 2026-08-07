@@ -74,6 +74,7 @@ numpydoc_xref_aliases = {
     "FLARE": "milp_flare.flare.FLARE",
     "FLAREResult": "milp_flare.flare.FLAREResult",
     "FormulationInput": "milp_flare.flare.FormulationInput",
+    "ParameterMapInput": "milp_flare.flare.ParameterMapInput",
     "FLARENLPrompt": "milp_flare.flare_nl.FLARENLPrompt",
     "Harness": "milp_flare.harness.base.Harness",
     "HarnessRunResult": "milp_flare.harness.base.HarnessRunResult",

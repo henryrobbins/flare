@@ -230,7 +230,7 @@ def run_verification(
         "error": None,
     }
     try:
-        run = verifier.start(pair.a, pair.b, artifacts_dir)
+        run = verifier.start(pair, artifacts_dir)
         registry.add(run)
         try:
             result = run.result()

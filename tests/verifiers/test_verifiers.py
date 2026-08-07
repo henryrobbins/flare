@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
-from formulation_bench import Dataset, Formulation
+from formulation_bench import Dataset, Reformulation
 
 from src.llm_client import LLMClient, LLMConfig
 from src.verify.equivamap.equivamap import EquivaMapVerifier
@@ -67,24 +67,31 @@ VARIABLE_MAPPINGS: dict[tuple[str, str, str], dict[str, list[dict]]] = {
 }
 
 
+def lookup_reformulation(
+    dataset: Dataset, pname: str, a_letter: str, b_letter: str
+) -> Reformulation:
+    return next(
+        r
+        for r in dataset.reformulations
+        if r.a.problem.path.name == pname
+        and r.a.path.name == a_letter
+        and r.b.path.name == b_letter
+    )
+
+
 @pytest.fixture(params=PAIRS, ids=PAIR_IDS)
-def pair(request, dataset: Dataset) -> tuple[Formulation, Formulation, bool]:
+def pair(request, dataset: Dataset) -> tuple[Reformulation, bool]:
     pname, a_letter, b_letter, expected = request.param
-    pid = int(pname[1:])
-    problem = dataset.problems[pid]
-    return problem.formulations[a_letter], problem.formulations[b_letter], expected
+    return lookup_reformulation(dataset, pname, a_letter, b_letter), expected
 
 
 @pytest.fixture(params=PAIRS, ids=PAIR_IDS)
 def pair_with_key(
     request, dataset: Dataset
-) -> tuple[Formulation, Formulation, bool, tuple[str, str, str]]:
+) -> tuple[Reformulation, bool, tuple[str, str, str]]:
     pname, a_letter, b_letter, expected = request.param
-    pid = int(pname[1:])
-    problem = dataset.problems[pid]
     return (
-        problem.formulations[a_letter],
-        problem.formulations[b_letter],
+        lookup_reformulation(dataset, pname, a_letter, b_letter),
         expected,
         (pname, a_letter, b_letter),
     )
@@ -184,39 +191,52 @@ EQUIVAMAP_SKIP: set[tuple[str, str, str]] = {("p12", "a", "d")}
 
 
 def test_execution_verifier(
-    pair_with_key: tuple[Formulation, Formulation, bool, tuple[str, str, str]],
+    pair_with_key: tuple[Reformulation, bool, tuple[str, str, str]],
     tmp_path: Path,
 ) -> None:
-    a, b, expected, key = pair_with_key
+    reform, expected, key = pair_with_key
     if key in EXEC_SKIP:
         pytest.skip(
             f"objective parity makes ExecutionVerifier indistinguishable on {key}"
         )
-    result = ExecutionVerifier().verify(a, b, tmp_path)
+    result = ExecutionVerifier().verify(reform, tmp_path)
     assert result.is_reformulation is expected
 
 
-def test_llm_verifier(
-    pair: tuple[Formulation, Formulation, bool], tmp_path: Path
-) -> None:
-    a, b, expected = pair
+def test_llm_verifier(pair: tuple[Reformulation, bool], tmp_path: Path) -> None:
+    reform, expected = pair
     client = DummyLLMClient(
         single=_StubResponse(
             payload={"is_reformulation": expected, "reasoning": "stub"},
         )
     )
-    result = LLMVerifier(client).verify(a, b, tmp_path)
+    result = LLMVerifier(client).verify(reform, tmp_path)
     assert result.is_reformulation is expected
 
 
+def test_llm_verifier_prompt_includes_parameter_map(
+    pair: tuple[Reformulation, bool], tmp_path: Path
+) -> None:
+    reform, expected = pair
+    client = DummyLLMClient(
+        single=_StubResponse(
+            payload={"is_reformulation": expected, "reasoning": "stub"},
+        )
+    )
+    LLMVerifier(client).verify(reform, tmp_path)
+    prompt = (tmp_path / "prompt.txt").read_text()
+    assert "## Parameter Mapping" in prompt
+    assert reform.parameter_map.render_markdown() in prompt
+
+
 def test_equivamap_verifier(
-    pair_with_key: tuple[Formulation, Formulation, bool, tuple[str, str, str]],
+    pair_with_key: tuple[Reformulation, bool, tuple[str, str, str]],
     tmp_path: Path,
 ) -> None:
-    a, b, expected, key = pair_with_key
+    reform, expected, key = pair_with_key
     if key in EQUIVAMAP_SKIP:
         pytest.skip(f"trivial mapping doesn't distinguish ground truth on {key}")
     mapping = VARIABLE_MAPPINGS[key]
     client = DummyLLMClient.for_variables(mapping)
-    result = EquivaMapVerifier(client).verify(a, b, tmp_path)
+    result = EquivaMapVerifier(client).verify(reform, tmp_path)
     assert result.is_reformulation is expected
