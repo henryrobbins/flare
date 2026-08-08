@@ -34,7 +34,7 @@ RUN curl https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh -
         | sh -s -- -y --default-toolchain none --no-modify-path
 ENV PATH="/home/agent/.elan/bin:/home/agent/.local/bin:${PATH}"
 
-# lean-lsp MCP server (matches the `uvx lean-lsp-mcp` invocation in .mcp.json).
+# lean-lsp MCP server, invoked directly as `lean-lsp-mcp` by the harnesses.
 # https://github.com/oOo0oOo/lean-lsp-mcp
 RUN pipx install lean-lsp-mcp \
  && pipx install uv
