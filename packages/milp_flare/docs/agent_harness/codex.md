@@ -22,9 +22,9 @@ Authenticate the Codex CLI on the host following
 codex login
 ```
 
-This writes credentials to `~/.codex`. `FLARE` bind-mounts that
-directory read-write into the Docker container at run time so Codex
-can refresh its access token mid-session.
+This writes credentials to `~/.codex`. `FLARE` stages only
+`~/.codex/auth.json` into the container, read-write so Codex can
+refresh its access token mid-session.
 
 ## Using the harness
 
