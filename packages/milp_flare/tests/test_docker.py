@@ -33,9 +33,12 @@ You are testing a harness. Make exactly one tool call and then stop.
 The single tool call you must make: {action}
 
 Rules:
-- Make this exact tool call once. Do not retry on failure.
-- Do not use any other tool. If the call fails, just stop.
-- Do not write any files. Do not summarize. Just make the one call.
+- Make this exact tool call. If it fails because the tool is not available yet
+  (an MCP server is still connecting), make the same call again — up to 3
+  attempts. On any other failure, stop immediately.
+- Do not use any other tool. Once the call succeeds or you are out of attempts,
+  just stop.
+- Do not write any files. Do not summarize. Just make the call.
 """
 
 CLIS = ["claude_code", "codex", "opencode"]
