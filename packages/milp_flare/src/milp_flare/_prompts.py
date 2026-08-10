@@ -33,9 +33,9 @@ def render_flare_nl_prompt(
 
     Renders the Jinja2 template at
     ``milp_flare/assets/prompts/flare_nl.j2`` with the two pre-rendered
-    formulations and the parameter map interpolated in. See :doc:`/prompts`
-    for the template and :func:`milp_flare.flare_nl.flare_nl_prompt` for the
-    higher-level helper that pairs this with the system message.
+    formulations and parameter map. See :doc:`/prompts` for the template and
+    :func:`milp_flare.flare_nl.flare_nl_prompt` for the higher-level helper
+    that pairs this with the system message.
 
     Parameters
     ----------
@@ -44,8 +44,7 @@ def render_flare_nl_prompt(
     formulation_b : str
         Pre-rendered description of formulation B.
     parameter_map : str
-        Pre-rendered description of the parameter mapping from A's parameters
-        to B's.
+        Pre-rendered description of the parameter mapping from A to B's parameters.
 
     Returns
     -------

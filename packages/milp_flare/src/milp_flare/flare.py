@@ -67,9 +67,9 @@ class FormulationInput:
 class ParameterMapInput:
     """Parameter-map input for the FLARE agent.
 
-    The parameter map fixes the parameter mapping :math:`\\Phi_p` of the
-    reformulation construction, so the agent proves the reformulation against a
-    given mapping rather than searching for one.
+    The parameter map fixes the parameter mapping of the reformulation
+    construction (see :fb:`/definitions.html#reformulation`), so the agent proves
+    the reformulation against a given mapping rather than searching for one.
 
     Attributes
     ----------
@@ -274,9 +274,8 @@ class FLARE:
         - The result dictionary (``result.json``)
 
         The agent working directory contains descriptions of each formulation,
-        the parameter map carrying A's parameters to B's, the agent prompt
-        ``prompt.txt`` (see :doc:`/prompts`), and the necessary Lake environment
-        files.
+        the parameter map, the agent prompt ``prompt.txt`` (see :doc:`/prompts`),
+        and the necessary Lake environment files.
 
         .. code-block::
 
@@ -389,7 +388,7 @@ class FLARE:
             (form_dir / "solve.py").write_text(inp.solve_py)
             (form_dir / "Formulation.lean").write_text("")
 
-        # Populate the parameter map carrying A's parameters to B's
+        # Populate the parameter map that maps A's parameters to B's
         (wd / "map.md").write_text(parameter_map.map_md)
         (wd / "map.py").write_text(parameter_map.map_py)
 

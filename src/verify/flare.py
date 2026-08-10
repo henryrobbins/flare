@@ -55,8 +55,6 @@ class FLAREVerifier(ReformulationVerifier):
         b_in = FormulationInput(
             formulation_md=pair.b.render_markdown(), solve_py=pair.b.gen_solve_py()
         )
-        if pair.parameter_map is None:
-            raise ValueError(f"pair has no parameter map at {pair.path}")
         map_in = ParameterMapInput(
             map_md=pair.parameter_map.render_markdown(), map_py=pair.gen_map_py()
         )

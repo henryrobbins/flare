@@ -153,9 +153,7 @@ class EquivaMapVerifier(SynchronousVerifier):
         return {"tolerance": TOLERANCE, "llm": dataclasses.asdict(self.client.config)}
 
     def _verify(self, pair: Reformulation, output_path: Path) -> ReformulationResult:
-        # Like the execution baseline, this works on fixed instances that each
-        # formulation generates for itself, so the pair's parameter map is not
-        # needed. See ExecutionVerifier._verify.
+        # This method compares fixed instances, so the pair's parameter map is ignored.
         a, b = pair.a, pair.b
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)

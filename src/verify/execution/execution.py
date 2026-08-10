@@ -20,10 +20,7 @@ class ExecutionVerifier(SynchronousVerifier):
         return {"tolerance": TOLERANCE}
 
     def _verify(self, pair: Reformulation, output_path: Path) -> ReformulationResult:
-        # Each formulation instantiates itself from its own gen_params.py. The
-        # pair's parameter map is not needed: the dataset guarantees composing
-        # a's gen_params.py with the map yields b's parameters, so the two
-        # instances solved here are already map-consistent.
+        # This method compares fixed instances, so the pair's parameter map is ignored.
         a, b = pair.a, pair.b
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)

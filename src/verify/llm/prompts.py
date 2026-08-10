@@ -25,10 +25,8 @@ def render_reformulation(
     template: str = "flare_nl",
     include_implicit: bool = True,
 ) -> RenderedPrompt:
-    formulation_a = json.dumps(pair.a.render_markdown(include_implicit), indent=2)
-    formulation_b = json.dumps(pair.b.render_markdown(include_implicit), indent=2)
-    if pair.parameter_map is None:
-        raise ValueError(f"pair has no parameter map at {pair.path}")
+    formulation_a = pair.a.render_markdown(include_implicit)
+    formulation_b = pair.b.render_markdown(include_implicit)
     parameter_map = pair.parameter_map.render_markdown()
 
     if template == "flare_nl":
