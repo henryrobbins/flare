@@ -4,7 +4,7 @@ Below are the [Jinja2](https://jinja.palletsprojects.com/en/stable/) prompt temp
 
 ## FLARE Agent Prompt
 
-Used by {func}`FLARE.verify() <milp_flare.flare.FLARE.verify>` to instruct the agent on the working directory layout, workflow, rules, and available tools. The prompt directs the agent to the `map.md` / `map.py` files in its working directory and requires the `paramMap` field of its `MILPReformulation` to implement that mapping.
+Used by {func}`FLARE.verify() <milp_flare.flare.FLARE.verify>` to instruct the agent on the working directory layout, workflow, rules, and available tools.
 
 :::{dropdown} `assets/prompts/flare_agent.j2`
 :icon: file
