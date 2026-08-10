@@ -5,7 +5,7 @@
    "type": "git",
    "subDir": "dataset",
    "scope": "",
-   "rev": "fe2aaae2d2f3f1e3f37d3d0772b6faa8334921aa",
+   "rev": "7e2bcf854e8e1b6cba126607f3594cc22ded7cf7",
    "name": "FormulationBench",
    "manifestFile": "lake-manifest.json",
    "inputRev": "main",

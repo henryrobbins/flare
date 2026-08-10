@@ -5,7 +5,7 @@ experiment code used to produce the FLARE paper's results. The
 **FormulationBench** dataset and its `formulation-bench` loader package
 live in a separate repo,
 [henryrobbins/formulation-bench](https://github.com/henryrobbins/formulation-bench);
-this repo consumes them as a PyPI dependency (`formulation-bench>=0.4.0`)
+this repo consumes them as a PyPI dependency (`formulation-bench>=0.4.1`)
 and, on the Lean side, as a Lake git require.
 
 ## Top-level layout
