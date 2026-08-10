@@ -15,6 +15,13 @@ Schema (`agent_log.csv` columns):
 populated on `model_turn` rows; tool-related columns only on `tool_call`
 rows. Cells that the source trace doesn't carry are left empty.
 
+Two token columns are subsets of others rather than addends:
+`cache_read_tokens` is the cache-hit portion of the turn's total input, and
+`reasoning_tokens` is the thinking portion of `output_tokens`. Agents that
+report reasoning separately have it folded into `output_tokens` here, so
+`input_tokens + cache_create_tokens + cache_read_tokens` and `output_tokens`
+are the billable totals.
+
 Timestamps are ms since the first observed event; agents that don't emit
 timestamps (codex) leave the three time columns blank.
 """
@@ -462,7 +469,10 @@ def _parse_opencode(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
                         else ""
                     ),
                     "input_tokens": int(tokens.get("input", 0) or 0),
-                    "output_tokens": int(tokens.get("output", 0) or 0),
+                    # opencode reports reasoning alongside output rather than
+                    # inside it; fold it in to keep output_tokens billable.
+                    "output_tokens": int(tokens.get("output", 0) or 0)
+                    + int(tokens.get("reasoning", 0) or 0),
                     "cache_create_tokens": int(cache.get("write", 0) or 0),
                     "cache_read_tokens": int(cache.get("read", 0) or 0),
                     "reasoning_tokens": int(tokens.get("reasoning", 0) or 0),

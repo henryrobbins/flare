@@ -157,6 +157,7 @@ class OpenCodeHarness(Harness):
         """Parse `opencode run --format json` output."""
         input_tokens = 0
         output_tokens = 0
+        cached_input_tokens = 0
         cost_usd: float | None = None
         stop_reason: str | None = None
 
@@ -181,6 +182,7 @@ class OpenCodeHarness(Harness):
                 + _as_int(cache.get("write"))
                 + _as_int(cache.get("read"))
             )
+            cached_input_tokens += _as_int(cache.get("read"))
             output_tokens += _as_int(tokens.get("output"))
             c = part.get("cost")
             if isinstance(c, (int, float)):
@@ -193,5 +195,6 @@ class OpenCodeHarness(Harness):
             "stop_reason": stop_reason,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
+            "cached_input_tokens": cached_input_tokens,
             "cost_usd": cost_usd,
         }

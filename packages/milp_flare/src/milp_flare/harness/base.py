@@ -29,6 +29,10 @@ class HarnessRunResult:
     stop_reason : str, optional
         Final stop reason reported by the agent (e.g., ``"end_turn"``,
         ``"max_tokens"``). ``None`` if not reported.
+    cached_input_tokens : int, default 0
+        The cache-hit *subset* of ``input_tokens``, for harnesses that report
+        one. Billed at the model's discounted cached rate when ``cost_usd`` is
+        estimated; ``0`` means the whole input is billed uncached.
     """
 
     duration_s: float
@@ -36,6 +40,7 @@ class HarnessRunResult:
     input_tokens: int
     output_tokens: int
     stop_reason: str | None
+    cached_input_tokens: int = 0
 
 
 class Harness(ABC):
@@ -182,7 +187,10 @@ class Harness(ABC):
         # Codex doesn't surface per-turn USD; fill from token totals.
         if parsed.get("cost_usd") is None:
             parsed["cost_usd"] = compute_cost_usd(
-                self.model, parsed["input_tokens"], parsed["output_tokens"]
+                self.model,
+                parsed["input_tokens"],
+                parsed["output_tokens"],
+                parsed.get("cached_input_tokens", 0),
             )
 
         return HarnessRunResult(duration_s=round(agent.duration_s, 1), **parsed)

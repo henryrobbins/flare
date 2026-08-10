@@ -136,6 +136,25 @@ def test_run_fills_cost_from_tokens_when_unset(tmp_path: Path) -> None:
     assert result.cost_usd == pytest.approx(30.0)
 
 
+def test_run_prices_cached_input_at_the_cached_rate(tmp_path: Path) -> None:
+    """Cached input is the subset of input billed at the model's cached rate."""
+    wd = tmp_path / "wd"
+    wd.mkdir()
+    harness = _StubHarness(model="claude-opus-4-7", runner=_StubRunner())
+    harness.parsed = {
+        "stop_reason": "end_turn",
+        "input_tokens": 1_000_000,
+        "output_tokens": 1_000_000,
+        "cached_input_tokens": 800_000,
+        "cost_usd": None,
+    }
+
+    result = harness.run(wd)
+    # 0.2 Mtok uncached at $5 + 0.8 Mtok cached at $0.50 + 1 Mtok out at $25
+    assert result.cost_usd == pytest.approx(1.0 + 0.4 + 25.0)
+    assert result.cached_input_tokens == 800_000
+
+
 def test_run_handles_empty_agent_output(tmp_path: Path) -> None:
     """An agent that streams nothing yields zeroed defaults, not a crash."""
     wd = tmp_path / "wd"

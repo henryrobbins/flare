@@ -38,5 +38,9 @@ tocdepth: 3
 ## Pricing
 
 ```{eval-rst}
+.. autoclass:: milp_flare.harness.cost.ModelPrice
+```
+
+```{eval-rst}
 .. autodata:: milp_flare.harness.cost.COST_PER_MTOK
 ```

@@ -118,6 +118,7 @@ class CodexHarness(Harness):
         """Parse `codex exec --json` output."""
         input_tokens = 0
         output_tokens = 0
+        cached_input_tokens = 0
         stop_reason: str | None = None
 
         for line in lines:
@@ -143,8 +144,13 @@ class CodexHarness(Harness):
                 or usage.get("completion_tokens")
                 or 0
             )
+            # `cached_input_tokens` is the cache-hit subset of `input_tokens`,
+            # not an addend; it bills at the model's discounted cached rate.
+            ct = usage.get("cached_input_tokens") or usage.get("cachedInputTokens") or 0
             if isinstance(it, int):
                 input_tokens += it
+            if isinstance(ct, int):
+                cached_input_tokens += ct
             if isinstance(ot, int):
                 output_tokens += ot
             sr = event.get("stop_reason") or event.get("finish_reason")
@@ -155,5 +161,6 @@ class CodexHarness(Harness):
             "stop_reason": stop_reason,
             "input_tokens": input_tokens,
             "output_tokens": output_tokens,
+            "cached_input_tokens": cached_input_tokens,
             "cost_usd": None,
         }
