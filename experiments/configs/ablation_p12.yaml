@@ -12,7 +12,7 @@ modes:
     template: no_definition.j2
     include_implicit: true
   - label: allow_implicit
-    template: flare_nl
+    template: allow_implicit.j2
     include_implicit: false
 
 models:
