@@ -125,7 +125,7 @@ class ModalRunner(Runner):
         app: str = "flare",
         cpu: float = 2.0,
         memory: int = 4096,
-        timeout: int = 1800,
+        timeout: int = 3600,
     ) -> None:
         self._image = image
         self.app = app
