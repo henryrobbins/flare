@@ -39,7 +39,11 @@ def test_parse_turn_completed() -> None:
             {
                 "type": "turn.completed",
                 "stop_reason": "end_turn",
-                "usage": {"input_tokens": 800, "output_tokens": 120},
+                "usage": {
+                    "input_tokens": 800,
+                    "cached_input_tokens": 600,
+                    "output_tokens": 120,
+                },
             }
         )
     ]
@@ -47,6 +51,7 @@ def test_parse_turn_completed() -> None:
         "stop_reason": "end_turn",
         "input_tokens": 800,
         "output_tokens": 120,
+        "cached_input_tokens": 600,
         "cost_usd": None,
     }
 
@@ -102,6 +107,7 @@ def test_parse_ignores_other_events() -> None:
         "stop_reason": None,
         "input_tokens": 0,
         "output_tokens": 0,
+        "cached_input_tokens": 0,
         "cost_usd": None,
     }
 

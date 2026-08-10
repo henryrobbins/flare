@@ -59,6 +59,7 @@ def test_parse_step_finish() -> None:
         "stop_reason": "stop",
         "input_tokens": 112,
         "output_tokens": 40,
+        "cached_input_tokens": 7,
         "cost_usd": 0.05,
     }
 
@@ -98,6 +99,7 @@ def test_parse_handles_missing_and_non_int() -> None:
         "stop_reason": None,
         "input_tokens": 0,
         "output_tokens": 0,
+        "cached_input_tokens": 0,
         "cost_usd": None,
     }
 

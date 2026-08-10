@@ -82,6 +82,7 @@ numpydoc_xref_aliases = {
     "CodexHarness": "milp_flare.harness.codex.CodexHarness",
     "OpenCodeHarness": "milp_flare.harness.opencode.OpenCodeHarness",
     "COST_PER_MTOK": "milp_flare.harness.cost.COST_PER_MTOK",
+    "ModelPrice": "milp_flare.harness.cost.ModelPrice",
     # Compute runners
     "Runner": "milp_flare.harness.runner.base.Runner",
     "AgentRun": "milp_flare.harness.runner.base.AgentRun",

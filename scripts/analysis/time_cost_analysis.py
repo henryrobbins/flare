@@ -90,10 +90,14 @@ def summarize(rows: list[dict[str, Any]], fallback_model: str) -> dict[str, Any]
         cost = reported_cost
         cost_estimated = False
     else:
+        # cache_read_tokens is the cache-hit subset of the turn's input, priced
+        # at the model's cached rate; reasoning_tokens is already inside
+        # output_tokens.
         est = compute_cost_usd(
             fallback_model,
             tokens["input_tokens"] + tokens["cache_read_tokens"],
-            tokens["output_tokens"] + tokens.get("reasoning_tokens", 0),
+            tokens["output_tokens"],
+            tokens["cache_read_tokens"],
         )
         cost = est or 0.0
         cost_estimated = est is not None
