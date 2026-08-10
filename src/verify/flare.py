@@ -1,8 +1,8 @@
 from pathlib import Path
 from typing import Any
 
-from formulation_bench import Formulation
-from milp_flare import FLARE, FormulationInput, Harness
+from formulation_bench import Reformulation
+from milp_flare import FLARE, FormulationInput, Harness, ParameterMapInput
 from milp_flare.flare import FLARERun
 
 from src.verify.base import (
@@ -48,14 +48,15 @@ class FLAREVerifier(ReformulationVerifier):
     def get_config_dict(self) -> dict[str, Any]:
         return self._inner.get_config_dict()
 
-    def start(
-        self, a: Formulation, b: Formulation, output_path: Path
-    ) -> FLAREVerifierRun:
+    def start(self, pair: Reformulation, output_path: Path) -> FLAREVerifierRun:
         a_in = FormulationInput(
-            formulation_md=a.render_markdown(), solve_py=a.gen_solve_py()
+            formulation_md=pair.a.render_markdown(), solve_py=pair.a.gen_solve_py()
         )
         b_in = FormulationInput(
-            formulation_md=b.render_markdown(), solve_py=b.gen_solve_py()
+            formulation_md=pair.b.render_markdown(), solve_py=pair.b.gen_solve_py()
         )
-        run = self._inner.start(a_in, b_in, output_path)
+        map_in = ParameterMapInput(
+            map_md=pair.parameter_map.render_markdown(), map_py=pair.gen_map_py()
+        )
+        run = self._inner.start(a_in, b_in, map_in, output_path)
         return FLAREVerifierRun(run, output_path, self.name)

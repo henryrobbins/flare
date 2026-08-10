@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from formulation_bench import Formulation
+from formulation_bench import Reformulation
 from jinja2 import Environment, FileSystemLoader
 from milp_flare.flare_nl import FLARE_NL_SYSTEM, flare_nl_prompt
 
@@ -21,20 +21,21 @@ _env = Environment(
 
 
 def render_reformulation(
-    a: Formulation,
-    b: Formulation,
+    pair: Reformulation,
     template: str = "flare_nl",
     include_implicit: bool = True,
 ) -> RenderedPrompt:
-    formulation_a = json.dumps(a.render_markdown(include_implicit), indent=2)
-    formulation_b = json.dumps(b.render_markdown(include_implicit), indent=2)
+    formulation_a = pair.a.render_markdown(include_implicit)
+    formulation_b = pair.b.render_markdown(include_implicit)
+    parameter_map = pair.parameter_map.render_markdown()
 
     if template == "flare_nl":
-        p = flare_nl_prompt(formulation_a, formulation_b)
+        p = flare_nl_prompt(formulation_a, formulation_b, parameter_map)
         return RenderedPrompt(system=p.system, user=p.user)
 
     user = _env.get_template(template).render(
         problem_a=formulation_a,
         problem_b=formulation_b,
+        parameter_map=parameter_map,
     )
     return RenderedPrompt(system=FLARE_NL_SYSTEM, user=user)

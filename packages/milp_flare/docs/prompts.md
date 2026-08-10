@@ -16,7 +16,7 @@ Used by {func}`FLARE.verify() <milp_flare.flare.FLARE.verify>` to instruct the a
 
 ## FLARE-NL Prompt
 
-Used by {func}`flare_nl_prompt() <milp_flare.flare_nl.flare_nl_prompt>` to build a single-turn prompt that asks an LLM to decide whether one formulation is a reformulation of another. Formulation descriptions are supplied through `formulation_a` and `formulation_b`. `Formulation.render_markdown()` from {fb}`FormulationBench </api/formulation.html#formulation_bench.formulation.Formulation.render_markdown>` is often used to generate these Markdown descriptions. The prompt also specifies the FormulationBench {fb}`definition </definitions.html>` of *formulation* and *reformulation*.
+Used by {func}`flare_nl_prompt() <milp_flare.flare_nl.flare_nl_prompt>` to build a single-turn prompt that asks an LLM to decide whether one formulation is a reformulation of another. Formulation descriptions are supplied through `formulation_a` and `formulation_b`, and the given parameter mapping through `parameter_map`. `Formulation.render_markdown()` and `ParameterMap.render_markdown()` from {fb}`FormulationBench </api/formulation.html#formulation_bench.formulation.Formulation.render_markdown>` are often used to generate these Markdown descriptions. The prompt also specifies the FormulationBench {fb}`definition </definitions.html>` of *formulation* and *reformulation*.
 
 :::{dropdown} `assets/prompts/flare_nl.j2`
 :icon: file

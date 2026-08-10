@@ -19,12 +19,13 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from formulation_bench import Dataset, Formulation
+from formulation_bench import Dataset, Reformulation
 
 from milp_flare import (
     FLARE,
     FormulationInput,
     Harness,
+    ParameterMapInput,
 )
 from milp_flare.harness.runner import AgentRun
 
@@ -57,11 +58,16 @@ PAIR_IDS = [f"{p}_{a}_{b}_{exp}" for p, a, b, exp in PAIRS]
 
 
 @pytest.fixture(params=PAIRS, ids=PAIR_IDS)
-def pair(request, dataset: Dataset) -> tuple[Formulation, Formulation, bool]:
+def pair(request, dataset: Dataset) -> tuple[Reformulation, bool]:
     pname, a_letter, b_letter, expected = request.param
-    pid = int(pname[1:])
-    problem = dataset.problems[pid]
-    return problem.formulations[a_letter], problem.formulations[b_letter], expected
+    reform = next(
+        r
+        for r in dataset.reformulations
+        if r.a.problem.path.name == pname
+        and r.a.path.name == a_letter
+        and r.b.path.name == b_letter
+    )
+    return reform, expected
 
 
 # ---------------------------------------------------------------------------
@@ -94,9 +100,7 @@ def _rewrite_reformulation_imports(text: str, a_letter: str, b_letter: str) -> s
     return _FORM_IMPORT.sub(repl, text)
 
 
-def _copy_ground_truth(
-    wd: Path, dataset_root: Path, a: Formulation, b: Formulation
-) -> None:
+def _copy_ground_truth(wd: Path, reform: Reformulation) -> None:
     """Populate wd with the ground-truth Formulation.lean + Reformulation.lean.
 
     The dataset's reformulation file imports the formulations by their
@@ -105,14 +109,12 @@ def _copy_ground_truth(
     to the local `A.Formulation` / `B.Formulation` modules served by the
     docker lakefile.
     """
+    a, b = reform.a, reform.b
     shutil.copy2(a.path / "Formulation.lean", wd / "A" / "Formulation.lean")
     shutil.copy2(b.path / "Formulation.lean", wd / "B" / "Formulation.lean")
-    pname = a.path.parent.parent.name  # e.g. "p1"
-    reform_src = (
-        dataset_root / "reformulations" / pname / f"{a.path.name}_{b.path.name}.lean"
-    )
+    assert reform.lean_proof_path is not None
     rewritten = _rewrite_reformulation_imports(
-        reform_src.read_text(), a.path.name, b.path.name
+        reform.lean_proof_path.read_text(), a.path.name, b.path.name
     )
     (wd / "Reformulation.lean").write_text(rewritten)
 
@@ -126,7 +128,7 @@ class DummyHarness(Harness):
     """Harness that bypasses Docker and pre-writes ground-truth Lean files.
 
     For True pairs, the harness copies the dataset's ``Formulation.lean``
-    files and the matching ``reformulations/pX/<a>_<b>.lean`` into the
+    files and the pair's ground-truth ``Reformulation.lean`` into the
     agent working directory and writes a fake ``result.json`` reporting a
     successful compile. For False pairs, it writes a ``NOT REFORMULATION``
     marker, which FLARE picks up via its agent-decision check.
@@ -134,17 +136,9 @@ class DummyHarness(Harness):
 
     name = "dummy"
 
-    def __init__(
-        self,
-        dataset_root: Path,
-        a: Formulation,
-        b: Formulation,
-        expected: bool,
-    ) -> None:
+    def __init__(self, reform: Reformulation, expected: bool) -> None:
         super().__init__(model="dummy-model")
-        self.dataset_root = dataset_root
-        self.a = a
-        self.b = b
+        self.reform = reform
         self.expected = expected
 
     def configure_wd(self, wd: Path) -> None:
@@ -166,7 +160,7 @@ class DummyHarness(Harness):
         # files and a fake compile result, then hand back a no-op handle. The
         # base `collect` streams its (empty) output and parses via _parse_lines.
         if self.expected:
-            _copy_ground_truth(wd, self.dataset_root, self.a, self.b)
+            _copy_ground_truth(wd, self.reform)
             (wd / "result.json").write_text(
                 json.dumps(
                     {
@@ -224,23 +218,15 @@ class GroundTruthHarness(Harness):
 
     name = "ground_truth"
 
-    def __init__(
-        self,
-        dataset_root: Path,
-        a: Formulation,
-        b: Formulation,
-        expected: bool,
-    ) -> None:
+    def __init__(self, reform: Reformulation, expected: bool) -> None:
         super().__init__(model="dummy-model")
-        self.dataset_root = dataset_root
-        self.a = a
-        self.b = b
+        self.reform = reform
         self.expected = expected
 
     def configure_wd(self, wd: Path) -> None:
         super().configure_wd(wd)
         if self.expected:
-            _copy_ground_truth(wd, self.dataset_root, self.a, self.b)
+            _copy_ground_truth(wd, self.reform)
         else:
             (wd / "Reformulation.lean").write_text(
                 "-- NOT REFORMULATION\n-- ground-truth harness verdict\n"
@@ -269,26 +255,26 @@ class GroundTruthHarness(Harness):
 
 
 # The DummyHarness / GroundTruthHarness pre-write the Lean files and never
-# read formulation.md, so any markdown is fine.
+# read formulation.md or map.md, so any markdown is fine.
 def _inputs(
-    a: Formulation, b: Formulation
-) -> tuple[FormulationInput, FormulationInput]:
+    reform: Reformulation,
+) -> tuple[FormulationInput, FormulationInput, ParameterMapInput]:
     return (
-        FormulationInput(formulation_md="", solve_py=a.gen_solve_py()),
-        FormulationInput(formulation_md="", solve_py=b.gen_solve_py()),
+        FormulationInput(formulation_md="", solve_py=reform.a.gen_solve_py()),
+        FormulationInput(formulation_md="", solve_py=reform.b.gen_solve_py()),
+        ParameterMapInput(map_md="", map_py=reform.gen_map_py()),
     )
 
 
 def test_flare_verifier(
-    pair: tuple[Formulation, Formulation, bool],
-    dataset: Dataset,
+    pair: tuple[Reformulation, bool],
     tmp_path: Path,
 ) -> None:
-    a, b, expected = pair
-    harness = DummyHarness(dataset_root=dataset.root, a=a, b=b, expected=expected)
+    reform, expected = pair
+    harness = DummyHarness(reform=reform, expected=expected)
     verifier = FLARE(harness=harness)
-    a_in, b_in = _inputs(a, b)
-    result = verifier.verify(a_in, b_in, tmp_path)
+    a_in, b_in, map_in = _inputs(reform)
+    result = verifier.verify(a_in, b_in, map_in, tmp_path)
     assert result.is_reformulation is expected
 
 
@@ -298,12 +284,11 @@ def test_flare_verifier_rejects_extra_axiom(
 ) -> None:
     """A proof depending on an axiom outside the standard set fails, even when
     every Lean file compiles cleanly."""
-    problem = dataset.problems[1]
-    a, b = problem.formulations["a"], problem.formulations["b"]
-    harness = BadAxiomHarness(dataset_root=dataset.root, a=a, b=b, expected=True)
+    reform = dataset.reformulations[0]  # p1.a -> p1.b
+    harness = BadAxiomHarness(reform=reform, expected=True)
     verifier = FLARE(harness=harness)
-    a_in, b_in = _inputs(a, b)
-    result = verifier.verify(a_in, b_in, tmp_path)
+    a_in, b_in, map_in = _inputs(reform)
+    result = verifier.verify(a_in, b_in, map_in, tmp_path)
     assert result.is_reformulation is False
     assert result.metadata["no_new_axioms"] is False
     assert "P1.cheat" in result.metadata["axioms"]
@@ -311,8 +296,7 @@ def test_flare_verifier_rejects_extra_axiom(
 
 @pytest.mark.docker
 def test_flare_verifier_docker(
-    pair: tuple[Formulation, Formulation, bool],
-    dataset: Dataset,
+    pair: tuple[Reformulation, bool],
     tmp_path: Path,
 ) -> None:
     """End-to-end FLARE run against the real flare-agent Docker image.
@@ -322,9 +306,9 @@ def test_flare_verifier_docker(
     real compilation. Requires the ``flare-agent:latest`` image. No model
     credentials are consumed.
     """
-    a, b, expected = pair
-    harness = GroundTruthHarness(dataset_root=dataset.root, a=a, b=b, expected=expected)
+    reform, expected = pair
+    harness = GroundTruthHarness(reform=reform, expected=expected)
     verifier = FLARE(harness=harness)
-    a_in, b_in = _inputs(a, b)
-    result = verifier.verify(a_in, b_in, tmp_path)
+    a_in, b_in, map_in = _inputs(reform)
+    result = verifier.verify(a_in, b_in, map_in, tmp_path)
     assert result.is_reformulation is expected

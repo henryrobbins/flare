@@ -26,14 +26,16 @@ def render_flare_agent_prompt() -> str:
     return _env.get_template("flare_agent.j2").render()
 
 
-def render_flare_nl_prompt(formulation_a: str, formulation_b: str) -> str:
+def render_flare_nl_prompt(
+    formulation_a: str, formulation_b: str, parameter_map: str
+) -> str:
     """Render the FLARE-NL user prompt.
 
     Renders the Jinja2 template at
     ``milp_flare/assets/prompts/flare_nl.j2`` with the two pre-rendered
-    formulations interpolated in. See :doc:`/prompts` for the template
-    and :func:`milp_flare.flare_nl.flare_nl_prompt` for the higher-level
-    helper that pairs this with the system message.
+    formulations and parameter map. See :doc:`/prompts` for the template and
+    :func:`milp_flare.flare_nl.flare_nl_prompt` for the higher-level helper
+    that pairs this with the system message.
 
     Parameters
     ----------
@@ -41,6 +43,8 @@ def render_flare_nl_prompt(formulation_a: str, formulation_b: str) -> str:
         Pre-rendered description of formulation A.
     formulation_b : str
         Pre-rendered description of formulation B.
+    parameter_map : str
+        Pre-rendered description of the parameter mapping from A to B's parameters.
 
     Returns
     -------
@@ -50,4 +54,5 @@ def render_flare_nl_prompt(formulation_a: str, formulation_b: str) -> str:
     return _env.get_template("flare_nl.j2").render(
         formulation_a=formulation_a,
         formulation_b=formulation_b,
+        parameter_map=parameter_map,
     )

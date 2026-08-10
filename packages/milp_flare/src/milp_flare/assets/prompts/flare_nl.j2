@@ -26,8 +26,15 @@ $B$ is a *reformulation* of $A$ if there exists a reformulation construction sat
 - **Objective mapping.** The forward and backward mappings induce an objective mapping. The following two conditions must hold. (1) For all feasible points ${x \in F(p)}$, the forward mapped point $x' = \Phi_{fwd}(x;p)$ has objective value $f_0'(x';p') = \Phi_{\text{obj}}(f_0(x;p))$. (2) For all feasible points ${x' \in F'(p')}$, the backward mapped point is $x = \Phi_{bwd}(x';p)$ and $f_0'(x';p') = \Phi_{\text{obj}}(f_0(x;p))$.
 - **Strictly monotone.** The objective mapping $\Phi_{\text{obj}}$ is strictly monotonically increasing.
 
+## Parameter Mapping
+
+The parameter mapping $\Phi_{p}$ is *given*. It computes each parameter of formulation B from the parameters of formulation A.
+
+{{ parameter_map }}
+
 ## Instructions
 
+- Decide whether B is a reformulation of A under *this* parameter mapping. Do not substitute a different one, even if another mapping would make B a reformulation of A.
 - Do NOT make any assumptions about the formulation or parameter space that are not explicitly stated in the formulation descriptions.
 - When uncertain, state that formulation B is *not* a reformulation of A.
 - Provide a short summary of your conclusion (at most 2,500 characters) and a final determination of whether B is a reformulation of A (true or false).

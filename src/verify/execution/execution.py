@@ -4,7 +4,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from formulation_bench import Formulation
+from formulation_bench import Formulation, Reformulation
 
 from src.verify.base import ReformulationResult, SynchronousVerifier
 
@@ -19,9 +19,9 @@ class ExecutionVerifier(SynchronousVerifier):
     def get_config_dict(self) -> dict[str, Any]:
         return {"tolerance": TOLERANCE}
 
-    def _verify(
-        self, a: Formulation, b: Formulation, output_path: Path
-    ) -> ReformulationResult:
+    def _verify(self, pair: Reformulation, output_path: Path) -> ReformulationResult:
+        # This method compares fixed instances, so the pair's parameter map is ignored.
+        a, b = pair.a, pair.b
         artifacts_dir = output_path
         artifacts_dir.mkdir(parents=True, exist_ok=True)
         (artifacts_dir / "config.json").write_text(
