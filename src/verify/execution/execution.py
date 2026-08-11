@@ -1,4 +1,5 @@
 import json
+import math
 import subprocess
 import time
 from pathlib import Path
@@ -8,7 +9,7 @@ from formulation_bench import Formulation, Reformulation
 
 from src.verify.base import ReformulationResult, SynchronousVerifier
 
-TOLERANCE = 1e-6
+REL_TOLERANCE = 1e-6
 
 
 class ExecutionVerifier(SynchronousVerifier):
@@ -17,7 +18,7 @@ class ExecutionVerifier(SynchronousVerifier):
         return "execution"
 
     def get_config_dict(self) -> dict[str, Any]:
-        return {"tolerance": TOLERANCE}
+        return {"rel_tolerance": REL_TOLERANCE}
 
     def _verify(self, pair: Reformulation, output_path: Path) -> ReformulationResult:
         # This method compares fixed instances, so the pair's parameter map is ignored.
@@ -33,7 +34,7 @@ class ExecutionVerifier(SynchronousVerifier):
         obj_b = self._solve(b, artifacts_dir / "b")
         duration_s = round(time.time() - start, 1)
 
-        is_reform = abs(obj_a - obj_b) < TOLERANCE
+        is_reform = math.isclose(obj_a, obj_b, rel_tol=REL_TOLERANCE, abs_tol=0.0)
         meta = {"is_reformulation": is_reform, "obj_a": obj_a, "obj_b": obj_b}
         (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
 
