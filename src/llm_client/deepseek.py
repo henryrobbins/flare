@@ -1,7 +1,12 @@
-import json
 from typing import Any
 
-from .base import LLMClient, LLMConfig, with_retry
+from .base import (
+    LLMClient,
+    LLMConfig,
+    schema_instructions,
+    with_json_retry,
+    with_retry,
+)
 
 
 class DeepSeekClient(LLMClient):
@@ -17,8 +22,8 @@ class DeepSeekClient(LLMClient):
         import openai
 
         self._client = openai.OpenAI(
-            base_url="https://api.deepseek.com",
-            api_key=os.environ["DEEPSEEK_API_KEY"],
+            base_url=config.base_url or "https://api.deepseek.com",
+            api_key=os.environ[config.api_key_env or "DEEPSEEK_API_KEY"],
         )
         self._config = config
 
@@ -58,73 +63,34 @@ class DeepSeekClient(LLMClient):
     ) -> tuple[dict[str, Any], dict[str, Any]]:
         # json_object mode requires the word "json" in the prompt and benefits
         # from a schema example to guide output shape.
-        system_with_schema = (
-            f"{system}\n\nRespond with a JSON object matching this schema:\n"
-            f"{json.dumps(schema)}\n"
-            "Output only the JSON object — no markdown fences, no prose."
-        )
-        required_keys = set(
-            schema.get("required") or schema.get("properties", {}).keys()
+        system_with_schema = schema_instructions(system, schema)
+        return with_json_retry(
+            lambda: self._complete_json_once(system_with_schema, user), schema
         )
 
-        last_err: Exception | None = None
-        for attempt in range(3):
-            response = with_retry(
-                lambda: self._client.chat.completions.create(
-                    **self._build_kwargs(),
-                    messages=[
-                        {"role": "system", "content": system_with_schema},
-                        {"role": "user", "content": user},
-                    ],
-                    response_format={"type": "json_object"},
-                )
+    def _complete_json_once(self, system: str, user: str) -> tuple[str, dict[str, Any]]:
+        response = with_retry(
+            lambda: self._client.chat.completions.create(
+                **self._build_kwargs(),
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+                response_format={"type": "json_object"},
             )
-            finish_reason = response.choices[0].finish_reason
-            if finish_reason == "length":
-                raise RuntimeError(
-                    f"DeepSeek response truncated (finish_reason=length, "
-                    f"max_tokens={self._config.max_tokens})"
-                )
-            content = response.choices[0].message.content or "{}"
-            try:
-                parsed = json.loads(_strip_to_json(content))
-                missing = required_keys - parsed.keys()
-                if missing:
-                    raise ValueError(f"missing required keys: {sorted(missing)}")
-                break
-            except (json.JSONDecodeError, ValueError) as e:
-                last_err = e
-                continue
-        else:
+        )
+        if response.choices[0].finish_reason == "length":
             raise RuntimeError(
-                f"DeepSeek returned invalid JSON after 3 attempts: {last_err}"
+                f"DeepSeek response truncated (finish_reason=length, "
+                f"max_tokens={self._config.max_tokens})"
             )
-
         usage_obj = response.usage
         details = (
             getattr(usage_obj, "completion_tokens_details", None) if usage_obj else None
         )
-        reasoning_tokens = getattr(details, "reasoning_tokens", 0) or 0
         usage = {
             "input_tokens": usage_obj.prompt_tokens if usage_obj else 0,
             "output_tokens": usage_obj.completion_tokens if usage_obj else 0,
-            "reasoning_tokens": reasoning_tokens,
+            "reasoning_tokens": getattr(details, "reasoning_tokens", 0) or 0,
         }
-        return parsed, usage
-
-
-def _strip_to_json(s: str) -> str:
-    """Strip markdown fences and any prose around a JSON object."""
-    s = s.strip()
-    # Strip ```json ... ``` or ``` ... ``` fences.
-    if s.startswith("```"):
-        s = s.split("\n", 1)[1] if "\n" in s else s[3:]
-        if s.endswith("```"):
-            s = s[:-3]
-        s = s.strip()
-    # Take the first {...} block if there's leading/trailing prose.
-    start = s.find("{")
-    end = s.rfind("}")
-    if start != -1 and end != -1 and end > start:
-        s = s[start : end + 1]
-    return s
+        return response.choices[0].message.content or "{}", usage

@@ -1,3 +1,4 @@
+import json
 import random
 import time
 from abc import ABC, abstractmethod
@@ -32,6 +33,70 @@ def with_retry(fn: Callable[[], T], max_attempts: int = 4) -> T:
             last_exc = e
     assert last_exc is not None
     raise last_exc
+
+
+def schema_instructions(system: str, schema: dict[str, Any]) -> str:
+    """Append schema guidance to `system` for models without enforced schemas."""
+    return (
+        f"{system}\n\nRespond with a JSON object matching this schema:\n"
+        f"{json.dumps(schema)}\n"
+        "Output only the JSON object — no markdown fences, no prose."
+    )
+
+
+def strip_to_json(s: str) -> str:
+    r"""Strip markdown fences and any prose around a JSON object.
+
+    >>> strip_to_json('```json\n{"a": 1}\n```')
+    '{"a": 1}'
+    >>> strip_to_json('Here is the answer: {"a": 1}. Hope that helps!')
+    '{"a": 1}'
+    """
+    s = s.strip()
+    # Strip ```json ... ``` or ``` ... ``` fences.
+    if s.startswith("```"):
+        s = s.split("\n", 1)[1] if "\n" in s else s[3:]
+        if s.endswith("```"):
+            s = s[:-3]
+        s = s.strip()
+    # Take the first {...} block if there's leading/trailing prose.
+    start = s.find("{")
+    end = s.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        s = s[start : end + 1]
+    return s
+
+
+def with_json_retry(
+    call: Callable[[], tuple[str, dict[str, Any]]],
+    schema: dict[str, Any],
+    attempts: int = 3,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Retry `call` until its body parses as JSON carrying the schema's keys.
+
+    `call` returns (raw_body, usage). The returned usage gains `json_retries`:
+    the number of reparses needed, 0 when the first body parsed cleanly. Usage
+    reflects the successful attempt only, so token counts undercount when a
+    retry was needed.
+
+    Raises RuntimeError if no attempt yields conforming JSON.
+    """
+    required = set(schema.get("required") or schema.get("properties", {}).keys())
+    last_err: Exception | None = None
+    for attempt in range(attempts):
+        content, usage = call()
+        try:
+            parsed = json.loads(strip_to_json(content))
+            missing = required - parsed.keys()
+            if missing:
+                raise ValueError(f"missing required keys: {sorted(missing)}")
+        except (json.JSONDecodeError, ValueError) as e:
+            last_err = e
+            continue
+        return parsed, {**usage, "json_retries": attempt}
+    raise RuntimeError(
+        f"model returned invalid JSON after {attempts} attempts: {last_err}"
+    )
 
 
 @dataclass(frozen=True)
@@ -120,6 +185,17 @@ class LLMConfig:
     # thinking takes "low" | "medium" | "high" | "xhigh" | "max"; DeepSeek
     # v4-pro takes "high" | "max".
     reasoning_effort: str | None = None
+    # Override the provider's default endpoint (e.g. an institutional gateway).
+    base_url: str | None = None
+    # Name of the environment variable holding the key for `base_url`; the
+    # provider's own default key is used when unset.
+    api_key_env: str | None = None
+    # How the JSON schema is enforced. "schema" uses the provider's structured
+    # output feature; "prompt" states the schema in the system prompt and
+    # reparses on malformed output. Endpoints that emulate structured output
+    # with a forced tool call suppress extended thinking, so reasoning models
+    # behind such an endpoint need "prompt" to reason at all.
+    json_mode: str = "schema"
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> "LLMConfig":

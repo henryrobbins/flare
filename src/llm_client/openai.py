@@ -1,4 +1,5 @@
 import json
+import os
 from typing import Any
 
 from .base import LLMClient, LLMConfig, with_retry
@@ -10,7 +11,12 @@ class OpenAIClient(LLMClient):
     def __init__(self, config: LLMConfig) -> None:
         import openai
 
-        self._client = openai.OpenAI()
+        kwargs: dict[str, Any] = {}
+        if config.base_url is not None:
+            kwargs["base_url"] = config.base_url
+        if config.api_key_env is not None:
+            kwargs["api_key"] = os.environ[config.api_key_env]
+        self._client = openai.OpenAI(**kwargs)
         self._config = config
 
     @property
