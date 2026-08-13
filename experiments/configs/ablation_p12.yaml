@@ -18,20 +18,20 @@ modes:
 models:
   # == Anthropic models =======================================================
 
-  - label: opus-4-7
-    client: { model: claude-opus-4-7, max_tokens: 8192 }
-  - label: opus-4.7_reasoning
+  - label: opus-5
+    client: { model: claude-opus-5, max_tokens: 8192 }
+  - label: opus-5_reasoning
     client:
-      model: claude-opus-4-7
+      model: claude-opus-5
       max_tokens: 16384
       reasoning: true
       reasoning_effort: high
 
-  - label: sonnet-4-6
-    client: { model: claude-sonnet-4-6, max_tokens: 8192 }
-  - label: sonnet-4-6_reasoning
+  - label: sonnet-5
+    client: { model: claude-sonnet-5, max_tokens: 8192 }
+  - label: sonnet-5_reasoning
     client:
-      model: claude-sonnet-4-6
+      model: claude-sonnet-5
       max_tokens: 16384
       reasoning: true
       reasoning_effort: high
@@ -41,20 +41,20 @@ models:
   - label: gpt-4.1 # no reasoning support
     client: { model: gpt-4.1, max_tokens: 8192 }
 
-  - label: gpt-5.5
-    client: { model: gpt-5.5, max_tokens: 8192 }
-  - label: gpt-5.5_reasoning
+  - label: gpt-5.6-sol
+    client: { model: gpt-5.6-sol, max_tokens: 8192 }
+  - label: gpt-5.6-sol_reasoning
     client:
-      model: gpt-5.5
+      model: gpt-5.6-sol
       max_tokens: 16384
       reasoning: true
       reasoning_effort: medium
 
-  - label: gpt-5.4
-    client: { model: gpt-5.4, max_tokens: 8192 }
-  - label: gpt-5.4_reasoning
+  - label: gpt-5.6-terra
+    client: { model: gpt-5.6-terra, max_tokens: 8192 }
+  - label: gpt-5.6-terra_reasoning
     client:
-      model: gpt-5.4
+      model: gpt-5.6-terra
       max_tokens: 16384
       reasoning: true
       reasoning_effort: medium

@@ -15,9 +15,9 @@ modes:
     include_implicit: false
 
 models:
-  - label: opus-4.7
+  - label: opus-5
     client:
-      model: claude-opus-4-7
+      model: claude-opus-5
       max_tokens: 16384
       reasoning: true
       reasoning_effort: high
@@ -25,9 +25,9 @@ models:
   - label: gpt-4.1 # no reasoning support
     client: { model: gpt-4.1, max_tokens: 8192 }
 
-  - label: gpt-5.5
+  - label: gpt-5.6-sol
     client:
-      model: gpt-5.5
+      model: gpt-5.6-sol
       max_tokens: 16384
       reasoning: true
       reasoning_effort: medium
