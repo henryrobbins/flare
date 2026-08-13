@@ -1,0 +1,111 @@
+# ablation_p12.yaml — full model sweep restricted to problem 12.
+
+workers: 25
+runs: 3
+problems: [12]
+
+gateway_anthropic: &gateway_anthropic
+  base_url: https://aiapi-prod.stanford.edu/anthropic
+  api_key_env: STANFORD_AI_API_GATEWAY_KEY
+  # The gateway emulates Anthropic structured output with a forced tool call,
+  # which suppresses thinking. State the schema in the prompt instead so the
+  # reasoning arms actually reason.
+  json_mode: prompt
+
+gateway_openai: &gateway_openai
+  base_url: https://aiapi-prod.stanford.edu/v1
+  api_key_env: STANFORD_AI_API_GATEWAY_KEY
+
+modes:
+  - label: regular
+    template: flare_nl
+    include_implicit: true
+  - label: no_definition
+    template: no_definition.j2
+    include_implicit: true
+  - label: allow_implicit
+    template: allow_implicit.j2
+    include_implicit: false
+
+models:
+  # == Anthropic models =======================================================
+
+  - label: opus-5
+    client:
+      <<: *gateway_anthropic
+      model: claude-opus-5
+      max_tokens: 8192
+  - label: opus-5_reasoning
+    client:
+      <<: *gateway_anthropic
+      model: claude-opus-5
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: high
+
+  - label: sonnet-5
+    client:
+      <<: *gateway_anthropic
+      model: claude-sonnet-5
+      max_tokens: 8192
+  - label: sonnet-5_reasoning
+    client:
+      <<: *gateway_anthropic
+      model: claude-sonnet-5
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: high
+
+  # == OpenAI models ==========================================================
+
+  - label: gpt-4.1 # no reasoning support
+    client:
+      <<: *gateway_openai
+      model: gpt-4.1
+      max_tokens: 8192
+
+  - label: gpt-5.6-sol
+    client:
+      <<: *gateway_openai
+      model: gpt-5.6-sol
+      max_tokens: 8192
+  - label: gpt-5.6-sol_reasoning
+    client:
+      <<: *gateway_openai
+      model: gpt-5.6-sol
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: medium
+
+  - label: gpt-5.6-terra
+    client:
+      <<: *gateway_openai
+      model: gpt-5.6-terra
+      max_tokens: 8192
+  - label: gpt-5.6-terra_reasoning
+    client:
+      <<: *gateway_openai
+      model: gpt-5.6-terra
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: medium
+
+  # == DeepSeek models ========================================================
+
+  - label: deepseek-pro
+    client: { model: deepseek-v4-pro, max_tokens: 8192 }
+  - label: deepseek-pro_reasoning
+    client:
+      model: deepseek-v4-pro
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: high
+
+  - label: deepseek-flash
+    client: { model: deepseek-v4-flash, max_tokens: 8192 }
+  - label: deepseek-flash_reasoning
+    client:
+      model: deepseek-v4-flash
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: high

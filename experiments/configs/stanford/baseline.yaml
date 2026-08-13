@@ -1,0 +1,28 @@
+# baseline.yaml — default config for baseline.py
+
+workers: 5
+runs: 3
+
+verifiers:
+  - type: execution
+    multi_run: true
+
+  - type: equivamap
+    multi_run: true
+    client:
+      model: claude-opus-5
+      base_url: https://aiapi-prod.stanford.edu/anthropic
+      api_key_env: STANFORD_AI_API_GATEWAY_KEY
+      # The gateway emulates Anthropic structured output with a forced tool call,
+      # which suppresses thinking. State the schema in the prompt instead so the
+      # reasoning arms actually reason.
+      json_mode: prompt
+      max_tokens: 16384
+      reasoning: true
+      reasoning_effort: high
+
+  - type: flare
+    harness: claude_code
+    client:
+      model: claude-opus-5
+      effort: high
