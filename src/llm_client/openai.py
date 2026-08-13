@@ -2,7 +2,7 @@ import json
 import os
 from typing import Any
 
-from .base import LLMClient, LLMConfig, with_retry
+from .base import LLMClient, LLMConfig, TruncatedResponseError, with_retry
 
 
 class OpenAIClient(LLMClient):
@@ -71,9 +71,10 @@ class OpenAIClient(LLMClient):
             reason = getattr(
                 getattr(response, "incomplete_details", None), "reason", "unknown"
             )
-            raise RuntimeError(
+            raise TruncatedResponseError(
                 f"OpenAI response incomplete (reason={reason}, "
-                f"max_output_tokens={self._config.max_tokens})"
+                f"max_output_tokens={self._config.max_tokens})",
+                response.output_text or "",
             )
         parsed = json.loads(response.output_text or "{}")
         details = (

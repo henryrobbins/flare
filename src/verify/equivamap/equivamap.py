@@ -8,7 +8,7 @@ from typing import Any
 from formulation_bench import Formulation, Reformulation
 from formulation_bench.models import Constraint
 
-from src.llm_client import LLMClient, compute_cost_usd
+from src.llm_client import LLMClient, TruncatedResponseError, compute_cost_usd
 from src.verify.base import ReformulationResult, SynchronousVerifier
 from src.verify.equivamap.prompts import (
     VARIABLE_MAPPING_SCHEMA,
@@ -186,9 +186,13 @@ class EquivaMapVerifier(SynchronousVerifier):
         for var_name in a.variables:
             rendered = render_variable_mapping(var_name, a, b)
             (prompts_dir / f"{var_name}_prompt.txt").write_text(rendered.user)
-            parsed, usage = self.client.complete_json_with_usage(
-                rendered.system, rendered.user, VARIABLE_MAPPING_SCHEMA
-            )
+            try:
+                parsed, usage = self.client.complete_json_with_usage(
+                    rendered.system, rendered.user, VARIABLE_MAPPING_SCHEMA
+                )
+            except TruncatedResponseError as e:
+                (prompts_dir / f"{var_name}_response.partial.txt").write_text(e.partial)
+                raise
             total_input_tokens += usage["input_tokens"]
             total_output_tokens += usage["output_tokens"]
             (prompts_dir / f"{var_name}_response.json").write_text(

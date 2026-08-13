@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 from formulation_bench import Dataset, Reformulation
 
-from src.llm_client import LLMClient, LLMConfig
+from src.llm_client import LLMClient, LLMConfig, TruncatedResponseError
 from src.verify.equivamap.equivamap import EquivaMapVerifier
 from src.verify.execution.execution import ExecutionVerifier
 from src.verify.llm.llm import LLMVerifier
@@ -212,6 +212,22 @@ def test_llm_verifier(pair: tuple[Reformulation, bool], tmp_path: Path) -> None:
     )
     result = LLMVerifier(client).verify(reform, tmp_path)
     assert result.is_reformulation is expected
+
+
+def test_llm_verifier_saves_partial_on_truncation(
+    pair: tuple[Reformulation, bool], tmp_path: Path
+) -> None:
+    reform, _ = pair
+
+    class TruncatingClient(DummyLLMClient):
+        def complete_json_with_usage(
+            self, system: str, user: str, schema: dict
+        ) -> tuple[dict, dict]:
+            raise TruncatedResponseError("truncated", '{"is_reformulation": tr')
+
+    with pytest.raises(TruncatedResponseError):
+        LLMVerifier(TruncatingClient()).verify(reform, tmp_path)
+    assert (tmp_path / "response.partial.txt").read_text() == '{"is_reformulation": tr'
 
 
 def test_llm_verifier_prompt_includes_parameter_map(

@@ -3,6 +3,7 @@ from typing import Any
 from .base import (
     LLMClient,
     LLMConfig,
+    TruncatedResponseError,
     schema_instructions,
     with_json_retry,
     with_retry,
@@ -80,9 +81,11 @@ class DeepSeekClient(LLMClient):
             )
         )
         if response.choices[0].finish_reason == "length":
-            raise RuntimeError(
+            message = response.choices[0].message
+            raise TruncatedResponseError(
                 f"DeepSeek response truncated (finish_reason=length, "
-                f"max_tokens={self._config.max_tokens})"
+                f"max_tokens={self._config.max_tokens})",
+                message.content or getattr(message, "reasoning_content", "") or "",
             )
         usage_obj = response.usage
         details = (

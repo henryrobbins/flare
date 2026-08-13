@@ -1,7 +1,7 @@
 from typing import Any
 
 from .anthropic import AnthropicClient
-from .base import LLMClient, LLMConfig, compute_cost_usd
+from .base import LLMClient, LLMConfig, TruncatedResponseError, compute_cost_usd
 from .deepseek import DeepSeekClient
 from .openai import OpenAIClient
 
@@ -11,6 +11,7 @@ __all__ = [
     "LLMClient",
     "LLMConfig",
     "OpenAIClient",
+    "TruncatedResponseError",
     "compute_cost_usd",
     "make_client",
 ]

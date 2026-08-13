@@ -5,6 +5,7 @@ from typing import Any
 from .base import (
     LLMClient,
     LLMConfig,
+    TruncatedResponseError,
     schema_instructions,
     with_json_retry,
     with_retry,
@@ -109,11 +110,25 @@ class AnthropicClient(LLMClient):
 
     def _check_truncated(self, message: Any) -> None:
         if message.stop_reason == "max_tokens":
-            raise RuntimeError(
-                f"Anthropic response truncated (max_tokens={self._config.max_tokens})"
+            raise TruncatedResponseError(
+                f"Anthropic response truncated (max_tokens={self._config.max_tokens})",
+                _partial_text(message),
             )
 
 
 def _text(message: Any) -> str:
     text: str = next(b.text for b in message.content if b.type == "text")
     return text
+
+
+def _partial_text(message: Any) -> str:
+    """Best-effort text of a cut-off message, falling back to the thinking trace."""
+    for block_type in ("text", "thinking"):
+        blocks = [
+            getattr(b, block_type, "") or ""
+            for b in message.content
+            if b.type == block_type
+        ]
+        if any(blocks):
+            return "\n".join(blocks)
+    return ""

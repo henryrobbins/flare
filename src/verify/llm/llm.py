@@ -6,7 +6,7 @@ from typing import Any
 
 from formulation_bench import Reformulation
 
-from src.llm_client import LLMClient, compute_cost_usd
+from src.llm_client import LLMClient, TruncatedResponseError, compute_cost_usd
 from src.verify.base import ReformulationResult, SynchronousVerifier
 from src.verify.llm.prompts import REFORMULATION_SCHEMA, render_reformulation
 
@@ -49,9 +49,13 @@ class LLMVerifier(SynchronousVerifier):
         (artifacts_dir / "prompt.txt").write_text(rendered.user)
 
         start = time.time()
-        parsed, usage = self.client.complete_json_with_usage(
-            rendered.system, rendered.user, REFORMULATION_SCHEMA
-        )
+        try:
+            parsed, usage = self.client.complete_json_with_usage(
+                rendered.system, rendered.user, REFORMULATION_SCHEMA
+            )
+        except TruncatedResponseError as e:
+            (artifacts_dir / "response.partial.txt").write_text(e.partial)
+            raise
         duration_s = round(time.time() - start, 1)
         (artifacts_dir / "response.json").write_text(json.dumps(parsed, indent=2))
 

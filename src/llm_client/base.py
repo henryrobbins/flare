@@ -13,6 +13,19 @@ T = TypeVar("T")
 _RETRYABLE_STATUS = {408, 425, 429, 500, 502, 503, 504, 529, 400}
 
 
+class TruncatedResponseError(RuntimeError):
+    """Raised when a provider stopped generating at the output-token cap.
+
+    `partial` holds whatever text the model produced before the cut — visible
+    output when there is any, otherwise the reasoning trace. It is empty when
+    the provider returns neither.
+    """
+
+    def __init__(self, message: str, partial: str = "") -> None:
+        super().__init__(message)
+        self.partial = partial
+
+
 def with_retry(fn: Callable[[], T], max_attempts: int = 4) -> T:
     """Run fn() with exponential backoff on transient API errors."""
     last_exc: Exception | None = None
