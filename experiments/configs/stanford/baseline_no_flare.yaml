@@ -19,4 +19,4 @@ verifiers:
       json_mode: prompt
       max_tokens: 16384
       reasoning: true
-      reasoning_effort: high
+      reasoning_effort: medium

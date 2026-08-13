@@ -33,7 +33,7 @@ models:
       model: claude-opus-5
       max_tokens: 16384
       reasoning: true
-      reasoning_effort: high
+      reasoning_effort: medium
 
   - label: gpt-4.1 # no reasoning support
     client:
