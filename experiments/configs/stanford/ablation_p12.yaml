@@ -20,12 +20,6 @@ modes:
   - label: regular
     template: flare_nl
     include_implicit: true
-  - label: no_definition
-    template: no_definition.j2
-    include_implicit: true
-  - label: allow_implicit
-    template: allow_implicit.j2
-    include_implicit: false
 
 models:
   # == Anthropic models =======================================================

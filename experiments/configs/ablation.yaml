@@ -22,9 +22,6 @@ models:
       reasoning: true
       reasoning_effort: medium
 
-  - label: gpt-4.1 # no reasoning support
-    client: { model: gpt-4.1, max_tokens: 8192 }
-
   - label: gpt-5.6-sol
     client:
       model: gpt-5.6-sol
