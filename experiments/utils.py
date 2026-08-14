@@ -62,7 +62,8 @@ def parse_problem_ids(s: str | None) -> set[int] | None:
 def resolve_problem_filter(
     cli_problems: str | None, cfg: dict[str, Any]
 ) -> set[int] | None:
-    """CLI --problems wins; falls back to YAML `problems:`; else no filter."""
+    """CLI --problems wins; falls back to YAML `problems:`; else no explicit
+    filter (which `filter_pairs` reads as NP-hard problems only)."""
     if cli_problems is not None:
         return parse_problem_ids(cli_problems)
     if "problems" in cfg:
@@ -73,8 +74,9 @@ def resolve_problem_filter(
 def filter_pairs(
     pairs: list[Reformulation], problem_filter: set[int] | None
 ) -> list[Reformulation]:
+    """Keep pairs touching a listed problem; with no filter, NP-hard ones only."""
     if problem_filter is None:
-        return list(pairs)
+        return [p for p in pairs if p.a.problem.np_hard and p.b.problem.np_hard]
     return [
         p
         for p in pairs
@@ -176,7 +178,10 @@ def add_common_args(parser: argparse.ArgumentParser, default_config: Path) -> No
     parser.add_argument(
         "--problems",
         "-p",
-        help="comma-separated problem numbers to run (e.g. 1,2,3; default: all)",
+        help=(
+            "comma-separated problem numbers to run (e.g. 1,2,3; "
+            "default: all NP-hard problems)"
+        ),
     )
     parser.add_argument(
         "--workers",
