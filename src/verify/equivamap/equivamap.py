@@ -22,6 +22,10 @@ TOLERANCE = 1e-6
 Nested = float | list[Any]
 
 
+class MappingError(Exception):
+    """A proposed variable mapping cannot be evaluated into pinning values."""
+
+
 def _scale_nested(data: Nested, c: float) -> Nested:
     if isinstance(data, list):
         return [_scale_nested(v, c) for v in data]
@@ -29,23 +33,41 @@ def _scale_nested(data: Nested, c: float) -> Nested:
 
 
 def _add_nested(a: Nested, b: Nested) -> Nested:
+    if isinstance(a, list) != isinstance(b, list):
+        raise MappingError("terms of the mapping have different ranks")
     if isinstance(a, list) and isinstance(b, list):
+        if len(a) != len(b):
+            raise MappingError("terms of the mapping have different shapes")
         return [_add_nested(x, y) for x, y in zip(a, b)]
     assert not isinstance(a, list) and not isinstance(b, list)
     return float(a) + float(b)
 
 
+def _nested_structure(data: Nested) -> Any:
+    """Nesting structure of a solution value, ragged arrays included."""
+    if not isinstance(data, list):
+        return None
+    return tuple(_nested_structure(v) for v in data)
+
+
 def _compute_rhs(
     terms: list[dict[str, Any]], sol_b_vars: dict[str, Any]
-) -> float | list[Any] | dict[Any, Any] | None:
-    """Compute RHS value(s) by evaluating the linear combination against B's sol."""
+) -> float | list[Any] | dict[Any, Any]:
+    """Compute RHS value(s) by evaluating the linear combination against B's sol.
+
+    Raises ``MappingError`` if the terms cannot be combined into a single value.
+    """
     result: float | list[Any] | dict[Any, Any] | None = None
+    kinds = set()
     for term in terms:
         entry = sol_b_vars.get(term["variable"])
         if entry is None:
-            return None
+            raise MappingError(f"{term['variable']} is not a variable of B")
         c = term["constant"]
         kind = entry["kind"]
+        kinds.add(kind)
+        if len(kinds) > 1:
+            raise MappingError("terms of the mapping have different kinds")
         data = entry["data"]
         if kind == "scalar":
             contrib: float = c * float(data)
@@ -59,8 +81,35 @@ def _compute_rhs(
                 result = contrib_d
             else:
                 assert isinstance(result, dict)
+                if set(contrib_d) != set(result):
+                    raise MappingError("terms of the mapping have different index sets")
                 result = {k: result.get(k, 0.0) + v for k, v in contrib_d.items()}
+    if result is None:
+        raise MappingError("mapping produced no value")
     return result
+
+
+def _check_pinnable(
+    var_name: str, rhs: float | list[Any] | dict[Any, Any], entry_a: dict[str, Any]
+) -> None:
+    """Raise ``MappingError`` unless rhs pins every entry of A's ``var_name``.
+
+    A mapping whose value doesn't line up with the variable it pins would
+    otherwise silently under-constrain A, which reads as equivalence.
+    """
+    kind = entry_a["kind"]
+    if kind == "scalar":
+        if isinstance(rhs, (list, dict)):
+            raise MappingError(f"{var_name} is scalar but the mapping is not")
+    elif kind == "array":
+        if not isinstance(rhs, list):
+            raise MappingError(f"{var_name} is an array but the mapping is not")
+        if _nested_structure(rhs) != _nested_structure(entry_a["data"]):
+            raise MappingError(f"the mapping does not match the shape of {var_name}")
+    else:
+        keys = {tuple(json.loads(k)) for k in entry_a["data"]}
+        if not isinstance(rhs, dict) or set(rhs) != keys:
+            raise MappingError(f"the mapping does not cover every index of {var_name}")
 
 
 def _list_depth(data: list[Any]) -> int:
@@ -204,13 +253,13 @@ class EquivaMapVerifier(SynchronousVerifier):
             json.dumps(variable_mappings, indent=2)
         )
 
-        # If any variable could not be mapped, the check is invalid — return False.
-        if any(not terms for terms in variable_mappings.values()):
+        def negative(**extra: Any) -> ReformulationResult:
+            """Result for a check that never got far enough to compare objectives."""
             meta = {
                 "is_reformulation": False,
                 "obj_a": obj_a,
                 "obj_b": obj_b,
-                "incomplete_mapping": True,
+                **extra,
                 "input_tokens": total_input_tokens,
                 "output_tokens": total_output_tokens,
             }
@@ -226,16 +275,21 @@ class EquivaMapVerifier(SynchronousVerifier):
                 metadata=meta,
             )
 
+        # If any variable could not be mapped, the check is invalid — return False.
+        if any(not terms for terms in variable_mappings.values()):
+            return negative(incomplete_mapping=True)
+
         # Step 4: Compute pinning constraints and build modified formulation A
         map_lines: list[str] = []
         pinned_a = a
 
         for var_name, terms in variable_mappings.items():
-            if not terms:
-                continue
-            rhs = _compute_rhs(terms, sol_b_vars)
-            if rhs is None:
-                continue
+            assert terms is not None
+            try:
+                rhs = _compute_rhs(terms, sol_b_vars)
+                _check_pinnable(var_name, rhs, sol_a["variables"][var_name])
+            except MappingError as e:
+                return negative(invalid_mapping=str(e))
             constraint = _pinning_constraint(var_name, rhs)
             pinned_a = pinned_a.with_constraint(constraint)
             map_lines.append(constraint.code["gurobipy"])
@@ -246,25 +300,7 @@ class EquivaMapVerifier(SynchronousVerifier):
         try:
             sol_a_constrained = _solve(pinned_a, artifacts_dir / "a_constrained")
         except subprocess.CalledProcessError:
-            meta = {
-                "is_reformulation": False,
-                "obj_a": obj_a,
-                "obj_b": obj_b,
-                "infeasible": True,
-                "input_tokens": total_input_tokens,
-                "output_tokens": total_output_tokens,
-            }
-            (artifacts_dir / "result.json").write_text(json.dumps(meta, indent=2))
-            return ReformulationResult(
-                is_reformulation=False,
-                method=self.name,
-                artifacts_dir=artifacts_dir,
-                duration_s=round(time.time() - start, 1),
-                cost_usd=compute_cost_usd(
-                    self.client.config.model, total_input_tokens, total_output_tokens
-                ),
-                metadata=meta,
-            )
+            return negative(infeasible=True)
         obj_a_constrained = float(sol_a_constrained["objective"])
 
         # Step 6: Check that B's optimum, mapped into A's variables, is optimal in A.

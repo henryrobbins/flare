@@ -256,3 +256,24 @@ def test_equivamap_verifier(
     client = DummyLLMClient.for_variables(mapping)
     result = EquivaMapVerifier(client).verify(reform, tmp_path)
     assert result.is_reformulation is expected
+
+
+def test_equivamap_rejects_ill_shaped_mapping(dataset: Dataset, tmp_path: Path) -> None:
+    """A mapping that can't pin every entry of A is a failure, not a pass.
+
+    Summing B variables of different shapes used to truncate to the shorter
+    one, leaving A under-constrained and free to re-optimize into a match.
+    """
+    reform = lookup_reformulation(dataset, "p12", "a", "b")
+    client = DummyLLMClient.for_variables(
+        {
+            "x": [
+                {"constant": 1.0, "variable": "x"},
+                {"constant": 1.0, "variable": "u"},
+            ],
+            "u": [{"constant": 1.0, "variable": "u"}],
+        }
+    )
+    result = EquivaMapVerifier(client).verify(reform, tmp_path)
+    assert result.is_reformulation is False
+    assert "invalid_mapping" in result.metadata
