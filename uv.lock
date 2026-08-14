@@ -890,7 +890,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "anthropic" },
-    { name = "formulation-bench", specifier = ">=0.4.1" },
+    { name = "formulation-bench", specifier = ">=0.5.0" },
     { name = "gurobipy" },
     { name = "jinja2" },
     { name = "matplotlib", specifier = ">=3.10.9" },
@@ -974,14 +974,14 @@ wheels = [
 
 [[package]]
 name = "formulation-bench"
-version = "0.4.1"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "jinja2" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/58/cb/ad12ec5c2811238bed95dd50ef6e460cd323d9934f7765da7e3903453166/formulation_bench-0.4.1.tar.gz", hash = "sha256:6656b3e32f225cb2f5867d453087e4fa946e0d703792259fae51a4055e649989", size = 26161, upload-time = "2026-08-10T18:00:09.298Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/03/ee/7ae1d728d48f57c00a4bb8246a1c25cc1a65df7e2c92e1c803d4ff398cdb/formulation_bench-0.5.0.tar.gz", hash = "sha256:7f99da17ba6187ed643fd8f7aef5a21da1376479c72a4484ab7180e429fb5f14", size = 26264, upload-time = "2026-08-14T17:41:06.08Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/ae/daf97e60642d928115b6f5d958c488af6ffd98622ec84ffd6288cfd4cf69/formulation_bench-0.4.1-py3-none-any.whl", hash = "sha256:31c445d6eb40e019ccfec6f996dc67ed32fe3008e0fda23c2c825cb8625d2a0e", size = 24288, upload-time = "2026-08-10T18:00:07.963Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/93/9d4b549c403784f81ef9d1db9bff67c09ab89d7ca39bccefa6c905f82a96/formulation_bench-0.5.0-py3-none-any.whl", hash = "sha256:db416b4a5c2cadae3b16704ce4f008879e9af9cbba157e7611a6cb1d21a7521b", size = 24371, upload-time = "2026-08-14T17:41:04.884Z" },
 ]
 
 [[package]]
@@ -1865,7 +1865,7 @@ provides-extras = ["modal", "docs"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "formulation-bench", specifier = ">=0.4.1" },
+    { name = "formulation-bench", specifier = ">=0.5.0" },
     { name = "mypy", specifier = ">=1.0" },
     { name = "pytest", specifier = ">=8.0" },
     { name = "pytest-cov", specifier = ">=5.0" },
