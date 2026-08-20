@@ -199,7 +199,7 @@ class FLARE:
     Parameters
     ----------
     harness : Harness
-        The agent harness to use for auto-formalization and proof synthesis.
+        The agent harness to use for autoformalization and theorem proving.
         See :ref:`agent-harnesses` for the available harnesses.
 
     Attributes

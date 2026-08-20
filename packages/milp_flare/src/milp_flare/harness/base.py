@@ -46,8 +46,8 @@ class HarnessRunResult:
 class Harness(ABC):
     """Base class for FLARE agent harness.
 
-    :class:`FLARE` uses an agent harness to auto-formalize MILP formulations in
-    Lean and do automated formal proof synthesis (AFPS) of reformulation
+    :class:`FLARE` uses an agent harness to autoformalize MILP formulations in
+    Lean and do automated theorem proving (ATP) of reformulation
     certificates. A harness owns the *agent* concern (which CLI to launch, how
     to authenticate it, how to parse its output) and delegates the *compute*
     concern (where the container runs) to an injected
@@ -116,8 +116,8 @@ class Harness(ABC):
            an agent CLI in non-interactive mode.
         2. Any configuration files necessary to enable the
            `lean-lsp-mcp <https://github.com/oOo0oOo/lean-lsp-mcp>`_ MCP server.
-        3. Custom Agent Skills for auto-formalization of MILP formulations and
-           automated formal proof synthesis for reformulation (see :doc:`/skills`).
+        3. Custom Agent Skills for autoformalization of MILP formulations and
+           automated theorem proving for reformulation (see :doc:`/skills`).
 
         Parameters
         ----------

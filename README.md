@@ -8,8 +8,8 @@
 
 > [!NOTE]
 > This repository hosts the `milp-flare` package and the experiment code
-> accompanying *[FLARE: Verifying MILP Reformulations with LLM-Based Formal
-> Proof Synthesis](https://flare.henryrobbins.com/)*.
+> accompanying *[FLARE: Verifying MILP Reformulations with LLM-Based Theorem
+> Proving](https://flare.henryrobbins.com/)*.
 
 `FLARE` (Formulation-Level Automated Reformulation Evaluation) uses an
 LLM-based agent and the Lean 4 proof assistant to verify mixed-integer linear
@@ -19,7 +19,7 @@ program (MILP) reformulations. `FLARE` is implemented in the `milp-flare` Python
 
 | Project | Path | Description | Links |
 | --- | --- | --- | --- |
-| **FormulationBench** | [henryrobbins/formulation-bench](https://github.com/henryrobbins/formulation-bench) | 20 problems, 116 MILP formulations, 96 labelled reformulation pairs, plus the `formulation-bench` loader package. | [![PyPI](https://img.shields.io/pypi/v/formulation-bench)](https://pypi.org/project/formulation-bench/) [![Docs](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com) |
+| **FormulationBench** | [henryrobbins/formulation-bench](https://github.com/henryrobbins/formulation-bench) | 20 problems, 109 MILP formulations, 89 labelled reformulation pairs, plus the `formulation-bench` loader package. | [![PyPI](https://img.shields.io/pypi/v/formulation-bench)](https://pypi.org/project/formulation-bench/) [![Docs](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com) |
 | **`milp-flare`** | [`packages/milp_flare/`](packages/milp_flare/) | Official implementation of FLARE and FLARE-NL. | [![PyPI](https://img.shields.io/pypi/v/milp-flare)](https://pypi.org/project/milp-flare/) [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=milp_flare)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=milp_flare) [![Docs](https://readthedocs.org/projects/milp-flare/badge/?version=latest)](https://milp-flare.henryrobbins.com/en/latest) |
 | **Experiments** | [`src/`](src/), [`experiments/`](experiments/), [`scripts/`](scripts/) | Paper experiment code: alternative verifiers, prompt templates, and experiment/analysis scripts. | [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=src)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=src) |
 | **Paper site** | [`site/`](site/) | Astro landing page for the paper, deployed to GitHub Pages on pushes to the `site` branch. | [Live site](https://flare.henryrobbins.com/) |
@@ -51,7 +51,10 @@ See the `milp-flare` [installation guide](https://milp-flare.henryrobbins.com/en
 ### Baseline (Table 1, Table 2)
 
 Runs `execution`, `equivamap`, and `FLARE` on every reformulation pair, 3
-runs each, with results written under `runs/<timestamp>/`:
+runs each, with results written under `runs/<timestamp>/`. With no explicit
+problem filter, the experiments use the 54 pairs belonging to the 16 NP-hard
+problems, the subset on which the paper's notion of reformulation is
+meaningful:
 
 ```bash
 uv run python -m experiments.baseline -c experiments/configs/baseline.yaml
@@ -64,7 +67,7 @@ uv run python -m experiments.baseline -c experiments/configs/baseline.yaml \
     --problems 1,2,3 --workers 5 --runs 3
 ```
 
-### FLARE-NL Ablation Study (Table 3, Table 5)
+### FLARE-NL Ablation Study (Table 3, Table 7)
 
 Sweeps prompt variants and LLM models for `FLARE-NL`:
 
@@ -72,7 +75,7 @@ Sweeps prompt variants and LLM models for `FLARE-NL`:
 uv run python -m experiments.ablation -c experiments/configs/ablation.yaml
 ```
 
-For Table 5 in the Appendix, use the `ablation_p12.yaml` configuration.
+For Table 7 in the Appendix, use the `ablation_p12.yaml` configuration.
 
 ```bash
 uv run python -m experiments.ablation -c experiments/configs/ablation_p12.yaml
@@ -104,7 +107,15 @@ See `AGENTS.md` for development information.
 
 ## Cite
 
-TODO: arXiv paper.
+```bibtex
+@unpublished{robbins2026flare,
+  title = {FLARE: Verifying MILP Reformulations with LLM-Based Theorem Proving},
+  author = {Robbins, Henry and Lawless, Connor and Udell, Madeleine and Vitercik, Ellen},
+  year = 2026,
+  note = {Working paper},
+  url = {https://flare.henryrobbins.com}
+}
+```
 
 ## License
 
