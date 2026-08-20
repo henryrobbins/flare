@@ -1,28 +1,20 @@
 # FLARE
 
 [![CI](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml/badge.svg)](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml)
-[![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg)](https://codecov.io/gh/henryrobbins/flare)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-> [!NOTE]
-> This repository hosts the `milp-flare` package and the experiment code
-> accompanying *[FLARE: Verifying MILP Reformulations with LLM-Based Theorem
-> Proving](https://flare.henryrobbins.com/)*.
+This is the official code repository for *[FLARE: Verifying MILP Reformulations with LLM-Based Theorem Proving](https://flare.henryrobbins.com/)*. `FLARE` (Formulation-Level Automated Reformulation Evaluation) uses an LLM-based agent and the Lean 4 proof assistant to verify mixed-integer linear program (MILP) reformulations. `FLARE` is implemented in the `milp-flare` Python package and evaluated on the [FormulationBench](https://github.com/henryrobbins/formulation-bench) dataset using the `formulation-bench` Python package. This repository hosts `milp-flare` and all of the experimental code used to produce the paper's results.
 
-`FLARE` (Formulation-Level Automated Reformulation Evaluation) uses an
-LLM-based agent and the Lean 4 proof assistant to verify mixed-integer linear
-program (MILP) reformulations. `FLARE` is implemented in the `milp-flare` Python package and evaluated on the **FormulationBench** dataset using the `formulation-bench` Python package. This repository hosts `milp-flare` and all of the experimental code used to produce the paper's results. The dataset and the `formulation-bench` package live in the [formulation-bench](https://github.com/henryrobbins/formulation-bench) repository.
+## Packages and Code
 
-## Sub-Projects
-
-| Project | Path | Description | Links |
+| Code | Location | Description | Links |
 | --- | --- | --- | --- |
-| **FormulationBench** | [henryrobbins/formulation-bench](https://github.com/henryrobbins/formulation-bench) | 20 problems, 109 MILP formulations, 89 labelled reformulation pairs, plus the `formulation-bench` loader package. | [![PyPI](https://img.shields.io/pypi/v/formulation-bench)](https://pypi.org/project/formulation-bench/) [![Docs](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com) |
-| **`milp-flare`** | [`packages/milp_flare/`](packages/milp_flare/) | Official implementation of FLARE and FLARE-NL. | [![PyPI](https://img.shields.io/pypi/v/milp-flare)](https://pypi.org/project/milp-flare/) [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=milp_flare)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=milp_flare) [![Docs](https://readthedocs.org/projects/milp-flare/badge/?version=latest)](https://milp-flare.henryrobbins.com/en/latest) |
-| **Experiments** | [`src/`](src/), [`experiments/`](experiments/), [`scripts/`](scripts/) | Paper experiment code: alternative verifiers, prompt templates, and experiment/analysis scripts. | [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=src)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=src) |
-| **Paper site** | [`site/`](site/) | Astro landing page for the paper, deployed to GitHub Pages on pushes to the `site` branch. | [Live site](https://flare.henryrobbins.com/) |
+| `formulation-bench` | [GitHub](https://github.com/henryrobbins/formulation-bench) | FormulationBench dataset and loader package. | [![PyPI](https://img.shields.io/pypi/v/formulation-bench)](https://pypi.org/project/formulation-bench/) [![Docs](https://readthedocs.org/projects/formulation-bench/badge/?version=latest)](https://formulation-bench.henryrobbins.com) [![codecov](https://codecov.io/gh/henryrobbins/formulation-bench/branch/main/graph/badge.svg)](https://codecov.io/gh/henryrobbins/formulation-bench) |
+| `milp-flare` | [`packages/milp_flare/`](packages/milp_flare/) | Official implementation of `FLARE` and `FLARE-NL`. | [![PyPI](https://img.shields.io/pypi/v/milp-flare)](https://pypi.org/project/milp-flare/) [![Docs](https://readthedocs.org/projects/milp-flare/badge/?version=latest)](https://milp-flare.henryrobbins.com/en/latest) [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=milp_flare)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=milp_flare) |
+| Experiments | [`src/`](src/), [`experiments/`](experiments/), [`scripts/`](scripts/) | Code to reproduce paper experimental results. | - |
+| Landing page | [`site/`](site/) | Paper landing page. | [Live site](https://flare.henryrobbins.com/) |
 
 ## Reproducing Experimental Results
 
@@ -42,11 +34,9 @@ The two scripts in [`experiments/`](experiments/) reproduce every quantitative r
 4. Install a [Gurobi](https://www.gurobi.com/) license (required by the `execution` baseline and the dataset's `solve.py` scripts). A free [academic license](https://www.gurobi.com/academia/academic-program-and-licenses/) works.
 
 The experiment scripts fetch the FormulationBench dataset on first use via
-`Dataset.load()`, caching it under a git-ignored `dataset/` directory at the
-repo root. The test suite uses the package default,
-`$XDG_CACHE_HOME/formulation_bench`.
+`Dataset.load()`. Also see the [Downloading the dataset](https://formulation-bench.henryrobbins.com/en/latest/user_guide/download.html) user guide.
 
-See the `milp-flare` [installation guide](https://milp-flare.henryrobbins.com/en/latest/installation.html) for more details.
+Also see the `milp-flare` [installation guide](https://milp-flare.henryrobbins.com/en/latest/installation.html) for more details on building [building the Docker image](https://milp-flare.henryrobbins.com/en/latest/user_guide/docker.html) and [configuring API keys](https://milp-flare.henryrobbins.com/en/latest/agent_harness/index.html).
 
 ### Baseline (Table 1, Table 2)
 
@@ -106,6 +96,8 @@ Additional analysis scripts (cost/time plots, context analysis) live under
 See `AGENTS.md` for development information.
 
 ## Cite
+
+This repository hosts the `milp-flare` Python package implementing `FLARE` and `FLARE-NL` and the experimental code for *[FLARE: Verifying MILP Reformulations with LLM-Based Theorem Proving](https://flare.henryrobbins.com/)*. If you use either, please cite:
 
 ```bibtex
 @unpublished{robbins2026flare,
