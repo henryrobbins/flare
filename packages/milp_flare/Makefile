@@ -1,7 +1,7 @@
 # Common dev commands for the milp-flare package.
 # Run from this directory (packages/milp_flare/).
 
-.PHONY: help install test test-docker test-modal cov cov-open cov-clean lint format typecheck check build-image build-modal-image docs docs-serve docs-clean clean
+.PHONY: help install test test-docker test-modal cov cov-open cov-clean lint format typecheck check build-image build-modal-image docs docs-doctest docs-serve docs-clean clean
 
 help:
 	@echo "Targets:"
@@ -19,6 +19,7 @@ help:
 	@echo "  build-image  Build the flare-agent Docker image"
 	@echo "  build-modal-image  Build + publish the flare-agent Modal image"
 	@echo "  docs         Build the Sphinx docs once"
+	@echo "  docs-doctest Execute the {testcode} blocks in the docs"
 	@echo "  docs-serve   Live-reload docs in browser"
 	@echo "  docs-clean   Remove built docs"
 	@echo "  clean        Remove build + cache artifacts"
@@ -49,16 +50,16 @@ cov-clean:
 	rm -rf htmlcov coverage.xml .coverage
 
 lint:
-	uv run --package milp-flare ruff check src tests
+	uv run --package milp-flare ruff check src tests conftest.py
 
 format:
-	uv run --package milp-flare ruff format src tests
-	uv run --package milp-flare ruff check --fix src tests
+	uv run --package milp-flare ruff format src tests conftest.py
+	uv run --package milp-flare ruff check --fix src tests conftest.py
 
 typecheck:
 	uv run --package milp-flare mypy
 
-check: lint typecheck test
+check: lint typecheck test docs-doctest
 
 build-image:
 	uv run --package milp-flare milp-flare build-image
@@ -68,6 +69,9 @@ build-modal-image:
 
 docs:
 	uv run --package milp-flare --extra docs sphinx-build -W -b html docs docs/_build/html
+
+docs-doctest:
+	uv run --package milp-flare --extra docs sphinx-build -W -b doctest docs docs/_build/doctest
 
 docs-serve:
 	uv run --package milp-flare --extra docs sphinx-autobuild --watch src docs docs/_build/html

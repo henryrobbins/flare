@@ -32,7 +32,7 @@ milp-flare build-modal-image
 
 The image is published under the name `flare-agent` and associated with the `flare` Modal app (override with `--name` and `--app`; force a rebuild past Modal's layer cache with `--force`). Run `modal app list` and inspect the workspace's images to confirm it was published successfully.
 
-The Modal image is built with Modal's Python SDK builder rather than the bundled `Dockerfile` (for better caching and faster iteration), but is kept in sync with it. It contains the same agent CLIs (Claude Code, Codex, OpenCode), the `elan` + Lean toolchain, the [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp) MCP server, and the necessary Lean definitions in `Common.lean` (the same used by {fb}`/definitions.html`). Two notable differences from the Docker image: the Modal image runs as root with all tools installed globally, and it has no `ENTRYPOINT` — the runner invokes `run-agent` explicitly after the working directory is populated. See the build definition below.
+The Modal image is built with Modal's Python SDK builder rather than the bundled `Dockerfile` (for better caching and faster iteration), but is kept in sync with it. It contains the same agent CLIs (Claude Code, Codex, OpenCode), the `elan` + Lean toolchain, the [lean-lsp-mcp](https://github.com/oOo0oOo/lean-lsp-mcp) MCP server, and the necessary Lean definitions in `Common.lean` (the same used by {fb}`/definitions.html`).
 
 :::{dropdown} `build-modal-image`
 :icon: code
@@ -46,26 +46,26 @@ The Modal image is built with Modal's Python SDK builder rather than the bundled
 
 A harness runs on local Docker by default. Pass a {class}`~milp_flare.harness.runner.modal.ModalRunner` to run on Modal instead:
 
-```python
+```{testcode}
 from milp_flare import FLARE
 from milp_flare.harness import ClaudeCodeHarness
 from milp_flare.harness.runner import ModalRunner
 
 harness = ClaudeCodeHarness(
-    model="claude-opus-4-7",
+    model="claude-opus-5",
     effort="medium",
     runner=ModalRunner(),
 )
 flare = FLARE(harness=harness)
 ```
 
-Everything else — including the call to `FLARE.verify` — is identical to the Docker workflow (see {doc}`run_flare`).
+Everything else is identical to the Docker workflow (see {doc}`run_flare`).
 
 ## Modal Resources
 
 {class}`~milp_flare.harness.runner.modal.ModalRunner` exposes the per-Sandbox resource allocation as constructor arguments:
 
-```python
+```{testcode}
 ModalRunner(cpu=4.0, memory=4096, timeout=1800)
 ```
 

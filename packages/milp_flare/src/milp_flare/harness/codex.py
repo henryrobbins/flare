@@ -24,7 +24,7 @@ class CodexHarness(Harness):
     ----------
     model : str
         OpenAI model identifier. Only supports models that are supported by the
-        Codex CLI (e.g., ``"gpt-5.4"``, ``"gpt-5.5"``). See :codex:`/models` for
+        Codex CLI (e.g., ``"gpt-5.6-sol"``, ``"gpt-5.5"``). See :codex:`/models` for
         up-to-date model information.
     effort : str, default ``"medium"``
         Reasoning effort level (``"none"``, ``"low"``, ``"medium"``,
@@ -42,17 +42,17 @@ class CodexHarness(Harness):
 
     Examples
     --------
-    Configure Codex agent harness with GPT-5.4 and high effort::
+    Configure Codex agent harness with GPT-5.6 Sol and high effort::
 
         >>> from milp_flare import FLARE
         >>> from milp_flare.harness import CodexHarness
-        >>> harness = CodexHarness(model="gpt-5.4", effort="high")
+        >>> harness = CodexHarness(model="gpt-5.6-sol", effort="high")
         >>> print(json.dumps(harness.get_config_dict(), indent=2))
         {
           "harness": "codex",
           "compute": "docker",
           "image": "flare-agent:latest",
-          "model": "gpt-5.4",
+          "model": "gpt-5.6-sol",
           "effort": "high"
         }
     """

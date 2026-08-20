@@ -37,7 +37,7 @@ The image contains agent CLIs (Claude Code, Codex, OpenCode), the `elan` + Lean 
 
 ## Docker Resources
 
-Docker allows the user to configure resource allocation. The minimum requirements for `FLARE` are 2 CPUs, 4GB memory, and 16GB disk usage. To run multiple agents in parallel, it is recommended to have ~2 CPUs and ~3GB memory per agent. Experiments from the {paper}`/` were performed on a MacBook Pro (Apple M3 Pro, 12-core CPU, 18 GB unified memory). 5 agents were comfortably run in parallel with a 10 CPU and 16GB resource allocation.
+Docker allows the user to configure resource allocation. The minimum requirements for `FLARE` are 2 CPUs and 3GB memory. E.g, 5 agents can comfortably run on a MacBook Pro (Apple M3 Pro, 12-core CPU, 18 GB unified memory) with a 10 CPU and 16GB resource allocation.
 
 :::{warning}
 It is not recommended to allocate *all* of your machine's computational resources is any category.

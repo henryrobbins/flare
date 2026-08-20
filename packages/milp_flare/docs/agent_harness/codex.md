@@ -28,19 +28,19 @@ refresh its access token mid-session.
 
 ## Using the harness
 
-```python
+```{testcode}
 from milp_flare.harness import CodexHarness
 
-harness = CodexHarness(model="gpt-5.4", effort="high")
+harness = CodexHarness(model="gpt-5.6-sol", effort="high")
 ```
 
 Or via the `HARNESSES` registry (convenient for config-driven
 experiment scripts):
 
-```python
+```{testcode}
 from milp_flare import HARNESSES
 
-harness = HARNESSES["codex"](model="gpt-5.4", effort="high")
+harness = HARNESSES["codex"](model="gpt-5.6-sol", effort="high")
 ```
 
 ## Cost tracking

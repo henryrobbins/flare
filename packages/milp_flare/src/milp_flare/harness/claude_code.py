@@ -30,7 +30,7 @@ class ClaudeCodeHarness(Harness):
     ----------
     model : str
         Claude model identifier. Only supports models that are supported by the
-        Claude Code CLI (e.g., ``"claude-opus-4-7"``, ``"claude-sonnet-4-6"``).
+        Claude Code CLI (e.g., ``"claude-opus-5"``, ``"claude-sonnet-4-6"``).
         See :claude:`/model-config#model-aliases` for up-to-date model information.
     effort : str, default ``"medium"``
         Reasoning effort level (``"low"``, ``"medium"``, ``"high"``, ``"xhigh"``,
@@ -52,13 +52,13 @@ class ClaudeCodeHarness(Harness):
 
         >>> from milp_flare import FLARE
         >>> from milp_flare.harness import ClaudeCodeHarness
-        >>> harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="high")
+        >>> harness = ClaudeCodeHarness(model="claude-opus-5", effort="high")
         >>> print(json.dumps(harness.get_config_dict(), indent=2))
         {
           "harness": "claude_code",
           "compute": "docker",
           "image": "flare-agent:latest",
-          "model": "claude-opus-4-7",
+          "model": "claude-opus-5",
           "effort": "high"
         }
 

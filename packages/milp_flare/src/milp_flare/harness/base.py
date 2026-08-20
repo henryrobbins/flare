@@ -56,7 +56,7 @@ class Harness(ABC):
     Parameters
     ----------
     model : str
-        Model identifier (e.g., ``"claude-opus-4-7"``, ``"gpt-5.5"``). See
+        Model identifier (e.g., ``"claude-opus-5"``, ``"gpt-5.5"``). See
         harness subclasses for supported models.
     effort : str, default ``"medium"``
         Reasoning effort level (``"low"``, ``"medium"``, ``"high"``). See

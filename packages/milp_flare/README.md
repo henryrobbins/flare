@@ -9,7 +9,7 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 > [!NOTE]
-> This is the official implementation of `FLARE` and `FLARE-NL` introduced in *[FLARE: Verifying MILP Reformulations with LLM-Based Formal Proof Synthesis](https://flare.henryrobbins.com/)*.
+> This is the official implementation of `FLARE` and `FLARE-NL` introduced in *[FLARE: Verifying MILP Reformulations with LLM-Based Theorem Proving](https://flare.henryrobbins.com/)*.
 
 `FLARE` (Formulation-Level Automated Reformulation Evaluation) uses an LLM-based agent and the Lean proof assistant to verify mixed-integer linear program (MILP) reformulations according to the [FormulationBench](https://formulation-bench.henryrobbins.com/en/latest/definitions.html) definition of reformulation. `FLARE-NL` is a Large Language Model (LLM) proxy for `FLARE` that trades off formal guarantees for speed and cost. See the [documentation](https://milp-flare.henryrobbins.com) for details.
 
@@ -42,7 +42,7 @@ ds = Dataset.load()
 pair = ds.reformulations[0]  # p1.a -> p1.b
 a, b = pair.a, pair.b
 
-harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
+harness = ClaudeCodeHarness(model="claude-opus-5", effort="medium")
 flare = FLARE(harness=harness)
 
 a_in = FormulationInput(
@@ -64,7 +64,15 @@ See `AGENTS.md` for development information.
 
 ## Cite
 
-TODO: arXiv paper.
+```bibtex
+@unpublished{robbins2026flare,
+  title = {FLARE: Verifying MILP Reformulations with LLM-Based Theorem Proving},
+  author = {Robbins, Henry and Lawless, Connor and Udell, Madeleine and Vitercik, Ellen},
+  year = 2026,
+  note = {Working paper},
+  url = {https://flare.henryrobbins.com}
+}
+```
 
 ## License
 

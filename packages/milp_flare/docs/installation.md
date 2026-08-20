@@ -17,7 +17,7 @@ This quickstart runs `FLARE` on a pair of formulations from the {fb}`Formulation
 - **FormulationBench** Python package `formulation-bench` (see {fb}`FormulationBench </installation.html>`)
 
 
-```python
+```{testcode}
 from pathlib import Path
 
 from formulation_bench import Dataset
@@ -28,7 +28,7 @@ ds = Dataset.load()
 pair = ds.reformulations[0]  # p1.a -> p1.b
 a, b = pair.a, pair.b
 
-harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
+harness = ClaudeCodeHarness(model="claude-opus-5", effort="medium")
 flare = FLARE(harness=harness)
 
 a_in = FormulationInput(

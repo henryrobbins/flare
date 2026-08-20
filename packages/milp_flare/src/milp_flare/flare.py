@@ -212,29 +212,30 @@ class FLARE:
 
     Use FLARE to verify if formulation ``b`` of problem ``p1`` from
     :fb:`/problems/p1.html` is a reformulation of formulation ``a`` (also see
-    :doc:`/user_guide/run_flare`):
+    :doc:`/user_guide/run_flare`)::
 
-    .. code-block:: python
+        >>> from pathlib import Path
+        >>> from formulation_bench import Dataset
+        >>> from milp_flare import FLARE, FormulationInput, ParameterMapInput
+        >>> from milp_flare.harness import ClaudeCodeHarness
 
-        from pathlib import Path
-        from formulation_bench import Dataset
-        from milp_flare import FLARE, FormulationInput, ParameterMapInput
-        from milp_flare.harness import ClaudeCodeHarness
+        >>> ds = Dataset.load()
+        >>> pair = ds.reformulations[0]  # p1.a -> p1.b
+        >>> a, b = pair.a, pair.b
 
-        ds = Dataset.load()
-        pair = ds.reformulations[0]  # p1.a -> p1.b
-        a, b = pair.a, pair.b
-
-        harness = ClaudeCodeHarness(model="claude-opus-4-7")
-        flare = FLARE(harness=harness)
-        result = flare.verify(
-            FormulationInput(a.render_markdown(), a.gen_solve_py()),
-            FormulationInput(b.render_markdown(), b.gen_solve_py()),
-            ParameterMapInput(
-                pair.parameter_map.render_markdown(), pair.gen_map_py()
-            ),
-            output_path=Path("runs/p1_a_b"),
-        )
+        >>> harness = ClaudeCodeHarness(model="claude-opus-5")
+        >>> flare = FLARE(harness=harness)
+        >>> result = flare.verify(
+        ...     FormulationInput(a.render_markdown(), a.gen_solve_py()),
+        ...     FormulationInput(b.render_markdown(), b.gen_solve_py()),
+        ...     ParameterMapInput(
+        ...         pair.parameter_map.render_markdown(), pair.gen_map_py()
+        ...     ),
+        ...     output_path=Path("runs/p1_a_b"),
+        ... )
+          [flare] monitor: tail -f runs/p1_a_b/wd/agent_output.jsonl
+        >>> result.is_reformulation
+        True
     """
 
     def __init__(self, harness: Harness) -> None:
@@ -349,20 +350,37 @@ class FLARE:
         Examples
         --------
 
-        Run FLARE on formulations ``a`` and ``b`` and inspect the result:
+        Run FLARE on formulations ``a`` and ``b`` and inspect the result::
 
-        .. code-block:: python
+            >>> from pathlib import Path
+            >>> from formulation_bench import Dataset
+            >>> from milp_flare import (
+            ...     FLARE,
+            ...     FormulationInput,
+            ...     ParameterMapInput,
+            ... )
+            >>> from milp_flare.harness import ClaudeCodeHarness
 
-            flare = FLARE(harness=harness)
-            result = flare.verify(a, b, pmap, output_path=Path("runs/a_b"))
-            result.is_reformulation
+            >>> pair = Dataset.load().reformulations[0]  # p1.a -> p1.b
+            >>> a = FormulationInput(
+            ...     pair.a.render_markdown(), pair.a.gen_solve_py()
+            ... )
+            >>> b = FormulationInput(
+            ...     pair.b.render_markdown(), pair.b.gen_solve_py()
+            ... )
+            >>> pmap = ParameterMapInput(
+            ...     pair.parameter_map.render_markdown(), pair.gen_map_py()
+            ... )
+
+            >>> flare = FLARE(harness=ClaudeCodeHarness(model="claude-opus-5"))
+            >>> result = flare.verify(a, b, pmap, output_path=Path("runs/a_b"))
+              [flare] monitor: tail -f runs/a_b/wd/agent_output.jsonl
+            >>> result.is_reformulation
             True
-            result.metadata["form_a_written"]
+            >>> result.metadata["form_a_written"]
             True
-            result.cost_usd
+            >>> result.cost_usd
             1.49
-            result.duration_s
-            322
         """
         return self.start(a, b, parameter_map, output_path).result()
 

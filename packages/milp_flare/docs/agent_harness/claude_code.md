@@ -31,27 +31,24 @@ CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
 bills against your Claude plan rather than the API.
 
 :::{warning}
-Starting June 15, 2026, Claude Agent SDK and `claude -p` usage no
-longer count towards Claude plan usage limits. They will instead charge
-a separate Agent SDK monthly credit. See
-[this article](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan).
+There are plans to migrate the Claude Agent SDK and `claude -p` non-interactive usage to no longer count towards Claude plan usage limits. This was originally planned for June 15, 2026. It has been delayed to a later date. See [this article](https://support.claude.com/en/articles/15036540-use-the-claude-agent-sdk-with-your-claude-plan).
 :::
 
 ## Using the harness
 
-```python
+```{testcode}
 from milp_flare.harness import ClaudeCodeHarness
 
-harness = ClaudeCodeHarness(model="claude-opus-4-7", effort="medium")
+harness = ClaudeCodeHarness(model="claude-opus-5", effort="medium")
 ```
 
 Or via the `HARNESSES` registry (convenient for config-driven
 experiment scripts):
 
-```python
+```{testcode}
 from milp_flare import HARNESSES
 
-harness = HARNESSES["claude_code"](model="claude-opus-4-7", effort="medium")
+harness = HARNESSES["claude_code"](model="claude-opus-5", effort="medium")
 ```
 
 ## Cost tracking

@@ -1,6 +1,6 @@
 # Agent Skills
 
-`FLARE` utilizes two [Agent Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) for auto-formalization of the `MILPFormulation` (see {fb}`definition </definitions.html#lean-encoding>`) and automated formal proof synthesis (AFPS) of `MILPReformulation` (see {fb}`definition </definitions.html#id2>`). Both skills include a `SKILL.md` and a Lean template `template.lean` with detailed scaffolding instructions.
+`FLARE` utilizes two [Agent Skills](https://docs.claude.com/en/docs/agents-and-tools/agent-skills/overview) for autoformalization of the `MILPFormulation` (see {fb}`definition </definitions.html#lean-encoding>`) and automated theorem proving (ATP) of `MILPReformulation` (see {fb}`definition </definitions.html#id2>`). Both skills include a `SKILL.md` and a Lean template `template.lean` with detailed scaffolding instructions.
 
 ## `lean-milp-formulation`
 

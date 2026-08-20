@@ -31,7 +31,7 @@ Other supported keys: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
 
 The {class}`OpenCodeHarness <milp_flare.harness.opencode.OpenCodeHarness>` infers the provider from the model name. You can pass `provider` to override.
 
-```python
+```{testcode}
 from milp_flare.harness import OpenCodeHarness
 
 harness = OpenCodeHarness(
@@ -42,7 +42,7 @@ harness = OpenCodeHarness(
 Or via the `HARNESSES` registry (convenient for config-driven
 experiment scripts):
 
-```python
+```{testcode}
 from milp_flare import HARNESSES
 
 harness = HARNESSES["opencode"](
