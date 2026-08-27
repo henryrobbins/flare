@@ -1,5 +1,6 @@
 # FLARE
 
+[![arXiv](https://img.shields.io/badge/arXiv-2608.25220-b31b1b.svg)](https://arxiv.org/abs/2608.25220)
 [![CI](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml/badge.svg)](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
@@ -100,12 +101,14 @@ See `AGENTS.md` for development information.
 This repository hosts the `milp-flare` Python package implementing `FLARE` and `FLARE-NL` and the experimental code for *[FLARE: Verifying MILP Reformulations with LLM-Based Theorem Proving](https://flare.henryrobbins.com/)*. If you use either, please cite:
 
 ```bibtex
-@unpublished{robbins2026flare,
-  title = {FLARE: Verifying MILP Reformulations with LLM-Based Theorem Proving},
+@misc{robbins2026flare,
+  title = {{{FLARE}}: Verifying {{MILP}} Reformulations with {{LLM}}-Based Theorem Proving},
   author = {Robbins, Henry and Lawless, Connor and Udell, Madeleine and Vitercik, Ellen},
   year = 2026,
-  note = {Working paper},
-  url = {https://flare.henryrobbins.com}
+  eprint = {2608.25220},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2608.25220}
 }
 ```
 

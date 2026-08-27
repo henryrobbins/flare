@@ -1,5 +1,6 @@
 # milp-flare
 
+[![arXiv](https://img.shields.io/badge/arXiv-2608.25220-b31b1b.svg)](https://arxiv.org/abs/2608.25220)
 [![PyPI version](https://img.shields.io/pypi/v/milp-flare)](https://pypi.org/project/milp-flare/)
 [![CI](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml/badge.svg)](https://github.com/henryrobbins/flare/actions/workflows/ci-python.yml)
 [![codecov](https://codecov.io/gh/henryrobbins/flare/branch/main/graph/badge.svg?flag=milp_flare)](https://codecov.io/gh/henryrobbins/flare?flags%5B0%5D=milp_flare)
@@ -65,12 +66,14 @@ See `AGENTS.md` for development information.
 ## Cite
 
 ```bibtex
-@unpublished{robbins2026flare,
-  title = {FLARE: Verifying MILP Reformulations with LLM-Based Theorem Proving},
+@misc{robbins2026flare,
+  title = {{{FLARE}}: Verifying {{MILP}} Reformulations with {{LLM}}-Based Theorem Proving},
   author = {Robbins, Henry and Lawless, Connor and Udell, Madeleine and Vitercik, Ellen},
   year = 2026,
-  note = {Working paper},
-  url = {https://flare.henryrobbins.com}
+  eprint = {2608.25220},
+  archivePrefix = {arXiv},
+  primaryClass = {cs.AI},
+  url = {https://arxiv.org/abs/2608.25220}
 }
 ```
 
